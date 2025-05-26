@@ -108,14 +108,14 @@ class JacLanguageTests(TestCase):
             "Too high!\nToo low!\nToo high!\nCongratulations! You guessed correctly.\n",
         )
 
-    def test_dotgen(self) -> None:
+    def test_printgraph(self) -> None:
         """Test the dot gen of builtin function."""
         import json
 
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "builtin_dotgen_json", base_path=self.fixture_abs_path("./")
+            self.mach, "builtin_printgraph_json", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -439,7 +439,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "builtin_dotgen", base_path=self.fixture_abs_path("./")
+            self.mach, "builtin_printgraph", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -1274,7 +1274,9 @@ class JacLanguageTests(TestCase):
         """Test visitor, here keyword usage in jaclang."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import(self.mach, "here_visitor_usage", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "here_visitor_usage", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Here value is  10", stdout_value[0])

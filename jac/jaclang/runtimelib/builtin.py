@@ -10,10 +10,7 @@ from jaclang.runtimelib.constructs import Archetype, NodeArchetype, Root
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 
-# FIXME: Retname this to something common, doing this way so this doesn't break
-# the existing code. Currently it can return the jac graph in both dot and json format.
-# So the name shuouldn't be dotgen but something more generic.
-def dotgen(
+def printgraph(
     node: Optional[NodeArchetype] = None,
     depth: int = -1,
     traverse: bool = False,
@@ -30,7 +27,7 @@ def dotgen(
     if as_json:
         return _jac_graph_json()
 
-    return Jac.dotgen(
+    return Jac.printgraph(
         edge_type=edge_type,
         node=node or Jac.root(),
         depth=depth,
@@ -86,7 +83,7 @@ __all__ = [
     "abstractmethod",
     "ClassVar",
     "override",
-    "dotgen",
+    "printgraph",
     "jid",
     "jobj",
 ]

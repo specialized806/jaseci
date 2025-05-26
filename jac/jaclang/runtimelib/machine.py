@@ -525,7 +525,7 @@ class JacBuiltin:
     """Jac Builtins."""
 
     @staticmethod
-    def dotgen(
+    def printgraph(
         node: NodeArchetype,
         depth: int,
         traverse: bool,
