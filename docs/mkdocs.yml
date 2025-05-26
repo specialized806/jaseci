@@ -83,6 +83,7 @@ nav:
 
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
+    - Release Notes: "communityhub/release_notes.md"
     - Breaking Changes: "communityhub/breaking_changes.md"
     - Fun Stuff:
       - "communityhub/projects.md"
