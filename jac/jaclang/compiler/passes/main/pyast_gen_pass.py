@@ -881,7 +881,7 @@ class PyastGenPass(UniPass):
                 self.sync(
                     ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),
                     jac_node=node.doc,
-                )
+                ),
             )
         return body
 
