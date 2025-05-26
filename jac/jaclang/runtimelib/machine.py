@@ -598,7 +598,8 @@ class JacBuiltin:
                 f' [label="{edge_label if "GenericEdge" not in edge_label else ""}"];\n'
             )
             mermaid_content += (
-                f"{visited_nodes.index(source)} -->|{edge_label if 'GenericEdge' not in edge_label else ''}| {visited_nodes.index(target)}\n"
+                f"{visited_nodes.index(source)} -->"
+                f"|{edge_label if 'GenericEdge' not in edge_label else ''}| {visited_nodes.index(target)}\n"
             )
         for node_ in visited_nodes:
             color = (
@@ -609,9 +610,7 @@ class JacBuiltin:
                 f'{visited_nodes.index(node_)} [label="{label}"'
                 f'fillcolor="{color}"];\n'
             )
-            mermaid_content += (
-                f'{visited_nodes.index(node_)}["{label}"]\n'
-            )
+            mermaid_content += f'{visited_nodes.index(node_)}["{label}"]\n'
         output = dot_content + "}" if format == "dot" else mermaid_content
         if file:
             with open(file, "w") as f:
