@@ -296,9 +296,9 @@ class JacCliTests(TestCase):
         printgraph_params = set(inspect.signature(printgraph).parameters.keys())
         printgraph_params = printgraph_params - {
             "node",
-            "dot_file",
+            "file",
             "edge_type",
-            "as_json",
+            "format",
         }
         printgraph_params.update({"initial", "saveto", "connection", "session"})
         self.assertTrue(printgraph_params.issubset(graph_params))

@@ -130,6 +130,17 @@ class JacLanguageTests(TestCase):
         edges = data["edges"]
         self.assertEqual(len(edges), 6)
 
+    def test_printgraph_mermaid(self) -> None:
+        """Test the mermaid gen of builtin function."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "builtin_printgraph_mermaid", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("flowchart LR", stdout_value)
+
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
