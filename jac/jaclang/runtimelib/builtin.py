@@ -18,14 +18,15 @@ def printgraph(
     bfs: bool = True,
     edge_limit: int = 512,
     node_limit: int = 512,
-    dot_file: Optional[str] = None,
-    as_json: bool = False,
+    file: Optional[str] = None,
+    format: str = "dot",
 ) -> str:
-    """Print the dot graph."""
+    """Print the graph in different formats."""
     from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
-    if as_json:
-        return _jac_graph_json()
+    fmt = format.lower()
+    if fmt == "json":
+        return _jac_graph_json(file)
 
     return Jac.printgraph(
         edge_type=edge_type,
@@ -35,7 +36,8 @@ def printgraph(
         bfs=bfs,
         edge_limit=edge_limit,
         node_limit=node_limit,
-        dot_file=dot_file,
+        file=file,
+        format=fmt,
     )
 
 
@@ -49,7 +51,7 @@ def jobj(id: str) -> Archetype | None:
     return Jac.get_object(id)
 
 
-def _jac_graph_json() -> str:
+def _jac_graph_json(file: Optional[str] = None) -> str:
     """Get the graph in json string."""
     processed: list[Root | NodeArchetype] = []
     nodes: list[dict] = []
@@ -70,13 +72,17 @@ def _jac_graph_json() -> str:
         for ref in Jac.refs(end):
             if ref not in processed:
                 working_set.append((end, ref))
-    return json.dumps(
+    output = json.dumps(
         {
             "version": "1.0",
             "nodes": nodes,
             "edges": edges,
         }
     )
+    if file:
+        with open(file, "w") as f:
+            f.write(output)
+    return output
 
 
 __all__ = [
