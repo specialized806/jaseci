@@ -69,17 +69,17 @@ async function setupCodeBlock(div) {
     `;
 
     await loadMonacoEditor();
-    
+
     div.innerHTML = `
     <div class="jac-code" style="border: 1px solid #ccc;"></div>
     <button class="md-button md-button--primary run-code-btn">Run</button>
     <pre class="code-output" style="display:none; white-space: pre-wrap; background: #1e1e1e; color: #d4d4d4; padding: 10px;"></pre>
     `;
-    
+
     const container = div.querySelector(".jac-code");
     const runButton = div.querySelector(".run-code-btn");
     const outputBlock = div.querySelector(".code-output");
-    
+
     const editor = monaco.editor.create(container, {
         value: originalCode || '# Write your Jac code here',
         language: 'python',
