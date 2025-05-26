@@ -2,7 +2,7 @@ Jac provides two complementary approaches to defining executable code: tradition
 
 #### Omission of Gratuitous `self`
 
-Unlike Python, Jac methods do not require a `self` parameter unless it is
+Unlike Python, Jac methods of `obj`, `node`, `edge`, and `walker` do not require a `self` parameter unless it is
 actually used.  Instance methods implicitly receive the current object, reducing
 boilerplate and keeping signatures focused on relevant parameters.
 

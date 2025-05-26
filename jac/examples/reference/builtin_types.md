@@ -32,7 +32,8 @@ let cache: `Dict[str, int]` = {};
 ```
 
 These identifiers are recognized by the compiler automatically, simplifying type
-annotations and eliminating repetitive import statements.
+annotations and eliminating repetitive import statements. All available types from
+python `typing` library is availabe through this idiom. 
 
 **Type Usage**
 
