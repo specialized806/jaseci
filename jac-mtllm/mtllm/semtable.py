@@ -96,11 +96,22 @@ class SemScope:
             node = node.parent
         return type_str
 
+    def get_scope_trace(self) -> list[dict[str, str]]:
+        """Get the scope trace as a list of dict."""
+        list_of_scopes = [{"scope": self.scope, "type": self.type}]
+        if self.parent:
+            parent_trace = self.parent.get_scope_trace()
+            for scope in parent_trace:
+                list_of_scopes.append(scope)
+        return list_of_scopes
+
 
 class SemRegistry:
     """Registry class for semantic information."""
 
-    def __init__(self, program_head: uni.ProgramModule, by_scope: SemScope) -> None:
+    def __init__(
+        self, program_head: uni.ProgramModule, by_scope: Optional[SemScope]
+    ) -> None:
         """Initialize the registry with the program head and current scope."""
         self.program_head: uni.ProgramModule = program_head
         self.by_scope: SemScope = by_scope
@@ -156,20 +167,28 @@ class SemRegistry:
         mod = None
         scope_obj = None
         # Find the relevant module and scope object
+        scope_stack = scope.get_scope_trace() if scope else self.by_scope.get_scope_trace()
+        expected_mod = scope_stack[-1]["scope"] if scope_stack else None
         for m in mods.values():
-            candidate_scope = scope.scope if scope else self.by_scope.scope
-            found_scope = m.find_scope(candidate_scope)
-            if found_scope:
+            if m.name == expected_mod:
                 mod = m
+                break
+        if not mod:
+            return None, None
+        found_scope = mod
+        scope_stack.pop(-1)
+        while len(scope_stack) > 0:
+            found_scope = found_scope.find_scope(name=scope_stack[-1]["scope"])
+            if found_scope and len(scope_stack) == 1:
                 scope_obj = found_scope
                 break
+            scope_stack.pop(-1)
         if not mod or not scope_obj:
             return None, None  # Module or scope not found
 
         symbol_table = scope_obj.get_parent()
         if not symbol_table:
             return None, None  # Symbol table not found
-
         # Lookup by scope
         if scope:
             symbol = symbol_table.lookup(scope.scope)
@@ -197,7 +216,6 @@ class SemRegistry:
 
             # Create SemInfo objects for all symbols in the scope
             sem_info_list = []
-
             for sym in scope_node.names_in_scope.values():
                 node_of_sym = sym.decl.name_of
                 node_type = self._find_node_datatype(node_of_sym) or "Any"
@@ -210,7 +228,6 @@ class SemRegistry:
                             "",
                         )
                     )
-
             return sem_scope, sem_info_list
 
         # Lookup by name
