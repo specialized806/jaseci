@@ -965,11 +965,8 @@ class JacBasics:
                         connected_edges.append(edge)
                         if dir == EdgeDir.IN:
                             connected_edges.append(edge.__jac__.source.archetype)
-                        elif dir == EdgeDir.ANY:
-                            connected_edges.append(edge.__jac__.source.archetype)
-                            connected_edges.append(edge.__jac__.target.archetype)
                         else:
-                            connected_edges.append(edge.__jac__.source.archetype)
+                            connected_edges.append(edge.__jac__.target.archetype)
                     else:
                         connected_edges.append(edge)
             return connected_edges
