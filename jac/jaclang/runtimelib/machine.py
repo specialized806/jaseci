@@ -329,20 +329,26 @@ class JacWalker:
             | NodeArchetype
             | EdgeArchetype
         ),
+        insert_loc: int = -1,
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchetype):
             """Walker visits node."""
             wanch = walker.__jac__
             before_len = len(wanch.next)
+            next = []
             for anchor in (
                 (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
             ):
                 if anchor not in wanch.ignores:
                     if isinstance(anchor, (NodeAnchor, EdgeAnchor)):
-                        wanch.next.append(anchor)
+                        next.append(anchor)
                     else:
                         raise ValueError("Anchor should be NodeAnchor or EdgeAnchor.")
+            if insert_loc == 0:
+                wanch.next[:0] = next
+            else:
+                wanch.next.extend(next)
             return len(wanch.next) > before_len
         else:
             raise TypeError("Invalid walker object")
