@@ -339,13 +339,10 @@ class JacWalker:
                 (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
             ):
                 if anchor not in wanch.ignores:
-                    if isinstance(anchor, NodeAnchor):
+                    if isinstance(anchor, (NodeAnchor, EdgeAnchor)):
                         wanch.next.append(anchor)
-                    elif isinstance(anchor, EdgeAnchor):
-                        if target := anchor.target:
-                            wanch.next.extend([anchor, target])
-                        else:
-                            raise ValueError("Edge has no target.")
+                    else:
+                        raise ValueError("Anchor should be NodeAnchor or EdgeAnchor.")
             return len(wanch.next) > before_len
         else:
             raise TypeError("Invalid walker object")
@@ -942,7 +939,10 @@ class JacBasics:
         dir: EdgeDir = EdgeDir.OUT,
         filter: Callable[[EdgeArchetype], bool] | None = None,
         edges_only: bool = False,
-    ) -> list[NodeArchetype] | list[EdgeArchetype]:
+        from_visit: bool = False,
+    ) -> (
+        list[NodeArchetype] | list[EdgeArchetype] | list[NodeArchetype | EdgeArchetype]
+    ):
         """Jac's apply_dir stmt feature."""
         if isinstance(sources, NodeArchetype):
             sources = [sources]
@@ -952,14 +952,23 @@ class JacBasics:
             else targets if targets else None
         )
         if edges_only:
-            connected_edges: list[EdgeArchetype] = []
+            connected_edges: list[EdgeArchetype | NodeArchetype] = []
             for node in sources:
                 edges = JacMachineInterface.get_edges(
                     node.__jac__, dir, filter, target_obj=targ_obj_set
                 )
-                connected_edges.extend(
-                    edge for edge in edges if edge not in connected_edges
-                )
+                for edge in edges:
+                    assert isinstance(edge, EdgeArchetype)
+                    if edge in connected_edges:
+                        continue
+                    if from_visit:
+                        connected_edges.append(edge)
+                        if dir == EdgeDir.IN:
+                            connected_edges.append(edge.__jac__.source.archetype)
+                        else:
+                            connected_edges.append(edge.__jac__.target.archetype)
+                    else:
+                        connected_edges.append(edge)
             return connected_edges
         else:
             connected_nodes: list[NodeArchetype] = []
