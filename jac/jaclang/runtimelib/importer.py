@@ -114,11 +114,12 @@ class ImportReturn:
                         if os.path.isfile(init_jac):
                             package_name = module.__name__
                             init_mod = self.importer.jac_machine.loaded_modules.get(
-                                package_name,self.load_jac_mod_as_item(
+                                package_name,
+                                self.load_jac_mod_as_item(
                                     module=module,
                                     name="__init__",
                                     jac_file_path=init_jac,
-                                )
+                                ),
                             )
                             # Attach all public names from __init__.jac to the package module
                             for k, v in init_mod.__dict__.items():
