@@ -1795,9 +1795,7 @@ class PyastGenPass(UniPass):
                 self.sync(
                     ast3.keyword(
                         arg="insert_loc",
-                        value=self.sync(
-                            ast3.Constant(value=int(node.insert_loc.value))
-                        ),
+                        value=cast(ast3.expr, node.insert_loc.gen.py_ast[0]),
                     )
                 )
             )

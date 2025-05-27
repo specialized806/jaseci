@@ -16,7 +16,16 @@ edge MyEdge {
 
 walker MyWalker {
     can does with MyNode entry {
-        visit :0:[-->];
+        if here.val == 20{
+            visit :0:[-->];
+        }
+        elif here.val == 30 {
+            visit :-1:[-->];
+        }
+        else {
+            visit [-->];
+        }
+        
     }
 }
 
@@ -28,11 +37,13 @@ with entry {
     n4 = MyNode(40);
     n5 = MyNode(50);
     n6 = MyNode(60);
+    n7 = MyNode(70);
     root ++> n0 ++> n1;
     n1 ++> n2;
     n1 ++> n3;
     n1 ++> n4;
     n2 ++> n5;
     n2 ++> n6;
+    n3 ++> n7;
     MyWalker() spawn n0;
 }
