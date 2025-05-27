@@ -78,6 +78,18 @@ with entry {
     print(f"{result.value} personality detected for {name}");
 }
 ```
+??? example "Output"
+    ```
+    Introvert personality detected for Albert Einstein
+    ```
+
+??? info "How To Run"
+    1. Install the MTLLM plugin by ```pip install mtllm[openai]```
+    2. Save your Gemini API as an environment variable.
+    > **Note:**
+    >
+    > You can use OpenAI, Gemini or other services as well as host your own LLM using Ollama or Huggingface.
+    3. Copy this code into `example.jac` file and run with `jac run example.jac`
 `by llm()` delegates execution to an LLM without any extra library code.
 
 
@@ -98,10 +110,6 @@ walker create_post {
     }
 }
 ```
-??? example "Output"
-    ```
-    Introvert personality detected for Albert Einstein
-    ```
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
 
 
