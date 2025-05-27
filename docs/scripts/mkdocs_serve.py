@@ -78,7 +78,9 @@ class DebouncedRebuildHandler(FileSystemEventHandler):
         except subprocess.CalledProcessError as e:
             print(f"Rebuild failed: {e}")
         except FileNotFoundError:
-            print("Error: mkdocs not found. Please install it via `pip install mkdocs`.")
+            print(
+                "Error: mkdocs not found. Please install it via `pip install mkdocs`."
+            )
 
 
 def serve_with_watch() -> None:
