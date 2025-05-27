@@ -1,4 +1,4 @@
-node MyNode{
+node MyNode {
     has val:int;
 
     can do with MyWalker entry {
@@ -34,16 +34,9 @@ with entry {
     n1 = MyNode(10);
     n2 = MyNode(20);
     n3 = MyNode(30);
-    n4 = MyNode(40);
-    n5 = MyNode(50);
-    n6 = MyNode(60);
-    n7 = MyNode(70);
     root ++> n0 ++> n1;
-    n1 ++> n2;
-    n1 ++> n3;
-    n1 ++> n4;
-    n2 ++> n5;
-    n2 ++> n6;
-    n3 ++> n7;
+    n1 ++> [n2, n3, MyNode(40)];
+    n2 ++> [MyNode(50), MyNode(60)];
+    n3 ++> MyNode(70);
     MyWalker() spawn n0;
 }
