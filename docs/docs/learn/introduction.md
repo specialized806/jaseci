@@ -61,17 +61,21 @@ A walker cycles through game stages using edges, demonstrating Data Spatial Prog
 Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive new libraries.
 
 ```jac
+import from mtllm.llms { OpenAI }
+glob llm = OpenAI(model_name="gpt-4o-mini");
+
 enum Personality {
-    INTROVERT,
-    EXTROVERT,
-    AMBIVERT
+    INTROVERT = "Introvert",
+    EXTROVERT = "Extrovert",
+    AMBIVERT = "Ambivert"
 }
 
-can get_personality(name: str) -> Personality by llm();
+def get_personality(name: str) -> Personality by llm();
 
 with entry {
-    result = get_personality("Albert Einstein");
-    print(f"{result} personality detected");
+    name = "Albert Einstein";
+    result = get_personality(name);
+    print(f"{result.value} personality detected for {name}");
 }
 ```
 `by llm()` delegates execution to an LLM without any extra library code.
@@ -94,6 +98,10 @@ walker create_post {
     }
 }
 ```
+??? example "Output"
+    ```
+    Introvert personality detected for Albert Einstein
+    ```
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
 
 
