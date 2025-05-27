@@ -1,6 +1,6 @@
 import from mtllm.llms { OpenAI }
 
-glob llm = OpenAI();
+glob llm = OpenAI(model_name="gpt-4o", verbose=False);
 
 obj Employer {
     has employer_name: str,

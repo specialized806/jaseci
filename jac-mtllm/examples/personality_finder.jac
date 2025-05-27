@@ -1,6 +1,6 @@
 import from mtllm.llms { OpenAI }
 
-glob llm = OpenAI(verbose=False, model_name="gpt-4o-mini");
+glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
 
 enum Personality {
     INTROVERT = "Introvert",
