@@ -1790,6 +1790,18 @@ class PyastGenPass(UniPass):
             )
         )
 
+        if node.insert_loc is not None:
+            visit_call.keywords.append(
+                self.sync(
+                    ast3.keyword(
+                        arg="insert_loc",
+                        value=self.sync(
+                            ast3.Constant(value=int(node.insert_loc.value))
+                        ),
+                    )
+                )
+            )
+
         node.gen.py_ast = [
             (
                 self.sync(

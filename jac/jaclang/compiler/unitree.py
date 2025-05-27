@@ -2644,7 +2644,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
     def __init__(
         self,
-        insert_loc: Optional[Expr],
+        insert_loc: Optional[Int],
         target: Expr,
         else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],

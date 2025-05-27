@@ -329,6 +329,7 @@ class JacWalker:
             | NodeArchetype
             | EdgeArchetype
         ),
+        insert_loc: int = -1,
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchetype):
@@ -340,7 +341,10 @@ class JacWalker:
             ):
                 if anchor not in wanch.ignores:
                     if isinstance(anchor, (NodeAnchor, EdgeAnchor)):
-                        wanch.next.append(anchor)
+                        if insert_loc == 0:
+                            wanch.next.insert(0, anchor)
+                        else:
+                            wanch.next.append(anchor)
                     else:
                         raise ValueError("Anchor should be NodeAnchor or EdgeAnchor.")
             return len(wanch.next) > before_len

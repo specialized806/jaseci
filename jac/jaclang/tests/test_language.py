@@ -1317,7 +1317,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("MyEdge from walker MyEdge(path=2)", stdout_value[16])
     
     def test_backward_edge_visit(self) -> None:
-        """Test visitor, here keyword usage in jaclang."""
+        """Test backward edge visit in jaclang."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.run(self.fixture_abs_path("backward_edge_visit.jac"))
@@ -1327,3 +1327,15 @@ class JacLanguageTests(TestCase):
         self.assertIn("MyWalker() from edge MyEdge(path=0)", stdout_value[1])
         self.assertIn("MyWalker() from edge MyEdge(path=3)", stdout_value[6])
         self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[9])
+
+    def test_visit_traversal(self) -> None:
+        """Test visit traversal semantic in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("visit_traversal.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyWalker() from node MyNode(val=0)", stdout_value[0])
+        self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[2])
+        self.assertIn("MyWalker() from node MyNode(val=20)", stdout_value[4])
+        self.assertIn("MyWalker() from node MyNode(val=50)", stdout_value[6])

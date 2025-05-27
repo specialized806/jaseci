@@ -1447,7 +1447,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_VISIT)
             insert_loc = None
             if self.match_token(Tok.COLON):
-                insert_loc = self.consume(uni.Expr)
+                insert_loc = self.consume(uni.Int)
                 self.consume_token(Tok.COLON)
             target = self.consume(uni.Expr)
             else_body = self.match(uni.ElseStmt)
