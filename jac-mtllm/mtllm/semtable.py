@@ -28,7 +28,7 @@ class SemInfo:
         self.semstr = semstr
 
         if hasattr(node, "doc") and getattr(node, "doc"):
-            self.docstr = getattr(node, "doc").value.strip('"\'')
+            self.docstr = getattr(node, "doc").value.strip("\"'")
         else:
             self.docstr = ""
         self.semstr = semstr or self.docstr
@@ -78,7 +78,7 @@ class SemScope:
         parent = None
         for scope in scope_list:
             start, end = scope.find("("), -1
-            scope_name, scope_type = scope[:start], scope[start+1:end]
+            scope_name, scope_type = scope[:start], scope[start + 1 : end]
             parent = SemScope(scope_name, scope_type, parent)
         return parent
 
@@ -110,24 +110,34 @@ class SemRegistry:
         if isinstance(node, uni.AstTypedVarNode) and node.type_tag:
             type_expr = node.type_tag.tag.unparse()
             return type_expr
+        if isinstance(node, uni.Enum):
+            return str("Enum")
         if isinstance(node, uni.Archetype):
             return str(node.sym_category)
-        if isinstance(node, uni.Ability) and isinstance(node.signature, uni.FuncSignature):
+        if isinstance(node, uni.Ability) and isinstance(
+            node.signature, uni.FuncSignature
+        ):
             ret = "function("
             params = []
             if node.signature.params:
                 for param in node.signature.params.items:
                     params.append(
-                        param.name.value + ":" + (self._find_node_datatype(param) or "Any")
+                        param.name.value
+                        + ":"
+                        + (self._find_node_datatype(param) or "Any")
                     )
             ret += ", ".join(params)
             return_str = "Any"
-            if isinstance(node.signature, uni.FuncSignature) and node.signature.return_type:
-                return_str = self._find_node_datatype(node.signature.return_type) or "Any"
+            if (
+                isinstance(node.signature, uni.FuncSignature)
+                and node.signature.return_type
+            ):
+                return_str = (
+                    self._find_node_datatype(node.signature.return_type) or "Any"
+                )
             ret += ") -> " + return_str
             return ret
         return None
-
 
     def lookup(
         self,
@@ -181,7 +191,7 @@ class SemRegistry:
             if scope_node is None:
                 # Try to find the scope node by name
                 scope_node = symbol.parent_tab.find_scope(symbol.sym_name)
-                if not scope_node or not hasattr(scope_node, 'names_in_scope'):
+                if not scope_node or not hasattr(scope_node, "names_in_scope"):
                     # If we can't find the proper scope, fall back to original behavior
                     scope_node = symbol.parent_tab
 
@@ -200,6 +210,7 @@ class SemRegistry:
                             "",
                         )
                     )
+
             return sem_scope, sem_info_list
 
         # Lookup by name
@@ -218,7 +229,6 @@ class SemRegistry:
             else:
                 # If the node has no parent, use the node itself (likely a module)
                 sem_scope = get_sem_scope(node)
-
             sem_info = SemInfo(node, name, node_type, "")
             if _type and sem_info.type != _type:
                 return None, None
@@ -229,7 +239,7 @@ class SemRegistry:
             sem_info_list = []
             # We'll store the parent scope - this should be the same for all symbols in this table
             sem_scope = None
-            
+
             # First, determine the containing scope from the symbol_table's parent
             if symbol_table.parent_scope:
                 parent_node = symbol_table.parent_scope
@@ -241,7 +251,10 @@ class SemRegistry:
                 parent_scope = sym.parent_tab
                 node_of_sym = sym.decl.name_of
                 node_type = self._find_node_datatype(node_of_sym) or "Any"
-                if isinstance(parent_scope, uni.UniNode) and str(parent_scope.get_type()) == _type:
+                if (
+                    isinstance(parent_scope, uni.UniNode)
+                    and str(parent_scope.get_type()) == _type
+                ):
                     # If we couldn't get the scope from the parent, use the declaration node as fallback
                     if not sem_scope:
                         decl_node = sym.decl.name_of
@@ -251,7 +264,9 @@ class SemRegistry:
                                 sem_scope = get_sem_scope(decl_node.parent)
                             else:
                                 sem_scope = get_sem_scope(decl_node)
-                    sem_info_list.append(SemInfo(node_of_sym, sym.sym_name, node_type, ""))
+                    sem_info_list.append(
+                        SemInfo(node_of_sym, sym.sym_name, node_type, "")
+                    )
 
             if sem_info_list:
                 return sem_scope, sem_info_list
