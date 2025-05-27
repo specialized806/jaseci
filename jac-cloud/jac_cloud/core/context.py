@@ -1,7 +1,7 @@
 """Core constructs for Jac Language."""
 
 from contextvars import ContextVar
-from dataclasses import dataclass, is_dataclass
+from dataclasses import MISSING, dataclass, is_dataclass
 from os import getenv
 from typing import Any, Generic, TypeVar, cast
 
@@ -62,6 +62,12 @@ class JaseciContext(JacMachine):
     base: JacMachine | None
     connection: Request | WebSocket | None
 
+    def __init__(self) -> None:
+        """Initialize JacMachine."""
+        # Temporary patch the initialization
+        # Jac-Cloud context should not alawys hold JacMachine
+        pass
+
     def close(self) -> None:
         """Clean up context."""
         self.mem.close()
@@ -76,6 +82,7 @@ class JaseciContext(JacMachine):
         ctx.mem = MongoDB()
         ctx.reports = []
         ctx.status = 200
+        ctx.custom = MISSING
 
         system_root: NodeAnchor | None = None
         system_root = ctx.mem.find_by_id(SUPER_ROOT)
