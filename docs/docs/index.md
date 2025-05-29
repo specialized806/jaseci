@@ -2,7 +2,7 @@
 <div class="hero" style="background-color: var(--bg-color); padding: 2rem; text-align: center;">
   <div class="container">
     <div style="display: flex; align-items: center; justify-content: center;">
-      <img src="https://www.jac-lang.org/assets/logo.png" alt="Jac Logo" width="150rem"/>
+      <img src="/assets/logo.png" alt="Jac Logo" width="150rem"/>
       <div style="color: var(--hero-text-color); font-size: 3rem; font-weight: 600; margin-left: 1rem; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: flex-start;">
         Jac and Jaseci
         <span style="font-size: 1.2rem; font-style: italic; font-weight: 100; margin: 0; color: var(--hero-text-color);">
@@ -13,9 +13,13 @@
   </div>
 </div>
 
+Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
+
+Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
+
 <div class="grid cards" style="text-align: center;" markdown>
 
-[Dive into Jac!](for_coders/introduction.md){ .md-button }
+[Dive into Jac!](learn/introduction.md){ .md-button }
 
 </div>
 

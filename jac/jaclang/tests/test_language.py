@@ -108,14 +108,14 @@ class JacLanguageTests(TestCase):
             "Too high!\nToo low!\nToo high!\nCongratulations! You guessed correctly.\n",
         )
 
-    def test_dotgen(self) -> None:
+    def test_printgraph(self) -> None:
         """Test the dot gen of builtin function."""
         import json
 
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "builtin_dotgen_json", base_path=self.fixture_abs_path("./")
+            self.mach, "builtin_printgraph_json", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -129,6 +129,17 @@ class JacLanguageTests(TestCase):
 
         edges = data["edges"]
         self.assertEqual(len(edges), 6)
+
+    def test_printgraph_mermaid(self) -> None:
+        """Test the mermaid gen of builtin function."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "builtin_printgraph_mermaid", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("flowchart LR", stdout_value)
 
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
@@ -439,7 +450,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "builtin_dotgen", base_path=self.fixture_abs_path("./")
+            self.mach, "builtin_printgraph", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -1269,3 +1280,63 @@ class JacLanguageTests(TestCase):
         self.assertIn("(tok[ 0 ] > change_end_line)", output)
         self.assertIn("(tok[ 0 ] == change_end_line)", output)
         self.assertIn("(tok[ 1 ] > change_end_char)", output)
+
+    def test_here_visitor_usage(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "here_visitor_usage", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Here value is  10", stdout_value[0])
+        self.assertIn("Visitor name is  Walker 1", stdout_value[1])
+
+    def test_here_visitor_error(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        cli.run(self.fixture_abs_path("here_usage_error.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("'here' is not defined", stdout_value)
+
+    def test_edge_ability(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("edge_ability.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyEdge from walker MyEdge(path=1)", stdout_value[0])
+        self.assertIn("MyWalker from edge MyWalker()", stdout_value[1])
+        self.assertIn("MyWalker from node MyWalker()", stdout_value[6])
+        self.assertIn("MyEdge from walker MyEdge(path=2)", stdout_value[16])
+    
+    def test_backward_edge_visit(self) -> None:
+        """Test backward edge visit in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("backward_edge_visit.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyWalker() from node MyNode(val=0)", stdout_value[0])
+        self.assertIn("MyWalker() from edge MyEdge(path=0)", stdout_value[1])
+        self.assertIn("MyWalker() from edge MyEdge(path=3)", stdout_value[6])
+        self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[9])
+
+    def test_visit_traversal(self) -> None:
+        """Test visit traversal semantic in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("visit_traversal.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyWalker() from node MyNode(val=0)", stdout_value[0])
+        self.assertIn("MyWalker() from node MyNode(val=20)", stdout_value[2])
+        self.assertIn("MyWalker() from node MyNode(val=60)", stdout_value[4])
+        self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[6])
+        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[7])

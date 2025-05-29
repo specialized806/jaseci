@@ -14,7 +14,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.builtin import dotgen
+from jaclang.runtimelib.builtin import printgraph
 from jaclang.runtimelib.constructs import WalkerArchetype
 from jaclang.runtimelib.machine import (
     JacMachine,
@@ -286,9 +286,13 @@ def lsp() -> None:
     Examples:
         jac lsp
     """
-    from jaclang.langserve.server import run_lang_server
+    from jaclang import JacMachineInterface as _
 
-    run_lang_server()
+    run_lang_server_tuple = _.py_jac_import(
+        "...jaclang.langserve.server", __file__, items={"run_lang_server": None}
+    )
+    run_lang_server = run_lang_server_tuple[0]
+    run_lang_server()  # type: ignore
 
 
 @cmd_registry.register
@@ -533,7 +537,7 @@ def dot(
         globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None
-            graph = dotgen(
+            graph = printgraph(
                 node=node,
                 depth=depth,
                 traverse=traverse,

@@ -3,6 +3,7 @@
 from .anthropic import Anthropic
 from .base import BaseLLM
 from .fake import FakeLLM
+from .google import Gemini
 from .groq import Groq
 from .huggingface import Huggingface
 from .ollama import Ollama
@@ -14,6 +15,7 @@ __all__ = [
     "Anthropic",
     "Ollama",
     "Huggingface",
+    "Gemini",
     "Groq",
     "OpenAI",
     "TogetherAI",
