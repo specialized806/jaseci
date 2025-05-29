@@ -358,11 +358,13 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         if not FastAPI.is_enabled():
             return JacMachineImpl.spawn(op1=op1, op2=op2)
 
+        edge: EdgeAnchor | None = None
         if isinstance(op1, WalkerArchetype):
             walker = op1.__jac__
             if isinstance(op2, NodeArchetype):
                 node = op2.__jac__
             elif isinstance(op2, EdgeArchetype):
+                edge = op2.__jac__
                 node = op2.__jac__.target
             else:
                 raise TypeError("Invalid target object")
@@ -371,13 +373,21 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             if isinstance(op1, NodeArchetype):
                 node = op1.__jac__
             elif isinstance(op1, EdgeArchetype):
+                edge = op1.__jac__
                 node = op1.__jac__.target
             else:
                 raise TypeError("Invalid target object")
         else:
             raise TypeError("Invalid walker object")
 
-        return Jac.spawn_call(walker=walker, node=node)  # type: ignore[return-value]
+        if edge is not None:
+            loc: EdgeAnchor | NodeAnchor = edge
+            walker.next = [edge, node]
+        else:
+            loc = node
+            walker.next = [node]
+
+        return Jac.spawn_call(walker=walker, node=loc)  # type: ignore[return-value]
 
     @staticmethod
     @hookimpl

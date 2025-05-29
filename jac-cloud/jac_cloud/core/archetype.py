@@ -900,8 +900,8 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
 
     archetype: "WalkerArchetype"
     state: WalkerAnchorState
-    path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
-    next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
+    path: list[NodeAnchor | EdgeAnchor] = field(default_factory=list)  # type: ignore[assignment]
+    next: list[NodeAnchor | EdgeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
     schedule: Schedule | None = None
