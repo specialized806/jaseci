@@ -28,7 +28,7 @@ def extract_params(
     include_info = []
     exclude_info = []
     if body.params:
-        for param in body.params.items:
+        for param in body.params:
             if isinstance(param, uni.KWPair) and isinstance(param.key, uni.Name):
                 key = param.key.value
                 value = param.value
@@ -570,7 +570,7 @@ class JacMachine:
                 keywords=[],
             )
         )
-        if node.params and node.params.items:
+        if node.params:
             inputs = [
                 _pass.sync(
                     ast3.Tuple(
@@ -655,7 +655,7 @@ class JacMachine:
                         ctx=ast3.Load(),
                     )
                 )
-                for kw_pair in node.params.items
+                for kw_pair in node.params
                 if isinstance(kw_pair, uni.KWPair)
             ]
         else:
