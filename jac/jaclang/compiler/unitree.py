@@ -3783,11 +3783,11 @@ class FilterCompr(AtomExpr):
     def __init__(
         self,
         f_type: Optional[Expr],
-        compares: Optional[SubNodeList[CompareExpr]],
+        compares: Sequence[CompareExpr],
         kid: Sequence[UniNode],
     ) -> None:
         self.f_type = f_type
-        self.compares = compares
+        self.compares = list(compares)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3796,7 +3796,8 @@ class FilterCompr(AtomExpr):
         res = True
         if deep:
             res = self.f_type.normalize(deep) if self.f_type else res
-            res = res and self.compares.normalize(deep) if self.compares else res
+            for comp in self.compares:
+                res = res and comp.normalize(deep)
         new_kid: list[UniNode] = []
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.LPAREN))
@@ -3808,7 +3809,10 @@ class FilterCompr(AtomExpr):
         if self.compares:
             if self.f_type:
                 new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.compares)
+            for i, comp in enumerate(self.compares):
+                new_kid.append(comp)
+                if i < len(self.compares) - 1:
+                    new_kid.append(self.gen_token(Tok.COMMA))
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
