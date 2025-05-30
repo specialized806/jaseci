@@ -2645,10 +2645,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.RPAREN)
                 return f_type
             self.consume_token(Tok.NULL_OK)
-            compares = self.consume(uni.SubNodeList)
+            compares_sn = self.consume(uni.SubNodeList)
             self.consume_token(Tok.RPAREN)
             return uni.FilterCompr(
-                compares=compares,
+                compares=compares_sn.items,
                 f_type=None,
                 kid=self.cur_nodes,
             )
@@ -2677,11 +2677,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             typed_filter_compare_list: expression (COLON filter_compare_list)?
             """
-            compares: uni.SubNodeList | None = None
+            compares_sn: uni.SubNodeList | None = None
             expr = self.consume(uni.Expr)
             if self.match_token(Tok.COLON):
-                compares = self.consume(uni.SubNodeList)
-            return uni.FilterCompr(compares=compares, f_type=expr, kid=self.cur_nodes)
+                compares_sn = self.consume(uni.SubNodeList)
+            return uni.FilterCompr(
+                compares=compares_sn.items if compares_sn else [],
+                f_type=expr,
+                kid=self.cur_nodes,
+            )
 
         def filter_compare_item(self, _: None) -> uni.CompareExpr:
             """Grammar rule.

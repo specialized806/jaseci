@@ -2982,7 +2982,7 @@ class PyastGenPass(UniPass):
                 ),
                 jac_node=x,
             )
-            for x in (node.compares.items if node.compares else [])
+            for x in node.compares
             if isinstance(x.gen.py_ast[0], ast3.Compare)
             and isinstance(x.gen.py_ast[0].left, ast3.Name)
         )
