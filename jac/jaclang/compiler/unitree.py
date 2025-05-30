@@ -3820,10 +3820,10 @@ class AssignCompr(AtomExpr):
 
     def __init__(
         self,
-        assigns: SubNodeList[KWPair],
+        assigns: Sequence[KWPair],
         kid: Sequence[UniNode],
     ) -> None:
-        self.assigns = assigns
+        self.assigns = list(assigns)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3831,14 +3831,21 @@ class AssignCompr(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.assigns.normalize(deep)
+            for assign in self.assigns:
+                res = res and assign.normalize(deep)
         new_kid: list[UniNode] = []
         if isinstance(self.parent, ConnectOp):
-            new_kid.append(self.assigns)
+            for i, assign in enumerate(self.assigns):
+                new_kid.append(assign)
+                if i < len(self.assigns) - 1:
+                    new_kid.append(self.gen_token(Tok.COMMA))
         else:
             new_kid.append(self.gen_token(Tok.LPAREN))
             new_kid.append(self.gen_token(Tok.EQ))
-            new_kid.append(self.assigns)
+            for i, assign in enumerate(self.assigns):
+                new_kid.append(assign)
+                if i < len(self.assigns) - 1:
+                    new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
         return res
