@@ -2554,7 +2554,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_R)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2585,7 +2587,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_L)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2616,7 +2620,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_BI)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2702,9 +2708,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             self.consume_token(Tok.LPAREN)
             self.consume_token(Tok.EQ)
-            assigns = self.consume(uni.SubNodeList)
+            assigns_sn = self.consume(uni.SubNodeList)
             self.consume_token(Tok.RPAREN)
-            return uni.AssignCompr(assigns=assigns, kid=self.cur_nodes)
+            return uni.AssignCompr(assigns=assigns_sn.items, kid=self.cur_nodes)
 
         def match_stmt(self, _: None) -> uni.MatchStmt:
             """Grammar rule.

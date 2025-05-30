@@ -3017,7 +3017,7 @@ class PyastGenPass(UniPass):
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
         keys = []
         values = []
-        for i in node.assigns.items:
+        for i in node.assigns:
             if i.key:  # TODO: add support for **kwargs in assign_compr
                 keys.append(self.sync(ast3.Constant(i.key.sym_name)))
                 values.append(i.value.gen.py_ast[0])
