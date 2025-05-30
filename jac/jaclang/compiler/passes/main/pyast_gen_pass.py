@@ -332,14 +332,13 @@ class PyastGenPass(UniPass):
                 ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),
                 jac_node=node.doc,
             )
-            if isinstance(doc, ast3.AST) and isinstance(
-                node.assignments.gen.py_ast, list
-            ):
-                node.gen.py_ast = [doc] + node.assignments.gen.py_ast
+            assigns_ast = self.flatten([a.gen.py_ast for a in node.assignments])
+            if isinstance(doc, ast3.AST):
+                node.gen.py_ast = [doc] + assigns_ast
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.assignments.gen.py_ast
+            node.gen.py_ast = self.flatten([a.gen.py_ast for a in node.assignments])
 
     def exit_test(self, node: uni.Test) -> None:
         test_name = node.name.sym_name

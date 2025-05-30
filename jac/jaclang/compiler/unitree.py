@@ -1053,12 +1053,12 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def __init__(
         self,
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: Sequence[Assignment],
         is_frozen: bool,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        self.assignments = assignments
+        self.assignments = list(assignments)
         self.is_frozen = is_frozen
         UniNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
@@ -1068,7 +1068,8 @@ class GlobalVars(ElementStmt, AstAccessNode):
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else True
-            res = res and self.assignments.normalize(deep)
+            for assign in self.assignments:
+                res = res and assign.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[UniNode] = []
         if self.doc:
@@ -1079,7 +1080,10 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.assignments)
+        for i, assign in enumerate(self.assignments):
+            new_kid.append(assign)
+            if i < len(self.assignments) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2803,10 +2807,8 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, GlobalVars
-        ):
-            if self.parent.kid.index(self) == len(self.parent.kid) - 1:
+        if isinstance(self.parent, GlobalVars):
+            if self.parent.assignments.index(self) == len(self.parent.assignments) - 1:
                 new_kid.append(self.gen_token(Tok.SEMI))
         elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))

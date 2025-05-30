@@ -293,10 +293,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             is_frozen = self.consume(uni.Token).name == Tok.KW_LET
             access_tag = self.match(uni.SubTag)
-            assignments = self.consume(uni.SubNodeList)
+            assignments_sn = self.consume(uni.SubNodeList)
             return uni.GlobalVars(
                 access=access_tag,
-                assignments=assignments,
+                assignments=assignments_sn.items,
                 is_frozen=is_frozen,
                 kid=self.cur_nodes,
             )
