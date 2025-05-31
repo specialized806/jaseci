@@ -527,7 +527,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             impl_def: decorators? KW_IMPL dotted_name impl_spec? impl_tail
             """
-            decorators = self.match(uni.SubNodeList)
+            decorators_node = self.match(uni.SubNodeList)
             self.consume_token(Tok.KW_IMPL)
             target = self.consume(uni.SubNodeList)
             spec = (
@@ -541,7 +541,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
 
             impl = uni.ImplDef(
-                decorators=decorators,
+                decorators=decorators_node.items if decorators_node else None,
                 target=target,
                 spec=valid_spec,
                 body=valid_tail,
