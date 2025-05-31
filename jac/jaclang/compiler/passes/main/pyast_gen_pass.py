@@ -792,15 +792,16 @@ class PyastGenPass(UniPass):
             self.traverse(node.body)
 
     def exit_archetype(self, node: uni.Archetype) -> None:
-        body = self.resolve_stmt_block(
-            (
+        inner = None
+        if isinstance(node.body, uni.ImplDef):
+            inner = (
                 node.body.body
-                if isinstance(node.body, uni.ImplDef)
-                and isinstance(node.body.body, uni.SubNodeList)
-                else node.body if isinstance(node.body, uni.SubNodeList) else None
-            ),
-            doc=node.doc,
-        )
+                if not isinstance(node.body.body, uni.FuncCall)
+                else None
+            )
+        elif not isinstance(node.body, uni.FuncCall):
+            inner = node.body
+        body = self.resolve_stmt_block(inner, doc=node.doc)
 
         if node.is_async:
             body.insert(
@@ -844,15 +845,16 @@ class PyastGenPass(UniPass):
 
     def exit_enum(self, node: uni.Enum) -> None:
         self.needs_enum()
-        body = self.resolve_stmt_block(
-            (
+        inner = None
+        if isinstance(node.body, uni.ImplDef):
+            inner = (
                 node.body.body
-                if isinstance(node.body, uni.ImplDef)
-                and isinstance(node.body.body, uni.SubNodeList)
-                else node.body if isinstance(node.body, uni.SubNodeList) else None
-            ),
-            doc=node.doc,
-        )
+                if not isinstance(node.body.body, uni.FuncCall)
+                else None
+            )
+        elif not isinstance(node.body, uni.FuncCall):
+            inner = node.body
+        body = self.resolve_stmt_block(inner, doc=node.doc)
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, uni.SubNodeList)
@@ -901,8 +903,10 @@ class PyastGenPass(UniPass):
         body = (
             self.gen_llm_body(node)
             if isinstance(node.body, uni.FuncCall)
-            or isinstance(node.body, uni.ImplDef)
-            and isinstance(node.body.body, uni.FuncCall)
+            or (
+                isinstance(node.body, uni.ImplDef)
+                and isinstance(node.body.body, uni.FuncCall)
+            )
             else (
                 [
                     self.sync(
@@ -919,8 +923,10 @@ class PyastGenPass(UniPass):
                         (
                             node.body.body
                             if isinstance(node.body, uni.ImplDef)
-                            and isinstance(node.body.body, uni.SubNodeList)
+                            and not isinstance(node.body.body, uni.FuncCall)
                             else node.body
+                            if not isinstance(node.body, uni.FuncCall)
+                            else None
                         ),
                         doc=node.doc,
                     )

@@ -1536,7 +1536,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         decorators: Optional[SubNodeList[Expr]],
         target: SubNodeList[NameAtom],
         spec: SubNodeList[Expr] | FuncSignature | EventSignature | None,
-        body: SubNodeList[CodeBlockStmt] | FuncCall,
+        body: Sequence[CodeBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decl_link: Optional[UniNode] = None,
@@ -1577,7 +1577,11 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         if deep:
             res = self.target.normalize(deep)
             res = res and self.spec.normalize(deep) if self.spec else res
-            res = res and self.body.normalize(deep)
+            if isinstance(self.body, FuncCall):
+                res = res and self.body.normalize(deep)
+            else:
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[UniNode] = []
@@ -1590,7 +1594,13 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         new_kid.append(self.target)
         if self.spec:
             new_kid.append(self.spec)
-        new_kid.append(self.body)
+        if isinstance(self.body, FuncCall):
+            new_kid.append(self.body)
+        else:
+            new_kid.append(self.gen_token(Tok.LBRACE))
+            for stmt in self.body:
+                new_kid.append(stmt)
+            new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
 

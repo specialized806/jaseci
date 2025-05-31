@@ -544,7 +544,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 decorators=decorators,
                 target=target,
                 spec=valid_spec,
-                body=valid_tail,
+                body=(
+                    valid_tail.items
+                    if isinstance(valid_tail, uni.SubNodeList)
+                    else valid_tail
+                ),
                 kid=self.cur_nodes,
             )
             return impl
