@@ -471,7 +471,7 @@ class UniScopeNode(UniNode):
                     if isinstance(item.operand, AstSymbolNode):
                         item.operand.name_spec.py_ctx_func = ast3.Store
                 elif isinstance(item, (TupleVal, ListVal)):
-                    for i in item.values.items if item.values else []:
+                    for i in item.values:
                         if isinstance(i, AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
                         elif isinstance(i, AtomTrailer):
@@ -2548,7 +2548,7 @@ class DeleteStmt(CodeBlockStmt):
     def py_ast_targets(self) -> list[ast3.AST]:
         """Get Python AST targets (without setting ctx)."""
         return (
-            self.target.values.gen.py_ast
+            [i.gen.py_ast[0] for i in self.target.values]
             if isinstance(self.target, TupleVal) and self.target.values
             else self.target.gen.py_ast
         )
@@ -3142,10 +3142,10 @@ class TupleVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr | KWPair]],
+        values: Sequence[Expr | KWPair],
         kid: Sequence[UniNode],
     ) -> None:
-        self.values = values
+        self.values = list(values)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3153,7 +3153,8 @@ class TupleVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
+            for i in self.values:
+                res = res and i.normalize(deep)
         in_ret_type = (
             self.parent
             and isinstance(self.parent, IndexSlice)
@@ -3169,10 +3170,12 @@ class TupleVal(AtomExpr):
             if not in_ret_type
             else []
         )
-        if self.values:
-            new_kid.append(self.values)
-            if len(self.values.items) < 2:
+        for idx, i in enumerate(self.values):
+            new_kid.append(i)
+            if idx < len(self.values) - 1:
                 new_kid.append(self.gen_token(Tok.COMMA))
+        if len(self.values) == 1:
+            new_kid.append(self.gen_token(Tok.COMMA))
         if not in_ret_type:
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
