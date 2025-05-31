@@ -193,6 +193,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
             elif isinstance(node.body, Sequence) and i in node.body:
                 if not in_body:
+                    parts.pop()
                     body_parts.append(self.hard_line())
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
@@ -1073,10 +1074,8 @@ class DocIRGenPass(UniPass):
         indent_parts: list[doc.DocType] = []
         prev_item: Optional[uni.UniNode] = None
         in_codeblock = node.delim and node.delim.name == Tok.WS
-        in_archetype = (
-            node.parent
-            and isinstance(node.parent, (uni.Archetype, uni.Enum))
-            and node == node.parent.body
+        in_archetype = node.parent and isinstance(
+            node.parent, (uni.Archetype, uni.Enum)
         )
         is_assignment = node.delim and node.delim.name == Tok.EQ
         for i in node.kid:
