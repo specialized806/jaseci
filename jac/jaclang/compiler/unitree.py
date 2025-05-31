@@ -484,7 +484,7 @@ class UniScopeNode(UniNode):
     def inherit_baseclasses_sym(self, node: Archetype | Enum) -> None:
         """Inherit base classes symbol tables."""
         if node.base_classes:
-            for base_cls in node.base_classes.items:
+            for base_cls in node.base_classes:
                 if (
                     isinstance(base_cls, AstSymbolNode)
                     and (found := self.use_lookup(base_cls))
@@ -1265,9 +1265,11 @@ class Import(ElementStmt, CodeBlockStmt):
                 ):
                     return True
                 for i in self.items:
-                    if isinstance(i, ModuleItem) and self.from_loc.resolve_relative_path(
-                        i.name.value
-                    ).endswith(".jac"):
+                    if isinstance(
+                        i, ModuleItem
+                    ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
+                        ".jac"
+                    ):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
@@ -1441,7 +1443,7 @@ class Archetype(
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[Expr]],
+        base_classes: Sequence[Expr] | None,
         body: Optional[SubNodeList[ArchBlockStmt] | ImplDef],
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
@@ -1449,7 +1451,7 @@ class Archetype(
     ) -> None:
         self.name = name
         self.arch_type = arch_type
-        self.base_classes = base_classes
+        self.base_classes: list[Expr] = list(base_classes) if base_classes else []
         UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -1500,9 +1502,8 @@ class Archetype(
             res = self.name.normalize(deep)
             res = res and self.arch_type.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
-            res = (
-                res and self.base_classes.normalize(deep) if self.base_classes else res
-            )
+            for base in self.base_classes:
+                res = res and base.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
@@ -1520,7 +1521,10 @@ class Archetype(
         new_kid.append(self.name)
         if self.base_classes:
             new_kid.append(self.gen_token(Tok.LPAREN))
-            new_kid.append(self.base_classes)
+            for idx, base in enumerate(self.base_classes):
+                new_kid.append(base)
+                if idx < len(self.base_classes) - 1:
+                    new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.gen_token(Tok.RPAREN))
         if self.body:
             if isinstance(self.body, ImplDef):
@@ -1607,14 +1611,14 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         self,
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[Expr]],
+        base_classes: Sequence[Expr] | None,
         body: Optional[SubNodeList[Assignment] | ImplDef],
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
         self.name = name
-        self.base_classes = base_classes
+        self.base_classes: list[Expr] = list(base_classes) if base_classes else []
         UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -1633,9 +1637,8 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         if deep:
             res = self.name.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
-            res = (
-                res and self.base_classes.normalize(deep) if self.base_classes else res
-            )
+            for base in self.base_classes:
+                res = res and base.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
@@ -1651,7 +1654,10 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         new_kid.append(self.name)
         if self.base_classes:
             new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.base_classes)
+            for idx, base in enumerate(self.base_classes):
+                new_kid.append(base)
+                if idx < len(self.base_classes) - 1:
+                    new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.gen_token(Tok.COLON))
         if self.body:
             if isinstance(self.body, ImplDef):
