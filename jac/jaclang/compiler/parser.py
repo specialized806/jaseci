@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TYPE_CHECKING, TypeAlias, TypeVar
+from typing import Callable, TYPE_CHECKING, TypeAlias, TypeVar, Sequence
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -543,7 +543,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             impl = uni.ImplDef(
                 decorators=decorators,
                 target=target,
-                spec=valid_spec,
+                spec=valid_spec.items if isinstance(valid_spec, uni.SubNodeList) else valid_spec,
                 body=valid_tail,
                 kid=self.cur_nodes,
             )
@@ -551,7 +551,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def impl_spec(
             self, _: None
-        ) -> uni.SubNodeList[uni.Expr] | uni.FuncSignature | uni.EventSignature:
+        ) -> Sequence[uni.Expr] | uni.FuncSignature | uni.EventSignature:
             """Grammar rule.
 
             impl_spec: inherited_archs | func_decl | event_clause
@@ -561,7 +561,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 or self.match(uni.FuncSignature)  # func_decl
                 or self.consume(uni.EventSignature)  # event_clause
             )
-            return spec
+            return spec.items if isinstance(spec, uni.SubNodeList) else spec
 
         def impl_tail(
             self, _: None

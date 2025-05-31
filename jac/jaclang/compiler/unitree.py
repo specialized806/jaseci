@@ -1535,7 +1535,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         self,
         decorators: Optional[SubNodeList[Expr]],
         target: SubNodeList[NameAtom],
-        spec: SubNodeList[Expr] | FuncSignature | EventSignature | None,
+        spec: Sequence[Expr] | FuncSignature | EventSignature | None,
         body: SubNodeList[CodeBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
@@ -1543,7 +1543,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
     ) -> None:
         self.decorators = decorators
         self.target = target
-        self.spec = spec
+        self.spec = list(spec) if isinstance(spec, Sequence) else spec
         self.body = body
         self.doc = doc
         self.decl_link = decl_link
@@ -1576,7 +1576,11 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and self.spec.normalize(deep) if self.spec else res
+            if isinstance(self.spec, Sequence):
+                for item in self.spec:
+                    res = res and item.normalize(deep)
+            else:
+                res = res and self.spec.normalize(deep) if self.spec else res
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
@@ -1589,7 +1593,15 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         new_kid.append(self.gen_token(Tok.KW_IMPL))
         new_kid.append(self.target)
         if self.spec:
-            new_kid.append(self.spec)
+            if isinstance(self.spec, Sequence):
+                new_kid.append(self.gen_token(Tok.LPAREN))
+                for idx, item in enumerate(self.spec):
+                    new_kid.append(item)
+                    if idx < len(self.spec) - 1:
+                        new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(self.gen_token(Tok.RPAREN))
+            else:
+                new_kid.append(self.spec)
         new_kid.append(self.body)
         self.set_kids(nodes=new_kid)
         return res
