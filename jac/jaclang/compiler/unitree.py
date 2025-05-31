@@ -2379,7 +2379,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
     def __init__(
         self,
         is_async: bool,
-        exprs: SubNodeList[ExprAsItem],
+        exprs: Sequence[ExprAsItem],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
@@ -2393,13 +2393,17 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.exprs.normalize(deep)
+            for item in self.exprs:
+                res = res and item.normalize(deep)
             res = res and self.body.normalize(deep)
         new_kid: list[UniNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
-        new_kid.append(self.exprs)
+        for idx, item in enumerate(self.exprs):
+            new_kid.append(item)
+            if idx < len(self.exprs) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         new_kid.append(self.body)
         self.set_kids(nodes=new_kid)
         return res
