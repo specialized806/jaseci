@@ -279,7 +279,7 @@ LanguageServer) {
                 );
                 if isinstance(temp_tab, uni.Archetype) and temp_tab.base_classes  {
                     base = [];
-                    for base_name in temp_tab.base_classes.items {
+                    for base_name in temp_tab.base_classes {
                         if isinstance(base_name, uni.Name) and base_name.sym  {
                             base.append(base_name.sym);
                         }

@@ -598,7 +598,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 arch_type=arch_type,
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
                 kid=self.cur_nodes,
             )
@@ -691,7 +691,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.Enum(
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
                 kid=self.cur_nodes,
             )
