@@ -1,18 +1,18 @@
-# Introduction
+# Getting Started
 
-## **How To Start**
+## **Start the Server**
 
-Just replace `jac run` with `jac serve` and you are now running your jac application as an API server.
+Execute the command `jac serve filename.jac` to run your jac application as an API server.
 
 `jac serve main.jac`
 
-Optionally, specif host and port with `--host` and `--port`.
+Optionally, specific host and port with `--host` and `--port`.
 
 Once starts, navigate to `/docs` to access the built-in API docs.
 
 ## **Walker Endpoints**
 
-- as default, walker declaration will be converted to 2 group of endpoints but can be disable by setting environment variable `DISABLE_AUTO_ENDPOINT=true`
+- As default, walker declaration will be converted to 2 group of endpoints but can be disable by setting environment variable `DISABLE_AUTO_ENDPOINT=true`
   - group will be based on allowed `methods` and `path` on specs
   - group 1: `/walker/{walker's name}`
   - group 2: `/walker/{walker's name}/{node}`
