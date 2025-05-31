@@ -321,7 +321,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             codeblock = self.consume(uni.SubNodeList)
             return uni.Test(
                 name=name,
-                body=codeblock,
+                body=codeblock.items,
                 kid=self.cur_nodes,
             )
 

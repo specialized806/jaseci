@@ -225,7 +225,8 @@ class PyastGenPass(UniPass):
     def resolve_stmt_block(
         self,
         node: (
-            uni.SubNodeList[uni.CodeBlockStmt]
+            Sequence[uni.CodeBlockStmt]
+            | uni.SubNodeList[uni.CodeBlockStmt]
             | uni.SubNodeList[uni.ArchBlockStmt]
             | uni.SubNodeList[uni.EnumBlockStmt]
             | None
@@ -233,21 +234,22 @@ class PyastGenPass(UniPass):
         doc: Optional[uni.String] = None,
     ) -> list[ast3.AST]:
         """Unwind codeblock."""
-        valid_stmts = (
-            [i for i in node.items if not isinstance(i, uni.Semi)] if node else []
+        items = (
+            list(node.items)
+            if isinstance(node, uni.SubNodeList)
+            else list(node) if node else []
         )
+        valid_stmts = [i for i in items if not isinstance(i, uni.Semi)]
         ret: list[ast3.AST] = (
-            [self.sync(ast3.Pass(), node)]
+            [self.sync(ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None)]
             if isinstance(node, uni.SubNodeList) and not valid_stmts
             else (
-                self.flatten(
-                    [
-                        x.gen.py_ast
-                        for x in valid_stmts
-                        if not isinstance(x, uni.ImplDef)
-                    ]
-                )
-                if node
+                self.flatten([
+                    x.gen.py_ast
+                    for x in valid_stmts
+                    if not isinstance(x, uni.ImplDef)
+                ])
+                if node is not None
                 else []
             )
         )
@@ -383,7 +385,7 @@ class PyastGenPass(UniPass):
                                 ast3.keyword(
                                     arg="file_loc",
                                     value=self.sync(
-                                        ast3.Constant(value=node.body.loc.mod_path)
+                                        ast3.Constant(value=node.loc.mod_path)
                                     ),
                                 )
                             ),
