@@ -1,4 +1,4 @@
-# Jac Cloud Scheduler
+# Scheduler
 
 ## **Supported specs**
 

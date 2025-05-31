@@ -1,4 +1,4 @@
-# websocket
+# Websocket
 
 ## Walker Declaration
 - walker can be declared as websocket thru __specs__ configurations.

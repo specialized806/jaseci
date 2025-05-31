@@ -1,4 +1,4 @@
-## Usage Documentation for jac-cloud Deployment
+# Deployment
 
 ### Overview
 The `jac-cloud` deployment provides a Kubernetes-based system for running JAC applications using the `jac-splice-orc` plugin. This setup includes:

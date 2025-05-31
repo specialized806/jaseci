@@ -1,4 +1,5 @@
 # Logging
+
 * jac-cloud server logs incoming requests and outgoing responses by default to log files stored in `/tmp/` directory
 * The log files are on a daily rotation. Meaning there will be a new log file created every day to prevent log files gets too large.
 * For production usage, we recommend connect your jac-cloud logs to an Elastic instance.
