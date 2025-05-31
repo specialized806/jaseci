@@ -349,13 +349,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         )
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, uni.Expr)]
-        valid_decorators = (
-            uni.SubNodeList[uni.Expr](
-                items=decorators, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if decorators
-            else None
-        )
+        if len(decorators) != len(converted_decorators_list):
+            raise self.ice("Length mismatch in decorators on class")
+        valid_decorators = decorators if decorators else None
         kid = (
             [name, valid_bases, valid_body, doc]
             if doc and valid_bases

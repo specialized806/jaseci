@@ -241,14 +241,20 @@ class PyastGenPass(UniPass):
         )
         valid_stmts = [i for i in items if not isinstance(i, uni.Semi)]
         ret: list[ast3.AST] = (
-            [self.sync(ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None)]
+            [
+                self.sync(
+                    ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None
+                )
+            ]
             if isinstance(node, uni.SubNodeList) and not valid_stmts
             else (
-                self.flatten([
-                    x.gen.py_ast
-                    for x in valid_stmts
-                    if not isinstance(x, uni.ImplDef)
-                ])
+                self.flatten(
+                    [
+                        x.gen.py_ast
+                        for x in valid_stmts
+                        if not isinstance(x, uni.ImplDef)
+                    ]
+                )
                 if node is not None
                 else []
             )
@@ -816,8 +822,8 @@ class PyastGenPass(UniPass):
             )
 
         decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, uni.SubNodeList)
+            [cast(ast3.expr, i.gen.py_ast[0]) for i in node.decorators]
+            if node.decorators
             else []
         )
 
@@ -854,8 +860,8 @@ class PyastGenPass(UniPass):
             doc=node.doc,
         )
         decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, uni.SubNodeList)
+            [cast(ast3.expr, i.gen.py_ast[0]) for i in node.decorators]
+            if node.decorators
             else []
         )
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
@@ -1441,8 +1447,7 @@ class PyastGenPass(UniPass):
             self.sync(
                 with_node(
                     items=[
-                        cast(ast3.withitem, item.gen.py_ast[0])
-                        for item in node.exprs
+                        cast(ast3.withitem, item.gen.py_ast[0]) for item in node.exprs
                     ],
                     body=[
                         cast(ast3.stmt, stmt)
