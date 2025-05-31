@@ -1925,13 +1925,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
             genai_call: uni.FuncCall | None = None
             target = self.consume(uni.Expr)
             self.consume_token(Tok.LPAREN)
-            params = self.match(uni.SubNodeList)
+            params_sn = self.match(uni.SubNodeList)
             if self.match_token(Tok.KW_BY):
                 genai_call = self.consume(uni.FuncCall)
             self.consume_token(Tok.RPAREN)
             return uni.FuncCall(
                 target=target,
-                params=params,
+                params=params_sn.items if params_sn else [],
                 genai_call=genai_call,
                 kid=self.cur_nodes,
             )
