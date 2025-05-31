@@ -747,6 +747,9 @@ class ArchBlockStmt(UniNode):
 class EnumBlockStmt(UniNode):
     """EnumBlockStmt node type for Jac Ast."""
 
+    def __init__(self, is_enum_stmt: bool) -> None:
+        self.is_enum_stmt = is_enum_stmt
+
 
 class CodeBlockStmt(UniCFGNode):
     """CodeBlockStmt node type for Jac Ast."""
@@ -770,13 +773,14 @@ class AstImplNeedingNode(AstSymbolNode, Generic[T]):
 class NameAtom(AtomExpr, EnumBlockStmt):
     """NameAtom node type for Jac Ast."""
 
-    def __init__(self) -> None:
+    def __init__(self, is_enum_stmt: bool) -> None:
         self.name_of: AstSymbolNode = self
         self._sym: Optional[Symbol] = None
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
         self._py_ctx_func: Type[ast3.expr_context] = ast3.Load
         AtomExpr.__init__(self)
+        EnumBlockStmt.__init__(self, is_enum_stmt=is_enum_stmt)
 
     @property
     def sym(self) -> Optional[Symbol]:
@@ -1163,12 +1167,14 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         name: Optional[Name],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
+        is_enum_stmt: bool = False,
         doc: Optional[String] = None,
     ) -> None:
         self.name = name
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
+        EnumBlockStmt.__init__(self, is_enum_stmt=is_enum_stmt)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1196,12 +1202,14 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         self,
         code: Token,
         kid: Sequence[UniNode],
+        is_enum_stmt: bool = False,
         doc: Optional[String] = None,
     ) -> None:
         self.code = code
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         CodeBlockStmt.__init__(self)
+        EnumBlockStmt.__init__(self, is_enum_stmt=is_enum_stmt)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1265,9 +1273,11 @@ class Import(ElementStmt, CodeBlockStmt):
                 ):
                     return True
                 for i in self.items:
-                    if isinstance(i, ModuleItem) and self.from_loc.resolve_relative_path(
-                        i.name.value
-                    ).endswith(".jac"):
+                    if isinstance(
+                        i, ModuleItem
+                    ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
+                        ".jac"
+                    ):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
@@ -1293,8 +1303,8 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.LBRACE))
-        for i, item in enumerate(self.items):
-            new_kid.append(item)
+        for i, itm in enumerate(self.items):
+            new_kid.append(itm)
             if i < len(self.items) - 1:
                 new_kid.append(self.gen_token(Tok.COMMA))
         if self.from_loc:
@@ -1598,8 +1608,12 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
             new_kid.append(self.body)
         else:
             new_kid.append(self.gen_token(Tok.LBRACE))
+            prev_stmt = None
             for stmt in self.body:
+                if isinstance(prev_stmt, EnumBlockStmt) and prev_stmt.is_enum_stmt:
+                    new_kid.append(self.gen_token(Tok.COMMA))
                 new_kid.append(stmt)
+                prev_stmt = stmt
             new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
@@ -2805,10 +2819,10 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         self.value = value
         self.mutable = mutable
         self.aug_op = aug_op
-        self.is_enum_stmt = is_enum_stmt
         UniNode.__init__(self, kid=kid)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
         CodeBlockStmt.__init__(self)
+        EnumBlockStmt.__init__(self, is_enum_stmt=is_enum_stmt)
 
     def normalize(self, deep: bool = True) -> bool:
         res = True
@@ -4257,10 +4271,9 @@ class Name(Token, NameAtom):
         col_end: int,
         pos_start: int,
         pos_end: int,
-        is_enum_singleton: bool = False,
+        is_enum_stmt: bool = False,
         is_kwesc: bool = False,
     ) -> None:
-        self.is_enum_singleton = is_enum_singleton
         self.is_kwesc = is_kwesc
         Token.__init__(
             self,
@@ -4274,7 +4287,7 @@ class Name(Token, NameAtom):
             pos_start=pos_start,
             pos_end=pos_end,
         )
-        NameAtom.__init__(self)
+        NameAtom.__init__(self, is_enum_stmt=is_enum_stmt)
         AstSymbolNode.__init__(
             self,
             sym_name=value,
@@ -4285,7 +4298,7 @@ class Name(Token, NameAtom):
     def unparse(self) -> str:
         super().unparse()
         return (f"<>{self.value}" if self.is_kwesc else self.value) + (
-            ",\n" if self.is_enum_singleton else ""
+            ",\n" if self.is_enum_stmt else ""
         )
 
     @staticmethod
@@ -4315,6 +4328,7 @@ class SpecialVarRef(Name):
     def __init__(
         self,
         var: Name,
+        is_enum_stmt: bool = False,
     ) -> None:
         self.orig = var
         Name.__init__(
@@ -4329,7 +4343,7 @@ class SpecialVarRef(Name):
             pos_start=var.pos_start,
             pos_end=var.pos_end,
         )
-        NameAtom.__init__(self)
+        NameAtom.__init__(self, is_enum_stmt=is_enum_stmt)
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),

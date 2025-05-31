@@ -709,6 +709,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assignments = self.consume(uni.SubNodeList)
             self.match_token(Tok.COMMA)
             while item := self.match(uni.EnumBlockStmt):
+                item.is_enum_stmt = True
                 assignments.add_kids_right([item])
                 assignments.items.append(item)
             right_enc = self.consume_token(Tok.RBRACE)
