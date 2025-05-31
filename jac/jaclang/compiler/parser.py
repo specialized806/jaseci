@@ -541,8 +541,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
 
             impl = uni.ImplDef(
+                target=target.items,
                 decorators=decorators_node.items if decorators_node else None,
-                target=target,
                 spec=valid_spec,
                 body=valid_tail,
                 kid=self.cur_nodes,
