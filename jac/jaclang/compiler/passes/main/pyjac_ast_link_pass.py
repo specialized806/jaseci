@@ -14,7 +14,6 @@ relationships between the two AST representations throughout the compilation pro
 """
 
 import ast as ast3
-
 from typing import Sequence
 
 import jaclang.compiler.unitree as uni

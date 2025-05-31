@@ -1295,9 +1295,9 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.LBRACE))
-        for i, item in enumerate(self.items):
-            new_kid.append(item)
-            if i < len(self.items) - 1:
+        for idx, itm in enumerate(self.items):
+            new_kid.append(itm)
+            if idx < len(self.items) - 1:
                 new_kid.append(self.gen_token(Tok.COMMA))
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.RBRACE))
