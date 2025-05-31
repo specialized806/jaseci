@@ -1432,7 +1432,10 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [
             self.sync(
                 with_node(
-                    items=[cast(ast3.withitem, item) for item in node.exprs.gen.py_ast],
+                    items=[
+                        cast(ast3.withitem, item.gen.py_ast[0])
+                        for item in node.exprs
+                    ],
                     body=[
                         cast(ast3.stmt, stmt)
                         for stmt in self.resolve_stmt_block(node.body)

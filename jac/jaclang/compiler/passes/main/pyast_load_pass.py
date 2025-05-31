@@ -733,9 +733,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = uni.SubNodeList[uni.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
@@ -748,7 +745,10 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         return uni.WithStmt(
-            is_async=False, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=False,
+            exprs=valid_items,
+            body=body_sub,
+            kid=[*valid_items, body_sub],
         )
 
     def proc_async_with(self, node: py_ast.AsyncWith) -> uni.WithStmt:
@@ -763,9 +763,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = uni.SubNodeList[uni.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
@@ -778,7 +775,10 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         return uni.WithStmt(
-            is_async=True, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=True,
+            exprs=valid_items,
+            body=body_sub,
+            kid=[*valid_items, body_sub],
         )
 
     def proc_raise(self, node: py_ast.Raise) -> uni.RaiseStmt:

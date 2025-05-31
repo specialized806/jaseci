@@ -1274,11 +1274,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             is_async = bool(self.match_token(Tok.KW_ASYNC))
             self.consume_token(Tok.KW_WITH)
-            exprs = self.consume(uni.SubNodeList)
+            exprs_node = self.consume(uni.SubNodeList)
             body = self.consume(uni.SubNodeList)
             return uni.WithStmt(
                 is_async=is_async,
-                exprs=exprs,
+                exprs=exprs_node.items,
                 body=body,
                 kid=self.cur_nodes,
             )
