@@ -849,7 +849,7 @@ class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(
-        self, decorators: Optional[SubNodeList[Expr]] = None, is_async: bool = False
+        self, decorators: Optional[SubNodeList[Expr]], is_async: bool = False
     ) -> None:
         self.decorators = decorators
         self.is_async = is_async
