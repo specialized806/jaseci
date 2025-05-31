@@ -541,6 +541,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
 
             impl = uni.ImplDef(
+                body=(
+                    valid_tail.items
+                    if isinstance(valid_tail, uni.SubNodeList)
+                    else valid_tail
+                ),
                 target=target.items,
                 decorators=decorators_node.items if decorators_node else None,
                 spec=(
@@ -548,7 +553,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     if isinstance(valid_spec, uni.SubNodeList)
                     else valid_spec
                 ),
-                body=valid_tail,
                 kid=self.cur_nodes,
             )
             return impl
@@ -709,6 +713,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assignments = self.consume(uni.SubNodeList)
             self.match_token(Tok.COMMA)
             while item := self.match(uni.EnumBlockStmt):
+                item.is_enum_stmt = True
                 assignments.add_kids_right([item])
                 assignments.items.append(item)
             right_enc = self.consume_token(Tok.RBRACE)
