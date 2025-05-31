@@ -1058,7 +1058,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        self.assignments = list(assignments)
+        self.assignments = assignments
         self.is_frozen = is_frozen
         UniNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
@@ -3088,7 +3088,7 @@ class ListVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr]],
+        values: Sequence[Expr],
         kid: Sequence[UniNode],
     ) -> None:
         self.values = values
@@ -3099,12 +3099,13 @@ class ListVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LSQUARE),
-        ]
-        if self.values:
-            new_kid.append(self.values)
+            for i in self.values:
+                res = res and i.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(Tok.LSQUARE)]
+        for idx, val in enumerate(self.values):
+            new_kid.append(val)
+            if idx < len(self.values) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         new_kid.append(self.gen_token(Tok.RSQUARE))
         self.set_kids(nodes=new_kid)
         return res
@@ -3115,10 +3116,10 @@ class SetVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr]],
+        values: Sequence[Expr] | None,
         kid: Sequence[UniNode],
     ) -> None:
-        self.values = values
+        self.values: list[Expr] = list(values) if values else []
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3126,12 +3127,13 @@ class SetVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LBRACE),
-        ]
-        if self.values:
-            new_kid.append(self.values)
+            for i in self.values:
+                res = res and i.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(Tok.LBRACE)]
+        for idx, val in enumerate(self.values):
+            new_kid.append(val)
+            if idx < len(self.values) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res

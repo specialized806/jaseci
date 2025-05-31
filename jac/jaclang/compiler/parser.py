@@ -1949,12 +1949,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 index = self.consume(uni.ListVal)
                 if not index.values:
                     raise self.ice()
-                if len(index.values.items) == 1:
-                    expr = index.values.items[0] if index.values else None
+                if len(index.values) == 1:
+                    expr = index.values[0]
                     kid = self.cur_nodes
                 else:
                     sublist = uni.SubNodeList[uni.Expr | uni.KWPair](
-                        items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
+                        items=[*index.values], delim=Tok.COMMA, kid=index.kid
                     )
                     expr = uni.TupleVal(values=sublist.items, kid=[sublist])
                     kid = [expr]
@@ -2115,9 +2115,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             list_val: LSQUARE (expr_list COMMA?)? RSQUARE
             """
             self.consume_token(Tok.LSQUARE)
-            values = self.match(uni.SubNodeList)
+            values_node = self.match(uni.SubNodeList)
             self.match_token(Tok.COMMA)
             self.consume_token(Tok.RSQUARE)
+            values = values_node.items if values_node else []
             return uni.ListVal(
                 values=values,
                 kid=self.cur_nodes,
@@ -2145,8 +2146,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             expr_list = self.match(uni.SubNodeList)
             self.match_token(Tok.COMMA)
             self.match_token(Tok.RBRACE)
+            values = expr_list.items if expr_list else []
             return uni.SetVal(
-                values=expr_list,
+                values=values,
                 kid=self.cur_nodes,
             )
 
