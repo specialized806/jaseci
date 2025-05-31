@@ -246,7 +246,7 @@ class PyastGenPass(UniPass):
                     ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None
                 )
             ]
-            if isinstance(node, uni.SubNodeList) and not valid_stmts
+            if isinstance(node, (uni.SubNodeList, Sequence)) and not valid_stmts
             else (
                 self.flatten(
                     [
@@ -806,7 +806,11 @@ class PyastGenPass(UniPass):
         elif not isinstance(node.body, uni.FuncCall):
             inner = node.body
         body = self.resolve_stmt_block(inner, doc=node.doc)
-
+        if not body and not isinstance(node.body, uni.FuncCall):
+            self.log_error(
+                "Archetype has no body. Perhaps an impl must be imported.", node
+            )
+            body = [self.sync(ast3.Pass(), node)]
         if node.is_async:
             body.insert(
                 0,

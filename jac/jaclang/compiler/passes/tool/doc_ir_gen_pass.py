@@ -3,7 +3,7 @@
 This is a pass for generating DocIr for Jac code.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
@@ -179,6 +179,9 @@ class DocIRGenPass(UniPass):
     def exit_archetype(self, node: uni.Archetype) -> None:
         """Generate DocIR for archetypes."""
         parts: list[doc.DocType] = []
+        body_parts: list[doc.DocType] = []
+        prev_item = None
+        in_body = False
         for i in node.kid:
             if (node.doc and i is node.doc) or (
                 node.decorators and i in node.decorators
@@ -188,6 +191,24 @@ class DocIRGenPass(UniPass):
             elif i == node.name:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif isinstance(node.body, Sequence) and i in node.body:
+                if not in_body:
+                    parts.pop()
+                    body_parts.append(self.hard_line())
+                body_parts.append(i.gen.doc_ir)
+                body_parts.append(self.hard_line())
+                if type(prev_item) is not type(i) or (
+                    prev_item and not self.is_one_line(prev_item)
+                ):
+                    body_parts.append(self.hard_line())
+                in_body = True
+            elif in_body:
+                in_body = False
+                body_parts.pop()
+                parts.append(self.indent(self.concat(body_parts)))
+                parts.append(self.hard_line())
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -195,6 +216,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            prev_item = i
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_ability(self, node: uni.Ability) -> None:
@@ -1052,10 +1074,8 @@ class DocIRGenPass(UniPass):
         indent_parts: list[doc.DocType] = []
         prev_item: Optional[uni.UniNode] = None
         in_codeblock = node.delim and node.delim.name == Tok.WS
-        in_archetype = (
-            node.parent
-            and isinstance(node.parent, (uni.Archetype, uni.Enum))
-            and node == node.parent.body
+        in_archetype = node.parent and isinstance(
+            node.parent, (uni.Archetype, uni.Enum)
         )
         is_assignment = node.delim and node.delim.name == Tok.EQ
         for i in node.kid:
