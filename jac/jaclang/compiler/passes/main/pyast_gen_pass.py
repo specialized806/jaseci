@@ -442,7 +442,7 @@ class PyastGenPass(UniPass):
         )
         imp_from = {}
         if node.items:
-            for item in node.items.items:
+            for item in node.items:
                 if isinstance(item, uni.ModuleItem):
                     imp_from[item.name.sym_name] = (
                         item.alias.sym_name if item.alias else None
@@ -713,7 +713,7 @@ class PyastGenPass(UniPass):
                 )
             )
         if node.is_absorb:
-            source = node.items.items[0]
+            source = node.items[0]
             if not isinstance(source, uni.ModulePath):
                 raise self.ice()
             typecheck_nodes.append(
@@ -730,7 +730,11 @@ class PyastGenPass(UniPass):
             typecheck_nodes.append(
                 self.sync(
                     ast3.Import(
-                        names=[cast(ast3.alias, x) for x in node.items.gen.py_ast]
+                        names=[
+                            cast(ast3.alias, x)
+                            for item in node.items
+                            for x in item.gen.py_ast
+                        ]
                     )
                 )
             )
@@ -743,7 +747,11 @@ class PyastGenPass(UniPass):
                             if node.from_loc
                             else None
                         ),
-                        names=[cast(ast3.alias, i) for i in node.items.gen.py_ast],
+                        names=[
+                            cast(ast3.alias, i)
+                            for item in node.items
+                            for i in item.gen.py_ast
+                        ],
                         level=0,
                     )
                 )
