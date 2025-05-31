@@ -471,7 +471,10 @@ class UniScopeNode(UniNode):
                     if isinstance(item.operand, AstSymbolNode):
                         item.operand.name_spec.py_ctx_func = ast3.Store
                 elif isinstance(item, (TupleVal, ListVal)):
-                    for i in item.values.items if item.values else []:
+                    vals = []
+                    if item.values:
+                        vals = item.values.items if hasattr(item.values, "items") else list(item.values)
+                    for i in vals:
                         if isinstance(i, AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
                         elif isinstance(i, AtomTrailer):
@@ -3088,10 +3091,10 @@ class ListVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr]],
+        values: Sequence[Expr] | None,
         kid: Sequence[UniNode],
     ) -> None:
-        self.values = values
+        self.values: list[Expr] = list(values) if values else []
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3099,12 +3102,13 @@ class ListVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LSQUARE),
-        ]
-        if self.values:
-            new_kid.append(self.values)
+            for i in self.values:
+                res = res and i.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(Tok.LSQUARE)]
+        for i, val in enumerate(self.values):
+            new_kid.append(val)
+            if i < len(self.values) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         new_kid.append(self.gen_token(Tok.RSQUARE))
         self.set_kids(nodes=new_kid)
         return res
@@ -3115,10 +3119,10 @@ class SetVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr]],
+        values: Sequence[Expr] | None,
         kid: Sequence[UniNode],
     ) -> None:
-        self.values = values
+        self.values: list[Expr] = list(values) if values else []
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
@@ -3126,12 +3130,13 @@ class SetVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LBRACE),
-        ]
-        if self.values:
-            new_kid.append(self.values)
+            for i in self.values:
+                res = res and i.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(Tok.LBRACE)]
+        for i, val in enumerate(self.values):
+            new_kid.append(val)
+            if i < len(self.values) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res

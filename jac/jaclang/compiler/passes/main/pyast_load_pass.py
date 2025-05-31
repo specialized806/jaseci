@@ -1556,13 +1556,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         l_square = self.operator(Tok.LSQUARE, "[")
         r_square = self.operator(Tok.RSQUARE, "]")
         return uni.ListVal(
-            values=(
-                uni.SubNodeList[uni.Expr](
-                    items=valid_elts, delim=Tok.COMMA, kid=valid_elts
-                )
-                if valid_elts
-                else None
-            ),
+            values=valid_elts,
             kid=[*valid_elts] if valid_elts else [l_square, r_square],
         )
 
@@ -1932,16 +1926,13 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             valid = [i for i in elts if isinstance(i, (uni.Expr))]
             if len(valid) != len(elts):
                 raise self.ice("Length mismatch in set body")
-            valid_elts = uni.SubNodeList[uni.Expr](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )
             kid: list[uni.UniNode] = [*valid]
         else:
-            valid_elts = None
+            valid = []
             l_brace = self.operator(Tok.LBRACE, "{")
             r_brace = self.operator(Tok.RBRACE, "}")
             kid = [l_brace, r_brace]
-        return uni.SetVal(values=valid_elts, kid=kid)
+        return uni.SetVal(values=valid, kid=kid)
 
     def proc_set_comp(self, node: py_ast.SetComp) -> uni.ListCompr:
         """Process python node.
