@@ -1310,7 +1310,7 @@ class ModulePath(AstSymbolNode):
 
     def __init__(
         self,
-        path: Optional[SubNodeList[Name]],
+        path: Optional[Sequence[Name]],
         level: int,
         alias: Optional[Name],
         kid: Sequence[UniNode],
@@ -1320,7 +1320,7 @@ class ModulePath(AstSymbolNode):
         self.alias = alias
         self.abs_path: Optional[str] = None
 
-        name_spec = alias if alias else path.items[0] if path else None
+        name_spec = alias if alias else path[0] if path else None
 
         UniNode.__init__(self, kid=kid)
         if not name_spec:
@@ -1343,7 +1343,7 @@ class ModulePath(AstSymbolNode):
     def dot_path_str(self) -> str:
         """Get path string."""
         return ("." * self.level) + ".".join(
-            [p.value for p in self.path.items]
+            [p.value for p in self.path]
             if self.path
             else [self.name_spec.sym_name]
         )
@@ -1351,13 +1351,18 @@ class ModulePath(AstSymbolNode):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.path.normalize(deep) if self.path else res
+            if self.path:
+                for item in self.path:
+                    res = res and item.normalize(deep)
             res = res and self.alias.normalize(deep) if self.alias else res
         new_kid: list[UniNode] = []
         for _ in range(self.level):
             new_kid.append(self.gen_token(Tok.DOT))
         if self.path:
-            new_kid.append(self.path)
+            for idx, item in enumerate(self.path):
+                new_kid.append(item)
+                if idx < len(self.path) - 1:
+                    new_kid.append(self.gen_token(Tok.DOT))
         if self.alias:
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.alias)
