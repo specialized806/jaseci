@@ -340,28 +340,17 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         base_classes: list[uni.Expr] = [
             base for base in converted_base_classes if isinstance(base, uni.Expr)
         ]
-        valid_bases = (
-            uni.SubNodeList[uni.Expr](
-                items=base_classes, delim=Tok.COMMA, kid=base_classes
-            )
-            if base_classes
-            else None
-        )
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, uni.Expr)]
-        valid_decorators = (
-            uni.SubNodeList[uni.Expr](
-                items=decorators, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if decorators
-            else None
-        )
+        if len(decorators) != len(converted_decorators_list):
+            raise self.ice("Length mismatch in decorators on class")
+        valid_decorators = decorators if decorators else None
         kid = (
-            [name, valid_bases, valid_body, doc]
-            if doc and valid_bases
+            [name, *base_classes, valid_body, doc]
+            if doc and base_classes
             else (
-                [name, valid_bases, valid_body]
-                if valid_bases
+                [name, *base_classes, valid_body]
+                if base_classes
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
@@ -369,7 +358,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             arch_type=arch_type,
             name=name,
             access=None,
-            base_classes=valid_bases,
+            base_classes=base_classes,
             body=valid_body,
             kid=kid,
             doc=doc,
@@ -1397,9 +1386,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 paths.append(
                     uni.ModulePath(
-                        path=uni.SubNodeList[uni.Name](
-                            items=[name.expr], delim=Tok.DOT, kid=[name.expr]
-                        ),
+                        path=[name.expr],
                         level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
@@ -1408,12 +1395,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = uni.Import(
             from_loc=None,
-            items=items.items,
+            items=paths,
             is_absorb=False,
-            kid=[items],
+            kid=paths,
         )
         return ret
 
@@ -1455,11 +1441,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=(
-                uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths)
-                if modpaths
-                else None
-            ),
+            path=modpaths if modpaths else None,
             level=node.level,
             alias=None,
             kid=modparts,
@@ -1482,32 +1464,23 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 )
             else:
                 raise self.ice()
-        items = (
-            uni.SubNodeList[uni.ModuleItem](
-                items=valid_names, delim=Tok.COMMA, kid=valid_names
-            )
-            if valid_names
-            else None
-        )
+        items = valid_names
         if not items:
             raise self.ice("No valid names in import from")
         pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
-            path_in = uni.SubNodeList[uni.ModulePath](
-                items=[path], delim=Tok.COMMA, kid=[path]
-            )
             ret = uni.Import(
                 from_loc=None,
-                items=path_in.items,
+                items=[path],
                 is_absorb=True,
-                kid=[pytag, path_in],
+                kid=[pytag, path],
             )
             return ret
         ret = uni.Import(
             from_loc=path,
-            items=items.items,
+            items=items,
             is_absorb=False,
-            kid=[pytag, path, items],
+            kid=[pytag, path, *items],
         )
         return ret
 
