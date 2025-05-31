@@ -1956,7 +1956,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     sublist = uni.SubNodeList[uni.Expr | uni.KWPair](
                         items=[*index.values], delim=Tok.COMMA, kid=index.kid
                     )
-                    expr = uni.TupleVal(values=sublist, kid=[sublist])
+                    expr = uni.TupleVal(values=sublist.items, kid=[sublist])
                     kid = [expr]
                 return uni.IndexSlice(
                     slices=[uni.IndexSlice.Slice(start=expr, stop=None, step=None)],
@@ -2133,7 +2133,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.match(uni.SubNodeList)
             self.consume_token(Tok.RPAREN)
             return uni.TupleVal(
-                values=target,
+                values=target.items if target else [],
                 kid=self.cur_nodes,
             )
 
@@ -2556,9 +2556,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_R)
             conn_assign = (
-                uni.AssignCompr(
-                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
-                )
+                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
                 if conn_assign_sub
                 else None
             )
@@ -2589,9 +2587,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_L)
             conn_assign = (
-                uni.AssignCompr(
-                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
-                )
+                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
                 if conn_assign_sub
                 else None
             )
@@ -2622,9 +2618,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.CARROW_BI)
             conn_assign = (
-                uni.AssignCompr(
-                    assigns=conn_assign_sub.items, kid=[conn_assign_sub]
-                )
+                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
                 if conn_assign_sub
                 else None
             )

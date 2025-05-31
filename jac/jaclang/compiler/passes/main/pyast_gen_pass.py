@@ -332,7 +332,9 @@ class PyastGenPass(UniPass):
                 ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),
                 jac_node=node.doc,
             )
-            assigns_ast = self.flatten([a.gen.py_ast for a in node.assignments])
+            assigns_ast: list[ast3.AST] = self.flatten(
+                [a.gen.py_ast for a in node.assignments]
+            )
             if isinstance(doc, ast3.AST):
                 node.gen.py_ast = [doc] + assigns_ast
             else:
@@ -2094,7 +2096,7 @@ class PyastGenPass(UniPass):
             func_node = uni.FuncCall(
                 target=node.right,
                 params=(
-                    node.left.values.items
+                    list(node.left.values)
                     if isinstance(node.left, uni.TupleVal) and node.left.values
                     else [node.left]
                 ),
@@ -2124,7 +2126,7 @@ class PyastGenPass(UniPass):
             func_node = uni.FuncCall(
                 target=node.left,
                 params=(
-                    node.right.values.items
+                    list(node.right.values)
                     if isinstance(node.right, uni.TupleVal) and node.right.values
                     else [node.right]
                 ),
@@ -2348,11 +2350,7 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Tuple(
-                    elts=(
-                        cast(list[ast3.expr], node.values.gen.py_ast)
-                        if node.values
-                        else []
-                    ),
+                    elts=[cast(ast3.expr, i.gen.py_ast[0]) for i in node.values],
                     ctx=cast(ast3.expr_context, node.py_ctx_func()),
                 )
             )
