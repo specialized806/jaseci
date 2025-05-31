@@ -1545,7 +1545,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
     def __init__(
         self,
         decorators: Optional[Sequence[Expr]],
-        target: SubNodeList[NameAtom],
+        target: Sequence[NameAtom],
         spec: SubNodeList[Expr] | FuncSignature | EventSignature | None,
         body: SubNodeList[CodeBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
@@ -1592,8 +1592,8 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             if self.decorators:
-                for item in self.decorators:
-                    res = res and item.normalize(deep)
+                for dec in self.decorators:
+                    res = res and dec.normalize(deep)
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
