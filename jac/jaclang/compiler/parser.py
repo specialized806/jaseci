@@ -668,7 +668,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             if decorator := self.match(uni.SubNodeList):
                 enum_decl = self.consume(uni.Enum)
-                enum_decl.decorators = decorator
+                enum_decl.decorators = decorator.items
                 enum_decl.add_kids_left([decorator])
                 return enum_decl
             return self.consume(uni.Enum)
