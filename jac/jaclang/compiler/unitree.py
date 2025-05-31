@@ -1218,7 +1218,7 @@ class Import(ElementStmt, CodeBlockStmt):
     def __init__(
         self,
         from_loc: Optional[ModulePath],
-        items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
+        items: Sequence[ModuleItem] | Sequence[ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
@@ -1260,16 +1260,14 @@ class Import(ElementStmt, CodeBlockStmt):
                     os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
                 ):
                     return True
-                for i in self.items.items:
-                    if isinstance(
-                        i, ModuleItem
-                    ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
-                        ".jac"
-                    ):
+                for i in self.items:
+                    if isinstance(i, ModuleItem) and self.from_loc.resolve_relative_path(
+                        i.name.value
+                    ).endswith(".jac"):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
-            for i in self.items.items
+            for i in self.items
         )
 
     def normalize(self, deep: bool = False) -> bool:
@@ -1277,7 +1275,8 @@ class Import(ElementStmt, CodeBlockStmt):
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
-            res = res and self.items.normalize(deep)
+            for item in self.items:
+                res = res and item.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[UniNode] = []
         if self.doc:
@@ -1290,7 +1289,10 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.items)
+        for i, item in enumerate(self.items):
+            new_kid.append(item)
+            if i < len(self.items) - 1:
+                new_kid.append(self.gen_token(Tok.COMMA))
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.RBRACE))
         else:

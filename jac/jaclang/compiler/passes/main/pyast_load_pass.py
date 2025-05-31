@@ -1411,7 +1411,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = uni.Import(
             from_loc=None,
-            items=items,
+            items=items.items,
             is_absorb=False,
             kid=[items],
         )
@@ -1498,14 +1498,14 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             )
             ret = uni.Import(
                 from_loc=None,
-                items=path_in,
+                items=path_in.items,
                 is_absorb=True,
                 kid=[pytag, path_in],
             )
             return ret
         ret = uni.Import(
             from_loc=path,
-            items=items,
+            items=items.items,
             is_absorb=False,
             kid=[pytag, path, items],
         )

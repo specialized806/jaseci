@@ -374,7 +374,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.SEMI)
                 return uni.Import(
                     from_loc=None,
-                    items=items,
+                    items=items.items,
                     is_absorb=True,
                     kid=kid,
                 )
@@ -406,7 +406,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             is_absorb = False
             return uni.Import(
                 from_loc=from_path,
-                items=items,
+                items=items.items,
                 is_absorb=is_absorb,
                 kid=kid,
             )
