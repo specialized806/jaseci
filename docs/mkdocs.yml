@@ -40,7 +40,7 @@ nav:
         - Quick FAQ: "learn/data_spatial/FAQ.md" # faq
     - Jac Cloud Guide:
       - "learn/jac-cloud/introduction.md"
-      - "learn/jac-cloud/getting_started.md"
+      - "learn/jac-cloud/quickstart.md"
       - Features:
         - "learn/jac-cloud/permission.md"
         - "learn/jac-cloud/jac_cloud_logging.md"
