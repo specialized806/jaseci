@@ -1534,7 +1534,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
     def __init__(
         self,
         decorators: Optional[SubNodeList[Expr]],
-        target: SubNodeList[NameAtom],
+        target: Sequence[NameAtom],
         spec: SubNodeList[Expr] | FuncSignature | EventSignature | None,
         body: SubNodeList[CodeBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
@@ -1550,7 +1550,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
-            sym_name="impl." + ".".join([x.sym_name for x in self.target.items]),
+            sym_name="impl." + ".".join([x.sym_name for x in self.target]),
             name_spec=self.create_impl_name_node(),
             sym_category=SymbolType.IMPL,
         )
@@ -1559,15 +1559,15 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
 
     def create_impl_name_node(self) -> Name:
         ret = Name(
-            orig_src=self.target.items[-1].loc.orig_src,
+            orig_src=self.target[-1].loc.orig_src,
             name=Tok.NAME.value,
-            value="impl." + ".".join([x.sym_name for x in self.target.items]),
-            col_start=self.target.items[0].loc.col_start,
-            col_end=self.target.items[-1].loc.col_end,
-            line=self.target.items[0].loc.first_line,
-            end_line=self.target.items[-1].loc.last_line,
-            pos_start=self.target.items[0].loc.pos_start,
-            pos_end=self.target.items[-1].loc.pos_end,
+            value="impl." + ".".join([x.sym_name for x in self.target]),
+            col_start=self.target[0].loc.col_start,
+            col_end=self.target[-1].loc.col_end,
+            line=self.target[0].loc.first_line,
+            end_line=self.target[-1].loc.last_line,
+            pos_start=self.target[0].loc.pos_start,
+            pos_end=self.target[-1].loc.pos_end,
         )
         ret.parent = self
         return ret
@@ -1575,7 +1575,8 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.target.normalize(deep)
+            for item in self.target:
+                res = res and item.normalize(deep)
             res = res and self.spec.normalize(deep) if self.spec else res
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
@@ -1587,7 +1588,10 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
             new_kid.append(self.gen_token(Tok.DECOR_OP))
             new_kid.append(self.decorators)
         new_kid.append(self.gen_token(Tok.KW_IMPL))
-        new_kid.append(self.target)
+        for idx, item in enumerate(self.target):
+            new_kid.append(item)
+            if idx < len(self.target) - 1:
+                new_kid.append(self.gen_token(Tok.DOT))
         if self.spec:
             new_kid.append(self.spec)
         new_kid.append(self.body)

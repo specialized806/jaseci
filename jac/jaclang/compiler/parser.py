@@ -542,7 +542,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             impl = uni.ImplDef(
                 decorators=decorators,
-                target=target,
+                target=target.items,
                 spec=valid_spec,
                 body=valid_tail,
                 kid=self.cur_nodes,
