@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TYPE_CHECKING, TypeAlias, TypeVar
+from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -446,7 +446,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             valid_path = self.consume(uni.SubNodeList)
             alias = self.consume(uni.Name) if self.match_token(Tok.KW_AS) else None
             return uni.ModulePath(
-                path=valid_path,
+                path=valid_path.items,
                 level=0,
                 alias=alias,
                 kid=self.cur_nodes,
@@ -504,12 +504,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             archspec: uni.ArchSpec | uni.Enum | None = None
 
-            decorators = self.match(uni.SubNodeList)
+            decorators_node = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
-            if decorators is not None:
+            if decorators_node is not None:
                 archspec = self.consume(uni.ArchSpec)
-                archspec.decorators = decorators
-                archspec.add_kids_left([decorators])
+                archspec.decorators = decorators_node.items
+                archspec.add_kids_left([decorators_node])
             else:
                 archspec = self.match(uni.ArchSpec) or self.consume(uni.Enum)
             if is_async and isinstance(archspec, uni.ArchSpec):
@@ -527,7 +527,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             impl_def: decorators? KW_IMPL dotted_name impl_spec? impl_tail
             """
-            decorators = self.match(uni.SubNodeList)
+            decorators_node = self.match(uni.SubNodeList)
             self.consume_token(Tok.KW_IMPL)
             target = self.consume(uni.SubNodeList)
             spec = (
@@ -541,13 +541,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
 
             impl = uni.ImplDef(
-                decorators=decorators,
-                target=target,
-                spec=valid_spec,
                 body=(
                     valid_tail.items
                     if isinstance(valid_tail, uni.SubNodeList)
                     else valid_tail
+                ),
+                target=target.items,
+                decorators=decorators_node.items if decorators_node else None,
+                spec=(
+                    valid_spec.items
+                    if isinstance(valid_spec, uni.SubNodeList)
+                    else valid_spec
                 ),
                 kid=self.cur_nodes,
             )
@@ -555,7 +559,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def impl_spec(
             self, _: None
-        ) -> uni.SubNodeList[uni.Expr] | uni.FuncSignature | uni.EventSignature:
+        ) -> Sequence[uni.Expr] | uni.FuncSignature | uni.EventSignature:
             """Grammar rule.
 
             impl_spec: inherited_archs | func_decl | event_clause
@@ -565,7 +569,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 or self.match(uni.FuncSignature)  # func_decl
                 or self.consume(uni.EventSignature)  # event_clause
             )
-            return spec
+            return spec.items if isinstance(spec, uni.SubNodeList) else spec
 
         def impl_tail(
             self, _: None
@@ -602,7 +606,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 arch_type=arch_type,
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
                 kid=self.cur_nodes,
             )
@@ -672,7 +676,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             if decorator := self.match(uni.SubNodeList):
                 enum_decl = self.consume(uni.Enum)
-                enum_decl.decorators = decorator
+                enum_decl.decorators = decorator.items
                 enum_decl.add_kids_left([decorator])
                 return enum_decl
             return self.consume(uni.Enum)
@@ -695,7 +699,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.Enum(
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
                 kid=self.cur_nodes,
             )
