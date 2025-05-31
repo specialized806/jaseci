@@ -345,7 +345,9 @@ class JacWalker:
                         next.append(anchor)
                     else:
                         raise ValueError("Anchor should be NodeAnchor or EdgeAnchor.")
-            if insert_loc < 0:
+            if insert_loc < -len(wanch.next):  # for out of index selection
+                insert_loc = 0
+            elif insert_loc < 0:
                 insert_loc += len(wanch.next) + 1
             wanch.next = wanch.next[:insert_loc] + next + wanch.next[insert_loc:]
             return len(wanch.next) > before_len
