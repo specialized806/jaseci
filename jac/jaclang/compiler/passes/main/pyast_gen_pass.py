@@ -246,7 +246,7 @@ class PyastGenPass(UniPass):
                     ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None
                 )
             ]
-            if isinstance(node, uni.SubNodeList) and not valid_stmts
+            if not valid_stmts
             else (
                 self.flatten(
                     [
