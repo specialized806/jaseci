@@ -335,8 +335,27 @@ class DocIRGenPass(UniPass):
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Generate DocIR for function calls."""
         parts: list[doc.DocType] = []
+        indent_parts: list[doc.DocType] = []
+        in_params = False
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.LPAREN and node.params:
+                in_params = True
+                parts.append(i.gen.doc_ir)
+            elif isinstance(i, uni.Token) and i.name == Tok.RPAREN and node.params:
+                in_params = False
+                parts.append(
+                    self.indent(self.concat([self.tight_line(), *indent_parts]))
+                )
+                parts.append(self.tight_line())
+                parts.append(i.gen.doc_ir)
+            elif in_params:
+                if isinstance(i, uni.Token) and i.name == Tok.COMMA:
+                    indent_parts.append(i.gen.doc_ir)
+                    indent_parts.append(self.space())
+                else:
+                    indent_parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
