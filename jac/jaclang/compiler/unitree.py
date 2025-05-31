@@ -1450,7 +1450,7 @@ class Archetype(
         arch_type: Token,
         access: Optional[SubTag[Token]],
         base_classes: Sequence[Expr] | None,
-        body: Optional[SubNodeList[ArchBlockStmt] | ImplDef],
+        body: Sequence[ArchBlockStmt] | ImplDef | None,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decorators: Sequence[Expr] | None = None,
@@ -1491,12 +1491,12 @@ class Archetype(
     @property
     def is_abstract(self) -> bool:
         body = (
-            self.body.items
-            if isinstance(self.body, SubNodeList)
+            list(self.body)
+            if isinstance(self.body, Sequence)
             else (
-                self.body.body.items
+                list(self.body.body)
                 if isinstance(self.body, ImplDef)
-                and isinstance(self.body.body, SubNodeList)
+                and isinstance(self.body.body, Sequence)
                 else []
             )
         )
@@ -1510,7 +1510,13 @@ class Archetype(
             res = res and self.access.normalize(deep) if self.access else res
             for base in self.base_classes:
                 res = res and base.normalize(deep)
-            res = res and self.body.normalize(deep) if self.body else res
+            if isinstance(self.body, ImplDef):
+                res = res and self.body.normalize(deep)
+            elif isinstance(self.body, Sequence):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            else:
+                res = res and False if self.body is not None else res
             res = res and self.doc.normalize(deep) if self.doc else res
             for dec in self.decorators or []:
                 res = res and dec.normalize(deep)
@@ -1540,7 +1546,10 @@ class Archetype(
             if isinstance(self.body, ImplDef):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.body)
+                new_kid.append(self.gen_token(Tok.LBRACE))
+                for idx, stmt in enumerate(self.body):
+                    new_kid.append(stmt)
+                new_kid.append(self.gen_token(Tok.RBRACE))
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
