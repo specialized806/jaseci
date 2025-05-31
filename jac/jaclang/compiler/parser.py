@@ -504,12 +504,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             archspec: uni.ArchSpec | uni.Enum | None = None
 
-            decorators = self.match(uni.SubNodeList)
+            decorators_node = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
-            if decorators is not None:
+            if decorators_node is not None:
                 archspec = self.consume(uni.ArchSpec)
-                archspec.decorators = decorators
-                archspec.add_kids_left([decorators])
+                archspec.decorators = decorators_node.items
+                archspec.add_kids_left([decorators_node])
             else:
                 archspec = self.match(uni.ArchSpec) or self.consume(uni.Enum)
             if is_async and isinstance(archspec, uni.ArchSpec):
@@ -668,7 +668,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             if decorator := self.match(uni.SubNodeList):
                 enum_decl = self.consume(uni.Enum)
-                enum_decl.decorators = decorator
+                enum_decl.decorators = decorator.items
                 enum_decl.add_kids_left([decorator])
                 return enum_decl
             return self.consume(uni.Enum)

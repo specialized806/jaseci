@@ -849,7 +849,7 @@ class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(
-        self, decorators: Optional[SubNodeList[Expr]], is_async: bool = False
+        self, decorators: Sequence[Expr] | None, is_async: bool = False
     ) -> None:
         self.decorators = decorators
         self.is_async = is_async
@@ -1447,7 +1447,7 @@ class Archetype(
         body: Optional[SubNodeList[ArchBlockStmt] | ImplDef],
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
+        decorators: Sequence[Expr] | None = None,
     ) -> None:
         self.name = name
         self.arch_type = arch_type
@@ -1506,13 +1506,17 @@ class Archetype(
                 res = res and base.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
+            for dec in self.decorators or []:
+                res = res and dec.normalize(deep)
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
-            new_kid.append(self.decorators)
+            for idx, dec in enumerate(self.decorators):
+                new_kid.append(dec)
+                if idx < len(self.decorators) - 1:
+                    new_kid.append(self.gen_token(Tok.DECOR_OP))
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.arch_type)
@@ -1615,7 +1619,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         body: Optional[SubNodeList[Assignment] | ImplDef],
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
+        decorators: Sequence[Expr] | None = None,
     ) -> None:
         self.name = name
         self.base_classes: list[Expr] = list(base_classes) if base_classes else []
@@ -1641,11 +1645,15 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
                 res = res and base.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
+            for dec in self.decorators or []:
+                res = res and dec.normalize(deep)
         new_kid: list[UniNode] = []
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
-            new_kid.append(self.decorators)
+            for idx, dec in enumerate(self.decorators):
+                new_kid.append(dec)
+                if idx < len(self.decorators) - 1:
+                    new_kid.append(self.gen_token(Tok.DECOR_OP))
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_ENUM))

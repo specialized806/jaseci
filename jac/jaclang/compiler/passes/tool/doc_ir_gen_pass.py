@@ -180,7 +180,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for archetypes."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i in [node.doc, node.decorators]:
+            if (node.doc and i is node.doc) or (
+                node.decorators and i in node.decorators
+            ):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif i == node.name:
@@ -1022,7 +1024,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for enum declarations."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i in [node.doc, node.decorators]:
+            if (node.doc and i is node.doc) or (
+                node.decorators and i in node.decorators
+            ):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:

@@ -822,8 +822,8 @@ class PyastGenPass(UniPass):
             )
 
         decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, uni.SubNodeList)
+            [cast(ast3.expr, i.gen.py_ast[0]) for i in node.decorators]
+            if node.decorators
             else []
         )
 
@@ -860,8 +860,8 @@ class PyastGenPass(UniPass):
             doc=node.doc,
         )
         decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, uni.SubNodeList)
+            [cast(ast3.expr, i.gen.py_ast[0]) for i in node.decorators]
+            if node.decorators
             else []
         )
         base_classes = [cast(ast3.expr, i.gen.py_ast[0]) for i in node.base_classes]
