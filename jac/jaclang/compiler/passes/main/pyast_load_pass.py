@@ -661,13 +661,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             self.log_error("Length mismatch in async for body")
-        body2 = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        body2 = valid_body
 
         orelse = [self.convert(stmt) for stmt in node.orelse]
         valid_orelse = [
@@ -698,7 +692,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 condition=test,
                 body=body2,
                 else_body=else_body,
-                kid=([test, body2, else_body] if else_body else [test, body2]),
+                kid=([test, *body2, else_body] if else_body else [test, *body2]),
             )
         else:
             raise self.ice()
