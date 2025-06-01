@@ -1349,11 +1349,9 @@ class PyastGenPass(UniPass):
             self.sync(
                 ast3.Try(
                     body=cast(list[ast3.stmt], self.resolve_stmt_block(node.body)),
-                    handlers=(
-                        [cast(ast3.ExceptHandler, i) for i in node.excepts.gen.py_ast]
-                        if node.excepts
-                        else []
-                    ),
+                    handlers=[
+                        cast(ast3.ExceptHandler, i.gen.py_ast[0]) for i in node.excepts
+                    ],
                     orelse=(
                         [cast(ast3.stmt, i) for i in node.else_body.gen.py_ast]
                         if node.else_body
@@ -1391,7 +1389,7 @@ class PyastGenPass(UniPass):
 
     def exit_iter_for_stmt(self, node: uni.IterForStmt) -> None:
         py_nodes: list[ast3.AST] = []
-        body = node.body.gen.py_ast
+        body = self.resolve_stmt_block(node.body)
         if (
             isinstance(body, list)
             and isinstance(node.count_by.gen.py_ast[0], ast3.AST)

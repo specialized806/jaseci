@@ -509,13 +509,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        valid_body = val_body
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
@@ -532,9 +526,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 body=valid_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *valid_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *valid_body]
                 ),
             )
         else:
@@ -557,13 +551,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        valid_body = val_body
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
@@ -580,9 +568,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 body=valid_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *valid_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *valid_body]
                 ),
             )
         else:
@@ -1976,26 +1964,18 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=valid,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
-        kid: list[uni.UniNode] = [valid_body]
+        valid_body = valid
+        kid: list[uni.UniNode] = [*valid_body]
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]
             valid_handlers = [i for i in handlers if isinstance(i, (uni.Except))]
             if len(handlers) != len(valid_handlers):
                 raise self.ice("Length mismatch in try handlers")
-            excepts = uni.SubNodeList[uni.Except](
-                items=valid_handlers, delim=Tok.WS, kid=valid_handlers
-            )
-            kid.append(excepts)
+            excepts = valid_handlers
+            kid.extend(valid_handlers)
         else:
-            excepts = None
+            excepts = []
 
         if len(node.orelse) != 0:
             orelse = [self.convert(i) for i in node.orelse]
@@ -2015,23 +1995,19 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid_finalbody,
-                delim=Tok.WS,
+            finally_stmt_obj: Optional[uni.FinallyStmt] = uni.FinallyStmt(
+                body=valid_finalbody,
                 kid=valid_finalbody,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
             )
-            finally_stmt = uni.FinallyStmt(body=finally_body, kid=[finally_body])
 
-            kid.append(finally_stmt)
+            kid.append(finally_stmt_obj)
         else:
-            finally_body = None
+            finally_stmt_obj = None
         ret = uni.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
-            finally_body=finally_stmt if finally_body else None,
+            finally_body=finally_stmt_obj,
             kid=kid,
         )
         return ret
