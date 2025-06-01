@@ -2216,7 +2216,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             return uni.FuncSignature(
                 params=[],
                 return_type=None,
-                kid=[],
+                kid=[self.operator(Tok.LPAREN, "("), self.operator(Tok.RPAREN, ")")],
             )
 
     def operator(self, tok: Tok, value: str) -> uni.Token:
