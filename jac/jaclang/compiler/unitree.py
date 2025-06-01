@@ -2933,7 +2933,10 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         if isinstance(self.parent, GlobalVars):
             if self.parent.assignments.index(self) == len(self.parent.assignments) - 1:
                 new_kid.append(self.gen_token(Tok.SEMI))
-        elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
+        elif (not self.is_enum_stmt) and not (
+            isinstance(self.parent, IterForStmt)
+            and self in [self.parent.iter, self.parent.count_by]
+        ):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res

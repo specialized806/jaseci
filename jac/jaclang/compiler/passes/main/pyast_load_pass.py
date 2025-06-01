@@ -1995,12 +1995,13 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_stmt_obj: Optional[uni.FinallyStmt] = uni.FinallyStmt(
-                body=valid_finalbody,
-                kid=valid_finalbody,
+            finally_stmt_obj: Optional[uni.FinallyStmt] = (
+                fin_append := uni.FinallyStmt(
+                    body=valid_finalbody,
+                    kid=valid_finalbody,
+                )
             )
-
-            kid.append(finally_stmt_obj)
+            kid.append(fin_append)
         else:
             finally_stmt_obj = None
         ret = uni.TryStmt(
