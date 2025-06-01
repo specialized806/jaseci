@@ -693,7 +693,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
             else:
-                body = sub_list2 or sub_list1
+                body_sn = sub_list2 or sub_list1
+                body = body_sn.items if body_sn else []
                 inh = sub_list2 and sub_list1
             return uni.Enum(
                 name=name,
@@ -939,7 +940,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assign = chomp[0]
             if isinstance(assign, uni.SubNodeList):
                 return uni.ArchHas(
-                    vars=assign,
+                    vars=assign.items,
                     is_static=is_static,
                     is_frozen=is_freeze,
                     access=access,
@@ -1476,7 +1477,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.GLOBAL_OP)
             target = self.consume(uni.SubNodeList)
             return uni.GlobalStmt(
-                target=target,
+                target=target.items,
                 kid=self.cur_nodes,
             )
 
@@ -1488,7 +1489,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.NONLOCAL_OP)
             target = self.consume(uni.SubNodeList)
             return uni.NonLocalStmt(
-                target=target,
+                target=target.items,
                 kid=self.cur_nodes,
             )
 
@@ -2073,7 +2074,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.match(uni.SubNodeList)
             self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
             return uni.FString(
-                parts=target,
+                parts=target.items if target else [],
                 kid=self.cur_nodes,
             )
 
@@ -2963,8 +2964,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             kid_nodes.append(rparen)
             return uni.MatchArch(
                 name=name,
-                arg_patterns=arg,
-                kw_patterns=kw,
+                arg_patterns=arg.items if arg else None,
+                kw_patterns=kw.items if kw else None,
                 kid=kid_nodes,
             )
 

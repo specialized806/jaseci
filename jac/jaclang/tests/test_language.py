@@ -588,7 +588,7 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("if (0 <= x <= 5) {", output)
         self.assertIn("  case _:\n", output)
-        self.assertIn(" case Point ( x = int ( a ), y = 0 ):\n", output)
+        self.assertIn(" case Point(x = int(a), y = 0):\n", output)
         self.assertIn("class Sample {\n    def init", output)
 
     def test_py2jac(self) -> None:
@@ -608,8 +608,8 @@ class JacLanguageTests(TestCase):
                 prog=None,
             ).ir_out.unparse()
         self.assertIn("match Container(inner=Inner(x=a, y=b)) { \n", output)
-        self.assertIn("case Container ( inner = Inner ( x = a, y = 0 ) ):\n", output)
-        self.assertIn("case Container ( inner = Inner ( x = a, y = b ) ):\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
         self.assertIn("case _:\n", output)
 
     def test_refs_target(self) -> None:
@@ -1340,4 +1340,5 @@ class JacLanguageTests(TestCase):
         self.assertIn("MyWalker() from node MyNode(val=20)", stdout_value[2])
         self.assertIn("MyWalker() from node MyNode(val=60)", stdout_value[4])
         self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[6])
-        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[7])
+        self.assertIn("MyWalker() from node MyNode(val=90)", stdout_value[7])
+        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[9])

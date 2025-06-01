@@ -1263,8 +1263,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     pos_end=0,
                 )
             )
-        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return uni.GlobalStmt(target=target, kid=[target])
+        return uni.GlobalStmt(target=names, kid=names)
 
     def proc_if_exp(self, node: py_ast.IfExp) -> uni.IfElseExpr:
         """Process python node.
@@ -1415,10 +1414,10 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid = [
             value for value in values if isinstance(value, (uni.String, uni.ExprStmt))
         ]
-        valid_values = uni.SubNodeList[uni.String | uni.ExprStmt](
-            items=valid, delim=None, kid=valid
+        return uni.FString(
+            parts=valid,
+            kid=[*valid] if valid else [uni.EmptyToken()],
         )
-        return uni.FString(parts=valid_values, kid=[valid_values])
 
     def proc_lambda(self, node: py_ast.Lambda) -> uni.LambdaExpr:
         """Process python node.
@@ -1541,10 +1540,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     items=valid_patterns, delim=Tok.COMMA, kid=valid_patterns
                 )
                 kid.append(patterns_sub)
+                patterns_list = valid_patterns
             else:
                 raise self.ice()
         else:
             patterns_sub = None
+            patterns_list = None
 
         if len(node.kwd_patterns):
             names: list[uni.Name] = []
@@ -1575,15 +1576,20 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                         kid=[names[i], valid_kwd_patterns[i]],
                     )
                 )
-            kw_patterns = uni.SubNodeList[uni.MatchKVPair](
+            kw_patterns_node = uni.SubNodeList[uni.MatchKVPair](
                 items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
             )
-            kid.append(kw_patterns)
+            kid.append(kw_patterns_node)
+            kw_patterns_list = kv_pairs
         else:
-            kw_patterns = None
+            kw_patterns_node = None
+            kw_patterns_list = None
         if isinstance(cls, (uni.NameAtom, uni.AtomTrailer)):
             return uni.MatchArch(
-                name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
+                name=cls,
+                arg_patterns=patterns_list,
+                kw_patterns=kw_patterns_list,
+                kid=kid,
             )
         else:
             raise self.ice()
@@ -1790,8 +1796,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     pos_end=0,
                 )
             )
-        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return uni.NonLocalStmt(target=target, kid=names)
+        return uni.NonLocalStmt(target=names, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> uni.Semi:
         """Process python node."""

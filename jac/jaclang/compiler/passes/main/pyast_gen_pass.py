@@ -226,6 +226,7 @@ class PyastGenPass(UniPass):
         self,
         node: (
             Sequence[uni.CodeBlockStmt]
+            | Sequence[uni.EnumBlockStmt]
             | uni.SubNodeList[uni.CodeBlockStmt]
             | uni.SubNodeList[uni.ArchBlockStmt]
             | uni.SubNodeList[uni.EnumBlockStmt]
@@ -1121,17 +1122,18 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_arch_has(self, node: uni.ArchHas) -> None:
+        vars_py: list[ast3.AST] = self.flatten([v.gen.py_ast for v in node.vars])
         if node.doc:
             doc = self.sync(
                 ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),
                 jac_node=node.doc,
             )
-            if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
-                node.gen.py_ast = [doc] + node.vars.gen.py_ast
+            if isinstance(doc, ast3.AST):
+                node.gen.py_ast = [doc] + vars_py
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
+            node.gen.py_ast = vars_py
 
     def exit_has_var(self, node: uni.HasVar) -> None:
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
@@ -1881,7 +1883,7 @@ class PyastGenPass(UniPass):
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         py_nodes = []
-        for x in node.target.items:
+        for x in node.target:
             py_nodes.append(
                 self.sync(
                     ast3.Global(names=[x.sym_name]),
@@ -1892,7 +1894,7 @@ class PyastGenPass(UniPass):
 
     def exit_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         py_nodes = []
-        for x in node.target.items:
+        for x in node.target:
             py_nodes.append(
                 self.sync(
                     ast3.Nonlocal(names=[x.sym_name]),
@@ -2310,7 +2312,7 @@ class PyastGenPass(UniPass):
                 if isinstance(i, uni.String):
                     pieces.append(i.lit_value)
                 elif isinstance(i, uni.FString):
-                    pieces.extend(get_pieces(i.parts.items)) if i.parts else None
+                    pieces.extend(get_pieces(i.parts)) if i.parts else None
                 elif isinstance(i, uni.ExprStmt):
                     pieces.append(i.gen.py_ast[0])
                 else:
@@ -2349,11 +2351,11 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = [combined_multi[0]]
 
     def exit_f_string(self, node: uni.FString) -> None:
-        node.gen.py_ast = (
-            node.parts.gen.py_ast
-            if node.parts
-            else [self.sync(ast3.Constant(value=""))]
-        )
+        py_parts: list[list[ast3.AST]] = [
+            cast(list[ast3.AST], p.gen.py_ast) for p in node.parts
+        ]
+        parts = self.flatten(cast(list[list[ast3.AST] | ast3.AST | None], py_parts))
+        node.gen.py_ast = parts if parts else [self.sync(ast3.Constant(value=""))]
 
     def exit_list_val(self, node: uni.ListVal) -> None:
         elts = [cast(ast3.expr, v.gen.py_ast[0]) for v in node.values]
@@ -3117,31 +3119,19 @@ class PyastGenPass(UniPass):
             self.sync(
                 ast3.MatchClass(
                     cls=cast(ast3.expr, node.name.gen.py_ast[0]),
-                    patterns=(
-                        [
-                            cast(ast3.pattern, x.gen.py_ast[0])
-                            for x in node.arg_patterns.items
-                        ]
-                        if node.arg_patterns
-                        else []
-                    ),
-                    kwd_attrs=(
-                        [
-                            x.key.sym_name
-                            for x in node.kw_patterns.items
-                            if isinstance(x.key, uni.NameAtom)
-                        ]
-                        if node.kw_patterns
-                        else []
-                    ),
-                    kwd_patterns=(
-                        [
-                            cast(ast3.pattern, x.value.gen.py_ast[0])
-                            for x in node.kw_patterns.items
-                        ]
-                        if node.kw_patterns
-                        else []
-                    ),
+                    patterns=[
+                        cast(ast3.pattern, x.gen.py_ast[0])
+                        for x in (node.arg_patterns or [])
+                    ],
+                    kwd_attrs=[
+                        x.key.sym_name
+                        for x in (node.kw_patterns or [])
+                        if isinstance(x.key, uni.NameAtom)
+                    ],
+                    kwd_patterns=[
+                        cast(ast3.pattern, x.value.gen.py_ast[0])
+                        for x in (node.kw_patterns or [])
+                    ],
                 )
             )
         ]
