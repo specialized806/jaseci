@@ -844,7 +844,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if self.match_token(Tok.RETURN_HINT):
                 return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=None,
+                    params=[],
                     return_type=return_spec,
                     kid=self.cur_nodes,
                 )
@@ -856,7 +856,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=params,
+                    params=params.items if params else [],
                     return_type=return_spec,
                     kid=self.cur_nodes,
                 )
@@ -1608,15 +1608,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 sig_kid.append(params)
             if return_type:
                 sig_kid.append(return_type)
-            signature = (
-                uni.FuncSignature(
-                    params=params,
-                    return_type=return_type,
-                    kid=sig_kid,
+                signature = (
+                    uni.FuncSignature(
+                        params=params.items if params else [],
+                        return_type=return_type,
+                        kid=sig_kid,
+                    )
+                    if params or return_type
+                    else None
                 )
-                if params or return_type
-                else None
-            )
             new_kid = [i for i in self.cur_nodes if i != params and i != return_type]
             new_kid.insert(1, signature) if signature else None
             return uni.LambdaExpr(
