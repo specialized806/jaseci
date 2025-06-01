@@ -3219,7 +3219,11 @@ class FString(AtomExpr):
                 i.value = (
                     "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
                 )
-            new_kid.append(i)
+                new_kid.append(i)
+            else:
+                new_kid.append(self.gen_token(Tok.LBRACE))
+                new_kid.append(i)
+                new_kid.append(self.gen_token(Tok.RBRACE))
         if is_single_quote:
             new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
         else:
