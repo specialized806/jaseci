@@ -1516,7 +1516,7 @@ class Archetype(
                 for stmt in self.body:
                     res = res and stmt.normalize(deep)
             else:
-                res = res and False if self.body is not None else res
+                res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             for dec in self.decorators or []:
                 res = res and dec.normalize(deep)
@@ -1547,7 +1547,7 @@ class Archetype(
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
                 new_kid.append(self.gen_token(Tok.LBRACE))
-                for idx, stmt in enumerate(self.body):
+                for stmt in self.body:
                     new_kid.append(stmt)
                 new_kid.append(self.gen_token(Tok.RBRACE))
         else:

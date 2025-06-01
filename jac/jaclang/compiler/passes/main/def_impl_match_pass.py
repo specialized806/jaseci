@@ -17,11 +17,12 @@ developers to define archetype and ability interfaces in one file while implemen
 their behavior in separate files.
 """
 
+from typing import Sequence
+
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.unitree import Symbol, UniScopeNode
-from typing import Sequence
 
 
 class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
@@ -183,9 +184,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
 
     def check_archetype(self, node: uni.Archetype) -> None:
         """Check a single archetype for issues."""
-        if node.arch_type.name == Tok.KW_OBJECT and isinstance(
-            node.body, Sequence
-        ):
+        if node.arch_type.name == Tok.KW_OBJECT and isinstance(node.body, Sequence):
             self.cur_node = node
             found_default_init = False
             for stmnt in node.body:
