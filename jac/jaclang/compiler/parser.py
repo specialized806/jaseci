@@ -8,7 +8,7 @@ import os
 from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler import jac_lark as jl  # type: ignore
+from jaclang.compiler import jac_lark as jl
 from jaclang.compiler.constant import EdgeDir, Tokens as Tok
 from jaclang.compiler.passes.main import Transform
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
@@ -183,6 +183,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
         # Parser Helper functions.                                            #
         # ******************************************************************* #
 
+        def extract_from_list(self, nd_list: list[uni.UniNode], ty: type[T]) -> list[T]:
+            """Extract a list of nodes of type 'ty' from the current nodes."""
+            return [node for node in nd_list if isinstance(node, ty)]
+
         def match(self, ty: type[T]) -> T | None:
             """Return a node matching type 'ty' if possible from the current nodes."""
             if (self.node_idx < len(self.cur_nodes)) and isinstance(
@@ -227,6 +231,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
             while node := self.match(ty):
                 nodes.append(node)
             return nodes  # type: ignore[return-value]
+
+        @property
+        def flat_cur_nodes(self) -> list[uni.UniNode]:
+            """Flatten the current nodes."""
+            flat_nodes: list[uni.UniNode] = []
+            for node in self.cur_nodes:
+                if isinstance(node, list):
+                    flat_nodes.extend(node)
+                else:
+                    flat_nodes.append(node)
+            return flat_nodes
 
         # ******************************************************************* #
         # Parsing Rules                                                       #
@@ -443,16 +458,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             import_path: dotted_name (KW_AS NAME)?
             """
-            valid_path = self.consume(uni.SubNodeList)
+            valid_path = self.extract_from_list(self.consume(list), uni.Name)
             alias = self.consume(uni.Name) if self.match_token(Tok.KW_AS) else None
             return uni.ModulePath(
-                path=valid_path.items,
+                path=valid_path,
                 level=0,
                 alias=alias,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
-        def dotted_name(self, _: None) -> uni.SubNodeList[uni.Name]:
+        def dotted_name(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             dotted_name: named_ref (DOT named_ref)*
@@ -460,11 +475,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             valid_path = [self.consume(uni.Name)]
             while self.match_token(Tok.DOT):
                 valid_path.append(self.consume(uni.Name))
-            return uni.SubNodeList[uni.Name](
-                items=valid_path,
-                delim=Tok.DOT,
-                kid=self.cur_nodes,
-            )
+            return [*self.cur_nodes]
 
         def import_items(self, _: None) -> uni.SubNodeList[uni.ModuleItem]:
             """Grammar rule.
@@ -529,7 +540,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             decorators_node = self.match(uni.SubNodeList)
             self.consume_token(Tok.KW_IMPL)
-            target = self.consume(uni.SubNodeList)
+            target = self.extract_from_list(self.consume(list), uni.NameAtom)
             spec = (
                 self.match(uni.SubNodeList)
                 or self.match(uni.FuncSignature)
@@ -546,14 +557,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     if isinstance(valid_tail, uni.SubNodeList)
                     else valid_tail
                 ),
-                target=target.items,
+                target=target,
                 decorators=decorators_node.items if decorators_node else None,
                 spec=(
                     valid_spec.items
                     if isinstance(valid_spec, uni.SubNodeList)
                     else valid_spec
                 ),
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
             return impl
 
