@@ -1306,16 +1306,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             is_async = bool(self.match_token(Tok.KW_ASYNC))
             self.consume_token(Tok.KW_WITH)
-            exprs_node = self.consume(uni.SubNodeList)
+            exprs_node = self.extract_from_list(self.consume(list), uni.ExprAsItem)
             body = self.consume(uni.SubNodeList)
             return uni.WithStmt(
                 is_async=is_async,
-                exprs=exprs_node.items,
+                exprs=exprs_node,
                 body=body.items,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
-        def expr_as_list(self, _: None) -> uni.SubNodeList[uni.ExprAsItem]:
+        def expr_as_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             expr_as_list: (expr_as COMMA)* expr_as
@@ -1323,11 +1323,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             items = [self.consume(uni.ExprAsItem)]
             while self.match_token(Tok.COMMA):
                 items.append(self.consume(uni.ExprAsItem))
-            return uni.SubNodeList[uni.ExprAsItem](
-                items=items,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+            return [*self.cur_nodes]
 
         def expr_as(self, _: None) -> uni.ExprAsItem:
             """Grammar rule.
