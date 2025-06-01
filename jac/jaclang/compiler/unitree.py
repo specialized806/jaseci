@@ -2433,8 +2433,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            for t in self.target:
-                res = res and t.normalize(deep)
+            res = res and self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
             for stmt in self.body:
                 res = res and stmt.normalize(deep)
