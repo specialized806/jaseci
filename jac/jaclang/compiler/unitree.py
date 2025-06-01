@@ -1765,7 +1765,7 @@ class Ability(
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: FuncSignature | EventSignature | None,
-        body: Optional[SubNodeList[CodeBlockStmt] | ImplDef | FuncCall],
+        body: Sequence[CodeBlockStmt] | ImplDef | FuncCall | None,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decorators: Sequence[Expr] | None = None,
@@ -1835,7 +1835,13 @@ class Ability(
             res = self.name_ref.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
             res = res and self.signature.normalize(deep) if self.signature else res
-            res = res and self.body.normalize(deep) if self.body else res
+            if isinstance(self.body, ImplDef):
+                res = res and self.body.normalize(deep)
+            elif isinstance(self.body, Sequence):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            else:
+                res = res and self.body.normalize(deep) if self.body else res
             for dec in self.decorators or []:
                 res = res and dec.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
@@ -1872,6 +1878,15 @@ class Ability(
         if self.body:
             if isinstance(self.body, ImplDef):
                 new_kid.append(self.gen_token(Tok.SEMI))
+            elif isinstance(self.body, Sequence):
+                new_kid.append(self.gen_token(Tok.LBRACE))
+                prev_stmt = None
+                for stmt in self.body:
+                    if isinstance(prev_stmt, EnumBlockStmt) and prev_stmt.is_enum_stmt:
+                        new_kid.append(self.gen_token(Tok.COMMA))
+                    new_kid.append(stmt)
+                    prev_stmt = stmt
+                new_kid.append(self.gen_token(Tok.RBRACE))
             else:
                 new_kid.append(self.body)
                 if self.is_genai_ability:
