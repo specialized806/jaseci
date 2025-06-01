@@ -1875,17 +1875,13 @@ class Ability(
             new_kid.append(self.gen_token(Tok.KW_BY))
         if self.is_abstract:
             new_kid.append(self.gen_token(Tok.KW_ABSTRACT))
-        if self.body:
+        if self.body is not None:
             if isinstance(self.body, ImplDef):
                 new_kid.append(self.gen_token(Tok.SEMI))
             elif isinstance(self.body, Sequence):
                 new_kid.append(self.gen_token(Tok.LBRACE))
-                prev_stmt = None
                 for stmt in self.body:
-                    if isinstance(prev_stmt, EnumBlockStmt) and prev_stmt.is_enum_stmt:
-                        new_kid.append(self.gen_token(Tok.COMMA))
                     new_kid.append(stmt)
-                    prev_stmt = stmt
                 new_kid.append(self.gen_token(Tok.RBRACE))
             else:
                 new_kid.append(self.body)
