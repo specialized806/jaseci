@@ -880,9 +880,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=self.extract_from_list(params, uni.ParamVar)
-                    if params
-                    else [],
+                    params=(
+                        self.extract_from_list(params, uni.ParamVar) if params else []
+                    ),
                     return_type=return_spec,
                     kid=self.flat_cur_nodes,
                 )
@@ -892,10 +892,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             func_decl_params: (param_var COMMA)* param_var COMMA?
             """
-            params = [self.consume(uni.ParamVar)]
-            while self.match_token(Tok.COMMA):
-                if param_stmt := self.match(uni.ParamVar):
-                    params.append(param_stmt)
             return [*self.cur_nodes]
 
         def param_var(self, _: None) -> uni.ParamVar:
@@ -1623,14 +1619,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.COLON)
             body = self.consume(uni.Expr)
             if params:
-                sig_kid.append(params)
+                sig_kid.extend(params)
             if return_type:
                 sig_kid.append(return_type)
             signature = (
                 uni.FuncSignature(
-                    params=self.extract_from_list(params, uni.ParamVar)
-                    if params
-                    else [],
+                    params=(
+                        self.extract_from_list(params, uni.ParamVar) if params else []
+                    ),
                     return_type=return_type,
                     kid=sig_kid,
                 )
