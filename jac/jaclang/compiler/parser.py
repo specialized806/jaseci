@@ -2877,12 +2877,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     f"Expected name to be either NameAtom or AtomTrailer, got {type(name)}"
                 )
             self.consume_token(Tok.LPAREN)
-            first = self.match(list) or self.match(uni.SubNodeList)
+            first = self.match(list)
             second: list[uni.UniNode] | None = None
-            if isinstance(first, uni.SubNodeList) and self.match_token(Tok.COMMA):
+            has_kw = bool(
+                first and any(isinstance(i, uni.MatchKVPair) for i in first)
+            )
+            if first and not has_kw and self.match_token(Tok.COMMA):
                 second = self.consume(list)
             self.consume_token(Tok.RPAREN)
-            if isinstance(first, list):
+            if has_kw:
                 arg = None
                 kw_list = first
             else:
@@ -2890,32 +2893,23 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kw_list = second
             return uni.MatchArch(
                 name=name,
-                arg_patterns=arg.items if isinstance(arg, uni.SubNodeList) else None,
+                arg_patterns=
+                    self.extract_from_list(arg, uni.MatchPattern) if arg else None,
                 kw_patterns=(
-                    self.extract_from_list(kw_list, uni.MatchKVPair)
-                    if kw_list
-                    else None
+                    self.extract_from_list(kw_list, uni.MatchKVPair) if kw_list else None
                 ),
                 kid=[name, *self.flat_cur_nodes[name_idx:]],
             )
 
-        def pattern_list(self, _: None) -> uni.SubNodeList[uni.MatchPattern]:
+        def pattern_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             pattern_list: (pattern_list COMMA)? pattern_seq
             """
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                pattern = self.consume(uni.MatchPattern)
-            else:
-                pattern = self.consume(uni.MatchPattern)
-            new_kid = [*consume.kid, comma, pattern] if consume else [pattern]
-            valid_kid = [i for i in new_kid if isinstance(i, uni.MatchPattern)]
-            return uni.SubNodeList[uni.MatchPattern](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+            self.consume(uni.MatchPattern)
+            return self.flat_cur_nodes
 
         def kw_pattern_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
