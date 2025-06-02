@@ -1568,7 +1568,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         decorators: Optional[Sequence[Expr]],
         target: Sequence[NameAtom],
         spec: Sequence[Expr] | FuncSignature | EventSignature | None,
-        body: Sequence[CodeBlockStmt] | FuncCall,
+        body: Sequence[CodeBlockStmt] | Sequence[EnumBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decl_link: Optional[UniNode] = None,

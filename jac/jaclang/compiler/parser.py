@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
+from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler import jac_lark as jl
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=uni.UniNode)
+TL = TypeVar("TL", bound=(uni.UniNode | list))
 
 
 class JacParser(Transform[uni.Source, uni.Module]):
@@ -183,11 +184,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
         # Parser Helper functions.                                            #
         # ******************************************************************* #
 
-        def extract_from_list(self, nd_list: list[uni.UniNode], ty: type[T]) -> list[T]:
+        def extract_from_list(
+            self, nd_list: list[uni.UniNode], ty: type[T] | tuple[type[T], ...]
+        ) -> list[T]:
             """Extract a list of nodes of type 'ty' from the current nodes."""
-            return [node for node in nd_list if isinstance(node, ty)]
+            return cast(list[T], [node for node in nd_list if isinstance(node, ty)])
 
-        def match(self, ty: type[T]) -> T | None:
+        def match(self, ty: type[TL]) -> TL | None:
             """Return a node matching type 'ty' if possible from the current nodes."""
             if (self.node_idx < len(self.cur_nodes)) and isinstance(
                 self.cur_nodes[self.node_idx], ty
@@ -196,7 +199,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return self.cur_nodes[self.node_idx - 1]  # type: ignore[return-value]
             return None
 
-        def consume(self, ty: type[T]) -> T:
+        def consume(self, ty: type[TL]) -> TL:
             """Consume and return the specified type, if it's not exists, will be an internal compiler error."""
             if node := self.match(ty):
                 return node
@@ -549,7 +552,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     else (
                         self.extract_from_list(
                             valid_tail,
-                            (uni.EnumBlockStmt, uni.CodeBlockStmt),
+                            (uni.EnumBlockStmt, uni.CodeBlockStmt),  # type: ignore[arg-type]
                         )
                         if isinstance(valid_tail, list)
                         else valid_tail
@@ -688,6 +691,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             name = self.consume(uni.Name)
             sub_list1 = self.match(list)
             enum_body = self.match(list)
+            body: list[uni.UniNode] | None = None
             if enum_body is None and self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
             elif enum_body is None:
@@ -1900,7 +1904,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.FuncCall(
                 target=target,
                 params=(
-                    self.extract_from_list(params_sn, (uni.Expr, uni.KWPair))
+                    self.extract_from_list(params_sn, (uni.Expr, uni.KWPair))  # type: ignore[arg-type]
                     if params_sn
                     else []
                 ),
