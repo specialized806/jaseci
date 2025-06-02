@@ -336,7 +336,14 @@ class JacLanguageTests(TestCase):
 
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
-        targets = ["deep", "deep.deeper", "deep.deeper.deep_outer_import"]
+        targets = [
+            "deep",
+            "deep.deeper",
+            "deep.mycode",
+            "deep.deeper.snd_lev",
+            "deep.one_lev",
+            "deep.deeper.deep_outer_import",
+        ]
         for i in targets:
             if i in sys.modules:
                 del sys.modules[i]
