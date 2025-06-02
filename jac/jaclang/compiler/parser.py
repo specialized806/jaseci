@@ -970,7 +970,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     is_static=is_static,
                     is_frozen=is_freeze,
                     access=access,
-                    kid=kid,
+                    kid=self.flat_cur_nodes,
                 )
             else:
                 raise self.ice()
@@ -1200,7 +1200,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 ),
                 else_body=else_stmt,
                 finally_body=finally_stmt,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def except_list(self, _: None) -> list[uni.UniNode]:
@@ -1493,7 +1493,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.consume(list)
             return uni.GlobalStmt(
                 target=self.extract_from_list(target, uni.Name),
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def nonlocal_ref(self, _: None) -> uni.NonLocalStmt:
@@ -1505,7 +1505,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.consume(list)
             return uni.NonLocalStmt(
                 target=self.extract_from_list(target, uni.Name),
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def assignment(self, _: None) -> uni.Assignment:
@@ -1958,14 +1958,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.FuncCall(
                 target=target,
                 params=(
-                    self.extract_from_list(
-                        params_sn, (uni.Expr, uni.KWPair)
-                    )
+                    self.extract_from_list(params_sn, (uni.Expr, uni.KWPair))
                     if params_sn
                     else []
                 ),
                 genai_call=genai_call,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def index_slice(self, _: None) -> uni.IndexSlice:
@@ -2097,8 +2095,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.match(list)
             self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
             return uni.FString(
-                parts=target if target else [],
-                kid=self.cur_nodes,
+                parts=(
+                    self.extract_from_list(target, (uni.String, uni.ExprStmt))
+                    if target
+                    else []
+                ),
+                kid=self.flat_cur_nodes,
             )
 
         def fstr_parts(self, _: None) -> list[uni.UniNode]:
@@ -2106,14 +2108,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
-            valid_parts: list[uni.String | uni.ExprStmt] = [
+            valid_parts: list[uni.String | uni.ExprStmt | uni.Token] = [
                 (
                     i
                     if isinstance(i, uni.String)
-                    else uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
                 )
                 for i in self.cur_nodes
-                if isinstance(i, uni.Expr)
+                if isinstance(i, (uni.Expr, uni.Token))
             ]
             return valid_parts
 
@@ -2122,14 +2128,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
-            valid_parts: list[uni.String | uni.ExprStmt] = [
+            valid_parts: list[uni.String | uni.ExprStmt | uni.Token] = [
                 (
                     i
                     if isinstance(i, uni.String)
-                    else uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
                 )
                 for i in self.cur_nodes
-                if isinstance(i, uni.Expr)
+                if isinstance(i, (uni.Expr, uni.Token))
             ]
             return valid_parts
 
@@ -2147,7 +2157,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             )
             return uni.ListVal(
                 values=values,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def tuple_val(self, _: None) -> uni.TupleVal:
@@ -2164,7 +2174,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     if target
                     else []
                 ),
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def set_val(self, _: None) -> uni.SetVal:
@@ -2176,12 +2186,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             expr_list = self.match(list)
             self.match_token(Tok.COMMA)
             self.match_token(Tok.RBRACE)
-            values = (
-                self.extract_from_list(expr_list, uni.Expr) if expr_list else []
-            )
+            values = self.extract_from_list(expr_list, uni.Expr) if expr_list else []
             return uni.SetVal(
                 values=values,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def expr_list(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
@@ -2529,19 +2537,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
             connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
             """
             conn_type: uni.Expr | None = None
-            conn_assign_sub: uni.SubNodeList | None = None
+            conn_assign_sub: list[uni.UniNode] | None = None
             if self.match_token(Tok.CARROW_R_P1):
                 conn_type = self.consume(uni.Expr)
                 conn_assign_sub = (
-                    self.consume(uni.SubNodeList)
-                    if self.match_token(Tok.COLON)
-                    else None
+                    self.consume(list) if self.match_token(Tok.COLON) else None
                 )
                 self.consume_token(Tok.CARROW_R_P2)
             else:
                 self.consume_token(Tok.CARROW_R)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=self.extract_from_list(conn_assign_sub, uni.KWPair),
+                    kid=conn_assign_sub,
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2551,7 +2560,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 conn_type=conn_type,
                 conn_assign=conn_assign,
                 edge_dir=EdgeDir.OUT,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def connect_from(self, _: None) -> uni.ConnectOp:
@@ -2560,19 +2569,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
             connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
             """
             conn_type: uni.Expr | None = None
-            conn_assign_sub: uni.SubNodeList | None = None
+            conn_assign_sub: list[uni.UniNode] | None = None
             if self.match_token(Tok.CARROW_L_P1):
                 conn_type = self.consume(uni.Expr)
                 conn_assign_sub = (
-                    self.consume(uni.SubNodeList)
-                    if self.match_token(Tok.COLON)
-                    else None
+                    self.consume(list) if self.match_token(Tok.COLON) else None
                 )
                 self.consume_token(Tok.CARROW_L_P2)
             else:
                 self.consume_token(Tok.CARROW_L)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=self.extract_from_list(conn_assign_sub, uni.KWPair),
+                    kid=conn_assign_sub,
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2582,7 +2592,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 conn_type=conn_type,
                 conn_assign=conn_assign,
                 edge_dir=EdgeDir.IN,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def connect_any(self, _: None) -> uni.ConnectOp:
@@ -2591,19 +2601,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
             connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
             """
             conn_type: uni.Expr | None = None
-            conn_assign_sub: uni.SubNodeList | None = None
+            conn_assign_sub: list[uni.UniNode] | None = None
             if self.match_token(Tok.CARROW_L_P1):
                 conn_type = self.consume(uni.Expr)
                 conn_assign_sub = (
-                    self.consume(uni.SubNodeList)
-                    if self.match_token(Tok.COLON)
-                    else None
+                    self.consume(list) if self.match_token(Tok.COLON) else None
                 )
                 self.consume_token(Tok.CARROW_R_P2)
             else:
                 self.consume_token(Tok.CARROW_BI)
             conn_assign = (
-                uni.AssignCompr(assigns=conn_assign_sub.items, kid=[conn_assign_sub])
+                uni.AssignCompr(
+                    assigns=self.extract_from_list(conn_assign_sub, uni.KWPair),
+                    kid=conn_assign_sub,
+                )
                 if conn_assign_sub
                 else None
             )
@@ -2613,7 +2624,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 conn_type=conn_type,
                 conn_assign=conn_assign,
                 edge_dir=EdgeDir.ANY,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def filter_compr(self, _: None) -> uni.FilterCompr:
@@ -2693,9 +2704,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             self.consume_token(Tok.LPAREN)
             self.consume_token(Tok.EQ)
-            assigns_sn = self.consume(uni.SubNodeList)
+            assigns_sn = self.extract_from_list(self.consume(list), uni.KWPair)
             self.consume_token(Tok.RPAREN)
-            return uni.AssignCompr(assigns=assigns_sn.items, kid=self.cur_nodes)
+            return uni.AssignCompr(assigns=assigns_sn, kid=self.flat_cur_nodes)
 
         def match_stmt(self, _: None) -> uni.MatchStmt:
             """Grammar rule.

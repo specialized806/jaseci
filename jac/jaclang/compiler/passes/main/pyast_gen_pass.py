@@ -2314,6 +2314,8 @@ class PyastGenPass(UniPass):
                     pieces.extend(get_pieces(i.parts)) if i.parts else None
                 elif isinstance(i, uni.ExprStmt):
                     pieces.append(i.gen.py_ast[0])
+                elif isinstance(i, uni.Token) and i.name in [Tok.LBRACE, Tok.RBRACE]:
+                    continue
                 else:
                     raise self.ice("Multi string made of something weird.")
             return pieces
