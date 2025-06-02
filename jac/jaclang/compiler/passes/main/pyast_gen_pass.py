@@ -829,7 +829,6 @@ class PyastGenPass(UniPass):
             if node.decorators
             else []
         )
-
         base_classes = [cast(ast3.expr, i.gen.py_ast[0]) for i in node.base_classes]
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))

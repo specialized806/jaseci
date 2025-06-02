@@ -622,13 +622,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
             body: list[uni.ArchBlockStmt] | None
             if body_list is None and self.match_token(Tok.SEMI):
                 body = None
+            elif body_list is None:
+                body = self.extract_from_list(inh_sn or [], uni.ArchBlockStmt)
+                inh_sn = None
             else:
                 body = self.extract_from_list(body_list or [], uni.ArchBlockStmt)
             return uni.Archetype(
                 arch_type=arch_type,
                 name=name,
                 access=access,
-                base_classes=inh_sn or [],
+                base_classes=self.extract_from_list(inh_sn or [], uni.Expr) or [],
                 body=body,
                 kid=self.flat_cur_nodes,
             )
@@ -654,18 +657,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume(uni.Expr)
             return [*self.cur_nodes]
 
-        def inherited_archs(self, kid: list[uni.UniNode]) -> list[uni.Expr]:
+        def inherited_archs(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
             """Grammar rule.
 
             inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
             """
-            self.match_token(Tok.LPAREN)
-            items: list[uni.Expr] = []
-            while inherited_arch := self.match(uni.Expr):
-                items.append(inherited_arch)
-                self.match_token(Tok.COMMA)
-            self.match_token(Tok.RPAREN)
-            return items
+            return self.flat_cur_nodes
 
         def named_ref(self, _: None) -> uni.NameAtom:
             """Grammar rule.
@@ -712,15 +709,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
             name = self.consume(uni.Name)
             sub_list1 = self.match(list)
             enum_body = self.match(list)
-            if self.match_token(Tok.SEMI):
+            if enum_body is None and self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
+            elif enum_body is None:
+                body = self.extract_from_list(sub_list1 or [], uni.EnumBlockStmt)
+                inh = None
             else:
-                body = enum_body or []
+                body = enum_body
                 inh = sub_list1
             return uni.Enum(
                 name=name,
                 access=access,
-                base_classes=inh or [],
+                base_classes=self.extract_from_list(inh or [], uni.Expr) or [],
                 body=self.extract_from_list(body, uni.EnumBlockStmt) if body else None,
                 kid=self.flat_cur_nodes,
             )
