@@ -311,11 +311,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             assignments_list = self.consume(list)
             return uni.GlobalVars(
                 access=access_tag,
-                assignments=self.extract_from_list(
-                    assignments_list, uni.Assignment
-                ),
+                assignments=self.extract_from_list(assignments_list, uni.Assignment),
                 is_frozen=is_frozen,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def access_tag(self, _: None) -> uni.SubTag[uni.Token]:
