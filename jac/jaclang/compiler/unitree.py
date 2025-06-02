@@ -1802,15 +1802,12 @@ class Ability(
     @property
     def method_owner(self) -> Optional[Archetype | Enum]:
         found = (
-            self.parent.parent
-            if self.parent
-            and self.parent.parent
-            and isinstance(self.parent.parent, (Archetype, Enum))
+            self.parent
+            if self.parent and isinstance(self.parent, (Archetype, Enum))
             else None
         ) or (
             self.parent.parent.decl_link
             if self.parent
-            and self.parent.parent
             and isinstance(self.parent.parent, ImplDef)
             and isinstance(self.parent.parent.decl_link, Archetype)
             else None
