@@ -2900,11 +2900,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
             class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
                         | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
+            name_idx = 0
             cur_element = self.consume(uni.NameAtom)
+            name_idx += 1
             trailer: uni.AtomTrailer | None = None
             while dot := self.match_token(Tok.DOT):
                 target = trailer if trailer else cur_element
-                right = self.consume(uni.Expr)
+                right = self.consume(uni.NameAtom)
+                name_idx += 2
                 trailer = uni.AtomTrailer(
                     target=target,
                     right=right,
@@ -2917,30 +2920,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 raise TypeError(
                     f"Expected name to be either NameAtom or AtomTrailer, got {type(name)}"
                 )
-            lparen = self.consume_token(Tok.LPAREN)
+            self.consume_token(Tok.LPAREN)
             first = self.match(list) or self.match(uni.SubNodeList)
-            comma = None
             second: list[uni.UniNode] | None = None
             if isinstance(first, uni.SubNodeList) and self.match_token(Tok.COMMA):
-                comma = self.consume_token(Tok.COMMA)
                 second = self.consume(list)
-            rparen = self.consume_token(Tok.RPAREN)
+            self.consume_token(Tok.RPAREN)
             if isinstance(first, list):
                 arg = None
                 kw_list = first
             else:
                 arg = first
                 kw_list = second
-            kid_nodes: list[uni.UniNode] = [name, lparen]
-            if arg:
-                kid_nodes.append(arg)
-                if kw_list:
-                    kid_nodes.extend([comma, kw_list]) if comma else kid_nodes.append(
-                        kw_list
-                    )
-            elif kw_list:
-                kid_nodes.append(kw_list)
-            kid_nodes.append(rparen)
             return uni.MatchArch(
                 name=name,
                 arg_patterns=arg.items if isinstance(arg, uni.SubNodeList) else None,
@@ -2949,7 +2940,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     if kw_list
                     else None
                 ),
-                kid=kid_nodes,
+                kid=[name, *self.flat_cur_nodes[name_idx:]],
             )
 
         def pattern_list(self, _: None) -> uni.SubNodeList[uni.MatchPattern]:
