@@ -93,6 +93,9 @@ async function setupCodeBlock(div) {
             vertical: 'hidden',
             handleMouseWheel: false,
         },
+        minimap: {
+            enabled: false
+        },
         automaticLayout: true,
         padding: {
             top: 10,
