@@ -515,12 +515,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             archspec: uni.ArchSpec | uni.Enum | None = None
 
-            decorators_node = self.match(uni.SubNodeList)
+            decorators_node = self.match(list)
             is_async = self.match_token(Tok.KW_ASYNC)
             if decorators_node is not None:
                 archspec = self.consume(uni.ArchSpec)
-                archspec.decorators = decorators_node.items
-                archspec.add_kids_left([decorators_node])
+                decorators = self.extract_from_list(decorators_node, uni.Expr)
+                archspec.decorators = decorators
+                archspec.add_kids_left(decorators_node)
             else:
                 archspec = self.match(uni.ArchSpec) or self.consume(uni.Enum)
             if is_async and isinstance(archspec, uni.ArchSpec):
@@ -538,7 +539,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             impl_def: decorators? KW_IMPL dotted_name impl_spec? impl_tail
             """
-            decorators_node = self.match(uni.SubNodeList)
+            decorators_node = self.match(list)
             self.consume_token(Tok.KW_IMPL)
             target = self.extract_from_list(self.consume(list), uni.NameAtom)
             spec = (
@@ -558,7 +559,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     else valid_tail
                 ),
                 target=target,
-                decorators=decorators_node.items if decorators_node else None,
+                decorators=(
+                    self.extract_from_list(decorators_node, uni.Expr)
+                    if decorators_node
+                    else None
+                ),
                 spec=(
                     valid_spec.items
                     if isinstance(valid_spec, uni.SubNodeList)
@@ -631,17 +636,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             return self.consume(uni.Token)
 
-        def decorators(self, _: None) -> uni.SubNodeList[uni.Expr]:
+        def decorators(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             decorators: (DECOR_OP atomic_chain)+
             """
             self.consume_token(Tok.DECOR_OP)
-            return uni.SubNodeList[uni.Expr](
-                items=self.consume_many(uni.Expr),
-                delim=Tok.DECOR_OP,
-                kid=self.cur_nodes,
-            )
+            self.consume(uni.Expr)
+            while self.match_token(Tok.DECOR_OP):
+                self.consume(uni.Expr)
+            return [*self.cur_nodes]
 
         def inherited_archs(self, kid: list[uni.UniNode]) -> uni.SubNodeList[uni.Expr]:
             """Grammar rule.
@@ -684,10 +688,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             enum: decorators? enum_decl
                 | enum_def
             """
-            if decorator := self.match(uni.SubNodeList):
+            if decorator := self.match(list):
                 enum_decl = self.consume(uni.Enum)
-                enum_decl.decorators = decorator.items
-                enum_decl.add_kids_left([decorator])
+                enum_decl.decorators = self.extract_from_list(decorator, uni.Expr)
+                enum_decl.add_kids_left(decorator)
                 return enum_decl
             return self.consume(uni.Enum)
 
@@ -742,7 +746,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             ability: decorators? KW_ASYNC? (ability_decl | function_decl)
             """
-            decorators = self.match(uni.SubNodeList)
+            decorators_node = self.match(list)
             is_async = self.match_token(Tok.KW_ASYNC)
 
             # Try to match ability_decl or function_decl
@@ -751,8 +755,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 ability.is_async = True
                 ability.add_kids_left([is_async])
 
-            if decorators:
-                for dec in decorators.items:
+            if decorators_node:
+                decorators = self.extract_from_list(decorators_node, uni.Expr)
+                for dec in decorators[:]:
                     if (
                         isinstance(dec, uni.NameAtom)
                         and dec.sym_name == "staticmethod"
@@ -762,7 +767,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         static_kw.line_no = dec.loc.first_line
                         static_kw.c_start = dec.loc.col_start
                         static_kw.c_end = static_kw.c_start + len(static_kw.name)
-                        decorators.items.remove(dec)  # noqa: B038
+                        decorators.remove(dec)  # noqa: B038
                         if not ability.is_static:
                             ability.is_static = True
                             if not ability.is_override:
@@ -770,9 +775,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                             else:
                                 ability.insert_kids_at_pos([static_kw], 1)
                         break
-                if decorators.items:
-                    ability.decorators = decorators.items
-                    ability.add_kids_left([decorators])
+                if decorators:
+                    ability.decorators = decorators
+                    ability.add_kids_left(decorators_node)
 
             return ability
 
