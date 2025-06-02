@@ -559,7 +559,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 body=(
                     valid_tail.items
                     if isinstance(valid_tail, uni.SubNodeList)
-                    else valid_tail
+                    else (
+                        self.extract_from_list(valid_tail, uni.EnumBlockStmt)
+                        if isinstance(valid_tail, list)
+                        else valid_tail
+                    )
                 ),
                 target=target,
                 decorators=decorators_node.items if decorators_node else None,
@@ -588,7 +592,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def impl_tail(
             self, _: None
-        ) -> Sequence[uni.EnumBlockStmt] | uni.SubNodeList[uni.CodeBlockStmt] | uni.FuncCall:
+        ) -> (
+            Sequence[uni.EnumBlockStmt]
+            | uni.SubNodeList[uni.CodeBlockStmt]
+            | uni.FuncCall
+        ):
             """Grammar rule.
 
             impl_tail: enum_block | block_tail
@@ -714,11 +722,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 name=name,
                 access=access,
                 base_classes=inh.items if inh else [],
-                body=body,
+                body=self.extract_from_list(body, uni.EnumBlockStmt) if body else None,
                 kid=self.flat_cur_nodes,
             )
 
-        def enum_block(self, _: None) -> list[uni.EnumBlockStmt]:
+        def enum_block(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             enum_block: LBRACE assignment_list COMMA? (py_code_block | free_code)* RBRACE
@@ -738,7 +746,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             for i in assignments.kid:
                 if isinstance(i, uni.Assignment):
                     i.is_enum_stmt = True
-            return assignments.items
+            return [*assignments.kid]
 
         def ability(self, _: None) -> uni.Ability | uni.FuncCall:
             """Grammar rule.
