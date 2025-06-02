@@ -336,8 +336,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             codeblock = self.consume(list)
             return uni.Test(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(codeblock, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def free_code(self, _: None) -> uni.ModuleCode:
@@ -353,8 +353,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             codeblock = self.consume(list)
             return uni.ModuleCode(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(codeblock, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def py_code_block(self, _: None) -> uni.PyInlineCode:
@@ -597,19 +597,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def impl_tail(
             self, _: None
-        ) -> (
-            Sequence[uni.EnumBlockStmt]
-            | list[uni.CodeBlockStmt]
-            | uni.FuncCall
-        ):
+        ) -> Sequence[uni.EnumBlockStmt] | list[uni.CodeBlockStmt] | uni.FuncCall:
             """Grammar rule.
 
             impl_tail: enum_block | block_tail
             """
-            tail = (
-                self.match(list)  # enum_block or code_block
-                or self.consume(uni.FuncCall)  # block_tail (KW_BY atomic_call)
-            )
+            tail = self.match(list) or self.consume(  # enum_block or code_block
+                uni.FuncCall
+            )  # block_tail (KW_BY atomic_call)
             return tail
 
         def archetype_decl(self, _: None) -> uni.ArchSpec:
@@ -812,7 +807,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 is_abstract = False
                 body = (
-                    body_sn_or_call
+                    self.extract_from_list(body_sn_or_call, uni.CodeBlockStmt)
                     if isinstance(body_sn_or_call, list)
                     else body_sn_or_call
                 )
@@ -826,7 +821,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 access=access,
                 signature=signature,
                 body=body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def function_decl(self, _: None) -> uni.Ability:
@@ -852,7 +847,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 is_abstract = False
                 body = (
-                    body_sn_or_call
+                    self.extract_from_list(body_sn_or_call, uni.CodeBlockStmt)
                     if isinstance(body_sn_or_call, list)
                     else body_sn_or_call
                 )
@@ -866,7 +861,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 access=access,
                 signature=signature,
                 body=body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def func_decl(self, _: None) -> uni.FuncSignature:
@@ -1044,20 +1039,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 pos_end=token.pos_end,
             )
 
-        def code_block(
-            self, kid: list[uni.UniNode]
-        ) -> list[uni.CodeBlockStmt]:
+        def code_block(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
             """Grammar rule.
 
             code_block: LBRACE statement* RBRACE
             """
-            left_enc = kid[0] if isinstance(kid[0], uni.Token) else None
-            right_enc = kid[-1] if isinstance(kid[-1], uni.Token) else None
-            valid_stmt = [i for i in kid if isinstance(i, uni.CodeBlockStmt)]
-            if len(valid_stmt) == len(kid) - 2:
-                return valid_stmt
-            else:
-                raise self.ice()
+            return self.flat_cur_nodes
 
         def statement(self, kid: list[uni.UniNode]) -> uni.CodeBlockStmt:
             """Grammar rule.
@@ -1126,8 +1113,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             body = self.consume(list)
             return uni.TypedCtxBlock(
                 type_ctx=ctx,
-                body=body,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def if_stmt(self, _: None) -> uni.IfStmt:
@@ -1141,9 +1128,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else_body = self.match(uni.ElseStmt) or self.match(uni.ElseIf)
             return uni.IfStmt(
                 condition=condition,
-                body=body,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def elif_stmt(self, _: None) -> uni.ElseIf:
@@ -1157,9 +1144,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else_body = self.match(uni.ElseStmt) or self.match(uni.ElseIf)
             return uni.ElseIf(
                 condition=condition,
-                body=body,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def else_stmt(self, _: None) -> uni.ElseStmt:
@@ -1170,8 +1157,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_ELSE)
             body = self.consume(list)
             return uni.ElseStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def try_stmt(self, _: None) -> uni.TryStmt:
@@ -1185,7 +1172,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else_stmt = self.match(uni.ElseStmt)
             finally_stmt = self.match(uni.FinallyStmt)
             return uni.TryStmt(
-                body=block,
+                body=self.extract_from_list(block, uni.CodeBlockStmt),
                 excepts=(
                     self.extract_from_list(except_list, uni.Except)
                     if except_list
@@ -1220,8 +1207,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.Except(
                 ex_type=ex_type,
                 name=name,
-                body=body_node,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(body_node, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def finally_stmt(self, _: None) -> uni.FinallyStmt:
@@ -1232,8 +1219,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_FINALLY)
             body = self.consume(list)
             return uni.FinallyStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def for_stmt(self, _: None) -> uni.IterForStmt | uni.InForStmt:
@@ -1256,9 +1243,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
-                    body=body,
+                    body=self.extract_from_list(body, uni.CodeBlockStmt),
                     else_body=else_body,
-                    kid=self.cur_nodes,
+                    kid=self.flat_cur_nodes,
                 )
             target = self.consume(uni.Expr)
             self.consume_token(Tok.KW_IN)
@@ -1269,9 +1256,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 is_async=is_async,
                 target=target,
                 collection=collection,
-                body=body,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def while_stmt(self, _: None) -> uni.WhileStmt:
@@ -1284,8 +1271,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             body = self.consume(list)
             return uni.WhileStmt(
                 condition=condition,
-                body=body,
-                kid=self.cur_nodes,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
+                kid=self.flat_cur_nodes,
             )
 
         def with_stmt(self, _: None) -> uni.WithStmt:
@@ -1300,7 +1287,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.WithStmt(
                 is_async=is_async,
                 exprs=exprs_node,
-                body=body,
+                body=self.extract_from_list(body, uni.CodeBlockStmt),
                 kid=self.flat_cur_nodes,
             )
 
