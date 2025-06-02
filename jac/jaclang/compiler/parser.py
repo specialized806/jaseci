@@ -543,7 +543,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_IMPL)
             target = self.extract_from_list(self.consume(list), uni.NameAtom)
             spec = (
-                self.match(uni.SubNodeList)
+                self.match(list)
                 or self.match(uni.FuncSignature)
                 or self.match(uni.EventSignature)
             )
@@ -572,11 +572,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     if decorators_node
                     else None
                 ),
-                spec=(
-                    valid_spec.items
-                    if isinstance(valid_spec, uni.SubNodeList)
-                    else valid_spec
-                ),
+                spec=valid_spec,
                 kid=self.flat_cur_nodes,
             )
             return impl
@@ -589,11 +585,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
             impl_spec: inherited_archs | func_decl | event_clause
             """
             spec = (
-                self.match(uni.SubNodeList)  # inherited_archs
+                self.match(list)  # inherited_archs
                 or self.match(uni.FuncSignature)  # func_decl
                 or self.consume(uni.EventSignature)  # event_clause
             )
-            return spec.items if isinstance(spec, uni.SubNodeList) else spec
+            return spec
 
         def impl_tail(
             self, _: None
@@ -621,7 +617,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             arch_type = self.consume(uni.Token)
             access = self.match(uni.SubTag)
             name = self.consume(uni.Name)
-            inh_sn = self.match(uni.SubNodeList)
+            inh_sn = self.match(list)
             body_list = self.match(list)
             body: list[uni.ArchBlockStmt] | None
             if body_list is None and self.match_token(Tok.SEMI):
@@ -632,7 +628,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 arch_type=arch_type,
                 name=name,
                 access=access,
-                base_classes=inh_sn.items if inh_sn else [],
+                base_classes=inh_sn or [],
                 body=body,
                 kid=self.flat_cur_nodes,
             )
@@ -658,18 +654,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume(uni.Expr)
             return [*self.cur_nodes]
 
-        def inherited_archs(self, kid: list[uni.UniNode]) -> uni.SubNodeList[uni.Expr]:
+        def inherited_archs(self, kid: list[uni.UniNode]) -> list[uni.Expr]:
             """Grammar rule.
 
             inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
             """
             self.match_token(Tok.LPAREN)
-            items: list = []
+            items: list[uni.Expr] = []
             while inherited_arch := self.match(uni.Expr):
                 items.append(inherited_arch)
                 self.match_token(Tok.COMMA)
             self.match_token(Tok.RPAREN)
-            return uni.SubNodeList[uni.Expr](items=items, delim=Tok.COMMA, kid=kid)
+            return items
 
         def named_ref(self, _: None) -> uni.NameAtom:
             """Grammar rule.
@@ -714,7 +710,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_ENUM)
             access = self.match(uni.SubTag)
             name = self.consume(uni.Name)
-            sub_list1 = self.match(uni.SubNodeList)
+            sub_list1 = self.match(list)
             enum_body = self.match(list)
             if self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
@@ -724,7 +720,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.Enum(
                 name=name,
                 access=access,
-                base_classes=inh.items if inh else [],
+                base_classes=inh or [],
                 body=self.extract_from_list(body, uni.EnumBlockStmt) if body else None,
                 kid=self.flat_cur_nodes,
             )
