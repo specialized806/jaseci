@@ -877,7 +877,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             func_decl: (LPAREN func_decl_params? RPAREN) (RETURN_HINT expression)?
                     | (RETURN_HINT expression)
             """
-            params: uni.SubNodeList | None = None
+            params: list[uni.UniNode] | None = None
             return_spec: uni.Expr | None = None
 
             # Check if starting with RETURN_HINT
@@ -886,35 +886,29 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return uni.FuncSignature(
                     params=[],
                     return_type=return_spec,
-                    kid=self.cur_nodes,
+                    kid=self.flat_cur_nodes,
                 )
             # Otherwise, parse the traditional parameter list form
             else:
                 self.consume_token(Tok.LPAREN)
-                params = self.match(uni.SubNodeList)
+                params = self.match(list)
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=params.items if params else [],
+                    params=(
+                        self.extract_from_list(params, uni.ParamVar) if params else []
+                    ),
                     return_type=return_spec,
-                    kid=self.cur_nodes,
+                    kid=self.flat_cur_nodes,
                 )
 
-        def func_decl_params(self, _: None) -> uni.SubNodeList[uni.ParamVar]:
+        def func_decl_params(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             func_decl_params: (param_var COMMA)* param_var COMMA?
             """
-            paramvar: list = []
-            while param_stmt := self.match(uni.ParamVar):
-                paramvar.append(param_stmt)
-                self.match_token(Tok.COMMA)
-            return uni.SubNodeList[uni.ParamVar](
-                items=paramvar,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+            return [*self.cur_nodes]
 
         def param_var(self, _: None) -> uni.ParamVar:
             """Grammar rule.
@@ -1635,18 +1629,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return_type: uni.Expr | None = None
             sig_kid: list[uni.UniNode] = []
             self.consume_token(Tok.KW_LAMBDA)
-            params = self.match(uni.SubNodeList)
+            params = self.match(list)
             if self.match_token(Tok.RETURN_HINT):
                 return_type = self.consume(uni.Expr)
             self.consume_token(Tok.COLON)
             body = self.consume(uni.Expr)
             if params:
-                sig_kid.append(params)
+                sig_kid.extend(params)
             if return_type:
                 sig_kid.append(return_type)
             signature = (
                 uni.FuncSignature(
-                    params=params.items if params else [],
+                    params=(
+                        self.extract_from_list(params, uni.ParamVar) if params else []
+                    ),
                     return_type=return_type,
                     kid=sig_kid,
                 )
