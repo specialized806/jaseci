@@ -308,10 +308,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             is_frozen = self.consume(uni.Token).name == Tok.KW_LET
             access_tag = self.match(uni.SubTag)
-            assignments_sn = self.consume(uni.SubNodeList)
+            assignments_list = self.consume(list)
             return uni.GlobalVars(
                 access=access_tag,
-                assignments=assignments_sn.items,
+                assignments=self.extract_from_list(
+                    assignments_list, uni.Assignment
+                ),
                 is_frozen=is_frozen,
                 kid=self.cur_nodes,
             )
@@ -735,21 +737,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
             enum_block: LBRACE assignment_list COMMA? (py_code_block | free_code)* RBRACE
             """
             left_enc = self.consume_token(Tok.LBRACE)
-            assignments = self.consume(uni.SubNodeList)
+            assignments = self.consume(list)
             self.match_token(Tok.COMMA)
             while item := self.match(uni.EnumBlockStmt):
                 item.is_enum_stmt = True
-                assignments.add_kids_right([item])
-                assignments.items.append(item)
+                assignments.append(item)
             right_enc = self.consume_token(Tok.RBRACE)
-            assignments.add_kids_left([left_enc])
-            assignments.add_kids_right([right_enc])
-            assignments.left_enc = left_enc
-            assignments.right_enc = right_enc
-            for i in assignments.kid:
+            for i in assignments:
                 if isinstance(i, uni.Assignment):
                     i.is_enum_stmt = True
-            return [*assignments.kid]
+            return [left_enc, *assignments, right_enc]
 
         def ability(self, _: None) -> uni.Ability | uni.FuncCall:
             """Grammar rule.
@@ -2392,38 +2389,27 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.match_token(Tok.COMMA)
             return self.flat_cur_nodes
 
-        def assignment_list(self, _: None) -> uni.SubNodeList[uni.Assignment]:
+        def assignment_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             assignment_list: (assignment_list COMMA)? (assignment | NAME)
             """
 
             def name_to_assign(name_consume: uni.NameAtom) -> uni.Assignment:
-                target = uni.SubNodeList[uni.Expr](
-                    items=[name_consume], delim=Tok.EQ, kid=[name_consume]
-                )
                 return uni.Assignment(
-                    target=target.items, value=None, type_tag=None, kid=[target]
+                    target=[name_consume], value=None, type_tag=None, kid=[name_consume]
                 )
 
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                assign = self.match(uni.Assignment) or self.consume(uni.NameAtom)
-                if isinstance(assign, uni.NameAtom):
-                    assign = name_to_assign(assign)
-                new_kid = [*consume.kid, comma, assign]
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+            if self.match(uni.Assignment):
+                pass
             elif name_consume := self.match(uni.NameAtom):
-                name_assign = name_to_assign(name_consume)
-                new_kid = [name_assign]
+                self.cur_nodes[self.node_idx - 1] = name_to_assign(name_consume)
             else:
                 assign = self.consume(uni.Assignment)
-                new_kid = [assign]
-            valid_kid = [i for i in new_kid if isinstance(i, uni.Assignment)]
-            return uni.SubNodeList[uni.Assignment](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+                self.cur_nodes[self.node_idx - 1] = assign
+            return self.flat_cur_nodes
 
         def type_ref(self, kid: list[uni.UniNode]) -> uni.TypeRef:
             """Grammar rule.
