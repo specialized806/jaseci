@@ -372,12 +372,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             import_stmt: KW_IMPORT KW_FROM from_path LBRACE import_items RBRACE
-                    | KW_IMPORT KW_FROM from_path COMMA import_items SEMI  //Deprecated
                     | KW_IMPORT import_path (COMMA import_path)* SEMI
                     | KW_INCLUDE import_path SEMI
             """
             # TODO: kid will be removed so let's keep as it is for now.
-            kid = self.cur_nodes
+            kid = self.flat_cur_nodes
 
             if self.match_token(Tok.KW_INCLUDE):
                 # Handle include statement
@@ -401,10 +400,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 from_path = self.consume(uni.ModulePath)
                 self.consume(uni.Token)  # LBRACE or COMMA
                 items_list = self.consume(list)
-                if self.consume(uni.Token).name == Tok.SEMI:  # RBRACE or SEMI
-                    self.parse_ref.log_warning(
-                        "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
-                    )
+                self.consume(uni.Token)
                 items = self.extract_from_list(items_list, uni.ModuleItem)
             else:
                 paths = [self.consume(uni.ModulePath)]
@@ -484,9 +480,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             import_items: (import_item COMMA)* import_item COMMA?
             """
-            self.consume(uni.ModuleItem)
-            while self.match_token(Tok.COMMA):
-                self.consume(uni.ModuleItem)
             return self.flat_cur_nodes
 
         def import_item(self, _: None) -> uni.ModuleItem:
