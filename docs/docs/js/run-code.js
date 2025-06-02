@@ -5,7 +5,6 @@ let monacoLoaded = false;
 let monacoLoadPromise = null;
 const initializedBlocks = new WeakSet();
 
-
 // Initialize Pyodide Worker
 function initPyodideWorker() {
     if (pyodideWorker) return pyodideInitPromise;
