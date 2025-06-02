@@ -1340,7 +1340,8 @@ class JacLanguageTests(TestCase):
         self.assertIn("MyWalker() from node MyNode(val=20)", stdout_value[2])
         self.assertIn("MyWalker() from node MyNode(val=60)", stdout_value[4])
         self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[6])
-        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[7])
+        self.assertIn("MyWalker() from node MyNode(val=90)", stdout_value[7])
+        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[9])
 
     def test_async_ability(self) -> None:
         """Test async ability."""
@@ -1354,5 +1355,3 @@ class JacLanguageTests(TestCase):
         self.assertIn("I am here man MyNode(val=5)", stdout_value[0])
         self.assertIn("Async function", stdout_value[1])
         self.assertIn("I am here man MyNode(val=1)", stdout_value[2])
-        self.assertIn("MyWalker() from node MyNode(val=90)", stdout_value[7])
-        self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[9])
