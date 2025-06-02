@@ -604,21 +604,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
             arch_type = self.consume(uni.Token)
             access = self.match(uni.SubTag)
             name = self.consume(uni.Name)
-            sub_list1 = self.match(uni.SubNodeList)
-            sub_list2 = self.match(uni.SubNodeList)
-            if self.match_token(Tok.SEMI):
-                inh, body = sub_list1, None
+            inh_sn = self.match(uni.SubNodeList)
+            body_list = self.match(list)
+            body: list[uni.ArchBlockStmt] | None
+            if body_list is None and self.match_token(Tok.SEMI):
+                body = None
             else:
-                body_sn = sub_list2 or sub_list1
-                body = body_sn.items if body_sn else []
-                inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
+                body = self.extract_from_list(body_list or [], uni.ArchBlockStmt)
             return uni.Archetype(
                 arch_type=arch_type,
                 name=name,
                 access=access,
-                base_classes=inh.items if inh else [],
+                base_classes=inh_sn.items if inh_sn else [],
                 body=body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def arch_type(self, _: None) -> uni.Token:
@@ -917,22 +916,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def member_block(self, _: None) -> uni.SubNodeList[uni.ArchBlockStmt]:
+        def member_block(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             member_block: LBRACE member_stmt* RBRACE
             """
-            left_enc = self.consume_token(Tok.LBRACE)
-            items = self.match_many(uni.ArchBlockStmt)
-            right_enc = self.consume_token(Tok.RBRACE)
-            ret = uni.SubNodeList[uni.ArchBlockStmt](
-                items=items,
-                delim=Tok.WS,
-                kid=self.cur_nodes,
-            )
-            ret.left_enc = left_enc
-            ret.right_enc = right_enc
-            return ret
+            self.consume_token(Tok.LBRACE)
+            self.match_many(uni.ArchBlockStmt)
+            self.consume_token(Tok.RBRACE)
+            return [*self.cur_nodes]
 
         def member_stmt(self, _: None) -> uni.ArchBlockStmt:
             """Grammar rule.
