@@ -3,10 +3,14 @@ let pyodideReady = false;
 let pyodideInitPromise = null;
 let monacoLoaded = false;
 let monacoLoadPromise = null;
+const initializedBlocks = new WeakSet();
+
 
 // Initialize Pyodide Worker
 function initPyodideWorker() {
     if (pyodideWorker) return pyodideInitPromise;
+    if (pyodideInitPromise) return pyodideInitPromise;
+
     pyodideWorker = new Worker("/js/pyodide-worker.js");
     pyodideInitPromise = new Promise((resolve, reject) => {
         pyodideWorker.onmessage = (event) => {
@@ -58,8 +62,8 @@ function loadMonacoEditor() {
 // Setup Code Block with Monaco Editor
 async function setupCodeBlock(div) {
     if (div._monacoInitialized) return;
-    div._monacoInitialized = true;
 
+    div._monacoInitialized = true;
     const originalCode = div.textContent.trim();
 
     div.innerHTML = `
@@ -103,7 +107,6 @@ async function setupCodeBlock(div) {
         container.style.height = `${height}px`;
         editor.layout();
     }
-
     updateEditorHeight();
     editor.onDidChangeModelContent(updateEditorHeight);
 
@@ -126,15 +129,41 @@ async function setupCodeBlock(div) {
     });
 }
 
-const observer = new MutationObserver(() => {
-    document.querySelectorAll('.code-block').forEach(setupCodeBlock);
+const lazyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const div = entry.target;
+            if (!initializedBlocks.has(div)) {
+                setupCodeBlock(div);
+                initializedBlocks.add(div);
+                lazyObserver.unobserve(div);
+            }
+        }
+    });
+}, {
+    root: null, 
+    rootMargin: "0px",
+    threshold: 0.1
 });
 
-observer.observe(document.body, {
+function observeUninitializedCodeBlocks() {
+    document.querySelectorAll('.code-block').forEach((block) => {
+        if (!initializedBlocks.has(block)) {
+            lazyObserver.observe(block);
+        }
+    });
+}
+
+const domObserver = new MutationObserver(() => {
+    observeUninitializedCodeBlocks();
+});
+
+domObserver.observe(document.body, {
     childList: true,
     subtree: true
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+    observeUninitializedCodeBlocks();
     initPyodideWorker();
 });
