@@ -2856,11 +2856,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
             class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
                         | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
+            name_idx = 0
             cur_element = self.consume(uni.NameAtom)
+            name_idx += 1
             trailer: uni.AtomTrailer | None = None
             while dot := self.match_token(Tok.DOT):
                 target = trailer if trailer else cur_element
-                right = self.consume(uni.Expr)
+                right = self.consume(uni.NameAtom)
+                name_idx += 2
                 trailer = uni.AtomTrailer(
                     target=target,
                     right=right,
@@ -2873,41 +2876,27 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 raise TypeError(
                     f"Expected name to be either NameAtom or AtomTrailer, got {type(name)}"
                 )
-            lparen = self.consume_token(Tok.LPAREN)
-            first = self.match(uni.SubNodeList)
-            second = (
-                self.consume(uni.SubNodeList)
-                if (comma := self.match_token(Tok.COMMA))
-                else None
-            )
-            rparen = self.consume_token(Tok.RPAREN)
-            arg = (
-                first
-                if (first and isinstance(first.items[0], uni.MatchPattern))
-                else None
-            )
-            kw = (
-                second
-                if (second and isinstance(second.items[0], uni.MatchKVPair))
-                else (
-                    first
-                    if (first and isinstance(first.items[0], uni.MatchKVPair))
-                    else None
-                )
-            )
-            kid_nodes: list = [name, lparen]
-            if arg:
-                kid_nodes.append(arg)
-                if kw:
-                    kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
-            elif kw:
-                kid_nodes.append(kw)
-            kid_nodes.append(rparen)
+            self.consume_token(Tok.LPAREN)
+            first = self.match(list) or self.match(uni.SubNodeList)
+            second: list[uni.UniNode] | None = None
+            if isinstance(first, uni.SubNodeList) and self.match_token(Tok.COMMA):
+                second = self.consume(list)
+            self.consume_token(Tok.RPAREN)
+            if isinstance(first, list):
+                arg = None
+                kw_list = first
+            else:
+                arg = first
+                kw_list = second
             return uni.MatchArch(
                 name=name,
-                arg_patterns=arg.items if arg else None,
-                kw_patterns=kw.items if kw else None,
-                kid=kid_nodes,
+                arg_patterns=arg.items if isinstance(arg, uni.SubNodeList) else None,
+                kw_patterns=(
+                    self.extract_from_list(kw_list, uni.MatchKVPair)
+                    if kw_list
+                    else None
+                ),
+                kid=[name, *self.flat_cur_nodes[name_idx:]],
             )
 
         def pattern_list(self, _: None) -> uni.SubNodeList[uni.MatchPattern]:
@@ -2928,27 +2917,22 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=new_kid,
             )
 
-        def kw_pattern_list(self, _: None) -> uni.SubNodeList[uni.MatchKVPair]:
+        def kw_pattern_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
             """
-            new_kid: list = []
-            if consume := self.match(uni.SubNodeList):
+            new_kid: list[uni.UniNode] = []
+            if consume := self.match(list):
                 comma = self.consume_token(Tok.COMMA)
-                new_kid.extend([*consume.kid, comma])
+                new_kid.extend([*consume, comma])
             name = self.consume(uni.NameAtom)
             eq = self.consume_token(Tok.EQ)
             value = self.consume(uni.MatchPattern)
-            new_kid.extend(
-                [uni.MatchKVPair(key=name, value=value, kid=[name, eq, value])]
+            new_kid.append(
+                uni.MatchKVPair(key=name, value=value, kid=[name, eq, value])
             )
-            valid_kid = [i for i in new_kid if isinstance(i, uni.MatchKVPair)]
-            return uni.SubNodeList[uni.MatchKVPair](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+            return new_kid
 
         def __default_token__(self, token: jl.Token) -> uni.Token:
             """Token handler."""
