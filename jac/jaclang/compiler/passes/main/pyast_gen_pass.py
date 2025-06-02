@@ -229,7 +229,6 @@ class PyastGenPass(UniPass):
             | Sequence[uni.EnumBlockStmt]
             | uni.SubNodeList[uni.CodeBlockStmt]
             | uni.SubNodeList[uni.ArchBlockStmt]
-            | uni.SubNodeList[uni.EnumBlockStmt]
             | None
         ),
         doc: Optional[uni.String] = None,

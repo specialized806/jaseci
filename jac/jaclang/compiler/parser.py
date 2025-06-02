@@ -546,10 +546,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 or self.match(uni.FuncSignature)
                 or self.match(uni.EventSignature)
             )
-            tail = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
+            tail = (
+                self.match(list)
+                or self.match(uni.SubNodeList)
+                or self.match(uni.FuncCall)
+            )
             valid_tail = spec if tail is None else tail
             valid_spec = None if tail is None else spec
-            assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
+            assert isinstance(valid_tail, (list, uni.SubNodeList, uni.FuncCall))
 
             impl = uni.ImplDef(
                 body=(
@@ -584,13 +588,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def impl_tail(
             self, _: None
-        ) -> uni.SubNodeList[uni.CodeBlockStmt] | uni.FuncCall:
+        ) -> Sequence[uni.EnumBlockStmt] | uni.SubNodeList[uni.CodeBlockStmt] | uni.FuncCall:
             """Grammar rule.
 
             impl_tail: enum_block | block_tail
             """
             tail = (
-                self.match(uni.SubNodeList)  # enum_block
+                self.match(list)  # enum_block
                 or self.match(uni.SubNodeList)  # block_tail (code_block)
                 or self.consume(uni.FuncCall)  # block_tail (KW_BY atomic_call)
             )
@@ -700,22 +704,21 @@ class JacParser(Transform[uni.Source, uni.Module]):
             access = self.match(uni.SubTag)
             name = self.consume(uni.Name)
             sub_list1 = self.match(uni.SubNodeList)
-            sub_list2 = self.match(uni.SubNodeList)
+            enum_body = self.match(list)
             if self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
             else:
-                body_sn = sub_list2 or sub_list1
-                body = body_sn.items if body_sn else []
-                inh = sub_list2 and sub_list1
+                body = enum_body or []
+                inh = sub_list1
             return uni.Enum(
                 name=name,
                 access=access,
                 base_classes=inh.items if inh else [],
                 body=body,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
-        def enum_block(self, _: None) -> uni.SubNodeList[uni.EnumBlockStmt]:
+        def enum_block(self, _: None) -> list[uni.EnumBlockStmt]:
             """Grammar rule.
 
             enum_block: LBRACE assignment_list COMMA? (py_code_block | free_code)* RBRACE
@@ -735,7 +738,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             for i in assignments.kid:
                 if isinstance(i, uni.Assignment):
                     i.is_enum_stmt = True
-            return assignments
+            return assignments.items
 
         def ability(self, _: None) -> uni.Ability | uni.FuncCall:
             """Grammar rule.
