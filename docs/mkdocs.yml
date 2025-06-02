@@ -43,12 +43,12 @@ nav:
       - "learn/jac-cloud/quickstart.md"
       - Features:
         - "learn/jac-cloud/permission.md"
-        - "learn/jac-cloud/jac_cloud_logging.md"
-        - "learn/jac-cloud/jac_cloud_env_vars.md"
-        - "learn/jac-cloud/jac_cloud_scheduler.md"
-        - "learn/jac-cloud/jac_cloud_async_walker.md"
-        - "learn/jac-cloud/jac_cloud_webhook.md"
-        - "learn/jac-cloud/jac_cloud_websocket.md"
+        - "learn/jac-cloud/logging.md"
+        - "learn/jac-cloud/env_vars.md"
+        - "learn/jac-cloud/scheduler.md"
+        - "learn/jac-cloud/async_walker.md"
+        - "learn/jac-cloud/webhook.md"
+        - "learn/jac-cloud/websocket.md"
       - "learn/jac-cloud/cloud-orc-integration.md"
     - Tooling:
       - "learn/tools/cli.md"

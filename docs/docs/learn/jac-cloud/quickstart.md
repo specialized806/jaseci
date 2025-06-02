@@ -245,9 +245,9 @@ Control Jac Cloud behavior with these environment variables:
 Now that you understand the basics, explore more advanced features:
 
 - [Authentication & Permissions](permission.md)
-- [Real-time WebSocket Communication](jac_cloud_websocket.md)
-- [Task Scheduling](jac_cloud_scheduler.md)
-- [Webhook Integration](jac_cloud_webhook.md)
-- [Environment Variables](jac_cloud_env_vars.md)
-- [Logging & Monitoring](jac_cloud_logging.md)
+- [Real-time WebSocket Communication](websocket.md)
+- [Task Scheduling](scheduler.md)
+- [Webhook Integration](webhook.md)
+- [Environment Variables](env_vars.md)
+- [Logging & Monitoring](logging.md)
 - [Kubernetes Deployment](cloud-orc-integration.md)

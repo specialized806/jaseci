@@ -79,13 +79,13 @@ Jac Cloud is perfect for:
 
 ## Next Steps
 
-Ready to get started? Check out our [Getting Started Guide](getting_started.md) to build your first Jac Cloud application, or explore specific features:
+Ready to get started? Check out our [Getting Started Guide](quickstart.md) to build your first Jac Cloud application, or explore specific features:
 
-- [Walker Endpoints and API Configuration](getting_started.md#walker-endpoints)
-- [WebSocket Real-time Communication](jac_cloud_websocket.md)
-- [Task Scheduling](jac_cloud_scheduler.md)
+- [Walker Endpoints and API Configuration](quickstart.md#walker-endpoints)
+- [WebSocket Real-time Communication](websocket.md)
+- [Task Scheduling](scheduler.md)
 - [Kubernetes Deployment](cloud-orc-integration.md)
-- [Logging and Monitoring](jac_cloud_logging.md)
+- [Logging and Monitoring](logging.md)
 
 ## Community and Support
 
