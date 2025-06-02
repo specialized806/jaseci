@@ -41,15 +41,17 @@ nav:
     - Jac Cloud Guide:
       - "learn/jac-cloud/introduction.md"
       - "learn/jac-cloud/quickstart.md"
-      - Features:
+      - Core Features:
         - "learn/jac-cloud/permission.md"
         - "learn/jac-cloud/logging.md"
         - "learn/jac-cloud/env_vars.md"
+      - Real-time & Async:
+        - "learn/jac-cloud/websocket.md"
         - "learn/jac-cloud/scheduler.md"
         - "learn/jac-cloud/async_walker.md"
         - "learn/jac-cloud/webhook.md"
-        - "learn/jac-cloud/websocket.md"
-      - "learn/jac-cloud/deployment.md"
+      - Operations:
+        - "learn/jac-cloud/deployment.md"
     - Tooling:
       - "learn/tools/cli.md"
 

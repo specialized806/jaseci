@@ -1,44 +1,49 @@
-# WebSocket Communication
+# Real-Time Communication with WebSockets
 
-## Overview
+## What Are WebSockets?
 
-Jac Cloud provides built-in WebSocket support for real-time, bidirectional communication between your server and clients. This allows you to build interactive applications like chat systems, live notifications, and collaborative tools.
+WebSockets enable real-time, two-way communication between your Jac Cloud server and clients. Unlike regular HTTP requests, WebSockets maintain a persistent connection, allowing you to build:
 
-## Getting Started
+- Live chat applications
+- Real-time notifications
+- Collaborative editing tools
+- Live dashboards
+- Multiplayer games
 
-### Declaring a WebSocket Walker
+## Getting Started in 5 Minutes
+
+### Step 1: Create a WebSocket Walker
 
 To create a WebSocket endpoint, add the `"websocket"` method to your walker's `__specs__` configuration:
 
 ```jac
-walker your_event_name {
-    has val: int;
+walker chat_service {
+    has message: str;
 
     can enter with `root entry {
-        report "Do something!";
+        report "Received: " + self.message;
     }
 
     class __specs__ {
-        has methods: list = ["websocket"];
+        has methods: list = ["websocket"];  // This makes it a WebSocket endpoint
     }
 }
 ```
 
-!!! note
-    WebSocket walkers can also support other HTTP methods, but file uploads are not supported.
+!!! tip "WebSocket + HTTP"
+    WebSocket walkers can also support other HTTP methods (GET, POST, etc.), but file uploads are not supported via WebSocket connections.
 
-## Connecting to WebSockets
+### Step 2: Connect From a Client
 
-### Connection Details
+Use standard WebSocket clients to connect to your endpoint:
 
+**Connection Details:**
 - **Protocol**: `ws://` (or `wss://` for secure connections)
 - **URL**: `/websocket`
 - **Optional Header**: `Authorization: Bearer {{USER-TOKEN}}`
 - **Optional Query Parameter**: `?channel_id=anystring`
 
-### Initial Connection Response
-
-Upon connection, you'll receive a connection event with client information:
+When connected, you'll receive a connection event with client information:
 
 ```json
 {
@@ -51,75 +56,58 @@ Upon connection, you'll receive a connection event with client information:
 }
 ```
 
-### Authentication Types
+## Sending Messages From Clients
 
-- **Authenticated**: Connect with a valid JWT token in the Authorization header
-- **Non-Authenticated**: Connect without a token (assigned a public user ID)
-
-## Client Events
-
-Clients can send various event types to the server:
-
-### Walker Event
-
-Triggers a walker execution:
+### Trigger a Walker Execution
 
 ```json
 {
     "type": "walker",
-    "walker": "your_event_name",
+    "walker": "chat_service",
     "response": true,
     "context": {
-        "val": 1
+        "message": "Hello, server!"
     }
 }
 ```
 
-### User Event
-
-Sends a notification to specific users:
+### Send a Message to Specific Users
 
 ```json
 {
     "type": "user",
     "root_ids": ["n::672b35cec309e5ef8469c372"],
     "data": {
-        "val": 1
+        "message": "Hello, specific user!"
     }
 }
 ```
 
-### Channel Event
-
-Sends a notification to all clients subscribed to specific channels:
+### Send a Message to a Channel
 
 ```json
 {
     "type": "channel",
-    "channel_ids": ["anystring"],
+    "channel_ids": ["room_123"],
     "data": {
-        "val": 1
+        "message": "Hello, everyone in this channel!"
     }
 }
 ```
 
-### Client Event
-
-Sends a notification to specific clients:
+### Send a Message to Specific Clients
 
 ```json
 {
     "type": "client",
     "client_ids": ["1730887348:f46d85203c704c099e9f44e948322a20"],
     "data": {
-        "val": 1
+        "message": "Hello, specific client!"
     }
 }
 ```
 
-### Change User Event
-
-Switches between authenticated and public user:
+### Switch Between Authenticated and Public User
 
 ```json
 {
@@ -128,7 +116,7 @@ Switches between authenticated and public user:
 }
 ```
 
-## Server Notifications
+## Sending Messages From the Server
 
 To send notifications from your walkers, import the WebSocket manager:
 
@@ -140,53 +128,60 @@ import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 
 #### Notify Current Client
 
-Send a notification to the client that triggered the WebSocket walker:
-
 ```jac
-socket.notify_self({"progress": "0%", "status": "started"});
+socket.notify_self({
+    "progress": "0%",
+    "status": "started"
+});
 ```
 
-#### Notify Users
-
-Send a notification to all clients of specific users:
+#### Notify Specific Users
 
 ```jac
-socket.notify_users([root], {"progress": "50%", "status": "processing"});
+socket.notify_users([root_id], {
+    "progress": "50%",
+    "status": "processing"
+});
 ```
 
 #### Notify Channels
 
-Send a notification to all clients subscribed to specific channels:
-
 ```jac
-socket.notify_channels([channel_id], {"progress": "75%", "status": "finalizing"});
+socket.notify_channels([channel_id], {
+    "progress": "75%",
+    "status": "finalizing"
+});
 ```
 
-#### Notify Clients
-
-Send a notification to specific clients:
+#### Notify Specific Clients
 
 ```jac
-socket.notify_clients([client_id], {"progress": "100%", "status": "completed"});
+socket.notify_clients([client_id], {
+    "progress": "100%",
+    "status": "completed"
+});
 ```
 
-## Complete Example
+## Complete Example: Chat Application
 
-### Jac Server Code
+### Server-Side Code (Jac)
 
 ```jac
-"""Websocket chat application example."""
+"""Simple WebSocket chat application example."""
 import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 
+// Send message to a specific user
 walker send_chat_to_user {
     has root_id: str;
+    has message: str = "Hello user!";
 
     can enter with `root entry {
         _root = &(self.root_id);
         socket.notify_users([_root], {
             "type": "chat",
-            "data": {"message": "Hello user!"}
+            "data": {"message": self.message}
         });
+        report "Message sent to user!";
     }
 
     class __specs__ {
@@ -194,14 +189,17 @@ walker send_chat_to_user {
     }
 }
 
+// Send message to a channel/group
 walker send_chat_to_group {
     has channel_id: str;
+    has message: str = "Hello channel!";
 
     can enter with `root entry {
         socket.notify_channels([self.channel_id], {
             "type": "chat",
-            "data": {"message": "Hello channel!"}
+            "data": {"message": self.message}
         });
+        report "Message sent to channel!";
     }
 
     class __specs__ {
@@ -210,7 +208,7 @@ walker send_chat_to_group {
 }
 ```
 
-### JavaScript Client Code
+### Client-Side Code (JavaScript)
 
 #### Connecting to WebSocket
 
@@ -226,21 +224,11 @@ client.onopen = (event) => {
     "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }));
 };
-
-// Authenticated connection with headers (requires 3rd party library)
-import WebSocket from 'ws';  // Example using 'ws' library
-const client = new WebSocket('ws://localhost:8000/websocket', {
-  headers: {
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-});
 ```
 
 !!! warning "Browser WebSocket Limitations"
     The standard browser WebSocket API doesn't support custom headers.
-    For authenticated connections in browsers, either:
-    1. Use the change_user event after connecting
-    2. Use a third-party WebSocket library that supports headers
+    For authenticated connections in browsers, use the change_user event after connecting.
 
 #### Handling Messages
 
@@ -254,59 +242,61 @@ client.onmessage = (event) => {
       break;
     case "chat":
       console.log("Received chat:", msg.data.message);
+      // Update UI with the new message
+      displayMessage(msg.data.message);
       break;
     default:
       console.log("Received event:", msg.type, msg.data);
   }
 };
+
+// Example function to display messages in UI
+function displayMessage(message) {
+  const messageElement = document.createElement("div");
+  messageElement.textContent = message;
+  document.getElementById("chat-messages").appendChild(messageElement);
+}
 ```
 
-#### Sending Events
+#### Sending Messages
 
 ```javascript
-// Trigger a walker
-client.send(JSON.stringify({
-  "type": "walker",
-  "walker": "send_chat_to_user",
-  "response": true,
-  "context": {
-    "root_id": "n::672b35cec309e5ef8469c372"
-  }
-}));
-
-// Send a direct message to another client
-client.send(JSON.stringify({
-  "type": "client",
-  "client_ids": ["1730887348:f46d85203c704c099e9f44e948322a20"],
-  "data": {
-    "type": "chat",
-    "data": {
-      "message": "Hello there!"
+// Function to send a message
+function sendMessage(message) {
+  // Trigger the send_chat_to_group walker
+  client.send(JSON.stringify({
+    "type": "walker",
+    "walker": "send_chat_to_group",
+    "response": true,
+    "context": {
+      "channel_id": "room_123",
+      "message": message
     }
-  }
-}));
+  }));
+}
 
-// Send a message to a channel
-client.send(JSON.stringify({
-  "type": "channel",
-  "channel_ids": ["room_123"],
-  "data": {
-    "type": "chat",
-    "data": {
-      "message": "Hello everyone!"
-    }
-  }
-}));
+// Example: Connect send button to the function
+document.getElementById("send-button").addEventListener("click", () => {
+  const messageInput = document.getElementById("message-input");
+  sendMessage(messageInput.value);
+  messageInput.value = "";
+});
 ```
 
-## Additional Resources
-
-For a complete working example, you can download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia).
-
-## Best Practices
+## WebSocket Best Practices
 
 1. **Use typed events**: Include a "type" field in your data to easily differentiate message types
 2. **Handle reconnection**: Implement reconnection logic in your client to handle network issues
 3. **Validate permissions**: Check user permissions before broadcasting sensitive information
 4. **Structure data consistently**: Maintain a consistent data structure for your WebSocket messages
 5. **Consider scalability**: For high-traffic applications, consider using the channel-based approach
+
+## Additional Resources
+
+For a complete working example, you can download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia).
+
+## Next Steps
+
+- Learn about [Webhook Integration](webhook.md) for third-party service integration
+- Explore [Task Scheduling](scheduler.md) for automated background tasks
+- Implement [Authentication & Permissions](permission.md) for secure applications

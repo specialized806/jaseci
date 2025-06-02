@@ -1,180 +1,316 @@
-# Environment Variable Configuration
+# Environment Variables: Configuration Made Easy
 
-Jac Cloud can be customized through environment variables, allowing you to configure various aspects of your application without changing code. This guide organizes these variables by category for easier reference.
+## What Are Environment Variables?
 
-## Core Configuration
+Environment variables are a simple way to configure your Jac Cloud application without changing code. Think of them as settings you can adjust from outside your application. They're perfect for:
 
-### Database Settings
+- Switching between development and production settings
+- Connecting to different databases
+- Adjusting security parameters
+- Enabling or disabling features
+- Storing API keys and secrets
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `DATABASE_HOST` | MongoDB connection string | `mongodb://localhost/?retryWrites=true&w=majority` |
-| `DATABASE_PATH` | Local path for DB | `mydatabase` |
-| `DATABASE_NAME` | MongoDB database name | `jaseci` |
+<!-- ![Environment Variables Diagram](https://via.placeholder.com/800x300?text=Environment+Variables+Diagram) -->
 
-### Redis Configuration
+## Quick Start: Setting Your First Variables
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `REDIS_HOST` | Redis connection host | `redis://localhost` |
-| `REDIS_PORT` | Redis connection port | `6379` |
-| `REDIS_USER` | Redis connection username | `null` |
-| `REDIS_PASS` | Redis connection password | `null` |
+### In Development (Command Line)
+
+```bash
+# Set variables before running your application
+export DATABASE_NAME=my_app_dev
+export LOGGER_LEVEL=debug
+jac serve main.jac
+```
+
+### In Production (Environment File)
+
+```bash
+# Create a .env file
+echo "DATABASE_NAME=my_app_prod" > .env
+echo "LOGGER_LEVEL=info" >> .env
+
+# Load variables and run
+source .env
+jac serve main.jac
+```
+
+## Core Configuration Groups
+
+### Database Connection
+
+Connect to MongoDB or local storage:
+
+```bash
+# MongoDB Atlas (cloud database)
+export DATABASE_HOST="mongodb+srv://username:password@cluster.mongodb.net"
+export DATABASE_NAME="production_db"
+
+# OR Local database
+export DATABASE_PATH="local_data"
+export DATABASE_NAME="my_app"
+```
+
+### Redis Configuration (for WebSockets & Caching)
+
+```bash
+# Basic Redis setup
+export REDIS_HOST="redis://redis.example.com"
+export REDIS_PORT="6379"
+
+# Secured Redis
+export REDIS_USER="admin"
+export REDIS_PASS="your_secure_password"
+```
 
 ### API Behavior
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `DISABLE_AUTO_ENDPOINT` | Disable automatic conversion of walkers to API endpoints | `false` |
-| `SHOW_ENDPOINT_RETURNS` | Include walker return values in API responses | `false` |
+```bash
+# Show detailed responses including return values
+export SHOW_ENDPOINT_RETURNS=true
 
-## Authentication & Security
+# Disable automatic API endpoint generation
+export DISABLE_AUTO_ENDPOINT=true
+```
 
-### Token Configuration
+## Security Settings
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `TOKEN_SECRET` | Random string used to encrypt tokens | 50 random characters |
-| `TOKEN_ALGORITHM` | Algorithm used to encrypt tokens | `HS256` |
-| `TOKEN_TIMEOUT` | Token expiration in hours | `12` |
+### Token Security
+
+```bash
+# Strong security for production
+export TOKEN_SECRET="a_long_random_string_that_is_very_hard_to_guess"
+export TOKEN_ALGORITHM="HS512"  # More secure algorithm
+export TOKEN_TIMEOUT="4"        # 4-hour tokens
+```
 
 ### User Verification
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `RESTRICT_UNVERIFIED_USER` | Restrict user login until verified | `false` |
-| `VERIFICATION_CODE_TIMEOUT` | Verification code expiration in hours | `24` |
-| `RESET_CODE_TIMEOUT` | Password reset code expiration in hours | `24` |
+```bash
+# Require email verification before login
+export RESTRICT_UNVERIFIED_USER=true
+export VERIFICATION_CODE_TIMEOUT=48  # 48 hours to verify
+export RESET_CODE_TIMEOUT=1          # 1 hour to reset password
+```
 
-### Email Integration
+### Email Integration (for Verification)
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `SENDGRID_HOST` | Host used for verification/reset links | `http://localhost:8000` |
-| `SENDGRID_API_KEY` | SendGrid API key | `null` |
-
-## Data Management
-
-### Graph Optimization
-
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `DISABLE_AUTO_CLEANUP` | Disable automatic deletion of disconnected nodes | `false` |
-| `SINGLE_QUERY` | Use individual queries instead of batch queries | `false` |
-
-### Transaction Control
-
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `SESSION_MAX_TRANSACTION_RETRY` | MongoDB transaction retry count | `1` |
-| `SESSION_MAX_COMMIT_RETRY` | MongoDB transaction commit retry count | `1` |
+```bash
+# SendGrid configuration for email notifications
+export SENDGRID_HOST="https://api.example.com"
+export SENDGRID_API_KEY="SG.your-sendgrid-api-key"
+```
 
 ## Logging Configuration
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `LOGGER_NAME` | Specified logger name | `app` |
-| `LOGGER_LEVEL` | Control log level (debug, info, warning, error) | `debug` |
-| `LOGGER_FILE_PATH` | Log directory and filename | `/tmp/jac_cloud_logs/jac-cloud.log` |
-| `LOGGER_ROLLOVER_INTERVAL` | Rotation interval (M=minute, H=hourly, D=daily, W=weekly) | `D` |
-| `LOGGER_MAX_BACKUP` | Maximum backup files before deletion (negative = unlimited) | `-1` |
-| `LOGGER_ROLLOVER_MAX_FILE_SIZE` | Maximum file size in bytes before rollover | `10000000` |
-| `LOGGER_USE_UTC` | Whether logger uses UTC time | `false` |
+Control what gets logged and where:
 
-## Single Sign-On (SSO) Configuration
-
-Jac Cloud supports various SSO providers. To configure them, use the following pattern:
-
+```bash
+# Production logging setup
+export LOGGER_LEVEL="info"                        # Less verbose logging
+export LOGGER_FILE_PATH="/var/log/jac-cloud.log"  # Standard log location
+export LOGGER_ROLLOVER_INTERVAL="D"               # Daily rotation
+export LOGGER_MAX_BACKUP="30"                     # Keep 30 days of logs
 ```
-SSO_{PLATFORM}_CLIENT_ID=your_client_id
-SSO_{PLATFORM}_CLIENT_SECRET=your_client_secret
+
+## Environment Variable Reference Tables
+
+### Database & Cache Settings
+
+| **Variable** | **Description** | **Default** | **Example** |
+|--------------|-----------------|-------------|-------------|
+| `DATABASE_HOST` | MongoDB connection string | `mongodb://localhost/?retryWrites=true&w=majority` | `mongodb+srv://user:pass@cluster.mongodb.net` |
+| `DATABASE_NAME` | MongoDB database name | `jaseci` | `my_production_db` |
+| `DATABASE_PATH` | Local path for DB | `mydatabase` | `path/to/db` |
+| `REDIS_HOST` | Redis connection host | `redis://localhost` | `redis://redis.example.com` |
+| `REDIS_PORT` | Redis connection port | `6379` | `6380` |
+| `REDIS_USER` | Redis username | `null` | `admin` |
+| `REDIS_PASS` | Redis password | `null` | `secret123` |
+
+### API & Application Behavior
+
+| **Variable** | **Description** | **Default** | **Example** |
+|--------------|-----------------|-------------|-------------|
+| `DISABLE_AUTO_ENDPOINT` | Disable automatic API endpoints | `false` | `true` |
+| `SHOW_ENDPOINT_RETURNS` | Include walker return values | `false` | `true` |
+| `DISABLE_AUTO_CLEANUP` | Disable automatic deletion of disconnected nodes | `false` | `true` |
+| `SINGLE_QUERY` | Use individual queries instead of batch | `false` | `true` |
+
+### Authentication & Security
+
+| **Variable** | **Description** | **Default** | **Example** |
+|--------------|-----------------|-------------|-------------|
+| `TOKEN_SECRET` | Secret key for token encryption | 50 random characters | `your-super-secure-secret-key` |
+| `TOKEN_ALGORITHM` | Algorithm for token encryption | `HS256` | `HS512` |
+| `TOKEN_TIMEOUT` | Token expiration in hours | `12` | `24` |
+| `RESTRICT_UNVERIFIED_USER` | Require email verification | `false` | `true` |
+| `VERIFICATION_CODE_TIMEOUT` | Verification code expiration (hours) | `24` | `48` |
+| `RESET_CODE_TIMEOUT` | Password reset code expiration (hours) | `24` | `1` |
+
+### Logging Configuration
+
+| **Variable** | **Description** | **Default** | **Example** |
+|--------------|-----------------|-------------|-------------|
+| `LOGGER_LEVEL` | Log level | `debug` | `info` |
+| `LOGGER_FILE_PATH` | Log file location | `/tmp/jac_cloud_logs/jac-cloud.log` | `/var/log/jac-cloud.log` |
+| `LOGGER_ROLLOVER_INTERVAL` | Rotation interval | `D` (daily) | `H` (hourly) |
+| `LOGGER_MAX_BACKUP` | Maximum backup files | `-1` (unlimited) | `30` |
+| `LOGGER_USE_UTC` | Use UTC time | `false` | `true` |
+
+## Social Login Configuration
+
+### Basic Pattern
+
+```bash
+# Replace PLATFORM with: GOOGLE, GITHUB, FACEBOOK, etc.
+export SSO_{PLATFORM}_CLIENT_ID="your_client_id"
+export SSO_{PLATFORM}_CLIENT_SECRET="your_client_secret"
+```
+
+### Google Example
+
+```bash
+export SSO_GOOGLE_CLIENT_ID="123456789-abcdef.apps.googleusercontent.com"
+export SSO_GOOGLE_CLIENT_SECRET="GOCSPX-abcdefghijklmnop"
+```
+
+### GitHub Example
+
+```bash
+export SSO_GITHUB_CLIENT_ID="abc123def456"
+export SSO_GITHUB_CLIENT_SECRET="ghp_abcdefghijklmnopqrstuvwxyz"
 ```
 
 ### Supported Platforms
 
-- APPLE
-- FACEBOOK
-- FITBIT
-- GITHUB
-- GITLAB
-- GOOGLE
-- KAKAO
-- LINE
-- LINKEDIN
-- MICROSOFT
-- NAVER
-- NOTION
-- TWITTER
-- YANDEX
-
-### Common SSO Variables
-
-| **Variable Pattern** | **Description** |
-|----------------------|-----------------|
-| `SSO_{PLATFORM}_CLIENT_ID` | Platform's client ID |
-| `SSO_{PLATFORM}_CLIENT_SECRET` | Platform's client secret |
-| `SSO_{PLATFORM}_ALLOW_INSECURE_HTTP` | Allow insecure HTTP connections |
-
-### Platform-Specific Variables
-
-| **Variable** | **Description** |
-|--------------|-----------------|
-| `SSO_GITLAB_BASE_ENDPOINT_URL` | GitLab base endpoint URL |
-| `SSO_MICROSOFT_TENANT` | Microsoft tenant ID |
-
-### Apple-Specific Configuration
-
-Apple requires additional configuration for client secret generation:
-
-| **Variable** | **Description** |
-|--------------|-----------------|
-| `SSO_APPLE_CLIENT_ID` | Apple client ID |
-| `SSO_APPLE_CLIENT_TEAM_ID` | Apple client team ID |
-| `SSO_APPLE_CLIENT_KEY` | Apple client key |
-| `SSO_APPLE_CLIENT_CERTIFICATE_PATH` | Path to Apple client certificate |
-| `SSO_APPLE_CLIENT_CERTIFICATE` | Raw content of Apple client certificate |
+<div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>Google</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>Facebook</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>GitHub</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>Microsoft</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>Apple</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>LinkedIn</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>Twitter</div>
+    </div>
+    <div class="grid-item" style="text-align: center; padding: 15px; border: 1px solid #444; border-radius: 8px; background-color: #333;">
+        <div>GitLab</div>
+    </div>
+</div>
 
 ## Server Configuration (Uvicorn)
 
-Jac Cloud uses Uvicorn as its ASGI server. You can configure it with these variables:
-
-!!! note
-    - All comma-separated configs should not have spaces between values
-    - `UV_RELOAD` and `UV_WORKERS` are not supported with `jac serve`
-    - To use `UV_WORKERS`, run with `poetry run standalone` and set `APP_PATH` to your Jac file
+Jac Cloud uses Uvicorn as its server. Configure it with these variables:
 
 ### Basic Server Settings
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `UV_HOST` | Host to bind to | `127.0.0.1` |
-| `UV_PORT` | Port to bind to | `8000` |
-| `UV_UDS` | Unix domain socket | `None` |
-| `UV_BACKLOG` | Maximum number of connections | `2048` |
-| `UV_TIMEOUT_KEEP_ALIVE` | Seconds to keep idle connections | `5` |
-| `UV_TIMEOUT_GRACEFUL_SHUTDOWN` | Graceful shutdown timeout | `None` |
+```bash
+# Public server configuration
+export UV_HOST="0.0.0.0"        # Listen on all interfaces
+export UV_PORT="80"              # Standard HTTP port
+export UV_TIMEOUT_KEEP_ALIVE="120"  # Keep connections alive longer
+```
 
-### WebSocket Configuration
+### HTTPS/SSL Configuration
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `UV_WS` | WebSocket implementation | `auto` |
-| `UV_WS_MAX_SIZE` | Maximum WebSocket message size | `16777216` |
-| `UV_WS_MAX_QUEUE` | Maximum WebSocket queue size | `32` |
-| `UV_WS_PING_INTERVAL` | WebSocket ping interval | `20.0` |
-| `UV_WS_PING_TIMEOUT` | WebSocket ping timeout | `20.0` |
-| `UV_WS_PER_MESSAGE_DEFLATE` | Enable per-message deflate | `True` |
+```bash
+# Enable HTTPS
+export UV_SSL_KEYFILE="/etc/ssl/private/key.pem"
+export UV_SSL_CERTFILE="/etc/ssl/certs/cert.pem"
+```
 
-### SSL Configuration
+## Environment Presets for Different Scenarios
 
-| **Variable** | **Description** | **Default** |
-|--------------|-----------------|-------------|
-| `UV_SSL_KEYFILE` | SSL key file | `None` |
-| `UV_SSL_CERTFILE` | SSL certificate file | `None` |
-| `UV_SSL_KEYFILE_PASSWORD` | Password for SSL key file | `None` |
-| `UV_SSL_CA_CERTS` | CA certificates file | `None` |
-| `UV_SSL_CIPHERS` | SSL ciphers to use | `TLSv1` |
+### Local Development
 
-### Advanced Settings
+```bash
+# Quick setup for local development
+export DATABASE_NAME="dev_db"
+export LOGGER_LEVEL="debug"
+export SHOW_ENDPOINT_RETURNS="true"
+```
 
-For additional Uvicorn configuration options, refer to the [official Uvicorn documentation](https://www.uvicorn.org/settings/).
+### Testing
+
+```bash
+# Configuration for testing
+export DATABASE_NAME="test_db"
+export LOGGER_LEVEL="debug"
+export TOKEN_TIMEOUT="1"  # Short-lived tokens for testing
+```
+
+### Production
+
+```bash
+# Secure production configuration
+export DATABASE_HOST="mongodb+srv://user:pass@cluster.mongodb.net"
+export DATABASE_NAME="prod_db"
+export LOGGER_LEVEL="info"
+export LOGGER_MAX_BACKUP="30"
+export TOKEN_ALGORITHM="HS512"
+export TOKEN_TIMEOUT="4"
+export RESTRICT_UNVERIFIED_USER="true"
+export UV_HOST="0.0.0.0"
+export UV_PORT="443"
+export UV_SSL_KEYFILE="/etc/ssl/private/key.pem"
+export UV_SSL_CERTFILE="/etc/ssl/certs/cert.pem"
+```
+
+## Best Practices for Beginners
+
+1. **Use environment files**: Create `.env` files for different environments
+   ```bash
+   # Create different environment files
+   touch .env.development .env.testing .env.production
+   ```
+
+2. **Never commit secrets**: Add `.env` files to your `.gitignore`
+   ```bash
+   # Add to .gitignore
+   echo ".env*" >> .gitignore
+   ```
+
+3. **Use different values per environment**:
+   ```bash
+   # Development
+   DATABASE_NAME=my_app_dev
+
+   # Production
+   DATABASE_NAME=my_app_prod
+   ```
+
+4. **Document your variables**: Create a template file showing all options
+   ```bash
+   # Create a template with comments
+   touch .env.template
+   ```
+
+5. **Validate critical variables**: Check for required variables in your code
+   ```jac
+   walker check_config {
+       can enter with `root entry {
+           if not env("DATABASE_HOST") {
+               print("Warning: DATABASE_HOST not set, using default");
+           }
+       }
+   }
+   ```
+
+## Next Steps
+
+- Learn about [WebSocket Communication](websocket.md) for real-time features
+- Explore [Task Scheduling](scheduler.md) for automated background tasks
+- Set up [Logging & Monitoring](logging.md) to track application performance
+- Deploy your app using the [Kubernetes Deployment Guide](deployment.md)

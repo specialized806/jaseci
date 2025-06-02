@@ -1,197 +1,188 @@
-# Kubernetes Deployment Guide
+# Cloud Deployment Guide
 
-## Overview
+## What is Kubernetes Deployment?
 
-The Jac Cloud Kubernetes deployment provides a streamlined way to run your Jac applications in a cloud environment using the `jac-splice-orc` plugin. This setup includes:
+Kubernetes deployment allows you to run your Jac applications in a cloud environment, providing benefits like:
 
-1. A Docker image with all necessary dependencies
-2. Kubernetes configurations for creating required resources
-3. Dynamic configuration through environment variables and ConfigMaps
+- **Scalability**: Run multiple instances of your app to handle more users
+- **Reliability**: Automatic recovery from failures
+- **Resource Efficiency**: Optimal use of computing resources
+- **Easy Updates**: Deploy new versions without downtime
+- **Centralized Management**: Control multiple services from one place
 
-## Prerequisites
+<!-- ![Kubernetes Architecture](https://via.placeholder.com/800x300?text=Kubernetes+Architecture) -->
 
-Before you begin, make sure you have:
+## Getting Started: Prerequisites
 
-- **Kubernetes Cluster**: Access to a Kubernetes cluster
-- **kubectl**: The Kubernetes command-line tool installed
-- **Docker**: Docker installed for building and pushing images (if needed)
-- **OpenAI API Key**: Optional, for applications using OpenAI services
+Before beginning your cloud journey, make sure you have:
 
-## Directory Structure
+| Requirement | Description | How to Get It |
+|-------------|-------------|---------------|
+| **Kubernetes Cluster** | A running Kubernetes cluster | [DigitalOcean](https://www.digitalocean.com/products/kubernetes/), [AWS EKS](https://aws.amazon.com/eks/), [Google GKE](https://cloud.google.com/kubernetes-engine) |
+| **kubectl** | The Kubernetes command-line tool | [Install Guide](https://kubernetes.io/docs/tasks/tools/) |
+| **Docker** | For building container images | [Install Docker](https://docs.docker.com/get-docker/) |
+| **OpenAI API Key** | Optional, for AI features | [OpenAI Platform](https://platform.openai.com/) |
 
-```
-jac-cloud/
-├── scripts/
-│   ├── Dockerfile              # Container image definition
-│   ├── init_jac_cloud.sh       # Initialization script
-│   ├── jac-cloud.yml           # Main Kubernetes configuration
-│   ├── module-config.yml       # Module configuration
-```
+## What's Included
 
-## Deployment Guide
+The Jac Cloud Kubernetes deployment includes:
 
-### Step 1: Build and Push the Docker Image
+- A pre-configured Docker image with all dependencies
+- Ready-to-use Kubernetes configuration files
+- Easy configuration through environment variables
+- Support for dynamic module loading
 
-Build the Jac Cloud Docker image using the provided Dockerfile:
+## Deployment in 5 Simple Steps
+
+### Step 1: Build Your Docker Image
 
 ```bash
-docker build -t your-dockerhub-username/jac-cloud:latest -f jac-cloud/scripts/Dockerfile .
-docker push your-dockerhub-username/jac-cloud:latest
+# Build the image
+docker build -t your-username/jac-cloud:latest -f jac-cloud/scripts/Dockerfile .
+
+# Push to a registry (Docker Hub, AWS ECR, etc.)
+docker push your-username/jac-cloud:latest
 ```
 
-Update the `image` field in `jac-cloud.yml` with your Docker image path.
+!!! tip "Time-Saving Option"
+    If you're just getting started, you can use the official Jaseci image: `jaseci/jac-cloud:latest`
 
-### Step 2: Apply the ConfigMap
+### Step 2: Configure Your Application
 
-The ConfigMap contains module-specific settings for your application:
+Create a ConfigMap with your application settings:
 
 ```bash
 kubectl apply -f jac-cloud/scripts/module-config.yml
 ```
 
-This will:
-- Create the `littlex` namespace if it doesn't exist
-- Apply the module configuration
+This creates:
+- A dedicated namespace for your app
+- Configuration for dynamic module loading
 
-### Step 3: Deploy the Application
-
-Apply the main Kubernetes configuration:
+### Step 3: Deploy Your Application
 
 ```bash
 kubectl apply -f jac-cloud/scripts/jac-cloud.yml
 ```
 
-This creates:
-- RBAC roles and bindings
-- Service account
-- Deployment with appropriate resources
-- Other required Kubernetes objects
+This creates all the necessary resources:
+- Deployment with your container
+- Service account with appropriate permissions
+- Network services and routes
 
-### Step 4: Add OpenAI API Key (Optional)
+### Step 4: Add API Keys (Optional)
 
-If your application uses OpenAI services:
-
-1. Convert your API key to base64:
-   ```bash
-   echo -n "your-openai-key" | base64
-   ```
-
-2. Replace the base64 value in the `data.openai-key` field in `jac-cloud.yml`
-
-3. Apply the updated configuration:
-   ```bash
-   kubectl apply -f jac-cloud/scripts/jac-cloud.yml
-   ```
-
-### Step 5: Verify the Deployment
-
-Confirm that all resources were created successfully:
+If your application uses OpenAI or other services:
 
 ```bash
+# Convert your API key to base64
+echo -n "your-openai-key" | base64
+# Output: eW91ci1vcGVuYWkta2V5
+
+# Update the key in your deployment file
+# Edit jac-cloud.yml and replace the openai-key value
+```
+
+### Step 5: Verify Your Deployment
+
+```bash
+# Check if everything is running
 kubectl get all -n littlex
-```
 
-You should see the `jac-cloud` pod running along with its associated resources.
-
-## Configuration Reference
-
-### Environment Variables
-
-| **Variable** | **Description** | **Default Value** |
-|--------------|-----------------|-------------------|
-| `NAMESPACE` | Target namespace for the deployment | `default` |
-| `CONFIGMAP_NAME` | Name of the ConfigMap to mount | `module-config` |
-| `FILE_NAME` | JAC file to execute in the pod | `example.jac` |
-| `OPENAI_API_KEY` | OpenAI API key (from secret) | None |
-
-### Module Configuration
-
-The `module-config.yml` file defines configurations for dynamically loaded modules:
-
-```json
-{
-  "numpy": {
-    "lib_mem_size_req": "100Mi",
-    "dependency": [],
-    "lib_cpu_req": "500m",
-    "load_type": "remote"
-  },
-  "transformers": {
-    "lib_mem_size_req": "2000Mi",
-    "dependency": ["torch", "transformers"],
-    "lib_cpu_req": "1.0",
-    "load_type": "remote"
-  },
-  "sentence_transformers": {
-    "lib_mem_size_req": "2000Mi",
-    "dependency": ["sentence-transformers"],
-    "lib_cpu_req": "1.0",
-    "load_type": "remote"
-  }
-}
-```
-
-## Troubleshooting
-
-### Verifying Resources
-
-#### Check the Namespace
-```bash
-kubectl get namespaces
-```
-
-#### Check the ConfigMap
-```bash
-kubectl get configmap -n littlex
-```
-
-#### Check the Deployment
-```bash
-kubectl get pods -n littlex
-```
-
-### Common Issues
-
-1. **Pod not starting**: Check events with `kubectl describe pod <pod-name> -n littlex`
-2. **Missing ConfigMap**: Ensure you applied the module-config.yml file first
-3. **Permission errors**: Verify the RBAC settings in jac-cloud.yml
-
-## Advanced Operations
-
-### Updating Configurations
-
-To update the ConfigMap or deployment:
-
-1. Modify the respective YAML file
-2. Apply the changes:
-   ```bash
-   kubectl apply -f jac-cloud/scripts/module-config.yml
-   kubectl apply -f jac-cloud/scripts/jac-cloud.yml
-   ```
-
-### Viewing Logs
-
-Monitor the logs of the Jac Cloud pod:
-```bash
+# Check your application logs
 kubectl logs -f deployment/jac-cloud -n littlex
 ```
 
-### Scaling the Deployment
+## Troubleshooting Common Issues
 
-To handle more load by running multiple replicas:
+### Pod Not Starting
+
+If your pod doesn't start:
+
 ```bash
+# Get more details about the pod
+kubectl describe pod -l app=jac-cloud -n littlex
+```
+
+Look for:
+- **ImagePullBackOff**: Image name is incorrect or not accessible
+- **CrashLoopBackOff**: Application is crashing after starting
+- **Pending**: Not enough resources in the cluster
+
+### Configuration Problems
+
+If your application doesn't work correctly:
+
+```bash
+# Check the ConfigMap
+kubectl get configmap module-config -n littlex -o yaml
+
+# Check environment variables
+kubectl exec -it deploy/jac-cloud -n littlex -- env
+```
+
+### Network Issues
+
+If you can't connect to your application:
+
+```bash
+# Check the service
+kubectl get service jac-cloud -n littlex
+
+# Test network connectivity
+kubectl exec -it deploy/jac-cloud -n littlex -- curl localhost:8000
+```
+
+## Advanced Operations
+
+### Scaling Your Application
+
+To handle more users by running multiple copies:
+
+```bash
+# Run 3 copies of your application
 kubectl scale deployment jac-cloud --replicas=3 -n littlex
 ```
 
-### Cleanup
+### Updating Your Application
 
-To remove all resources when you're done:
+To deploy a new version:
+
 ```bash
+# Update the image
+kubectl set image deployment/jac-cloud jac-cloud=your-username/jac-cloud:v2 -n littlex
+```
+
+### Monitoring Your Application
+
+```bash
+# Watch pod resource usage
+kubectl top pod -n littlex
+
+# Stream logs in real-time
+kubectl logs -f deploy/jac-cloud -n littlex
+```
+
+### Complete Cleanup
+
+When you're finished:
+
+```bash
+# Remove everything
 kubectl delete namespace littlex
 ```
 
+## Deployment Best Practices
+
+1. **Start small**: Begin with a single replica and scale up as needed
+2. **Use resource limits**: Set CPU and memory limits to prevent resource hogging
+3. **Implement health checks**: Add readiness and liveness probes
+4. **Set up monitoring**: Use Prometheus and Grafana for insights
+5. **Automate deployments**: Use CI/CD pipelines for automated updates
+
 ## Next Steps
 
-- Explore [Environment Variables](env_vars.md) for configuring your Jac Cloud application
-- Learn about [WebSockets](websocket.md) for real-time communication
+- Learn about [Environment Variables](env_vars.md) for configuring your app
 - Set up [Logging](logging.md) for monitoring your deployment
+- Implement [WebSockets](websocket.md) for real-time features
+- Explore [Task Scheduling](scheduler.md) for background processing

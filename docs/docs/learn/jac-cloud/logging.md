@@ -1,44 +1,43 @@
-# Logging and Monitoring
+# Logging and Monitoring Your Application
 
-## Overview
+## Why Logging Matters
 
-Jac Cloud includes a comprehensive logging system that tracks incoming requests and outgoing responses by default. This guide explains how to configure, customize, and integrate your logs with monitoring systems.
+Effective logging is crucial for:
+- Troubleshooting problems
+- Understanding user behavior
+- Monitoring application performance
+- Detecting security issues
+- Analyzing usage patterns
 
-## Default Logging Behavior
+Jac Cloud includes a comprehensive logging system that automatically tracks requests and responses, making your development experience smoother.
 
-- All requests and responses are automatically logged to files in the `/tmp/jac_cloud_logs/` directory
-- Log files use daily rotation to prevent any single file from becoming too large
-- JSON formatting is used for easy parsing and analysis
+<!-- ![Logging Dashboard Example](https://via.placeholder.com/800x300?text=Logging+Dashboard+Example) -->
 
-## Quick Start: Elastic Integration
+## Quick Start: Check Your Logs
 
-For production environments, we recommend connecting your Jac Cloud logs to an Elastic Stack instance for better visualization, analysis, and alerting capabilities.
-
-### Prerequisites
-
-- A running Elastic Stack instance (Elasticsearch, Kibana)
-- [Filebeat](https://www.elastic.co/downloads/beats/filebeat) installed on your server
-
-### Basic Setup
-
-1. We provide a template configuration at `scripts/filebeat-template.yaml`
-2. Modify the `hosts` and `api_key` fields to point to your Elastic instance
-3. Run Filebeat with the configuration:
+By default, Jac Cloud logs everything to the `/tmp/jac_cloud_logs/` directory. To check your logs:
 
 ```bash
-filebeat -e -c scripts/filebeat-template.yaml
+# View the latest log entries
+tail -f /tmp/jac_cloud_logs/jac-cloud.log
+
+# Search for errors
+grep "ERROR" /tmp/jac_cloud_logs/jac-cloud.log
 ```
 
-!!! warning
-    Filebeat automatically appends port 9200 to the host URL if no port is specified. If your Elastic instance is behind a load balancer with a URL without a custom port, add either `:80` or `:443` to the hosts config.
-    Example: `hosts: ["https://my_elastic_instance.me.com:443"]`
+All logs are in JSON format, making them easy to parse and analyze.
 
-## Detailed Filebeat Configuration
+## Setting Up Visualization with Elastic Stack
 
-### Installation
+For a better logging experience, connect Jac Cloud to Elastic Stack (Elasticsearch + Kibana) in three easy steps:
 
-1. [Download and install Filebeat](https://www.elastic.co/downloads/beats/filebeat)
-2. Create a configuration file with the following settings:
+### Step 1: Install Filebeat
+
+[Download and install Filebeat](https://www.elastic.co/downloads/beats/filebeat) on your server.
+
+### Step 2: Create Configuration File
+
+Create a file named `filebeat.yml` with this content:
 
 ```yml
 filebeat.inputs:
@@ -54,83 +53,173 @@ filebeat.inputs:
     expand_keys: true
 
 output.elasticsearch:
-  hosts: ["localhost:9200"]
+  hosts: ["localhost:9200"]  # Replace with your Elastic URL
   protocol: https
-  api_key: "id:api_key"
-  index: "filebeat-testing"
+  api_key: "id:api_key"      # Replace with your API key
+  index: "jac-cloud-logs"
 
 setup.template.name: "filebeat"
 setup.template.pattern: "filebeat-*"
 ```
 
-### Running Filebeat
+### Step 3: Run Filebeat
 
-#### Standard Operation
 ```bash
 filebeat -e -c filebeat.yml
 ```
 
-#### With Elevated Permissions
-```bash
-sudo cp filebeat.yml /etc/filebeat/filebeat.yml
-sudo filebeat -e
-```
+Now you can view your logs in Kibana with powerful filtering, visualization, and alerting capabilities!
 
-### Additional Resources
+!!! warning "Port Configuration"
+    If your Elastic instance is behind a load balancer with a URL that doesn't include a port, add either `:80` or `:443` to the hosts config:
+    ```
+    hosts: ["https://my_elastic_instance.me.com:443"]
+    ```
 
-For more detailed information, consult the official documentation:
-- [Getting Started with Elastic Cloud](https://www.elastic.co/guide/en/cloud/current/ec-getting-started-search-use-cases-python-logs.html)
-- [Filebeat Configuration Guide](https://www.elastic.co/guide/en/beats/filebeat/current/configuring-howto-filebeat.html)
+## Customizing Your Logging
 
-## Customizing Logging Behavior
+Adjust logging behavior by setting these environment variables:
 
-You can customize the logging behavior by setting these environment variables:
+| **Setting** | **Environment Variable** | **Description** | **Default** |
+|-------------|--------------------------|-----------------|-------------|
+| Logger Name | `LOGGER_NAME` | Name for your logger | `app` |
+| Log Level | `LOGGER_LEVEL` | Level of detail (debug, info, warning, error) | `debug` |
+| File Path | `LOGGER_FILE_PATH` | Where logs are stored | `/tmp/jac_cloud_logs/jac-cloud.log` |
+| Rotation | `LOGGER_ROLLOVER_INTERVAL` | How often to create new log files (M=minute, H=hour, D=day, W=week) | `D` (daily) |
+| Backup Count | `LOGGER_MAX_BACKUP` | Number of old logs to keep (-1 = unlimited) | `-1` |
+| File Size | `LOGGER_ROLLOVER_MAX_FILE_SIZE` | Maximum log file size in bytes | `10000000` (10MB) |
+| UTC Time | `LOGGER_USE_UTC` | Whether to use UTC time | `false` |
 
-| **Environment Variable** | **Description** | **Default Value** |
-|--------------------------|-----------------|-------------------|
-| `LOGGER_NAME` | Specified logger name | `app` |
-| `LOGGER_LEVEL` | Control log level (debug, info, warning, error) | `debug` |
-| `LOGGER_FILE_PATH` | Log directory and filename | `/tmp/jac_cloud_logs/jac-cloud.log` |
-| `LOGGER_ROLLOVER_INTERVAL` | Rotation interval (M=minute, H=hourly, D=daily, W=weekly) | `D` |
-| `LOGGER_MAX_BACKUP` | Maximum backup files before deletion (negative = unlimited) | `-1` |
-| `LOGGER_ROLLOVER_MAX_FILE_SIZE` | Maximum file size in bytes before rollover | `10000000` |
-| `LOGGER_USE_UTC` | Whether logger uses UTC time | `false` |
+### Example: Production Settings
 
-## Log Structure
-
-Jac Cloud logs are structured in JSON format with the following key fields:
-
-- `timestamp`: When the log entry was created
-- `level`: Log level (DEBUG, INFO, WARNING, ERROR)
-- `message`: Log message content
-- `request`: Details about the HTTP request (method, path, headers, etc.)
-- `response`: Details about the HTTP response (status code, body, etc.)
-- `duration`: Request processing time in milliseconds
-
-## Best Practices
-
-1. **Set appropriate log levels** - Use `debug` for development and `info` for production
-2. **Monitor log storage** - Configure `LOGGER_MAX_BACKUP` to prevent disk space issues
-3. **Centralize logs** - Use Elastic Stack or similar for multi-server deployments
-4. **Set up alerts** - Configure alerts for error conditions in your monitoring system
-5. **Secure sensitive data** - Be aware that logs may contain sensitive information
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Missing logs**: Verify the `LOGGER_FILE_PATH` directory exists and has write permissions
-2. **Filebeat connection issues**: Check network connectivity and authentication details
-3. **High disk usage**: Adjust `LOGGER_ROLLOVER_INTERVAL` and `LOGGER_MAX_BACKUP` settings
-
-### Checking Log Status
-
-To verify logging is working correctly:
+For a production environment, you might want to:
+1. Use `info` level to reduce log size
+2. Keep logs for 30 days
+3. Use UTC time for consistency
 
 ```bash
-# Check if log files exist
-ls -la /tmp/jac_cloud_logs/
-
-# View recent log entries
-tail -f /tmp/jac_cloud_logs/jac-cloud.log
+export LOGGER_LEVEL=info
+export LOGGER_MAX_BACKUP=30
+export LOGGER_USE_UTC=true
 ```
+
+## Understanding Log Structure
+
+Jac Cloud logs contain these key components:
+
+```json
+{
+  "timestamp": "2024-04-10T14:25:36.789Z",
+  "level": "INFO",
+  "message": "Request processed successfully",
+  "request": {
+    "method": "POST",
+    "path": "/walker/create_user",
+    "headers": {"authorization": "Bearer ***", "content-type": "application/json"},
+    "body": {"username": "example_user", "email": "user@example.com"}
+  },
+  "response": {
+    "status_code": 200,
+    "body": {"status": 200, "reports": ["User created successfully"]}
+  },
+  "duration": 125,
+  "client_ip": "192.168.1.1"
+}
+```
+
+This format makes it easy to filter and search for specific information.
+
+## Common Log Analysis Tasks
+
+### Finding Errors
+
+```bash
+grep '"level":"ERROR"' /tmp/jac_cloud_logs/jac-cloud.log
+```
+
+### Tracking Slow Requests
+
+```bash
+grep -v '"level":"DEBUG"' /tmp/jac_cloud_logs/jac-cloud.log |
+  jq 'select(.duration > 1000) | {path: .request.path, duration: .duration, time: .timestamp}'
+```
+
+### Monitoring User Activity
+
+```bash
+grep '/walker/login' /tmp/jac_cloud_logs/jac-cloud.log |
+  jq '.request.body.username'
+```
+
+## Logging Best Practices
+
+1. **Use appropriate log levels**:
+   - `debug`: Detailed information for debugging
+   - `info`: Confirmation that things are working
+   - `warning`: Something unexpected but not critical
+   - `error`: Something failed but the application continues
+   - `critical`: Application cannot continue
+
+2. **Be careful with sensitive data**:
+   - Passwords, tokens, and personal information should never be logged
+   - Jac Cloud automatically masks Authorization headers
+
+3. **Establish log retention policies**:
+   - Configure `LOGGER_MAX_BACKUP` based on your needs
+   - Consider compliance requirements (GDPR, HIPAA, etc.)
+
+4. **Set up alerts**:
+   - Configure alerts in Kibana for error spikes
+   - Monitor for unusual patterns or security issues
+
+## Troubleshooting Common Issues
+
+### Missing Logs
+
+If logs aren't appearing:
+
+1. Check directory permissions:
+   ```bash
+   sudo mkdir -p /tmp/jac_cloud_logs
+   sudo chmod 777 /tmp/jac_cloud_logs
+   ```
+
+2. Verify the logger configuration:
+   ```bash
+   echo $LOGGER_FILE_PATH
+   ```
+
+### Filebeat Connection Issues
+
+If Filebeat isn't sending logs to Elasticsearch:
+
+1. Check connection:
+   ```bash
+   curl -k https://your-elastic-instance:9200
+   ```
+
+2. Verify API key:
+   ```bash
+   filebeat test output
+   ```
+
+### High Disk Usage
+
+If logs are consuming too much space:
+
+1. Adjust rotation settings:
+   ```bash
+   export LOGGER_ROLLOVER_INTERVAL=D
+   export LOGGER_MAX_BACKUP=7
+   ```
+
+2. Manually clean old logs:
+   ```bash
+   find /tmp/jac_cloud_logs -name "*.log.*" -type f -mtime +7 -delete
+   ```
+
+## Next Steps
+
+- Learn about [WebSocket Communication](websocket.md) for real-time features
+- Explore [Webhook Integration](webhook.md) for third-party service integration
+- Set up [Environment Variables](env_vars.md) for application configuration
