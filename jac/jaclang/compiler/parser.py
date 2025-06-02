@@ -381,6 +381,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             # TODO: kid will be removed so let's keep as it is for now.
             kid = self.flat_cur_nodes
 
+            items: (
+                uni.SubNodeList[uni.ModuleItem] | uni.SubNodeList[uni.ModulePath] | list
+            )
             if self.match_token(Tok.KW_INCLUDE):
                 # Handle include statement
                 import_path_obj = self.consume(uni.ModulePath)
