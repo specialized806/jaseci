@@ -2108,7 +2108,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
-            valid_parts: list[uni.String | uni.ExprStmt | uni.Token] = [
+            valid_parts: list[uni.UniNode] = [
                 (
                     i
                     if isinstance(i, uni.String)
@@ -2119,7 +2119,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     )
                 )
                 for i in self.cur_nodes
-                if isinstance(i, (uni.Expr, uni.Token))
             ]
             return valid_parts
 
@@ -2128,7 +2127,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
-            valid_parts: list[uni.String | uni.ExprStmt | uni.Token] = [
+            valid_parts: list[uni.UniNode] = [
                 (
                     i
                     if isinstance(i, uni.String)
@@ -2139,7 +2138,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     )
                 )
                 for i in self.cur_nodes
-                if isinstance(i, (uni.Expr, uni.Token))
             ]
             return valid_parts
 

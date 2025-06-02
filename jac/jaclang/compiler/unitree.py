@@ -4626,11 +4626,7 @@ class String(Literal):
             ) and not self.find_parent_of_type(FString):
                 return repr_str[3:-3]
             if (not self.find_parent_of_type(FString)) or (
-                not (
-                    self.parent
-                    and self.parent.parent
-                    and isinstance(self.parent.parent, FString)
-                )
+                not (self.parent and isinstance(self.parent, FString))
             ):
                 return repr_str[1:-1]
             return repr_str
