@@ -36,8 +36,8 @@ class ModuleManager {
     ) -> None {
         file_path = file_path.removeprefix('file://');
         self.program.mod.hub[file_path] = build;
-        self.sem_managers[file_path] = SemTokManager(ir=build);
         if update_annexed {
+            self.sem_managers[file_path] = SemTokManager(ir=build);
             for (p, mod) in self.program.mod.hub.items() {
                 if p != file_path {
                     self.sem_managers[p] = SemTokManager(ir=mod);
