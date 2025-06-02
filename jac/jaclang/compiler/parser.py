@@ -470,10 +470,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             dotted_name: named_ref (DOT named_ref)*
             """
-            valid_path = [self.consume(uni.Name)]
-            while self.match_token(Tok.DOT):
-                valid_path.append(self.consume(uni.Name))
-            return [*self.cur_nodes]
+            return self.cur_nodes
 
         def import_items(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
@@ -637,11 +634,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            self.consume_token(Tok.DECOR_OP)
-            self.consume(uni.Expr)
-            while self.match_token(Tok.DECOR_OP):
-                self.consume(uni.Expr)
-            return [*self.cur_nodes]
+            return self.cur_nodes
 
         def inherited_archs(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
             """Grammar rule.
@@ -884,7 +877,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             func_decl_params: (param_var COMMA)* param_var COMMA?
             """
-            return [*self.cur_nodes]
+            return self.cur_nodes
 
         def param_var(self, _: None) -> uni.ParamVar:
             """Grammar rule.
@@ -908,10 +901,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             member_block: LBRACE member_stmt* RBRACE
             """
-            self.consume_token(Tok.LBRACE)
-            self.match_many(uni.ArchBlockStmt)
-            self.consume_token(Tok.RBRACE)
-            return [*self.cur_nodes]
+            return self.cur_nodes
 
         def member_stmt(self, _: None) -> uni.ArchBlockStmt:
             """Grammar rule.
@@ -957,11 +947,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
-                self.consume(uni.HasVar)
-            else:
-                self.consume(uni.HasVar)
             return self.flat_cur_nodes
 
         def typed_has_clause(self, _: None) -> uni.HasVar:
@@ -1171,9 +1156,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             except_list: except_def+
             """
-            self.consume(uni.Except)
-            while self.match(uni.Except):
-                pass
             return self.flat_cur_nodes
 
         def except_def(self, _: None) -> uni.Except:
@@ -1279,10 +1261,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             expr_as_list: (expr_as COMMA)* expr_as
             """
-            items = [self.consume(uni.ExprAsItem)]
-            while self.match_token(Tok.COMMA):
-                items.append(self.consume(uni.ExprAsItem))
-            return [*self.cur_nodes]
+            return self.cur_nodes
 
         def expr_as(self, _: None) -> uni.ExprAsItem:
             """Grammar rule.
@@ -2158,9 +2137,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             expr_list: (expr_list COMMA)? expression
             """
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
-            self.consume(uni.Expr)
             return self.flat_cur_nodes
 
         def kw_expr_list(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
@@ -2168,11 +2144,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
             """
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
-                self.consume(uni.KWPair)
-            else:
-                self.consume(uni.KWPair)
             return self.flat_cur_nodes
 
         def kw_expr(self, _: None) -> uni.KWPair:
@@ -2198,9 +2169,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             name_list: (named_ref COMMA)* named_ref
             """
-            self.consume(uni.Name)
-            while self.match_token(Tok.COMMA):
-                self.consume(uni.Name)
             return self.flat_cur_nodes
 
         def tuple_list(self, _: None) -> list[uni.UniNode]:
@@ -2212,15 +2180,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                       | expression COMMA
                       | kw_expr_list COMMA?
             """
-            if self.match(list):
-                self.match_token(Tok.COMMA)
-                return self.flat_cur_nodes
-            self.consume(uni.Expr)
-            self.consume_token(Tok.COMMA)
-            self.match(list)
-            self.match_token(Tok.COMMA)
-            self.match(list)
-            self.match_token(Tok.COMMA)
             return self.flat_cur_nodes
 
         def dict_val(self, _: None) -> uni.DictVal:
@@ -2348,11 +2307,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                       | kw_expr_list COMMA?
                       | expr_list    COMMA?
             """
-            self.consume(list)
-            if len(self.cur_nodes) > 2:
-                self.consume_token(Tok.COMMA)
-                self.consume(list)
-            self.match_token(Tok.COMMA)
             return self.flat_cur_nodes
 
         def assignment_list(self, _: None) -> list[uni.UniNode]:
@@ -2606,9 +2560,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
             """
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
-            self.consume(uni.CompareExpr)
             return self.flat_cur_nodes
 
         def typed_filter_compare_list(self, _: None) -> uni.FilterCompr:
@@ -2866,9 +2817,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.LPAREN)
             first = self.match(list)
             second: list[uni.UniNode] | None = None
-            has_kw = bool(
-                first and any(isinstance(i, uni.MatchKVPair) for i in first)
-            )
+            has_kw = bool(first and any(isinstance(i, uni.MatchKVPair) for i in first))
             if first and not has_kw and self.match_token(Tok.COMMA):
                 second = self.consume(list)
             self.consume_token(Tok.RPAREN)
@@ -2880,10 +2829,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kw_list = second
             return uni.MatchArch(
                 name=name,
-                arg_patterns=
-                    self.extract_from_list(arg, uni.MatchPattern) if arg else None,
+                arg_patterns=(
+                    self.extract_from_list(arg, uni.MatchPattern) if arg else None
+                ),
                 kw_patterns=(
-                    self.extract_from_list(kw_list, uni.MatchKVPair) if kw_list else None
+                    self.extract_from_list(kw_list, uni.MatchKVPair)
+                    if kw_list
+                    else None
                 ),
                 kid=[name, *self.flat_cur_nodes[name_idx:]],
             )
@@ -2893,9 +2845,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             pattern_list: (pattern_list COMMA)? pattern_seq
             """
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
-            self.consume(uni.MatchPattern)
             return self.flat_cur_nodes
 
         def kw_pattern_list(self, _: None) -> list[uni.UniNode]:
