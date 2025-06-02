@@ -1138,27 +1138,14 @@ class PyastGenPass(UniPass):
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
 
         is_static_var = (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, uni.ArchHas)
-            and node.parent.parent.is_static
+            (haspar := node.find_parent_of_type(uni.ArchHas))
+            and haspar
+            and haspar.is_static
         )
-
         is_in_class = (
-            node.parent
-            and node.parent.parent
-            and node.parent.parent.parent
-            and (
-                (
-                    isinstance(node.parent.parent.parent, uni.Archetype)
-                    and node.parent.parent.parent.arch_type.name == Tok.KW_CLASS
-                )
-                or (
-                    node.parent.parent.parent.parent
-                    and isinstance(node.parent.parent.parent.parent, uni.Archetype)
-                    and node.parent.parent.parent.parent.arch_type.name == Tok.KW_CLASS
-                )
-            )
+            (archpar := node.find_parent_of_type(uni.Archetype))
+            and archpar
+            and archpar.arch_type.name == Tok.KW_CLASS
         )
 
         value = None
