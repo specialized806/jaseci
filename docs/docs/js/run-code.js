@@ -143,7 +143,7 @@ const lazyObserver = new IntersectionObserver((entries) => {
         }
     });
 }, {
-    root: null, 
+    root: null,
     rootMargin: "0px",
     threshold: 0.1
 });
