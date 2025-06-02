@@ -11,35 +11,35 @@ With Jac Cloud, you can:
 
 ## Key Features at a Glance
 
-![Jac Cloud Features](https://via.placeholder.com/800x400?text=Jac+Cloud+Features)
+<!-- ![Jac Cloud Features](https://via.placeholder.com/800x400?text=Jac+Cloud+Features) -->
 
-### 🚀 Instant API Generation
+### Instant API Generation
 - Automatically converts Jac walkers into REST endpoints
 - Supports all HTTP methods (GET, POST, PUT, DELETE, etc.)
 - Built-in OpenAPI/Swagger documentation at `/docs`
 
-### 🔐 Authentication & Authorization
+### Authentication & Authorization
 - Token-based authentication system
 - Role-based access control
 - Configurable endpoint security
 
-### ⚡ Real-time Communication
+### Real-time Communication
 - WebSocket support for real-time applications
 - Channel-based messaging
 - Client and user notification systems
 
-### ⏱️ Task Scheduling
+### Task Scheduling
 - Cron-based scheduling
 - Interval-based tasks
 - One-time date triggers
 
-### 🛠️ Production-Ready Features
+### Production-Ready Features
 - Comprehensive logging with Elastic integration
 - Environment variable configuration
 - Health monitoring and metrics
 - File upload support
 
-### ☁️ Cloud Integration
+### Cloud Integration
 - Kubernetes deployment support
 - Docker containerization
 - ConfigMap-based configuration
@@ -90,10 +90,10 @@ Ready to get started? Check out these guides:
 - [Task Scheduling](scheduler.md) - Automate recurring tasks
 - [Kubernetes Deployment](deployment.md) - Deploy to the cloud
 
-## Community and Support
+<!-- ## Community and Support
 
 Jac Cloud is part of the larger Jaseci ecosystem. Join our community to get help, share your projects, and contribute to the platform's growth.
 
 ---
 
-*Transform your Jac applications into production-ready cloud services with Jac Cloud's powerful, yet simple framework.*
+*Transform your Jac applications into production-ready cloud services with Jac Cloud's powerful, yet simple framework.* -->

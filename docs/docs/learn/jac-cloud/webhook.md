@@ -1,6 +1,6 @@
 # Webhooks: External API Integration
 
-## 🌟 What Are Webhooks?
+## What Are Webhooks?
 
 Webhooks in Jac Cloud provide a secure way to expose your API endpoints to external services without requiring user authentication. Instead, webhooks use API keys for authentication, making them ideal for:
 
@@ -10,16 +10,16 @@ Webhooks in Jac Cloud provide a secure way to expose your API endpoints to exter
 - IoT device communication
 - CI/CD pipelines
 
-![Webhook Integration Diagram](https://via.placeholder.com/800x300?text=Webhook+Integration+Diagram)
+<!-- ![Webhook Integration Diagram](https://via.placeholder.com/800x300?text=Webhook+Integration+Diagram) -->
 
-## 🔑 Key Concepts for Beginners
+## Key Concepts for Beginners
 
 - **Webhook Walkers**: Similar to normal walkers but authenticated via API keys instead of user tokens
 - **API Key Management**: Keys are created and managed by users through dedicated endpoints
 - **Flexible Authentication**: API keys can be passed via headers, query parameters, URL paths, or in the request body
 - **Security Controls**: Keys can be restricted to specific walkers, nodes, and have configurable expiration dates
 
-## 🚀 Creating Your First Webhook (3 Steps)
+## Creating Your First Webhook (3 Steps)
 
 ### Step 1: Create a Webhook Walker
 
@@ -80,14 +80,14 @@ curl -X POST 'http://localhost:8000/webhook/walker/webhook_example' \
   }'
 ```
 
-## ⚙️ Webhook Configuration Options
+## Webhook Configuration Options
 
 | **Field** | **Type** | **Description** | **Default** |
 |-----------|----------|-----------------|-------------|
 | `type` | `str` | Where to look for the API key: `"header"`, `"query"`, `"path"`, or `"body"` | `"header"` |
 | `name` | `str` | Parameter name containing the API key | `"X-API-KEY"` |
 
-## 🔐 Managing API Keys
+## Managing API Keys
 
 ### Creating Keys
 
@@ -162,7 +162,7 @@ curl -X POST 'http://localhost:8000/webhook/walker/webhook_example' \
 }
 ```
 
-## 📚 Authentication Methods (4 Ways)
+## Authentication Methods (4 Ways)
 
 Jac Cloud supports four different ways to pass API keys to webhook endpoints:
 
@@ -262,7 +262,7 @@ curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_body' \
   -d '{"test_key": "YOUR-GENERATED-KEY"}'
 ```
 
-## 🔒 Security Best Practices
+## Security Best Practices
 
 1. **Restrict API Keys**: Limit keys to only the specific walkers and nodes they need access to
 2. **Set Appropriate Expirations**: Use shorter expiration times for sensitive operations
@@ -270,7 +270,7 @@ curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_body' \
 4. **Rotate Keys Regularly**: Generate new keys and invalidate old ones periodically
 5. **Monitor Usage**: Keep track of webhook invocations for security and debugging
 
-## 🛠️ Common Webhook Use Cases
+## Common Webhook Use Cases
 
 1. **GitHub/GitLab Integration**: Trigger builds or deployments on code changes
 2. **Payment Processing**: Handle payment webhooks from Stripe, PayPal, etc.
@@ -278,7 +278,7 @@ curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_body' \
 4. **Third-Party Integrations**: Connect with external services like Slack, Twilio
 5. **Data Synchronization**: Keep systems in sync with real-time updates
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [WebSocket Communication](websocket.md) for real-time features
 - Explore [Task Scheduling](scheduler.md) for automated background tasks

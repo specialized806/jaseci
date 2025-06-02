@@ -126,7 +126,7 @@ walker check_processing {
 
 # Asynchronous Processing with Async Walkers
 
-## 🌟 What Are Async Walkers?
+## What Are Async Walkers?
 
 Async walkers allow your application to perform tasks in the background without making users wait. They're perfect for:
 
@@ -136,9 +136,9 @@ Async walkers allow your application to perform tasks in the background without 
 - Sending emails or notifications
 - Any task that would otherwise cause delays
 
-![Async Processing Diagram](https://via.placeholder.com/800x300?text=Async+Processing+Diagram)
+<!-- ![Async Processing Diagram](https://via.placeholder.com/800x300?text=Async+Processing+Diagram) -->
 
-## 🚀 Creating Your First Async Walker in 3 Steps
+## Creating Your First Async Walker in 3 Steps
 
 ### Step 1: Add the `async` Keyword
 
@@ -201,18 +201,18 @@ walker check_results {
             report {
                 "status": "complete",
                 "results": process.results
-            };
-        else:
+            }
+        else{
             report {
                 "status": status,
                 "message": "Still processing..."
-            };
+            }
         }
     }
 }
 ```
 
-## ⚙️ How Async Walkers Work
+## How Async Walkers Work
 
 When you call an async walker:
 
@@ -221,7 +221,7 @@ When you call an async walker:
 3. **Result Storage**: Results are saved in the database
 4. **On-Demand Access**: You can check results anytime using the walker ID
 
-## 📋 Response Format
+## Response Format
 
 When you call an async walker, you'll receive a response like this:
 
@@ -234,7 +234,7 @@ When you call an async walker, you'll receive a response like this:
 
 The `walker_id` is your reference to check results later.
 
-## 🔍 Checking Walker Status
+## Checking Walker Status
 
 The async walker stores execution information in its `__jac__.schedule` object:
 
@@ -246,7 +246,7 @@ The async walker stores execution information in its `__jac__.schedule` object:
 | `reports` | Output values | `["Step 1 complete", "Step 2 complete"]` |
 | `error` | Error message | `"Could not connect to database"` |
 
-## 💡 Common Use Cases (With Examples)
+## Common Use Cases (With Examples)
 
 ### 1. Processing Large Datasets
 
@@ -321,7 +321,7 @@ async walker sync_with_external_system {
 }
 ```
 
-## 🛠️ Advanced Techniques
+## Advanced Techniques
 
 ### Combining with WebSockets for Real-time Updates
 
@@ -387,7 +387,7 @@ async walker safe_process {
 }
 ```
 
-## 💻 Complete Example: Background Image Processing
+## Complete Example: Background Image Processing
 
 ```jac
 // Image processing async walker
@@ -430,29 +430,29 @@ walker check_image_status {
     can enter with `root entry {
         process = &process_id;
 
-        if process.__jac__.schedule.status == "completed":
-            if process.status == "complete":
+        if process.__jac__.schedule.status == "completed"{
+            if process.status == "complete"{
                 report {
                     "status": "success",
                     "processed": process.processed_url,
                     "thumbnail": process.thumbnail_url
-                };
+                }
             else:
                 report {
                     "status": "error",
                     "message": "Processing failed"
-                };
+                }
         } else {
             report {
                 "status": "pending",
                 "current_step": process.status
-            };
+            }
         }
     }
 }
 ```
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [Task Scheduling](scheduler.md) for recurring tasks
 - Explore [WebSockets](websocket.md) for real-time communication

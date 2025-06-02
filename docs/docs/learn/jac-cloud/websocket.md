@@ -1,6 +1,6 @@
 # Real-Time Communication with WebSockets
 
-## 🌟 What Are WebSockets?
+## What Are WebSockets?
 
 WebSockets enable real-time, two-way communication between your Jac Cloud server and clients. Unlike regular HTTP requests, WebSockets maintain a persistent connection, allowing you to build:
 
@@ -10,7 +10,7 @@ WebSockets enable real-time, two-way communication between your Jac Cloud server
 - Live dashboards
 - Multiplayer games
 
-## 🚀 Getting Started in 5 Minutes
+## Getting Started in 5 Minutes
 
 ### Step 1: Create a WebSocket Walker
 
@@ -56,7 +56,7 @@ When connected, you'll receive a connection event with client information:
 }
 ```
 
-## 📨 Sending Messages From Clients
+## Sending Messages From Clients
 
 ### Trigger a Walker Execution
 
@@ -116,7 +116,7 @@ When connected, you'll receive a connection event with client information:
 }
 ```
 
-## 📤 Sending Messages From the Server
+## Sending Messages From the Server
 
 To send notifications from your walkers, import the WebSocket manager:
 
@@ -162,7 +162,7 @@ socket.notify_clients([client_id], {
 });
 ```
 
-## 💻 Complete Example: Chat Application
+## Complete Example: Chat Application
 
 ### Server-Side Code (Jac)
 
@@ -283,7 +283,7 @@ document.getElementById("send-button").addEventListener("click", () => {
 });
 ```
 
-## 🔍 WebSocket Best Practices
+## WebSocket Best Practices
 
 1. **Use typed events**: Include a "type" field in your data to easily differentiate message types
 2. **Handle reconnection**: Implement reconnection logic in your client to handle network issues
@@ -291,11 +291,11 @@ document.getElementById("send-button").addEventListener("click", () => {
 4. **Structure data consistently**: Maintain a consistent data structure for your WebSocket messages
 5. **Consider scalability**: For high-traffic applications, consider using the channel-based approach
 
-## 🛠️ Additional Resources
+## Additional Resources
 
 For a complete working example, you can download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia).
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [Webhook Integration](webhook.md) for third-party service integration
 - Explore [Task Scheduling](scheduler.md) for automated background tasks

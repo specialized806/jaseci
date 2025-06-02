@@ -1,6 +1,6 @@
 # Cloud Deployment Guide
 
-## 🌟 What is Kubernetes Deployment?
+## What is Kubernetes Deployment?
 
 Kubernetes deployment allows you to run your Jac applications in a cloud environment, providing benefits like:
 
@@ -10,9 +10,9 @@ Kubernetes deployment allows you to run your Jac applications in a cloud environ
 - **Easy Updates**: Deploy new versions without downtime
 - **Centralized Management**: Control multiple services from one place
 
-![Kubernetes Architecture](https://via.placeholder.com/800x300?text=Kubernetes+Architecture)
+<!-- ![Kubernetes Architecture](https://via.placeholder.com/800x300?text=Kubernetes+Architecture) -->
 
-## 🚀 Getting Started: Prerequisites
+## Getting Started: Prerequisites
 
 Before beginning your cloud journey, make sure you have:
 
@@ -23,7 +23,7 @@ Before beginning your cloud journey, make sure you have:
 | **Docker** | For building container images | [Install Docker](https://docs.docker.com/get-docker/) |
 | **OpenAI API Key** | Optional, for AI features | [OpenAI Platform](https://platform.openai.com/) |
 
-## 📦 What's Included
+## What's Included
 
 The Jac Cloud Kubernetes deployment includes:
 
@@ -32,7 +32,7 @@ The Jac Cloud Kubernetes deployment includes:
 - Easy configuration through environment variables
 - Support for dynamic module loading
 
-## 🛠️ Deployment in 5 Simple Steps
+## Deployment in 5 Simple Steps
 
 ### Step 1: Build Your Docker Image
 
@@ -93,7 +93,7 @@ kubectl get all -n littlex
 kubectl logs -f deployment/jac-cloud -n littlex
 ```
 
-## 🔍 Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
 ### Pod Not Starting
 
@@ -133,7 +133,7 @@ kubectl get service jac-cloud -n littlex
 kubectl exec -it deploy/jac-cloud -n littlex -- curl localhost:8000
 ```
 
-## 🛠️ Advanced Operations
+## Advanced Operations
 
 ### Scaling Your Application
 
@@ -172,7 +172,7 @@ When you're finished:
 kubectl delete namespace littlex
 ```
 
-## 💡 Deployment Best Practices
+## Deployment Best Practices
 
 1. **Start small**: Begin with a single replica and scale up as needed
 2. **Use resource limits**: Set CPU and memory limits to prevent resource hogging
@@ -180,7 +180,7 @@ kubectl delete namespace littlex
 4. **Set up monitoring**: Use Prometheus and Grafana for insights
 5. **Automate deployments**: Use CI/CD pipelines for automated updates
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [Environment Variables](env_vars.md) for configuring your app
 - Set up [Logging](logging.md) for monitoring your deployment

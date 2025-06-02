@@ -1,6 +1,6 @@
 # Task Scheduling: Automate Your Jac Applications
 
-## 🌟 What is Task Scheduling?
+## What is Task Scheduling?
 
 Jac Cloud's task scheduling system lets you run walkers at specified times or intervals without manual intervention. This powerful feature enables you to:
 
@@ -10,9 +10,9 @@ Jac Cloud's task scheduling system lets you run walkers at specified times or in
 - Execute periodic data synchronization
 - Trigger time-sensitive workflows
 
-![Task Scheduling Diagram](https://via.placeholder.com/800x300?text=Task+Scheduling+Diagram)
+<!-- ![Task Scheduling Diagram](https://via.placeholder.com/800x300?text=Task+Scheduling+Diagram) -->
 
-## 🚀 Quick Start: Schedule Your First Task
+## Quick Start: Schedule Your First Task
 
 ### Step 1: Create a Scheduled Walker
 
@@ -52,7 +52,7 @@ jac serve main.jac
 
 Your scheduled task will now run automatically at the specified time!
 
-## ⏰ Three Ways to Schedule Tasks
+## Three Ways to Schedule Tasks
 
 ### 1. Cron Scheduling (Time-Based)
 
@@ -119,7 +119,7 @@ walker special_event {
 }
 ```
 
-## ⚙️ Common Configuration Options
+## Common Configuration Options
 
 All scheduler configurations share these parameters:
 
@@ -132,7 +132,7 @@ All scheduler configurations share these parameters:
 | `max_instances` | `int` | Maximum simultaneous jobs per walker type | `1` |
 | `save` | `bool` | Whether to save walker instance results to database | `false` |
 
-## 📆 Cron Scheduling Reference
+## Cron Scheduling Reference
 
 | **Parameter** | **Type** | **Description** | **Example** |
 |---------------|----------|-----------------|-------------|
@@ -144,7 +144,7 @@ All scheduler configurations share these parameters:
 | `minute` | `int/str` | Minute (0-59) | `30` or `"*/15"` (every 15) |
 | `second` | `int/str` | Second (0-59) | `0` or `"*/30"` (every 30) |
 
-## ⏱️ Interval Scheduling Reference
+## Interval Scheduling Reference
 
 | **Parameter** | **Type** | **Description** | **Example** |
 |---------------|----------|-----------------|-------------|
@@ -154,7 +154,7 @@ All scheduler configurations share these parameters:
 | `minutes` | `int` | Number of minutes between runs | `30` (half-hourly) |
 | `seconds` | `int` | Number of seconds between runs | `60` (every minute) |
 
-## 💡 Practical Examples
+## Practical Examples
 
 ### Daily Backup at Midnight
 
@@ -225,7 +225,7 @@ walker send_daily_email {
 }
 ```
 
-## 🔧 Best Practices for Beginners
+## Best Practices for Beginners
 
 1. **Keep tasks idempotent**: Tasks should be safe to run multiple times
 2. **Set appropriate max_instances**: Prevent queue congestion by limiting concurrent instances
@@ -233,14 +233,14 @@ walker send_daily_email {
 4. **Check timezone awareness**: Cron and date triggers use server timezone unless specified
 5. **Start with longer intervals**: For testing, use longer intervals (minutes instead of seconds)
 
-## 🛠️ Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
 - **Tasks not running**: Check that your Jac Cloud service is running and Redis is properly configured
 - **Duplicate executions**: Ensure `propagate: false` (default) is set if multiple Jac Cloud instances are running
 - **Missing results**: Verify `save: true` is set to store task results in the database
 - **Unexpected timing**: Check server timezone vs. expected timezone
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [WebSocket Communication](websocket.md) for real-time features
 - Explore [Webhook Integration](webhook.md) for third-party service integration

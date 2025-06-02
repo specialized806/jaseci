@@ -2,7 +2,7 @@
 
 This guide will help you quickly get up and running with Jac Cloud, with step-by-step instructions designed for beginners.
 
-## 🚀 Your First Jac Cloud Server in 30 Seconds
+## Your First Jac Cloud Server in 30 Seconds
 
 Transform any Jac application into a cloud API server with a single command:
 
@@ -18,9 +18,9 @@ Once started, your API will be available at:
 - **API Endpoint**: `http://localhost:8000`
 - **Interactive Documentation**: `http://localhost:8000/docs`
 
-![Swagger Documentation Example](https://via.placeholder.com/800x400?text=Swagger+Documentation+Example)
+<!-- ![Swagger Documentation Example](https://via.placeholder.com/800x400?text=Swagger+Documentation+Example) -->
 
-## 📚 Understanding Walker Endpoints
+## Understanding Walker Endpoints
 
 ### What Happens Automatically
 
@@ -38,7 +38,7 @@ To disable automatic endpoint generation, set the environment variable:
 export DISABLE_AUTO_ENDPOINT=true
 ```
 
-## 🛠️ Configuring Your Walkers
+## Configuring Your Walkers
 
 ### Basic Configuration
 
@@ -57,7 +57,7 @@ walker my_walker {
 }
 ```
 
-## ⚙️ Configuration Reference
+## Configuration Reference
 
 ### Core Settings (Most Common)
 
@@ -87,7 +87,7 @@ walker my_walker {
 | `status_code` | `int` | Default response status code | `None` |
 | `deprecated` | `bool` | Mark endpoint as deprecated | `None` |
 
-## 💡 Examples for Beginners
+## Examples for Beginners
 
 ### Basic Endpoint Examples
 
@@ -147,7 +147,7 @@ walker multi_file_upload {
 }
 ```
 
-## 📋 Response Format
+## Response Format
 
 ### What to Expect
 
@@ -179,14 +179,14 @@ Jac Cloud automatically serializes walker, edge, and node archetypes:
 }
 ```
 
-## ⚡ Helpful Environment Variables
+## Helpful Environment Variables
 
 Control Jac Cloud behavior with these environment variables:
 
 - `DISABLE_AUTO_ENDPOINT=true` - Disable automatic endpoint generation
 - `SHOW_ENDPOINT_RETURNS=true` - Include walker return values in responses
 
-## 👣 Next Steps
+## Next Steps
 
 Now that you understand the basics, explore these features:
 

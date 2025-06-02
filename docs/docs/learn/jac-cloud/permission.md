@@ -1,6 +1,6 @@
 # Permission Management: Secure Multi-User Access
 
-## 🌟 Why Permissions Matter
+## Why Permissions Matter
 
 Jac Cloud's permission system lets you control who can access different parts of your application. This is crucial for:
 
@@ -10,9 +10,9 @@ Jac Cloud's permission system lets you control who can access different parts of
 - Creating public/private content
 - Implementing access control
 
-![Permission System Diagram](https://via.placeholder.com/800x300?text=Permission+System+Diagram)
+<!-- ![Permission System Diagram](https://via.placeholder.com/800x300?text=Permission+System+Diagram) -->
 
-## 🔑 Key Concepts for Beginners
+## Key Concepts for Beginners
 
 ### Understanding Data Representations
 
@@ -29,14 +29,14 @@ In Jac Cloud, your data exists in two forms:
 
 Jac Cloud has four permission levels that control what users can do:
 
-| Level | Icon | Description | Example Use Case |
-|-------|------|-------------|-----------------|
-| `NO_ACCESS` | 🚫 | Cannot see or interact with the item | Private user data |
-| `READ` | 👁️ | Can view but not modify the item | Public profile information |
-| `CONNECT` | 🔗 | Can link nodes to this node | Friend requests, comments |
-| `WRITE` | ✏️ | Full access to modify the item | User's own content |
+| Level | Description | Example Use Case |
+|-------|-------------|-----------------|
+| `NO_ACCESS` | Cannot see or interact with the item | Private user data |
+| `READ` | Can view but not modify the item | Public profile information |
+| `CONNECT` | Can link nodes to this node | Friend requests, comments |
+| `WRITE` | Full access to modify the item | User's own content |
 
-## 🔒 How Permissions Work (Simple Example)
+## How Permissions Work (Simple Example)
 
 Imagine a social media app with three users:
 
@@ -52,7 +52,7 @@ By default, User2 cannot see Post1 (created by User1). To allow this:
 2. This creates a connection in the permissions system
 3. Now User2 can access Post1 according to the permission level granted
 
-## 👨‍💻 Managing Permissions in Code
+## Managing Permissions in Code
 
 ### Option 1: Grant Access Using Helper Functions
 
@@ -111,7 +111,7 @@ walker make_private {
 }
 ```
 
-## 🧩 Common Permission Patterns
+## Common Permission Patterns
 
 ### Public Read, Private Write
 
@@ -188,7 +188,7 @@ walker check_access {
 }
 ```
 
-## 💡 Best Practices for Beginners
+## Best Practices for Beginners
 
 1. **Start restrictive**: Begin with tight permissions and open up as needed
 2. **Use helper functions**: Prefer `Jac.allow_root()` over direct manipulation
@@ -196,7 +196,7 @@ walker check_access {
 4. **Document your scheme**: Keep track of which nodes have which permissions
 5. **Batch similar permissions**: Update permissions for multiple nodes at once
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [WebSocket Communication](websocket.md) for real-time features
 - Explore [Webhook Integration](webhook.md) for third-party service integration

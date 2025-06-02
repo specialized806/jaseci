@@ -1,6 +1,6 @@
 # Environment Variables: Configuration Made Easy
 
-## 🌟 What Are Environment Variables?
+## What Are Environment Variables?
 
 Environment variables are a simple way to configure your Jac Cloud application without changing code. Think of them as settings you can adjust from outside your application. They're perfect for:
 
@@ -10,9 +10,9 @@ Environment variables are a simple way to configure your Jac Cloud application w
 - Enabling or disabling features
 - Storing API keys and secrets
 
-![Environment Variables Diagram](https://via.placeholder.com/800x300?text=Environment+Variables+Diagram)
+<!-- ![Environment Variables Diagram](https://via.placeholder.com/800x300?text=Environment+Variables+Diagram) -->
 
-## 🚀 Quick Start: Setting Your First Variables
+## Quick Start: Setting Your First Variables
 
 ### In Development (Command Line)
 
@@ -35,7 +35,7 @@ source .env
 jac serve main.jac
 ```
 
-## 📊 Core Configuration Groups
+## Core Configuration Groups
 
 ### Database Connection
 
@@ -73,7 +73,7 @@ export SHOW_ENDPOINT_RETURNS=true
 export DISABLE_AUTO_ENDPOINT=true
 ```
 
-## 🔐 Security Settings
+## Security Settings
 
 ### Token Security
 
@@ -101,7 +101,7 @@ export SENDGRID_HOST="https://api.example.com"
 export SENDGRID_API_KEY="SG.your-sendgrid-api-key"
 ```
 
-## 📝 Logging Configuration
+## Logging Configuration
 
 Control what gets logged and where:
 
@@ -113,7 +113,7 @@ export LOGGER_ROLLOVER_INTERVAL="D"               # Daily rotation
 export LOGGER_MAX_BACKUP="30"                     # Keep 30 days of logs
 ```
 
-## 🛠️ Environment Variable Reference Tables
+## Environment Variable Reference Tables
 
 ### Database & Cache Settings
 
@@ -157,7 +157,7 @@ export LOGGER_MAX_BACKUP="30"                     # Keep 30 days of logs
 | `LOGGER_MAX_BACKUP` | Maximum backup files | `-1` (unlimited) | `30` |
 | `LOGGER_USE_UTC` | Use UTC time | `false` | `true` |
 
-## 🔑 Social Login Configuration
+## Social Login Configuration
 
 ### Basic Pattern
 
@@ -210,7 +210,7 @@ export SSO_GITHUB_CLIENT_SECRET="ghp_abcdefghijklmnopqrstuvwxyz"
     </div>
 </div>
 
-## 🌐 Server Configuration (Uvicorn)
+## Server Configuration (Uvicorn)
 
 Jac Cloud uses Uvicorn as its server. Configure it with these variables:
 
@@ -231,7 +231,7 @@ export UV_SSL_KEYFILE="/etc/ssl/private/key.pem"
 export UV_SSL_CERTFILE="/etc/ssl/certs/cert.pem"
 ```
 
-## 📋 Environment Presets for Different Scenarios
+## Environment Presets for Different Scenarios
 
 ### Local Development
 
@@ -268,7 +268,7 @@ export UV_SSL_KEYFILE="/etc/ssl/private/key.pem"
 export UV_SSL_CERTFILE="/etc/ssl/certs/cert.pem"
 ```
 
-## 💡 Best Practices for Beginners
+## Best Practices for Beginners
 
 1. **Use environment files**: Create `.env` files for different environments
    ```bash
@@ -308,7 +308,7 @@ export UV_SSL_CERTFILE="/etc/ssl/certs/cert.pem"
    }
    ```
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [WebSocket Communication](websocket.md) for real-time features
 - Explore [Task Scheduling](scheduler.md) for automated background tasks

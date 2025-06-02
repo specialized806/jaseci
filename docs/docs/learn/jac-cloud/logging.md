@@ -1,6 +1,6 @@
 # Logging and Monitoring Your Application
 
-## 🌟 Why Logging Matters
+## Why Logging Matters
 
 Effective logging is crucial for:
 - Troubleshooting problems
@@ -11,9 +11,9 @@ Effective logging is crucial for:
 
 Jac Cloud includes a comprehensive logging system that automatically tracks requests and responses, making your development experience smoother.
 
-![Logging Dashboard Example](https://via.placeholder.com/800x300?text=Logging+Dashboard+Example)
+<!-- ![Logging Dashboard Example](https://via.placeholder.com/800x300?text=Logging+Dashboard+Example) -->
 
-## 🚀 Quick Start: Check Your Logs
+## Quick Start: Check Your Logs
 
 By default, Jac Cloud logs everything to the `/tmp/jac_cloud_logs/` directory. To check your logs:
 
@@ -27,7 +27,7 @@ grep "ERROR" /tmp/jac_cloud_logs/jac-cloud.log
 
 All logs are in JSON format, making them easy to parse and analyze.
 
-## 📊 Setting Up Visualization with Elastic Stack
+## Setting Up Visualization with Elastic Stack
 
 For a better logging experience, connect Jac Cloud to Elastic Stack (Elasticsearch + Kibana) in three easy steps:
 
@@ -76,7 +76,7 @@ Now you can view your logs in Kibana with powerful filtering, visualization, and
     hosts: ["https://my_elastic_instance.me.com:443"]
     ```
 
-## ⚙️ Customizing Your Logging
+## Customizing Your Logging
 
 Adjust logging behavior by setting these environment variables:
 
@@ -103,7 +103,7 @@ export LOGGER_MAX_BACKUP=30
 export LOGGER_USE_UTC=true
 ```
 
-## 📝 Understanding Log Structure
+## Understanding Log Structure
 
 Jac Cloud logs contain these key components:
 
@@ -129,7 +129,7 @@ Jac Cloud logs contain these key components:
 
 This format makes it easy to filter and search for specific information.
 
-## 🔍 Common Log Analysis Tasks
+## Common Log Analysis Tasks
 
 ### Finding Errors
 
@@ -151,7 +151,7 @@ grep '/walker/login' /tmp/jac_cloud_logs/jac-cloud.log |
   jq '.request.body.username'
 ```
 
-## 💡 Logging Best Practices
+## Logging Best Practices
 
 1. **Use appropriate log levels**:
    - `debug`: Detailed information for debugging
@@ -172,7 +172,7 @@ grep '/walker/login' /tmp/jac_cloud_logs/jac-cloud.log |
    - Configure alerts in Kibana for error spikes
    - Monitor for unusual patterns or security issues
 
-## 🛠️ Troubleshooting Common Issues
+## Troubleshooting Common Issues
 
 ### Missing Logs
 
@@ -218,7 +218,7 @@ If logs are consuming too much space:
    find /tmp/jac_cloud_logs -name "*.log.*" -type f -mtime +7 -delete
    ```
 
-## 👣 Next Steps
+## Next Steps
 
 - Learn about [WebSocket Communication](websocket.md) for real-time features
 - Explore [Webhook Integration](webhook.md) for third-party service integration
