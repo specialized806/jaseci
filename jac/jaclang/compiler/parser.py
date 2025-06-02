@@ -963,9 +963,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             access = chomp[0] if isinstance(chomp[0], uni.SubTag) else None
             chomp = chomp[1:] if access else chomp
             assign = chomp[0]
-            if isinstance(assign, uni.SubNodeList):
+            if isinstance(assign, list):
+                assigns = self.extract_from_list(assign, uni.HasVar)
                 return uni.ArchHas(
-                    vars=assign.items,
+                    vars=assigns,
                     is_static=is_static,
                     is_frozen=is_freeze,
                     access=access,
@@ -974,24 +975,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 raise self.ice()
 
-        def has_assign_list(self, _: None) -> uni.SubNodeList[uni.HasVar]:
+        def has_assign_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                assign = self.consume(uni.HasVar)
-                new_kid = [*consume.kid, comma, assign]
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+                self.consume(uni.HasVar)
             else:
-                assign = self.consume(uni.HasVar)
-                new_kid = [assign]
-            valid_kid = [i for i in new_kid if isinstance(i, uni.HasVar)]
-            return uni.SubNodeList[uni.HasVar](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+                self.consume(uni.HasVar)
+            return self.flat_cur_nodes
 
         def typed_has_clause(self, _: None) -> uni.HasVar:
             """Grammar rule.
@@ -1194,30 +1188,30 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             self.consume_token(Tok.KW_TRY)
             block = self.consume(uni.SubNodeList)
-            except_list = self.match(uni.SubNodeList)
+            except_list = self.match(list)
             else_stmt = self.match(uni.ElseStmt)
             finally_stmt = self.match(uni.FinallyStmt)
             return uni.TryStmt(
                 body=block.items,
-                excepts=except_list.items if except_list else [],
+                excepts=(
+                    self.extract_from_list(except_list, uni.Except)
+                    if except_list
+                    else []
+                ),
                 else_body=else_stmt,
                 finally_body=finally_stmt,
                 kid=self.cur_nodes,
             )
 
-        def except_list(self, _: None) -> uni.SubNodeList[uni.Except]:
+        def except_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             except_list: except_def+
             """
-            items = [self.consume(uni.Except)]
-            while expt := self.match(uni.Except):
-                items.append(expt)
-            return uni.SubNodeList[uni.Except](
-                items=items,
-                delim=Tok.WS,
-                kid=self.cur_nodes,
-            )
+            self.consume(uni.Except)
+            while self.match(uni.Except):
+                pass
+            return self.flat_cur_nodes
 
         def except_def(self, _: None) -> uni.Except:
             """Grammar rule.
@@ -1496,9 +1490,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             global_ref: GLOBAL_OP name_list
             """
             self.consume_token(Tok.GLOBAL_OP)
-            target = self.consume(uni.SubNodeList)
+            target = self.consume(list)
             return uni.GlobalStmt(
-                target=target.items,
+                target=self.extract_from_list(target, uni.Name),
                 kid=self.cur_nodes,
             )
 
@@ -1508,9 +1502,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             nonlocal_ref: NONLOCAL_OP name_list
             """
             self.consume_token(Tok.NONLOCAL_OP)
-            target = self.consume(uni.SubNodeList)
+            target = self.consume(list)
             return uni.NonLocalStmt(
-                target=target.items,
+                target=self.extract_from_list(target, uni.Name),
                 kid=self.cur_nodes,
             )
 
@@ -1957,13 +1951,19 @@ class JacParser(Transform[uni.Source, uni.Module]):
             genai_call: uni.FuncCall | None = None
             target = self.consume(uni.Expr)
             self.consume_token(Tok.LPAREN)
-            params_sn = self.match(uni.SubNodeList)
+            params_sn = self.match(list)
             if self.match_token(Tok.KW_BY):
                 genai_call = self.consume(uni.FuncCall)
             self.consume_token(Tok.RPAREN)
             return uni.FuncCall(
                 target=target,
-                params=params_sn.items if params_sn else [],
+                params=(
+                    self.extract_from_list(
+                        params_sn, (uni.Expr, uni.KWPair)
+                    )
+                    if params_sn
+                    else []
+                ),
                 genai_call=genai_call,
                 kid=self.cur_nodes,
             )
@@ -2094,14 +2094,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
             """
             self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
-            target = self.match(uni.SubNodeList)
+            target = self.match(list)
             self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
             return uni.FString(
-                parts=target.items if target else [],
+                parts=target if target else [],
                 kid=self.cur_nodes,
             )
 
-        def fstr_parts(self, _: None) -> uni.SubNodeList[uni.String | uni.ExprStmt]:
+        def fstr_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
@@ -2115,13 +2115,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 for i in self.cur_nodes
                 if isinstance(i, uni.Expr)
             ]
-            return uni.SubNodeList[uni.String | uni.ExprStmt](
-                items=valid_parts,
-                delim=None,
-                kid=valid_parts,
-            )
+            return valid_parts
 
-        def fstr_sq_parts(self, _: None) -> uni.SubNodeList[uni.String | uni.ExprStmt]:
+        def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
@@ -2135,11 +2131,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 for i in self.cur_nodes
                 if isinstance(i, uni.Expr)
             ]
-            return uni.SubNodeList[uni.String | uni.ExprStmt](
-                items=valid_parts,
-                delim=None,
-                kid=valid_parts,
-            )
+            return valid_parts
 
         def list_val(self, _: None) -> uni.ListVal:
             """Grammar rule.
@@ -2147,10 +2139,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             list_val: LSQUARE (expr_list COMMA?)? RSQUARE
             """
             self.consume_token(Tok.LSQUARE)
-            values_node = self.match(uni.SubNodeList)
+            values_node = self.match(list)
             self.match_token(Tok.COMMA)
             self.consume_token(Tok.RSQUARE)
-            values = values_node.items if values_node else []
+            values = (
+                self.extract_from_list(values_node, uni.Expr) if values_node else []
+            )
             return uni.ListVal(
                 values=values,
                 kid=self.cur_nodes,
@@ -2162,10 +2156,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
             tuple_val: LPAREN tuple_list? RPAREN
             """
             self.consume_token(Tok.LPAREN)
-            target = self.match(uni.SubNodeList)
+            target = self.match(list)
             self.consume_token(Tok.RPAREN)
             return uni.TupleVal(
-                values=target.items if target else [],
+                values=(
+                    self.extract_from_list(target, (uni.Expr, uni.KWPair))
+                    if target
+                    else []
+                ),
                 kid=self.cur_nodes,
             )
 
@@ -2175,51 +2173,38 @@ class JacParser(Transform[uni.Source, uni.Module]):
             set_val: LBRACE expr_list COMMA? RBRACE
             """
             self.match_token(Tok.LBRACE)
-            expr_list = self.match(uni.SubNodeList)
+            expr_list = self.match(list)
             self.match_token(Tok.COMMA)
             self.match_token(Tok.RBRACE)
-            values = expr_list.items if expr_list else []
+            values = (
+                self.extract_from_list(expr_list, uni.Expr) if expr_list else []
+            )
             return uni.SetVal(
                 values=values,
                 kid=self.cur_nodes,
             )
 
-        def expr_list(self, kid: list[uni.UniNode]) -> uni.SubNodeList[uni.Expr]:
+        def expr_list(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
             """Grammar rule.
 
             expr_list: (expr_list COMMA)? expression
             """
-            new_kid: list = []
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                new_kid.extend([*consume.kid, comma])
-            expr = self.consume(uni.Expr)
-            new_kid.extend([expr])
-            valid_kid = [i for i in new_kid if isinstance(i, uni.Expr)]
-            return uni.SubNodeList[uni.Expr](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+            self.consume(uni.Expr)
+            return self.flat_cur_nodes
 
-        def kw_expr_list(self, kid: list[uni.UniNode]) -> uni.SubNodeList[uni.KWPair]:
+        def kw_expr_list(self, kid: list[uni.UniNode]) -> list[uni.UniNode]:
             """Grammar rule.
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
             """
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                expr = self.consume(uni.KWPair)
-                new_kid = [*consume.kid, comma, expr]
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+                self.consume(uni.KWPair)
             else:
-                expr = self.consume(uni.KWPair)
-                new_kid = [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, uni.KWPair)]
-            return uni.SubNodeList[uni.KWPair](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+                self.consume(uni.KWPair)
+            return self.flat_cur_nodes
 
         def kw_expr(self, _: None) -> uni.KWPair:
             """Grammar rule.
@@ -2239,21 +2224,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def name_list(self, _: None) -> uni.SubNodeList[uni.Name]:
+        def name_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             name_list: (named_ref COMMA)* named_ref
             """
-            valid_kid = [self.consume(uni.Name)]
+            self.consume(uni.Name)
             while self.match_token(Tok.COMMA):
-                valid_kid.append(self.consume(uni.Name))
-            return uni.SubNodeList[uni.Name](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+                self.consume(uni.Name)
+            return self.flat_cur_nodes
 
-        def tuple_list(self, _: None) -> uni.SubNodeList[uni.Expr | uni.KWPair]:
+        def tuple_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             tuple_list: expression COMMA expr_list COMMA kw_expr_list COMMA?
@@ -2262,29 +2243,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
                       | expression COMMA
                       | kw_expr_list COMMA?
             """
-            if first_expr := self.match(uni.SubNodeList):
-                comma = self.match_token(Tok.COMMA)
-                if comma:
-                    first_expr.kid.append(comma)
-                return first_expr
-            expr = self.consume(uni.Expr)
+            if self.match(list):
+                self.match_token(Tok.COMMA)
+                return self.flat_cur_nodes
+            self.consume(uni.Expr)
             self.consume_token(Tok.COMMA)
-            second_expr = self.match(uni.SubNodeList)
+            self.match(list)
             self.match_token(Tok.COMMA)
-            kw_expr_list = self.match(uni.SubNodeList)
+            self.match(list)
             self.match_token(Tok.COMMA)
-            expr_list: list = []
-            if second_expr:
-                expr_list = second_expr.kid
-                if kw_expr_list:
-                    expr_list = [*expr_list, *kw_expr_list.kid]
-            expr_list = [expr, *expr_list]
-            valid_kid = [i for i in expr_list if isinstance(i, (uni.Expr, uni.KWPair))]
-            return uni.SubNodeList[uni.Expr | uni.KWPair](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+            return self.flat_cur_nodes
 
         def dict_val(self, _: None) -> uni.DictVal:
             """Grammar rule.
@@ -2404,34 +2372,19 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def param_list(self, _: None) -> uni.SubNodeList[uni.Expr | uni.KWPair]:
+        def param_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             param_list: expr_list    COMMA kw_expr_list COMMA?
                       | kw_expr_list COMMA?
                       | expr_list    COMMA?
             """
-            kw_expr_list: uni.SubNodeList | None = None
-            expr_list = self.consume(uni.SubNodeList)
+            self.consume(list)
             if len(self.cur_nodes) > 2:
                 self.consume_token(Tok.COMMA)
-                kw_expr_list = self.consume(uni.SubNodeList)
-            ends_comma = self.match_token(Tok.COMMA)
-            if kw_expr_list:
-                valid_kid = [
-                    i
-                    for i in [*expr_list.items, *kw_expr_list.items]
-                    if isinstance(i, (uni.Expr, uni.KWPair))
-                ]
-                return uni.SubNodeList[uni.Expr | uni.KWPair](
-                    items=valid_kid,
-                    delim=Tok.COMMA,
-                    kid=self.cur_nodes,
-                )
-            else:
-                if ends_comma:
-                    expr_list.kid.append(ends_comma)
-                return expr_list
+                self.consume(list)
+            self.match_token(Tok.COMMA)
+            return self.flat_cur_nodes
 
         def assignment_list(self, _: None) -> uni.SubNodeList[uni.Assignment]:
             """Grammar rule.
