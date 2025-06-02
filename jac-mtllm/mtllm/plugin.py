@@ -28,7 +28,7 @@ def extract_params(
     include_info = []
     exclude_info = []
     if body.params:
-        for param in body.params.items:
+        for param in body.params:
             if isinstance(param, uni.KWPair) and isinstance(param.key, uni.Name):
                 key = param.key.value
                 value = param.value
@@ -48,7 +48,7 @@ def extract_params(
                         )
                         include_info.append((var_name, value.gen.py_ast[0]))
                     elif isinstance(value, uni.TupleVal) and value.values:
-                        for i in value.values.items:
+                        for i in value.values:
                             var_name = (
                                 i.right.value
                                 if isinstance(i, uni.AtomTrailer)
@@ -70,7 +70,7 @@ def extract_params(
                         )
                         exclude_info.append((var_name, value.gen.py_ast[0]))
                     elif isinstance(value, uni.TupleVal) and value.values:
-                        for i in value.values.items:
+                        for i in value.values:
                             var_name = (
                                 i.right.value
                                 if isinstance(i, uni.AtomTrailer)
@@ -155,7 +155,7 @@ class JacMachine:
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         machine = JacMachineInterface.py_get_jac_machine()
-        program_head = machine.jac_program.mod
+        program_head = machine.program.mod
         _scope = SemScope.get_scope_from_str(scope)
         mod_registry = SemRegistry(program_head=program_head, by_scope=_scope)
 
@@ -274,7 +274,7 @@ class JacMachine:
                             ctx=ast3.Load(),
                         )
                     )
-                    for param in node.signature.params.items
+                    for param in node.signature.params
                 ]
                 if isinstance(node.signature, uni.FuncSignature)
                 and node.signature.params
@@ -289,8 +289,14 @@ class JacMachine:
                 else []
             )
             # Use the ability name as action, and if docstring exists, append it
-            docstr =  ((node.doc and node.doc.lit_value) or "") if isinstance(node, uni.AstDocNode) else ""
-            action = _pass.sync(ast3.Constant(value=f"{docstr.strip()} ({node.name_ref.sym_name})\n"))
+            docstr = (
+                ((node.doc and node.doc.lit_value) or "")
+                if isinstance(node, uni.AstDocNode)
+                else ""
+            )
+            action = _pass.sync(
+                ast3.Constant(value=f"{docstr.strip()} ({node.name_ref.sym_name})\n")
+            )
             return [
                 _pass.sync(
                     ast3.Return(
@@ -570,7 +576,7 @@ class JacMachine:
                 keywords=[],
             )
         )
-        if node.params and node.params.items:
+        if node.params:
             inputs = [
                 _pass.sync(
                     ast3.Tuple(
@@ -655,7 +661,7 @@ class JacMachine:
                         ctx=ast3.Load(),
                     )
                 )
-                for kw_pair in node.params.items
+                for kw_pair in node.params
                 if isinstance(kw_pair, uni.KWPair)
             ]
         else:

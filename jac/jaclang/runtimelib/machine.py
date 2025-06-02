@@ -345,10 +345,11 @@ class JacWalker:
                         next.append(anchor)
                     else:
                         raise ValueError("Anchor should be NodeAnchor or EdgeAnchor.")
-            if insert_loc == 0:
-                wanch.next[:0] = next
-            else:
-                wanch.next.extend(next)
+            if insert_loc < -len(wanch.next):  # for out of index selection
+                insert_loc = 0
+            elif insert_loc < 0:
+                insert_loc += len(wanch.next) + 1
+            wanch.next = wanch.next[:insert_loc] + next + wanch.next[insert_loc:]
             return len(wanch.next) > before_len
         else:
             raise TypeError("Invalid walker object")
@@ -847,7 +848,7 @@ class JacBasics:
             items,
         )
 
-        if not mach.jac_program:
+        if not mach.program:
             JacMachineInterface.attach_program(mach, JacProgram())
 
         if lng == "py":
@@ -1366,7 +1367,7 @@ class JacUtils:
     @staticmethod
     def attach_program(mach: JacMachine, jac_program: JacProgram) -> None:
         """Attach a JacProgram to the machine."""
-        mach.jac_program = jac_program
+        mach.program = jac_program
 
     @staticmethod
     def load_module(
@@ -1601,7 +1602,6 @@ class JacMachine(JacMachineInterface):
         base_path: str = "",
         session: Optional[str] = None,
         root: Optional[str] = None,
-        interp_mode: bool = False,
     ) -> None:
         """Initialize JacMachine."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
@@ -1614,8 +1614,7 @@ class JacMachine(JacMachineInterface):
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = JacProgram()
-        self.interp_mode = interp_mode
+        self.program: JacProgram = JacProgram()
         self.pool = ThreadPoolExecutor()
         self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)

@@ -643,7 +643,7 @@ class SpliceOrcPlugin:
             items,
         )
 
-        if not mach.jac_program:
+        if not mach.program:
             JacMachineInterface.attach_program(mach, JacProgram())
 
         if lng == "py":

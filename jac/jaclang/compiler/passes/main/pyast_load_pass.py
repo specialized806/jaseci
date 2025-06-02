@@ -62,17 +62,10 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         """Extract with entry from a body."""
 
         def gen_mod_code(with_entry_body: list[uni.CodeBlockStmt]) -> uni.ModuleCode:
-            with_entry_subnodelist = uni.SubNodeList[uni.CodeBlockStmt](
-                items=with_entry_body,
-                delim=Tok.WS,
-                kid=with_entry_body,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
             return uni.ModuleCode(
                 name=None,
-                body=with_entry_subnodelist,
-                kid=[with_entry_subnodelist],
+                body=with_entry_body,
+                kid=with_entry_body,
                 doc=None,
             )
 
@@ -172,33 +165,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         ):
             self.convert_to_doc(valid[0].expr)
             doc = valid[0].expr
-            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid[1:],
-                delim=Tok.WS,
-                kid=valid[1:] + [doc],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body = valid[1:]
         else:
             doc = None
-            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid,
-                delim=Tok.WS,
-                kid=valid,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body = valid
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, uni.Expr)]
         if len(valid_dec) != len(decorators):
             raise self.ice("Length mismatch in decorators on function")
-        valid_decorators = (
-            uni.SubNodeList[uni.Expr](
-                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if len(valid_dec)
-            else None
-        )
+        valid_decorators = valid_dec if valid_dec else None
         res = self.convert(node.args)
         sig: Optional[uni.FuncSignature] = (
             res if isinstance(res, uni.FuncSignature) else None
@@ -206,12 +181,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         ret_sig = self.convert(node.returns) if node.returns else None
         if isinstance(ret_sig, uni.Expr):
             if not sig:
-                sig = uni.FuncSignature(params=None, return_type=ret_sig, kid=[ret_sig])
+                sig = uni.FuncSignature(params=[], return_type=ret_sig, kid=[ret_sig])
             else:
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
         kid = ([doc] if doc else []) + (
-            [name, sig, valid_body] if sig else [name, valid_body]
+            [name, sig, *valid_body] if sig else [name, *valid_body]
         )
         if not sig:
             raise self.ice("Function signature not found")
@@ -309,7 +284,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 and isinstance(body_stmt.signature, uni.FuncSignature)
                 and body_stmt.signature.params
             ):
-                for param in body_stmt.signature.params.items:
+                for param in body_stmt.signature.params:
                     if param.name.value == "self":
                         param.type_tag = uni.SubTag[uni.Expr](name, kid=[name])
         doc = (
@@ -340,28 +315,17 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         base_classes: list[uni.Expr] = [
             base for base in converted_base_classes if isinstance(base, uni.Expr)
         ]
-        valid_bases = (
-            uni.SubNodeList[uni.Expr](
-                items=base_classes, delim=Tok.COMMA, kid=base_classes
-            )
-            if base_classes
-            else None
-        )
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, uni.Expr)]
-        valid_decorators = (
-            uni.SubNodeList[uni.Expr](
-                items=decorators, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if decorators
-            else None
-        )
+        if len(decorators) != len(converted_decorators_list):
+            raise self.ice("Length mismatch in decorators on class")
+        valid_decorators = decorators if decorators else None
         kid = (
-            [name, valid_bases, valid_body, doc]
-            if doc and valid_bases
+            [name, *base_classes, valid_body, doc]
+            if doc and base_classes
             else (
-                [name, valid_bases, valid_body]
-                if valid_bases
+                [name, *base_classes, valid_body]
+                if base_classes
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
@@ -369,8 +333,8 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             arch_type=arch_type,
             name=name,
             access=None,
-            base_classes=valid_bases,
-            body=valid_body,
+            base_classes=base_classes,
+            body=valid,
             kid=kid,
             doc=doc,
             decorators=valid_decorators,
@@ -410,7 +374,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         target_1 = (
             valid_exprs[0]
             if len(valid_exprs) > 1
-            else uni.TupleVal(values=target, kid=[target])
+            else uni.TupleVal(values=target.items, kid=[target])
         )
         return uni.DeleteStmt(
             target=target_1,
@@ -435,7 +399,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             raise self.ice("Length mismatch in assignment targets")
         if isinstance(value, uni.Expr):
             return uni.Assignment(
-                target=valid_targets,
+                target=valid_targets.items,
                 value=value,
                 type_tag=None,
                 kid=[valid_targets, value],
@@ -468,7 +432,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 items=[target], delim=Tok.COMMA, kid=[target]
             )
             return uni.Assignment(
-                target=targ,
+                target=targ.items,
                 type_tag=None,
                 mutable=True,
                 aug_op=op,
@@ -500,17 +464,17 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             and isinstance(annotation, uni.Expr)
             and isinstance(target, uni.Expr)
         ):
-            target = uni.SubNodeList[uni.Expr](
+            target_sn = uni.SubNodeList[uni.Expr](
                 items=[target], delim=Tok.EQ, kid=[target]
             )
             return uni.Assignment(
-                target=target,
+                target=target_sn.items,
                 value=value if isinstance(value, (uni.Expr, uni.YieldExpr)) else None,
                 type_tag=annotation_subtag,
                 kid=(
-                    [target, annotation_subtag, value]
+                    [target_sn, annotation_subtag, value]
                     if value
-                    else [target, annotation_subtag]
+                    else [target_sn, annotation_subtag]
                 ),
             )
         else:
@@ -533,32 +497,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        valid_body = val_body
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
         if orelse:
-            valid_orelse = uni.SubNodeList[uni.CodeBlockStmt](
-                items=val_orelse,
-                delim=Tok.WS,
-                kid=orelse,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            fin_orelse = uni.ElseStmt(body=val_orelse, kid=val_orelse)
         else:
-            valid_orelse = None
-        fin_orelse = (
-            uni.ElseStmt(body=valid_orelse, kid=[valid_orelse])
-            if valid_orelse
-            else None
-        )
+            fin_orelse = None
         if isinstance(target, uni.Expr) and isinstance(iter, uni.Expr):
             return uni.InForStmt(
                 target=target,
@@ -567,9 +514,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 body=valid_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *valid_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *valid_body]
                 ),
             )
         else:
@@ -592,32 +539,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        valid_body = val_body
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
         if orelse:
-            valid_orelse = uni.SubNodeList[uni.CodeBlockStmt](
-                items=val_orelse,
-                delim=Tok.WS,
-                kid=orelse,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            fin_orelse = uni.ElseStmt(body=val_orelse, kid=val_orelse)
         else:
-            valid_orelse = None
-        fin_orelse = (
-            uni.ElseStmt(body=valid_orelse, kid=[valid_orelse])
-            if valid_orelse
-            else None
-        )
+            fin_orelse = None
         if isinstance(target, uni.Expr) and isinstance(iter, uni.Expr):
             return uni.InForStmt(
                 target=target,
@@ -626,9 +556,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 body=valid_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *valid_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *valid_body]
                 ),
             )
         else:
@@ -648,18 +578,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in while body")
-        fin_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=valid_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         if isinstance(test, uni.Expr):
             return uni.WhileStmt(
                 condition=test,
-                body=fin_body,
-                kid=[test, fin_body],
+                body=valid_body,
+                kid=[test, *valid_body],
             )
         else:
             raise self.ice()
@@ -678,13 +601,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             self.log_error("Length mismatch in async for body")
-        body2 = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
+        body2 = valid_body
 
         orelse = [self.convert(stmt) for stmt in node.orelse]
         valid_orelse = [
@@ -700,14 +617,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     kid=first_elm.kid,
                 )
             else:
-                orelse2 = uni.SubNodeList[uni.CodeBlockStmt](
-                    items=valid_orelse,
-                    delim=Tok.WS,
-                    kid=orelse,
-                    left_enc=self.operator(Tok.LBRACE, "{"),
-                    right_enc=self.operator(Tok.RBRACE, "}"),
-                )
-                else_body = uni.ElseStmt(body=orelse2, kid=[orelse2])
+                else_body = uni.ElseStmt(body=valid_orelse, kid=valid_orelse)
         else:
             else_body = None
         if isinstance(test, uni.Expr):
@@ -715,7 +625,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 condition=test,
                 body=body2,
                 else_body=else_body,
-                kid=([test, body2, else_body] if else_body else [test, body2]),
+                kid=([test, *body2, else_body] if else_body else [test, *body2]),
             )
         else:
             raise self.ice()
@@ -733,22 +643,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = uni.SubNodeList[uni.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return uni.WithStmt(
-            is_async=False, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=False,
+            exprs=valid_items,
+            body=valid_body,
+            kid=[*valid_items, *valid_body],
         )
 
     def proc_async_with(self, node: py_ast.AsyncWith) -> uni.WithStmt:
@@ -763,22 +666,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = uni.SubNodeList[uni.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return uni.WithStmt(
-            is_async=True, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=True,
+            exprs=valid_items,
+            body=valid_body,
+            kid=[*valid_items, *valid_body],
         )
 
     def proc_raise(self, node: py_ast.Raise) -> uni.RaiseStmt:
@@ -1012,17 +908,18 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             if isinstance(i, uni.KWPair):
                 params_in.append(i)
         if len(params_in) != 0:
-            params_in2 = uni.SubNodeList[uni.Expr | uni.KWPair](
+            params_sn = uni.SubNodeList[uni.Expr | uni.KWPair](
                 items=params_in, delim=Tok.COMMA, kid=params_in
             )
+            kids = [func, params_sn]
         else:
-            params_in2 = None
+            kids = [func]
         if isinstance(func, uni.Expr):
             return uni.FuncCall(
                 target=func,
-                params=params_in2,
+                params=params_in,
                 genai_call=None,
-                kid=[func, params_in2] if params_in2 else [func],
+                kid=kids,
             )
         else:
             raise self.ice()
@@ -1273,7 +1170,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             return uni.Except(
                 ex_type=type,
                 name=name,
-                body=valid_body,
+                body=valid_body.items,
                 kid=kid,
             )
         else:
@@ -1354,8 +1251,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     pos_end=0,
                 )
             )
-        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return uni.GlobalStmt(target=target, kid=[target])
+        return uni.GlobalStmt(target=names, kid=names)
 
     def proc_if_exp(self, node: py_ast.IfExp) -> uni.IfElseExpr:
         """Process python node.
@@ -1396,9 +1292,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 paths.append(
                     uni.ModulePath(
-                        path=uni.SubNodeList[uni.Name](
-                            items=[name.expr], delim=Tok.DOT, kid=[name.expr]
-                        ),
+                        path=[name.expr],
                         level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
@@ -1407,12 +1301,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = uni.Import(
             from_loc=None,
-            items=items,
+            items=paths,
             is_absorb=False,
-            kid=[items],
+            kid=paths,
         )
         return ret
 
@@ -1454,11 +1347,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=(
-                uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths)
-                if modpaths
-                else None
-            ),
+            path=modpaths if modpaths else None,
             level=node.level,
             alias=None,
             kid=modparts,
@@ -1481,32 +1370,23 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 )
             else:
                 raise self.ice()
-        items = (
-            uni.SubNodeList[uni.ModuleItem](
-                items=valid_names, delim=Tok.COMMA, kid=valid_names
-            )
-            if valid_names
-            else None
-        )
+        items = valid_names
         if not items:
             raise self.ice("No valid names in import from")
         pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
-            path_in = uni.SubNodeList[uni.ModulePath](
-                items=[path], delim=Tok.COMMA, kid=[path]
-            )
             ret = uni.Import(
                 from_loc=None,
-                items=path_in,
+                items=[path],
                 is_absorb=True,
-                kid=[pytag, path_in],
+                kid=[pytag, path],
             )
             return ret
         ret = uni.Import(
             from_loc=path,
             items=items,
             is_absorb=False,
-            kid=[pytag, path, items],
+            kid=[pytag, path, *items],
         )
         return ret
 
@@ -1522,10 +1402,10 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid = [
             value for value in values if isinstance(value, (uni.String, uni.ExprStmt))
         ]
-        valid_values = uni.SubNodeList[uni.String | uni.ExprStmt](
-            items=valid, delim=None, kid=valid
+        return uni.FString(
+            parts=valid,
+            kid=[*valid] if valid else [uni.EmptyToken()],
         )
-        return uni.FString(parts=valid_values, kid=[valid_values])
 
     def proc_lambda(self, node: py_ast.Lambda) -> uni.LambdaExpr:
         """Process python node.
@@ -1555,13 +1435,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         l_square = self.operator(Tok.LSQUARE, "[")
         r_square = self.operator(Tok.RSQUARE, "]")
         return uni.ListVal(
-            values=(
-                uni.SubNodeList[uni.Expr](
-                    items=valid_elts, delim=Tok.COMMA, kid=valid_elts
-                )
-                if valid_elts
-                else None
-            ),
+            values=valid_elts,
             kid=[*valid_elts] if valid_elts else [l_square, r_square],
         )
 
@@ -1654,10 +1528,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     items=valid_patterns, delim=Tok.COMMA, kid=valid_patterns
                 )
                 kid.append(patterns_sub)
+                patterns_list = valid_patterns
             else:
                 raise self.ice()
         else:
             patterns_sub = None
+            patterns_list = None
 
         if len(node.kwd_patterns):
             names: list[uni.Name] = []
@@ -1688,15 +1564,20 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                         kid=[names[i], valid_kwd_patterns[i]],
                     )
                 )
-            kw_patterns = uni.SubNodeList[uni.MatchKVPair](
+            kw_patterns_node = uni.SubNodeList[uni.MatchKVPair](
                 items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
             )
-            kid.append(kw_patterns)
+            kid.append(kw_patterns_node)
+            kw_patterns_list = kv_pairs
         else:
-            kw_patterns = None
+            kw_patterns_node = None
+            kw_patterns_list = None
         if isinstance(cls, (uni.NameAtom, uni.AtomTrailer)):
             return uni.MatchArch(
-                name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
+                name=cls,
+                arg_patterns=patterns_list,
+                kw_patterns=kw_patterns_list,
+                kid=kid,
             )
         else:
             raise self.ice()
@@ -1903,8 +1784,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                     pos_end=0,
                 )
             )
-        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return uni.NonLocalStmt(target=target, kid=names)
+        return uni.NonLocalStmt(target=names, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> uni.Semi:
         """Process python node."""
@@ -1931,16 +1811,13 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             valid = [i for i in elts if isinstance(i, (uni.Expr))]
             if len(valid) != len(elts):
                 raise self.ice("Length mismatch in set body")
-            valid_elts = uni.SubNodeList[uni.Expr](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )
             kid: list[uni.UniNode] = [*valid]
         else:
-            valid_elts = None
+            valid = []
             l_brace = self.operator(Tok.LBRACE, "{")
             r_brace = self.operator(Tok.RBRACE, "}")
             kid = [l_brace, r_brace]
-        return uni.SetVal(values=valid_elts, kid=kid)
+        return uni.SetVal(values=valid, kid=kid)
 
     def proc_set_comp(self, node: py_ast.SetComp) -> uni.ListCompr:
         """Process python node.
@@ -2020,11 +1897,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if (
             not isinstance(slice, uni.IndexSlice)
             and isinstance(slice, uni.TupleVal)
-            and slice.values is not None
+            and slice.values
         ):
 
             slices: list[uni.IndexSlice.Slice] = []
-            for index_slice in slice.values.items:
+            for index_slice in slice.values:
                 if not isinstance(index_slice, uni.IndexSlice):
                     raise self.ice()
                 slices.append(index_slice.slices[0])
@@ -2059,41 +1936,27 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=valid,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
-        kid: list[uni.UniNode] = [valid_body]
+        valid_body = valid
+        kid: list[uni.UniNode] = [*valid_body]
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]
             valid_handlers = [i for i in handlers if isinstance(i, (uni.Except))]
             if len(handlers) != len(valid_handlers):
                 raise self.ice("Length mismatch in try handlers")
-            excepts = uni.SubNodeList[uni.Except](
-                items=valid_handlers, delim=Tok.WS, kid=valid_handlers
-            )
-            kid.append(excepts)
+            excepts = valid_handlers
+            kid.extend(valid_handlers)
         else:
-            excepts = None
+            excepts = []
 
         if len(node.orelse) != 0:
             orelse = [self.convert(i) for i in node.orelse]
             valid_orelse = [i for i in orelse if isinstance(i, (uni.CodeBlockStmt))]
             if len(orelse) != len(valid_orelse):
                 raise self.ice("Length mismatch in try orelse")
-            else_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid_orelse,
-                delim=Tok.WS,
-                kid=valid_orelse,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
-            elsestmt = uni.ElseStmt(body=else_body, kid=[else_body])
-            kid.append(else_body)
+            else_body = valid_orelse
+            elsestmt = uni.ElseStmt(body=else_body, kid=else_body)
+            kid.extend(else_body)
         else:
             else_body = None
 
@@ -2104,23 +1967,20 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid_finalbody,
-                delim=Tok.WS,
-                kid=valid_finalbody,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
+            finally_stmt_obj: Optional[uni.FinallyStmt] = (
+                fin_append := uni.FinallyStmt(
+                    body=valid_finalbody,
+                    kid=valid_finalbody,
+                )
             )
-            finally_stmt = uni.FinallyStmt(body=finally_body, kid=[finally_body])
-
-            kid.append(finally_stmt)
+            kid.append(fin_append)
         else:
-            finally_body = None
+            finally_stmt_obj = None
         ret = uni.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
-            finally_body=finally_stmt if finally_body else None,
+            finally_body=finally_stmt_obj,
             kid=kid,
         )
         return ret
@@ -2145,17 +2005,14 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         """
         elts = [self.convert(elt) for elt in node.elts]
         if len(node.elts) != 0:
-            valid = [i for i in elts if isinstance(i, (uni.Expr, uni.KWPair))]
-            if len(elts) != len(valid):
+            valid_elts = [i for i in elts if isinstance(i, (uni.Expr, uni.KWPair))]
+            if len(elts) != len(valid_elts):
                 raise self.ice("Length mismatch in tuple elts")
-            valid_elts = uni.SubNodeList[uni.Expr | uni.KWPair](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )
             kid = elts
         else:
             l_paren = self.operator(Tok.LPAREN, "(")
             r_paren = self.operator(Tok.RPAREN, ")")
-            valid_elts = None
+            valid_elts = []
             kid = [l_paren, r_paren]
         return uni.TupleVal(values=valid_elts, kid=kid)
 
@@ -2337,21 +2194,17 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
 
         valid_params = [param for param in params if isinstance(param, uni.ParamVar)]
         if valid_params:
-            fs_params = uni.SubNodeList[uni.ParamVar](
-                items=valid_params, delim=Tok.COMMA, kid=valid_params
-            )
+            fs_params = valid_params
             return uni.FuncSignature(
                 params=fs_params,
                 return_type=None,
-                kid=[fs_params],
+                kid=fs_params,
             )
         else:
-            _lparen = self.operator(Tok.LPAREN, "(")
-            _rparen = self.operator(Tok.RPAREN, ")")
             return uni.FuncSignature(
-                params=None,
+                params=[],
                 return_type=None,
-                kid=[_lparen, _rparen],
+                kid=[self.operator(Tok.LPAREN, "("), self.operator(Tok.RPAREN, ")")],
             )
 
     def operator(self, tok: Tok, value: str) -> uni.Token:

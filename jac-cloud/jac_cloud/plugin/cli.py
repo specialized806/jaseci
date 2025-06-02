@@ -29,19 +29,14 @@ class JacCmd:
         """Create Jac CLI cmds."""
 
         @cmd_registry.register
-        def serve(
-            filename: str,
-            host: str = "0.0.0.0",
-            port: int = 8000,
-            interp_mode: bool = False,
-        ) -> None:
+        def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
             """Serve the jac application."""
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
 
             FastAPI.enable()
-            mach = JacMachine(base, interp_mode=interp_mode)
+            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
