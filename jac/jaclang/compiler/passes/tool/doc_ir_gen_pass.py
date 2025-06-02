@@ -456,6 +456,10 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             elif (
                 isinstance(i, uni.SubNodeList)
                 and isinstance(i.gen.doc_ir, doc.Concat)
@@ -1233,9 +1237,7 @@ class DocIRGenPass(UniPass):
         is_escaped_curly = (
             node.lit_value in ["{", "}"]
             and node.parent
-            and isinstance(node.parent, uni.SubNodeList)
-            and node.parent.parent
-            and isinstance(node.parent.parent, uni.FString)
+            and isinstance(node.parent, uni.FString)
         )
 
         if "\n" in node.value:
