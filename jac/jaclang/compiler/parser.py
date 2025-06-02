@@ -561,7 +561,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     valid_tail.items
                     if isinstance(valid_tail, uni.SubNodeList)
                     else (
-                        self.extract_from_list(valid_tail, uni.EnumBlockStmt)
+                        self.extract_from_list(
+                            valid_tail,
+                            (uni.EnumBlockStmt, uni.CodeBlockStmt),
+                        )
                         if isinstance(valid_tail, list)
                         else valid_tail
                     )

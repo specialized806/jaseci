@@ -1806,10 +1806,10 @@ class Ability(
             if self.parent and isinstance(self.parent, (Archetype, Enum))
             else None
         ) or (
-            self.parent.parent.decl_link
+            self.parent.decl_link
             if self.parent
-            and isinstance(self.parent.parent, ImplDef)
-            and isinstance(self.parent.parent.decl_link, Archetype)
+            and isinstance(self.parent, ImplDef)
+            and isinstance(self.parent.decl_link, (Archetype, Enum))
             else None
         )
         return found
