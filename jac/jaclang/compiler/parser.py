@@ -2604,46 +2604,39 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.RPAREN)
                 return f_type
             self.consume_token(Tok.NULL_OK)
-            compares_sn = self.consume(uni.SubNodeList)
+            compares_list = self.consume(list)
             self.consume_token(Tok.RPAREN)
             return uni.FilterCompr(
-                compares=compares_sn.items,
+                compares=self.extract_from_list(compares_list, uni.CompareExpr),
                 f_type=None,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
-        def filter_compare_list(self, _: None) -> uni.SubNodeList[uni.CompareExpr]:
+        def filter_compare_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
             filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
             """
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                expr = self.consume(uni.CompareExpr)
-                new_kid = [*consume.kid, comma, expr]
-            else:
-                expr = self.consume(uni.CompareExpr)
-                new_kid = [expr]
-            valid_kid = [i for i in new_kid if isinstance(i, uni.CompareExpr)]
-            return uni.SubNodeList[uni.CompareExpr](
-                items=valid_kid,
-                delim=Tok.COMMA,
-                kid=new_kid,
-            )
+            if self.match(list):
+                self.consume_token(Tok.COMMA)
+            self.consume(uni.CompareExpr)
+            return self.flat_cur_nodes
 
         def typed_filter_compare_list(self, _: None) -> uni.FilterCompr:
             """Grammar rule.
 
             typed_filter_compare_list: expression (COLON filter_compare_list)?
             """
-            compares_sn: uni.SubNodeList | None = None
+            compares_list: list[uni.UniNode] | None = None
             expr = self.consume(uni.Expr)
             if self.match_token(Tok.COLON):
-                compares_sn = self.consume(uni.SubNodeList)
+                compares_list = self.consume(list)
             return uni.FilterCompr(
-                compares=compares_sn.items if compares_sn else [],
+                compares=self.extract_from_list(
+                    compares_list or [], uni.CompareExpr
+                ),
                 f_type=expr,
-                kid=self.cur_nodes,
+                kid=self.flat_cur_nodes,
             )
 
         def filter_compare_item(self, _: None) -> uni.CompareExpr:
