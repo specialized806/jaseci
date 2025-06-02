@@ -1202,12 +1202,12 @@ class JacLanguageTests(TestCase):
         self.assertNotIn("It is non blocking", stdout_value[4])
         self.assertIn("W(num=8)", stdout_value[5])
 
-    def test_async_ability(self) -> None:
+    def test_async_function(self) -> None:
         """Test async ability."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "async_ability", base_path=self.fixture_abs_path("./")
+            self.mach, "async_function", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
@@ -1340,3 +1340,16 @@ class JacLanguageTests(TestCase):
         self.assertIn("MyWalker() from node MyNode(val=60)", stdout_value[4])
         self.assertIn("MyWalker() from node MyNode(val=40)", stdout_value[6])
         self.assertIn("MyWalker() from node MyNode(val=70)", stdout_value[7])
+
+    def test_async_ability(self) -> None:
+        """Test async ability."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "async_ability", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("I am here man MyNode(val=5)", stdout_value[0])
+        self.assertIn("Async function", stdout_value[1])
+        self.assertIn("I am here man MyNode(val=1)", stdout_value[2])

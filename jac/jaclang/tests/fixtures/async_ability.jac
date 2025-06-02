@@ -1,18 +1,28 @@
-import asyncio;
-
-async def say_hello(){
-    print("Hello");
-    await asyncio.sleep(1);
-    print("World!");
+node MyNode {
+    has val:int;
 }
 
-async def main(){
-    await asyncio.gather(
-        say_hello(),
-        say_hello()
-    );
+edge MyEdge  {
+    has value:int;
+}
+
+async def fun{
+    print("Async function");
+}
+
+walker MyWalker {
+    has name:str;
+
+    async can do_print with MyNode entry {
+        print("I am here man", here);
+        visit [-->];
+        await fun();
+    }
 }
 
 with entry {
-    asyncio.run(main());
+    root ++> (node1:= MyNode(5));
+    node1 +>:MyEdge(100):+> [MyNode(i) for i in range(1,10,5)];
+    walker1 = MyWalker("Mylife");
+    walker1 spawn node1;
 }
