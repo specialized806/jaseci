@@ -1,34 +1,46 @@
-# Quick Start
+# Quick Start Guide
 
-### Starting Your First Server
+This guide will help you quickly get up and running with Jac Cloud, with step-by-step instructions designed for beginners.
+
+## 🚀 Your First Jac Cloud Server in 30 Seconds
 
 Transform any Jac application into a cloud API server with a single command:
 
 ```bash
-# Basic usage
+# Basic usage - this is all you need to start!
 jac serve main.jac
 
-# With custom host and port
+# With custom host and port (optional)
 jac serve main.jac --host 0.0.0.0 --port 8080
 ```
 
-Once started, your API will be available at `http://localhost:8000` with interactive documentation at `http://localhost:8000/docs`.
+Once started, your API will be available at:
+- **API Endpoint**: `http://localhost:8000`
+- **Interactive Documentation**: `http://localhost:8000/docs`
 
-## Understanding Walker Endpoints
+![Swagger Documentation Example](https://via.placeholder.com/800x400?text=Swagger+Documentation+Example)
+
+## 📚 Understanding Walker Endpoints
+
+### What Happens Automatically
 
 Jac Cloud automatically converts your walker declarations into REST API endpoints. By default, each walker creates two endpoint groups:
 
-- **Root Entry**: `/walker/{walker_name}` - Executes on the current root
-- **Node Entry**: `/walker/{walker_name}/{node_id}` - Executes on a specific node
+| Endpoint Type | URL Pattern | Description |
+|--------------|-------------|-------------|
+| **Root Entry** | `/walker/{walker_name}` | Executes on the current root |
+| **Node Entry** | `/walker/{walker_name}/{node_id}` | Executes on a specific node |
 
-### Disabling Auto-Generation
+### Want to Disable Auto-Generation?
 
 To disable automatic endpoint generation, set the environment variable:
 ```bash
 export DISABLE_AUTO_ENDPOINT=true
 ```
 
-## Configuring Walker Specifications
+## 🛠️ Configuring Your Walkers
+
+### Basic Configuration
 
 Control endpoint behavior using the `__specs__` object within your walker:
 
@@ -36,51 +48,48 @@ Control endpoint behavior using the `__specs__` object within your walker:
 walker my_walker {
     has data: str;
 
+    // This is where you configure your endpoint behavior
     obj __specs__ {
-        static has methods: list = ["get", "post"];
-        static has auth: bool = false;
-        static has as_query: list = ["data"];
+        static has methods: list = ["get", "post"];   // Supports both GET and POST
+        static has auth: bool = false;                // No authentication required
+        static has as_query: list = ["data"];         // "data" will be a query parameter
     }
 }
 ```
 
-## Specification Reference
+## ⚙️ Configuration Reference
 
-### Core Configuration
+### Core Settings (Most Common)
 
-| **Field** | **Type** | **Description** | **Default** |
-|-----------|----------|-----------------|-------------|
-| `path` | `str` | Additional path after auto-generated path | N/A |
-| `methods` | `list[str]` | Allowed HTTP methods (lowercase) | `["post"]` |
+| **Setting** | **Type** | **Description** | **Default** |
+|-------------|----------|-----------------|-------------|
+| `methods` | `list[str]` | Allowed HTTP methods: `"get"`, `"post"`, `"put"`, `"delete"`, etc. | `["post"]` |
 | `as_query` | `str \| list[str]` | Fields to treat as query parameters. Use `"*"` for all fields | `[]` |
 | `auth` | `bool` | Whether endpoint requires authentication | `true` |
+| `path` | `str` | Additional path after auto-generated path | N/A |
 | `private` | `bool` | Skip walker in auto-generation | `false` |
 
-### Advanced Configuration
+### Advanced Settings
 
-| **Field** | **Type** | **Description** | **Default** |
-|-----------|----------|-----------------|-------------|
-| `entry_type` | `str \| EntryType` | `"NODE"`, `"ROOT"`, or `"BOTH"` | `"BOTH"` |
-| `webhook` | `dict \| None` | [Webhook configuration](jac_cloud_webhook.md) | `None` |
-| `schedule` | `dict` | [Scheduler configuration](jac_cloud_scheduler.md) | `None` |
+| **Setting** | **Type** | **Description** | **Default** |
+|-------------|----------|-----------------|-------------|
+| `entry_type` | `str` | `"NODE"`, `"ROOT"`, or `"BOTH"` | `"BOTH"` |
+| `webhook` | `dict` | [Webhook configuration](webhook.md) | `None` |
+| `schedule` | `dict` | [Scheduler configuration](scheduler.md) | `None` |
 
-### OpenAPI/Swagger Documentation
+### Documentation Settings
 
-| **Field** | **Type** | **Description** | **Default** |
-|-----------|----------|-----------------|-------------|
-| `tags` | `list[str] \| None` | API tags for grouping endpoints | `None` |
-| `summary` | `str \| None` | Brief endpoint description | `None` |
-| `description` | `str \| None` | Detailed endpoint description (supports Markdown) | `None` |
-| `status_code` | `int \| None` | Default response status code | `None` |
-| `response_description` | `str` | Default response description | `"Successful Response"` |
-| `responses` | `dict \| None` | Additional response definitions | `None` |
-| `deprecated` | `bool \| None` | Mark endpoint as deprecated | `None` |
-| `name` | `str \| None` | Internal operation name | `None` |
-| `openapi_extra` | `dict \| None` | Extra OpenAPI metadata | `None` |
+| **Setting** | **Type** | **Description** | **Default** |
+|-------------|----------|-----------------|-------------|
+| `tags` | `list[str]` | API tags for grouping in Swagger UI | `None` |
+| `summary` | `str` | Brief endpoint description | `None` |
+| `description` | `str` | Detailed endpoint description (supports Markdown) | `None` |
+| `status_code` | `int` | Default response status code | `None` |
+| `deprecated` | `bool` | Mark endpoint as deprecated | `None` |
 
-## Examples
+## 💡 Examples for Beginners
 
-### Basic Examples
+### Basic Endpoint Examples
 
 ```jac
 import from jac_cloud { FastAPI }
@@ -111,49 +120,7 @@ walker public_info {
 }
 ```
 
-### Advanced Examples
-
-```jac
-// Path variables and multiple methods
-walker user_operations {
-    has user_id: str;
-    has data: dict;
-
-    obj __specs__ {
-        static has path: str = "/{user_id}";
-        static has methods: list = ["get", "put", "delete"];
-        static has as_query: list = ["user_id"];
-    }
-}
-
-// File upload support
-walker upload_document {
-    has document: UploadFile;
-    has metadata: dict;
-    has tags: list[str] = [];
-
-    obj __specs__ {
-        static has methods: list = ["post"];
-        static has summary: str = "Upload document with metadata";
-        static has tags: list = ["documents"];
-    }
-}
-
-// Mixed query and body parameters
-walker complex_search {
-    has filters: dict;
-    has sort_by: str;
-    has order: str = "asc";
-
-    obj __specs__ {
-        static has methods: list = ["post"];
-        static has as_query: list = ["sort_by", "order"];
-        static has description: str = "Advanced search with filters and sorting";
-    }
-}
-```
-
-### File Handling Examples
+### File Upload Examples
 
 ```jac
 // Single file upload
@@ -178,24 +145,11 @@ walker multi_file_upload {
         }
     }
 }
-
-// Mixed body and file data
-walker document_with_metadata {
-    has document: UploadFile;
-    has title: str;
-    has author: str;
-    has tags: list[str] = [];
-
-    obj __specs__ {
-        static has auth: bool = false;
-        static has tags: list = ["documents"];
-    }
-}
 ```
 
-## Response Structure
+## 📋 Response Format
 
-### Standard Response Format
+### What to Expect
 
 All walker endpoints return a standardized JSON response:
 
@@ -211,18 +165,10 @@ All walker endpoints return a standardized JSON response:
 }
 ```
 
-### Archetype Serialization
+### Working with Node and Edge Data
 
 Jac Cloud automatically serializes walker, edge, and node archetypes:
 
-#### Format
-```python
-{
-    "id": {{ str : anchor ref_id }},
-    "context": {{ dict : anchor archetype data }}
-}
-```
-#### Example
 ```json
 {
     "id": "unique_anchor_reference_id",
@@ -233,21 +179,20 @@ Jac Cloud automatically serializes walker, edge, and node archetypes:
 }
 ```
 
-## Environment Variables
+## ⚡ Helpful Environment Variables
 
 Control Jac Cloud behavior with these environment variables:
 
 - `DISABLE_AUTO_ENDPOINT=true` - Disable automatic endpoint generation
 - `SHOW_ENDPOINT_RETURNS=true` - Include walker return values in responses
 
-## Next Steps
+## 👣 Next Steps
 
-Now that you understand the basics, explore more advanced features:
+Now that you understand the basics, explore these features:
 
-- [Authentication & Permissions](permission.md)
-- [Real-time WebSocket Communication](websocket.md)
-- [Task Scheduling](scheduler.md)
-- [Webhook Integration](webhook.md)
-- [Environment Variables](env_vars.md)
-- [Logging & Monitoring](logging.md)
-- [Kubernetes Deployment](deployment.md)
+- [Authentication & Permissions](permission.md) - Secure your API
+- [Real-time WebSocket Communication](websocket.md) - Add real-time features
+- [Task Scheduling](scheduler.md) - Automate recurring tasks
+- [Webhook Integration](webhook.md) - Create API integrations
+- [Environment Variables](env_vars.md) - Configure your application
+- [Logging & Monitoring](logging.md) - Track application performance
