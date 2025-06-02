@@ -84,7 +84,7 @@ Ready to get started? Check out our [Getting Started Guide](quickstart.md) to bu
 - [Walker Endpoints and API Configuration](quickstart.md#walker-endpoints)
 - [WebSocket Real-time Communication](websocket.md)
 - [Task Scheduling](scheduler.md)
-- [Kubernetes Deployment](cloud-orc-integration.md)
+- [Kubernetes Deployment](deployment.md)
 - [Logging and Monitoring](logging.md)
 
 ## Community and Support

@@ -49,7 +49,7 @@ nav:
         - "learn/jac-cloud/async_walker.md"
         - "learn/jac-cloud/webhook.md"
         - "learn/jac-cloud/websocket.md"
-      - "learn/jac-cloud/cloud-orc-integration.md"
+      - "learn/jac-cloud/deployment.md"
     - Tooling:
       - "learn/tools/cli.md"
 
