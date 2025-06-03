@@ -136,8 +136,6 @@ Async walkers allow your application to perform tasks in the background without 
 - Sending emails or notifications
 - Any task that would otherwise cause delays
 
-<!-- ![Async Processing Diagram](https://via.placeholder.com/800x300?text=Async+Processing+Diagram) -->
-
 ## Creating Your First Async Walker in 3 Steps
 
 ### Step 1: Add the `async` Keyword

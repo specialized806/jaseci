@@ -15,10 +15,9 @@ jac serve main.jac --host 0.0.0.0 --port 8080
 ```
 
 Once started, your API will be available at:
+
 - **API Endpoint**: `http://localhost:8000`
 - **Interactive Documentation**: `http://localhost:8000/docs`
-
-<!-- ![Swagger Documentation Example](https://via.placeholder.com/800x400?text=Swagger+Documentation+Example) -->
 
 ## Understanding Walker Endpoints
 
@@ -28,14 +27,14 @@ Jac Cloud automatically converts your walker declarations into REST API endpoint
 
 | Endpoint Type | URL Pattern | Description |
 |--------------|-------------|-------------|
-| **Root Entry** | `/walker/{walker_name}` | Executes on the current root |
+| **Root Entry** | `/walker/{walker_name}` | Executes on the root |
 | **Node Entry** | `/walker/{walker_name}/{node_id}` | Executes on a specific node |
 
 ### Want to Disable Auto-Generation?
 
 To disable automatic endpoint generation, set the environment variable:
 ```bash
-export DISABLE_AUTO_ENDPOINT=true
+export DISABLE_AUTO_ENDPOINT=True
 ```
 
 ## Configuring Your Walkers
@@ -92,8 +91,6 @@ walker my_walker {
 ### Basic Endpoint Examples
 
 ```jac
-import from jac_cloud { FastAPI }
-
 // Simple POST endpoint
 walker create_user {
     has username: str;
@@ -183,8 +180,8 @@ Jac Cloud automatically serializes walker, edge, and node archetypes:
 
 Control Jac Cloud behavior with these environment variables:
 
-- `DISABLE_AUTO_ENDPOINT=true` - Disable automatic endpoint generation
-- `SHOW_ENDPOINT_RETURNS=true` - Include walker return values in responses
+- `DISABLE_AUTO_ENDPOINT=True` - Disable automatic endpoint generation
+- `SHOW_ENDPOINT_RETURNS=True` - Include walker return values in responses
 
 ## Next Steps
 

@@ -10,8 +10,6 @@ Kubernetes deployment allows you to run your Jac applications in a cloud environ
 - **Easy Updates**: Deploy new versions without downtime
 - **Centralized Management**: Control multiple services from one place
 
-<!-- ![Kubernetes Architecture](https://via.placeholder.com/800x300?text=Kubernetes+Architecture) -->
-
 ## Getting Started: Prerequisites
 
 Before beginning your cloud journey, make sure you have:

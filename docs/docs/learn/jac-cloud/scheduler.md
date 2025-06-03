@@ -10,8 +10,6 @@ Jac Cloud's task scheduling system lets you run walkers at specified times or in
 - Execute periodic data synchronization
 - Trigger time-sensitive workflows
 
-<!-- ![Task Scheduling Diagram](https://via.placeholder.com/800x300?text=Task+Scheduling+Diagram) -->
-
 ## Quick Start: Schedule Your First Task
 
 ### Step 1: Create a Scheduled Walker

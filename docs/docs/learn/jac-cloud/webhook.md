@@ -10,8 +10,6 @@ Webhooks in Jac Cloud provide a secure way to expose your API endpoints to exter
 - IoT device communication
 - CI/CD pipelines
 
-<!-- ![Webhook Integration Diagram](https://via.placeholder.com/800x300?text=Webhook+Integration+Diagram) -->
-
 ## Key Concepts for Beginners
 
 - **Webhook Walkers**: Similar to normal walkers but authenticated via API keys instead of user tokens

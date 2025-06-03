@@ -38,6 +38,7 @@ walker chat_service {
 Use standard WebSocket clients to connect to your endpoint:
 
 **Connection Details:**
+
 - **Protocol**: `ws://` (or `wss://` for secure connections)
 - **URL**: `/websocket`
 - **Optional Header**: `Authorization: Bearer {{USER-TOKEN}}`

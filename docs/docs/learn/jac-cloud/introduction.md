@@ -5,13 +5,12 @@
 Jac Cloud is a powerful cloud-native framework that transforms your Jac applications into production-ready API servers with minimal configuration. It bridges the gap between local Jac development and scalable cloud deployment, providing enterprise-grade features out of the box.
 
 With Jac Cloud, you can:
+
 - Deploy your Jac applications as RESTful APIs, WebSocket services, and scheduled tasks
 - Simply replace `jac run` with `jac serve` to transform your application into a fully-featured web service
 - Access a rich set of cloud-native features without writing additional code
 
 ## Key Features at a Glance
-
-<!-- ![Jac Cloud Features](https://via.placeholder.com/800x400?text=Jac+Cloud+Features) -->
 
 ### Instant API Generation
 - Automatically converts Jac walkers into REST endpoints

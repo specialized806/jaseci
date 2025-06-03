@@ -3,6 +3,7 @@
 ## Why Logging Matters
 
 Effective logging is crucial for:
+
 - Troubleshooting problems
 - Understanding user behavior
 - Monitoring application performance
@@ -10,8 +11,6 @@ Effective logging is crucial for:
 - Analyzing usage patterns
 
 Jac Cloud includes a comprehensive logging system that automatically tracks requests and responses, making your development experience smoother.
-
-<!-- ![Logging Dashboard Example](https://via.placeholder.com/800x300?text=Logging+Dashboard+Example) -->
 
 ## Quick Start: Check Your Logs
 
@@ -68,6 +67,11 @@ setup.template.pattern: "filebeat-*"
 filebeat -e -c filebeat.yml
 ```
 
+For more detailed documentation:
+
+- [Getting Started](https://www.elastic.co/guide/en/cloud/current/ec-getting-started-search-use-cases-python-logs.html)
+- [Configure filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/configuring-howto-filebeat.html)
+
 Now you can view your logs in Kibana with powerful filtering, visualization, and alerting capabilities!
 
 !!! warning "Port Configuration"
@@ -93,6 +97,7 @@ Adjust logging behavior by setting these environment variables:
 ### Example: Production Settings
 
 For a production environment, you might want to:
+
 1. Use `info` level to reduce log size
 2. Keep logs for 30 days
 3. Use UTC time for consistency
@@ -153,22 +158,26 @@ grep '/walker/login' /tmp/jac_cloud_logs/jac-cloud.log |
 
 ## Logging Best Practices
 
-1. **Use appropriate log levels**:
+### 1. **Use appropriate log levels**:
+
    - `debug`: Detailed information for debugging
    - `info`: Confirmation that things are working
    - `warning`: Something unexpected but not critical
    - `error`: Something failed but the application continues
    - `critical`: Application cannot continue
 
-2. **Be careful with sensitive data**:
+### 2. **Be careful with sensitive data**:
+
    - Passwords, tokens, and personal information should never be logged
    - Jac Cloud automatically masks Authorization headers
 
-3. **Establish log retention policies**:
+### 3. **Establish log retention policies**:
+
    - Configure `LOGGER_MAX_BACKUP` based on your needs
    - Consider compliance requirements (GDPR, HIPAA, etc.)
 
-4. **Set up alerts**:
+### 4. **Set up alerts**:
+
    - Configure alerts in Kibana for error spikes
    - Monitor for unusual patterns or security issues
 

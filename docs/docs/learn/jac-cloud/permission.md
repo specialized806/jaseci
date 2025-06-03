@@ -10,8 +10,6 @@ Jac Cloud's permission system lets you control who can access different parts of
 - Creating public/private content
 - Implementing access control
 
-<!-- ![Permission System Diagram](https://via.placeholder.com/800x300?text=Permission+System+Diagram) -->
-
 ## Key Concepts for Beginners
 
 ### Understanding Data Representations
@@ -41,9 +39,9 @@ Jac Cloud has four permission levels that control what users can do:
 Imagine a social media app with three users:
 
 ```
-User1 → Root1 → Post1
-User2 → Root2 → Post2
-User3 → Root3 → Post3
+Root1 → User1 → Post1
+Root2 → User2 → Post2
+Root3 → User3 → Post3
 ```
 
 By default, User2 cannot see Post1 (created by User1). To allow this:
@@ -64,7 +62,7 @@ walker grant_access {
 
     can grant_access with post entry {
         // Grant access to the current post
-        Jac.allow_root(here, NodeAnchor.ref(self.target_root_id), self.access_level);
+        _.allow_root(here, NodeAnchor.ref(self.target_root_id), self.access_level);
         report "Access granted!";
     }
 }
@@ -79,7 +77,7 @@ walker revoke_access {
 
     can revoke_access with post entry {
         // Revoke access to the current post
-        Jac.disallow_root(here, NodeAnchor.ref(self.target_root_id));
+        _.disallow_root(here, NodeAnchor.ref(self.target_root_id));
         report "Access revoked!";
     }
 }
@@ -92,7 +90,7 @@ walker revoke_access {
 walker make_public {
     can make_public with post entry {
         // Grant READ access to all users
-        Jac.perm_grant(here, "READ");
+        _.perm_grant(here, "READ");
         report "Post is now public!";
     }
 }
@@ -105,7 +103,7 @@ walker make_public {
 walker make_private {
     can make_private with post entry {
         // Remove all access
-        Jac.restrict(here);
+        _.restrict(here);
         report "Post is now private!";
     }
 }
@@ -128,7 +126,7 @@ walker create_public_post {
         here ++> post;
 
         // Make it readable by everyone, but only writable by owner
-        Jac.perm_grant(post, "READ");
+        _.perm_grant(post, "READ");
 
         report "Public post created!";
     }
@@ -148,7 +146,7 @@ walker grant_team_access {
     can grant_access with document entry {
         // Grant access to each team member
         for member_id in self.team_members {
-            Jac.allow_root(here, NodeAnchor.ref(member_id), self.access_level);
+            _.allow_root(here, NodeAnchor.ref(member_id), self.access_level);
         }
 
         report "Team access granted!";
@@ -166,11 +164,11 @@ walker check_access {
     has viewer_id: str;
 
     can check with post entry {
-        owner = <--[created_by];
+        owner = [<--created_by];
 
         // Check if viewer is friends with owner
         is_friend = false;
-        for friend in owner-->[friend] {
+        for friend in owner[-->friend] {
             if friend.id == self.viewer_id {
                 is_friend = true;
                 break;
@@ -179,7 +177,7 @@ walker check_access {
 
         if is_friend {
             // Grant access if they're friends
-            Jac.allow_root(here, NodeAnchor.ref(self.viewer_id), "READ");
+            _.allow_root(here, NodeAnchor.ref(self.viewer_id), "READ");
             report "Access granted to friend!";
         } else {
             report "Access denied - not a friend!";
@@ -191,8 +189,8 @@ walker check_access {
 ## Best Practices for Beginners
 
 1. **Start restrictive**: Begin with tight permissions and open up as needed
-2. **Use helper functions**: Prefer `Jac.allow_root()` over direct manipulation
-3. **Check permissions**: Use `Jac.check_read_access()` to verify permissions
+2. **Use helper functions**: Prefer `_.allow_root()` over direct manipulation
+3. **Check permissions**: Use `_.check_read_access()` to verify permissions
 4. **Document your scheme**: Keep track of which nodes have which permissions
 5. **Batch similar permissions**: Update permissions for multiple nodes at once
 
