@@ -123,7 +123,7 @@ class JacLangServer ( JacProgram , LanguageServer ) {
             );
         } self.log_py(
             f"'PROFILE: Deep check took '{(time.time() - start_time)}' seconds.'"
-        ); return len(self.errors_had) == 0; } except Exception as e { self.log_error(f"'Error during deep check: '{e}"); return False; }
+        ); return len(self.errors_had) == 0; } except Exception as e { self.log_py(f"'Error during deep check: '{e}"); return False; }
     }
 
     """Analyze and publish diagnostics."""
