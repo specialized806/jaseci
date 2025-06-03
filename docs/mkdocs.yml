@@ -10,7 +10,6 @@ nav:
     - Jac in a Flash: "learn/jac_in_a_flash.md"
     - End-to-End Examples:
       - LittleX (your own twitter):
-        - "learn/examples/littleX/overview.md"
         - "learn/examples/littleX/tutorial.md"
         - "learn/examples/littleX/quickstart.md"
       - RAG-based Conversational Chatbot:
