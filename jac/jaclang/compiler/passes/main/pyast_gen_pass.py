@@ -224,30 +224,15 @@ class PyastGenPass(UniPass):
 
     def resolve_stmt_block(
         self,
-        node: (
-            Sequence[uni.CodeBlockStmt]
-            | Sequence[uni.EnumBlockStmt]
-            | uni.SubNodeList[uni.CodeBlockStmt]
-            | uni.SubNodeList[uni.ArchBlockStmt]
-            | uni.SubNodeList[uni.EnumBlockStmt]
-            | None
-        ),
+        node: Sequence[uni.CodeBlockStmt] | Sequence[uni.EnumBlockStmt] | None,
         doc: Optional[uni.String] = None,
     ) -> list[ast3.AST]:
         """Unwind codeblock."""
-        items = (
-            list(node.items)
-            if isinstance(node, uni.SubNodeList)
-            else list(node) if node else []
-        )
+        items = list(node) if node else []
         valid_stmts = [i for i in items if not isinstance(i, uni.Semi)]
         ret: list[ast3.AST] = (
-            [
-                self.sync(
-                    ast3.Pass(), node if isinstance(node, uni.SubNodeList) else None
-                )
-            ]
-            if isinstance(node, (uni.SubNodeList, Sequence)) and not valid_stmts
+            [self.sync(ast3.Pass())]
+            if isinstance(node, Sequence) and not valid_stmts
             else (
                 self.flatten(
                     [
@@ -295,9 +280,6 @@ class PyastGenPass(UniPass):
 
     def exit_sub_tag(self, node: uni.SubTag[uni.T]) -> None:
         node.gen.py_ast = node.tag.gen.py_ast
-
-    def exit_sub_node_list(self, node: uni.SubNodeList[uni.T]) -> None:
-        node.gen.py_ast = self.flatten([i.gen.py_ast for i in node.items])
 
     def exit_module(self, node: uni.Module) -> None:
         clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
@@ -830,7 +812,6 @@ class PyastGenPass(UniPass):
             if node.decorators
             else []
         )
-
         base_classes = [cast(ast3.expr, i.gen.py_ast[0]) for i in node.base_classes]
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))
@@ -1139,27 +1120,14 @@ class PyastGenPass(UniPass):
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
 
         is_static_var = (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, uni.ArchHas)
-            and node.parent.parent.is_static
+            (haspar := node.find_parent_of_type(uni.ArchHas))
+            and haspar
+            and haspar.is_static
         )
-
         is_in_class = (
-            node.parent
-            and node.parent.parent
-            and node.parent.parent.parent
-            and (
-                (
-                    isinstance(node.parent.parent.parent, uni.Archetype)
-                    and node.parent.parent.parent.arch_type.name == Tok.KW_CLASS
-                )
-                or (
-                    node.parent.parent.parent.parent
-                    and isinstance(node.parent.parent.parent.parent, uni.Archetype)
-                    and node.parent.parent.parent.parent.arch_type.name == Tok.KW_CLASS
-                )
-            )
+            (archpar := node.find_parent_of_type(uni.Archetype))
+            and archpar
+            and archpar.arch_type.name == Tok.KW_CLASS
         )
 
         value = None
@@ -2315,6 +2283,8 @@ class PyastGenPass(UniPass):
                     pieces.extend(get_pieces(i.parts)) if i.parts else None
                 elif isinstance(i, uni.ExprStmt):
                     pieces.append(i.gen.py_ast[0])
+                elif isinstance(i, uni.Token) and i.name in [Tok.LBRACE, Tok.RBRACE]:
+                    continue
                 else:
                     raise self.ice("Multi string made of something weird.")
             return pieces

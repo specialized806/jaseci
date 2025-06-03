@@ -4,7 +4,7 @@ import asyncio;
 import logging;
 import time;
 import from concurrent.futures { ThreadPoolExecutor }
-import from typing { Callable, Optional }
+import from typing { Callable , Optional }
 
 import jaclang.compiler.unitree as uni;
 import from jaclang { JacMachineInterface as Jac }
@@ -29,10 +29,7 @@ class ModuleManager {
 
     """Update modules in JacProgram's hub and semantic managers."""
     def update(
-        self: ModuleManager,
-        file_path: str,
-        build: uni.Module,
-        update_annexed: bool = True
+        self: ModuleManager, file_path: str, build: uni.Module, update_annexed: bool = True
     ) -> None {
         file_path = file_path.removeprefix('file://');
         self.program.mod.hub[file_path] = build;
@@ -55,26 +52,22 @@ class ModuleManager {
 
 
 """Jac Language Server, manages JacProgram and LSP."""
-class JacLangServer (JacProgram,
-LanguageServer) {
+class JacLangServer ( JacProgram , LanguageServer ) {
     """Initialize JacLangServer."""
     def init(self: JacLangServer) -> None {
         LanguageServer.init(self, 'jac-lsp', 'v0.1');
         JacProgram.init(self);
         self.executor = ThreadPoolExecutor();
-        self.tasks: <>dict[(str, asyncio.Task)] = {};
-        self.sem_managers: <>dict[(str, SemTokManager)] = {};
+        self.tasks: <>dict[(str,asyncio.Task)] = {};
+        self.sem_managers: <>dict[(str,SemTokManager)] = {};
         self.module_manager = ModuleManager(self, self.sem_managers);
     }
 
     """Return diagnostics for all files as a dict {uri: diagnostics}."""
-    @property
+    @ property
     def diagnostics(self: JacLangServer, ) -> <>dict[str, <>list] {
         result = {};
-        for file_path in self.mod.hub {
-            uri = uris.from_fs_path(file_path);
-            result[uri] = utils.gen_diagnostics(uri, self.errors_had, self.warnings_had);
-        }
+        for file_path in self.mod.hub { uri = uris.from_fs_path(file_path); result[uri] = utils.gen_diagnostics(uri, self.errors_had, self.warnings_had); }
         return result;
     }
 
@@ -91,10 +84,7 @@ LanguageServer) {
 
     """Update modules in JacProgram's hub and semantic managers."""
     def update_modules(
-        self: JacLangServer,
-        file_path: str,
-        build: uni.Module,
-        need: bool = True
+        self: JacLangServer, file_path: str, build: uni.Module, need: bool = True
     ) -> None {
         self.log_py(f"'Updating modules for '{file_path}");
         self.module_manager.update(file_path, build, update_annexed=need);
@@ -102,74 +92,38 @@ LanguageServer) {
 
     """Rebuild a file (syntax only)."""
     def quick_check(self: JacLangServer, file_path: str) -> bool {
-        try {
-            file_path_fs = file_path.removeprefix('file://');
-            document = self.workspace.get_text_document(file_path);
-            self._clear_alerts_for_file(file_path_fs);
-            build = self.compile_from_str(
-                source_str=document.source,
-                file_path=document.path,
-                mode=CMode.PARSE
-            );
-            self.update_modules(file_path_fs, build, need=False);
-            self.publish_diagnostics(
-                file_path,
-                utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
-            );
-            return len(self.errors_had) == 0;
-        } except Exception as e {
-            self.log_error(f"'Error during syntax check: '{e}");
-            return False;
-        }
-
+        try { file_path_fs = file_path.removeprefix('file://'); document = self.workspace.get_text_document(file_path); self._clear_alerts_for_file(file_path_fs); build = self.compile_from_str(
+            source_str=document.source, file_path=document.path, mode=CMode.PARSE
+        ); self.update_modules(file_path_fs, build, need=False); self.publish_diagnostics(
+            file_path, utils.gen_diagnostics(
+                file_path, self.errors_had, self.warnings_had
+            )
+        ); return len(self.errors_had) == 0; } except Exception as e { self.log_error(f"'Error during syntax check: '{e}"); return False; }
     }
 
     """Rebuild a file and its dependencies (typecheck)."""
     def deep_check(
-        self: JacLangServer,
-        file_path: str,
-        annex_view: Optional[str] = None
+        self: JacLangServer, file_path: str, annex_view: Optional[str] = None
     ) -> bool {
-        try {
-            start_time = time.time();
-            file_path_fs = file_path.removeprefix('file://');
-            document = self.workspace.get_text_document(file_path);
-            self._clear_alerts_for_file(file_path_fs);
-            build = self.compile_from_str(
-                source_str=document.source,
-                file_path=document.path,
-                mode=CMode.TYPECHECK
+        try { start_time = time.time(); file_path_fs = file_path.removeprefix('file://'); document = self.workspace.get_text_document(file_path); self._clear_alerts_for_file(file_path_fs); build = self.compile_from_str(
+            source_str=document.source, file_path=document.path, mode=CMode.TYPECHECK
+        ); self.update_modules(file_path_fs, build); if build.annexable_by {
+            return self.deep_check(
+                uris.from_fs_path(build.annexable_by), annex_view=file_path
             );
-            self.update_modules(file_path_fs, build);
-            if build.annexable_by {
-                return self.deep_check(
-                    uris.from_fs_path(build.annexable_by),
-                    annex_view=file_path
-                );
-            }
+        } self.publish_diagnostics(
+            annex_view if annex_view else file_path , utils.gen_diagnostics(
+                annex_view if annex_view else file_path , self.errors_had, self.warnings_had
+            )
+        ); if annex_view {
             self.publish_diagnostics(
-                annex_view if annex_view else file_path ,
-                utils.gen_diagnostics(
-                    annex_view if annex_view else file_path ,
-                    self.errors_had,
-                    self.warnings_had
+                file_path, utils.gen_diagnostics(
+                    file_path, self.errors_had, self.warnings_had
                 )
             );
-            if annex_view {
-                self.publish_diagnostics(
-                    file_path,
-                    utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
-                );
-            }
-            self.log_py(
-                f"'PROFILE: Deep check took '{(time.time() - start_time)}' seconds.'"
-            );
-            return len(self.errors_had) == 0;
-        } except Exception as e {
-            self.log_error(f"'Error during deep check: '{e}");
-            return False;
-        }
-
+        } self.log_py(
+            f"'PROFILE: Deep check took '{(time.time() - start_time)}' seconds.'"
+        ); return len(self.errors_had) == 0; } except Exception as e { self.log_error(f"'Error during deep check: '{e}"); return False; }
     }
 
     """Analyze and publish diagnostics."""
@@ -184,9 +138,7 @@ LanguageServer) {
     """Analyze and publish diagnostics."""
     async def launch_deep_check(self: JacLangServer, uri: str) -> None {
         async def run_in_executor(
-            func: Callable[([str, Optional[str]], bool)],
-            file_path: str,
-            annex_view: Optional[str] = None
+            func: Callable[([str,Optional[str]],bool)], file_path: str, annex_view: Optional[str] = None
         ) -> None {
             loop = asyncio.get_event_loop();
             await loop.run_in_executor(self.executor, func, file_path, annex_view);
@@ -194,7 +146,7 @@ LanguageServer) {
         if uri in self.tasks and not self.tasks[uri].done()  {
             self.log_py(f"'Canceling '{uri}' deep check...'");
             self.tasks[uri].cancel();
-            del (self.tasks[uri], ) ;
+            del (self.tasks[uri],) ;
         }
         self.log_py(f"'Analyzing '{uri}'...'");
         task = asyncio.create_task(run_in_executor(self.deep_check, uri));
@@ -204,10 +156,7 @@ LanguageServer) {
 
     """Return completion for a file."""
     def get_completion(
-        self: JacLangServer,
-        file_path: str,
-        position: lspt.Position,
-        completion_trigger: Optional[str]
+        self: JacLangServer, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
     ) -> lspt.CompletionList {
         try{
             document = self.workspace.get_text_document(file_path);
@@ -315,51 +264,38 @@ LanguageServer) {
         if old_path in self.mod.hub and new_path != old_path  {
             self.mod.hub[new_path] = self.mod.hub[old_path];
             self.sem_managers[new_path] = self.sem_managers[old_path];
-            del (self.mod.hub[old_path], ) ;
-            del (self.sem_managers[old_path], ) ;
+            del (self.mod.hub[old_path],) ;
+            del (self.sem_managers[old_path],) ;
         }
     }
 
     """Delete module."""
     def delete_module(self: JacLangServer, uri: str) -> None {
         if uri in self.mod.hub {
-            del (self.mod.hub[uri], ) ;
+            del (self.mod.hub[uri],) ;
         }
         if uri in self.sem_managers {
-            del (self.sem_managers[uri], ) ;
+            del (self.sem_managers[uri],) ;
         }
     }
 
     """Return formatted jac."""
     def formatted_jac(self: JacLangServer, file_path: str) -> <>list[lspt.TextEdit] {
-        try {
-            document = self.workspace.get_text_document(file_path);
-            formatted_text = JacProgram.jac_str_formatter(
-                source_str=document.source,
-                file_path=document.path
-            );
-        } except Exception as e {
-            self.log_error(f"'Error during formatting: '{e}");
-            formatted_text = document.source;
-        }
-
+        try { document = self.workspace.get_text_document(file_path); formatted_text = JacProgram.jac_str_formatter(
+            source_str=document.source, file_path=document.path
+        ); } except Exception as e { self.log_error(f"'Error during formatting: '{e}"); formatted_text = document.source; }
         return [lspt.TextEdit(
             range=lspt.Range(
-                start=lspt.Position(line=0, character=0),
-                end=lspt.Position(
-                    line=(len(document.source.splitlines()) + 1),
-                    character=0
+                start=lspt.Position(line=0, character=0), end=lspt.Position(
+                    line=(len(document.source.splitlines()) + 1), character=0
                 )
-            ),
-            new_text=formatted_text
+            ), new_text=formatted_text
         )];
     }
 
     """Return hover information for a file."""
     def get_hover_info(
-        self: JacLangServer,
-        file_path: str,
-        position: lspt.Position
+        self: JacLangServer, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover] {
         file_path_fs = file_path.removeprefix('file://');
         if file_path_fs not in self.mod.hub {
@@ -370,9 +306,7 @@ LanguageServer) {
             return None;
         }
         token_index = utils.find_index(
-            sem_mgr.sem_tokens,
-            position.line,
-            position.character
+            sem_mgr.sem_tokens, position.line, position.character
         );
         if token_index is None {
             return None;
@@ -382,8 +316,7 @@ LanguageServer) {
         if value {
             return lspt.Hover(
                 contents=lspt.MarkupContent(
-                    kind=lspt.MarkupKind.PlainText,
-                    value=f"{value}"
+                    kind=lspt.MarkupKind.PlainText, value=f"{value}"
                 )
             );
         }
@@ -392,25 +325,15 @@ LanguageServer) {
 
     """Extract meaningful information from the AST node."""
     def get_node_info(self: JacLangServer, <>node: uni.AstSymbolNode) -> Optional[str] {
-        try {
-            if isinstance(<>node, uni.NameAtom) {
-                <>node = <>node.name_of;
-            }
-            access = (<>node.sym.access.value + ' ') if <>node.sym else None ;
-            node_info = f"'('{access if access else '' }{<>node.sym_category.value}') '{<>node.sym_name}";
-            if <>node.name_spec.clean_type {
-                node_info += f"': '{<>node.name_spec.clean_type}";
-            }
-            if isinstance(<>node, uni.AstDocNode) and <>node.doc  {
-                node_info += f"'\n'{<>node.doc.value}";
-            }
-            if isinstance(<>node, uni.Ability) and <>node.signature  {
-                node_info += f"'\n'{<>node.signature.unparse()}";
-            }
-        } except AttributeError as e {
-            self.log_warning(f"'Attribute error when accessing node attributes: '{e}");
-        }
-
+        try { if isinstance(<>node, uni.NameAtom) {
+            <>node = <>node.name_of;
+        } access = (<>node.sym.access.value + ' ') if <>node.sym else None ; node_info = f"'('{access if access else '' }{<>node.sym_category.value}') '{<>node.sym_name}"; if <>node.name_spec.clean_type {
+            node_info += f"': '{<>node.name_spec.clean_type}";
+        } if isinstance(<>node, uni.AstDocNode) and <>node.doc  {
+            node_info += f"'\n'{<>node.doc.value}";
+        } if isinstance(<>node, uni.Ability) and <>node.signature  {
+            node_info += f"'\n'{<>node.signature.unparse()}";
+        } } except AttributeError as e { self.log_warning(f"'Attribute error when accessing node attributes: '{e}"); }
         return node_info.strip();
     }
 
@@ -427,9 +350,7 @@ LanguageServer) {
 
     """Return definition location for a file."""
     def get_definition(
-        self: JacLangServer,
-        file_path: str,
-        position: lspt.Position
+        self: JacLangServer, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
         if file_path_fs not in self.mod.hub {
@@ -440,9 +361,7 @@ LanguageServer) {
             return None;
         }
         token_index = utils.find_index(
-            sem_mgr.sem_tokens,
-            position.line,
-            position.character
+            sem_mgr.sem_tokens, position.line, position.character
         );
         if token_index is None {
             return None;
@@ -451,18 +370,14 @@ LanguageServer) {
         if node_selected {
             if isinstance(node_selected, uni.Name)
             and node_selected.parent
-            and isinstance(node_selected.parent, uni.SubNodeList)
-            and node_selected.parent.parent
-            and isinstance(node_selected.parent.parent, uni.ModulePath)
+            and isinstance(node_selected.parent, uni.ModulePath)
              {
                 spec = node_selected.parent.parent.abs_path;
                 if spec {
                     spec = spec[ 5 : ] if spec.startswith('File:') else spec ;
                     return lspt.Location(
-                        uri=uris.from_fs_path(spec),
-                        range=lspt.Range(
-                            start=lspt.Position(line=0, character=0),
-                            end=lspt.Position(line=0, character=0)
+                        uri=uris.from_fs_path(spec), range=lspt.Range(
+                            start=lspt.Position(line=0, character=0), end=lspt.Position(line=0, character=0)
                         )
                     );
                 } else {
@@ -474,17 +389,14 @@ LanguageServer) {
                 path = node_selected.parent.abs_path
                 or node_selected.parent.from_mod_path.abs_path
                 ;
-                loc_range = (0, 0, 0, 0);
+                loc_range = (0,0,0,0);
                 if path and loc_range  {
                     path = path[ 5 : ] if path.startswith('File:') else path ;
                     return lspt.Location(
-                        uri=uris.from_fs_path(path),
-                        range=lspt.Range(
+                        uri=uris.from_fs_path(path), range=lspt.Range(
                             start=lspt.Position(
-                                line=loc_range[0],
-                                character=loc_range[1]
-                            ),
-                            end=lspt.Position(line=loc_range[2], character=loc_range[3])
+                                line=loc_range[0], character=loc_range[1]
+                            ), end=lspt.Position(line=loc_range[2], character=loc_range[3])
                         )
                     );
                 }
@@ -512,12 +424,7 @@ LanguageServer) {
             } else {
                 valid_range = decl_node.loc;
             }
-            try {
-                decl_range = utils.create_range(valid_range);
-            } except ValueError {
-                return None;
-            }
-
+            try { decl_range = utils.create_range(valid_range); } except ValueError { return None; }
             decl_location = lspt.Location(uri=decl_uri, range=decl_range);
             return decl_location;
         } else {
@@ -527,9 +434,7 @@ LanguageServer) {
 
     """Return references for a file."""
     def get_references(
-        self: JacLangServer,
-        file_path: str,
-        position: lspt.Position
+        self: JacLangServer, file_path: str, position: lspt.Position
     ) -> <>list[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
         if file_path_fs not in self.mod.hub {
@@ -546,8 +451,7 @@ LanguageServer) {
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
             list_of_references: <>list[lspt.Location] = [ lspt.Location(
-                uri=uris.from_fs_path(<>node.loc.mod_path),
-                range=utils.create_range(<>node.loc)
+                uri=uris.from_fs_path(<>node.loc.mod_path), range=utils.create_range(<>node.loc)
             ) for <>node in node_selected.sym.uses ];
             return list_of_references;
         }
@@ -556,10 +460,7 @@ LanguageServer) {
 
     """Rename a symbol in a file."""
     def rename_symbol(
-        self: JacLangServer,
-        file_path: str,
-        position: lspt.Position,
-        new_name: str
+        self: JacLangServer, file_path: str, position: lspt.Position, new_name: str
     ) -> Optional[lspt.WorkspaceEdit] {
         file_path_fs = file_path.removeprefix('file://');
         if file_path_fs not in self.mod.hub {
@@ -575,15 +476,10 @@ LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
-            changes: <>dict[(str, <>list[lspt.TextEdit])] = {};
-            for <>node in [*node_selected.sym.uses, node_selected.sym.defn[0]] {
-                key = uris.from_fs_path(<>node.loc.mod_path);
-                new_edit = lspt.TextEdit(
-                    range=utils.create_range(<>node.loc),
-                    new_text=new_name
-                );
-                utils.add_unique_text_edit(changes, key, new_edit);
-            }
+            changes: <>dict[(str,<>list[lspt.TextEdit])] = {};
+            for <>node in [*node_selected.sym.uses,node_selected.sym.defn[0]] { key = uris.from_fs_path(<>node.loc.mod_path); new_edit = lspt.TextEdit(
+                range=utils.create_range(<>node.loc), new_text=new_name
+            ); utils.add_unique_text_edit(changes, key, new_edit); }
             return lspt.WorkspaceEdit(changes=changes);
         }
         return None;
