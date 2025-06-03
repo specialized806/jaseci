@@ -1,132 +1,96 @@
 # Webhooks: External API Integration
 
-## What Are Webhooks?
+## What are Webhooks?
 
-Webhooks in Jac Cloud provide a secure way to expose your API endpoints to external services without requiring user authentication. Instead, webhooks use API keys for authentication, making them ideal for:
+Webhooks are a way for external services to securely call your Jac Cloud application when certain events occur. Unlike regular authenticated walkers (which are associated with a specific user), webhook walkers are directly linked to the root node and are secured with API keys rather than user tokens.
 
-- System-to-system integrations
-- Third-party service connections
-- Automated workflows
-- IoT device communication
-- CI/CD pipelines
+## Key Features
 
-## Key Concepts for Beginners
+- **Direct Root Access**: Webhooks operate at the root level, not tied to any specific user
+- **API Key Management**: Generate, extend, and delete API keys through the API
+- **Flexible Authentication**: Support for different API key placement methods (header, query, path, body)
+- **Customizable**: You can specify allowed walkers, nodes, and expiration dates for each API key
 
-- **Webhook Walkers**: Similar to normal walkers but authenticated via API keys instead of user tokens
-- **API Key Management**: Keys are created and managed by users through dedicated endpoints
-- **Flexible Authentication**: API keys can be passed via headers, query parameters, URL paths, or in the request body
-- **Security Controls**: Keys can be restricted to specific walkers, nodes, and have configurable expiration dates
+## Creating a Webhook Walker
 
-## Creating Your First Webhook (3 Steps)
+To declare a walker as a webhook endpoint, add a `webhook` configuration to the `__specs__` class:
 
-### Step 1: Create a Webhook Walker
-
-Add the `webhook` property to your walker's `__specs__` configuration:
-
-```jac
-walker webhook_example {
-    has data: str;
-
-    can enter with `root entry {
-        report "Webhook executed successfully with data: " + self.data;
+```python
+walker webhook {
+    can enter1 with `root entry {
+        report here;
     }
 
     class __specs__ {
         has webhook: dict = {
-            "type": "header",  // Where to look for the API key
-            "name": "X-API-KEY"  // Name of the parameter containing the key
+            "type": "header | query | path | body",  # optional: defaults to header
+            "name": "any string"                     # optional: defaults to X-API-KEY
         };
     }
 }
 ```
 
-### Step 2: Generate an API Key
+The `type` field specifies where the API key will be placed in the HTTP request:
+- `header`: In the HTTP headers (default)
+- `query`: As a query parameter
+- `path`: As part of the URL path
+- `body`: In the request body
 
-Send a POST request to `/webhook/generate-key`:
-
-```bash
-curl -X POST 'http://localhost:8000/webhook/generate-key' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "my-first-webhook",
-    "walkers": ["webhook_example"],
-    "expiration": {
-      "count": 30,
-      "interval": "days"
-    }
-  }'
-```
-
-You'll receive a response with your new API key:
-
-```json
-{
-  "id": "672203ee093fd3d208a4b6d4",
-  "name": "my-first-webhook",
-  "key": "6721f000ee301e1d54c3de3d:1730282478:P4Nrs3DOLIkaw5aYsbIWNzWZZAwEyb20"
-}
-```
-
-### Step 3: Test Your Webhook
-
-```bash
-curl -X POST 'http://localhost:8000/webhook/walker/webhook_example' \
-  -H 'X-API-KEY: 6721f000ee301e1d54c3de3d:1730282478:P4Nrs3DOLIkaw5aYsbIWNzWZZAwEyb20' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "data": "Hello from webhook!"
-  }'
-```
-
-## Webhook Configuration Options
-
-| **Field** | **Type** | **Description** | **Default** |
-|-----------|----------|-----------------|-------------|
-| `type` | `str` | Where to look for the API key: `"header"`, `"query"`, `"path"`, or `"body"` | `"header"` |
-| `name` | `str` | Parameter name containing the API key | `"X-API-KEY"` |
+The `name` field is the name of the parameter that will contain the API key.
 
 ## Managing API Keys
 
-### Creating Keys
+Jac Cloud provides several endpoints for managing webhook API keys:
 
-**Endpoint**: `POST /webhook/generate-key`
+![Webhook Management API endpoints](https://github.com/user-attachments/assets/3a01ab35-06b0-4942-8f1f-0c4ae794ce21)
 
-**Request Body**:
+### Generating a New API Key
 
-```json
+**Endpoint:** `POST /webhook/generate-key`
+
+**Request Body:**
+```python
 {
+  # unique name for the webhook key
   "name": "webhook1",
-  "walkers": ["webhook_example"],
+
+  # list of walker names allowed to use this key (empty means all webhooks)
+  "walkers": ["webhook"],
+
+  # list of node names allowed with this key (empty means all nodes)
   "nodes": ["root"],
+
+  # expiration settings
   "expiration": {
     "count": 60,
+    # seconds | minutes | hours | days
     "interval": "days"
   }
 }
 ```
 
-| **Field** | **Type** | **Description** | **Required** |
-|-----------|----------|-----------------|------------|
-| `name` | `str` | Unique name for the webhook key | Yes |
-| `walkers` | `list[str]` | Allowed webhook walkers (empty = all) | No |
-| `nodes` | `list[str]` | Allowed nodes (empty = all) | No |
-| `expiration.count` | `int` | Time value for expiration | Yes |
-| `expiration.interval` | `str` | Time unit: `"seconds"`, `"minutes"`, `"hours"`, `"days"` | Yes |
+**Response:**
+```python
+{
+  "id": "672203ee093fd3d208a4b6d4",
+  "name": "webhook1",
+  "key": "6721f000ee301e1d54c3de3d:1730282478:P4Nrs3DOLIkaw5aYsbIWNzWZZAwEyb20"
+}
+```
 
-### Listing Your Keys
+### Listing All API Keys
 
-**Endpoint**: `GET /webhook`
+**Endpoint:** `GET /webhook`
 
-**Example Response**:
-
-```json
+**Response:**
+```python
 {
   "keys": [
     {
       "id": "672203ee093fd3d208a4b6d4",
       "name": "test",
       "root_id": "6721f000ee301e1d54c3de3d",
-      "walkers": ["webhook_example"],
+      "walkers": ["webhook"],
       "nodes": ["root"],
       "expiration": "2025-12-24T10:01:18.206000",
       "key": "6721f000ee301e1d54c3de3d:1730282478:P4Nrs3DOLIkaw5aYsbIWNzWZZAwEyb20"
@@ -135,41 +99,55 @@ curl -X POST 'http://localhost:8000/webhook/walker/webhook_example' \
 }
 ```
 
-### Extending Key Expiration
+### Extending an API Key's Expiration
 
-**Endpoint**: `PATCH /webhook/extend/{id}`
+**Endpoint:** `PATCH /webhook/extend/{id}`
 
-**Request Body**:
-
-```json
+**Request Body:**
+```python
 {
   "count": 60,
+  # seconds | minutes | hours | days
   "interval": "days"
 }
 ```
 
-### Deleting Keys
-
-**Endpoint**: `DELETE /webhook/delete`
-
-**Request Body**:
-
-```json
+**Response:**
+```python
 {
+  "message": "Successfully Extended!"
+}
+```
+
+### Deleting API Keys
+
+**Endpoint:** `DELETE /webhook/delete`
+
+**Request Body:**
+```python
+{
+  # list of ids to be deleted
   "ids": ["672203ee093fd3d208a4b6d4"]
 }
 ```
 
-## Authentication Methods (4 Ways)
+**Response:**
+```python
+{
+  "message": "Successfully Deleted!"
+}
+```
 
-Jac Cloud supports four different ways to pass API keys to webhook endpoints:
+## Webhook Implementation Examples
 
-### 1. Header Authentication (Most Common)
+Here are examples of different webhook implementations:
 
-```jac
+### 1. Using Header for API Key (Default)
+
+```python
 walker webhook_by_header {
-    can enter with `root entry {
-        report "Header authentication successful!";
+    can enter1 with `root entry {
+        report here;
     }
 
     class __specs__ {
@@ -181,19 +159,18 @@ walker webhook_by_header {
 }
 ```
 
-**Example Request**:
-
+**Example Request:**
 ```bash
-curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_header' \
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_header' \
   -H 'test-key: YOUR-GENERATED-KEY'
 ```
 
-### 2. Query Parameter Authentication
+### 2. Using Query Parameter for API Key
 
-```jac
+```python
 walker webhook_by_query {
-    can enter with `root entry {
-        report "Query authentication successful!";
+    can enter1 with `root entry {
+        report here;
     }
 
     class __specs__ {
@@ -205,42 +182,39 @@ walker webhook_by_query {
 }
 ```
 
-**Example Request**:
-
+**Example Request:**
 ```bash
-curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_query?test_key=YOUR-GENERATED-KEY'
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_query?test_key=YOUR-GENERATED-KEY'
 ```
 
-### 3. URL Path Authentication
+### 3. Using Path Parameter for API Key
 
-```jac
+```python
 walker webhook_by_path {
-    can enter with `root entry {
-        report "Path authentication successful!";
+    can enter1 with `root entry {
+        report here;
     }
 
     class __specs__ {
         has webhook: dict = {
             "type": "path",
-            "name": "test_key"  // Must match path variable name
-        },
-        path: str = "/{test_key}";
+            "name": "test_key"  # name and the path var should be the same
+        }, path: str = "/{test_key}";
     }
 }
 ```
 
-**Example Request**:
-
+**Example Request:**
 ```bash
-curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_path/YOUR-GENERATED-KEY'
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_path/YOUR-GENERATED-KEY'
 ```
 
-### 4. Request Body Authentication
+### 4. Using Request Body for API Key
 
-```jac
+```python
 walker webhook_by_body {
-    can enter with `root entry {
-        report "Body authentication successful!";
+    can enter1 with `root entry {
+        report here;
     }
 
     class __specs__ {
@@ -252,32 +226,41 @@ walker webhook_by_body {
 }
 ```
 
-**Example Request**:
-
+**Example Request:**
 ```bash
-curl -X 'POST' 'http://localhost:8000/webhook/walker/webhook_by_body' \
-  -H 'Content-Type: application/json' \
-  -d '{"test_key": "YOUR-GENERATED-KEY"}'
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_body' -d '{"test_key": "YOUR-GENERATED-KEY"}'
 ```
 
-## Security Best Practices
+## Best Practices
 
-1. **Restrict API Keys**: Limit keys to only the specific walkers and nodes they need access to
-2. **Set Appropriate Expirations**: Use shorter expiration times for sensitive operations
-3. **Use Descriptive Names**: Choose meaningful names for your webhooks and API keys
-4. **Rotate Keys Regularly**: Generate new keys and invalidate old ones periodically
-5. **Monitor Usage**: Keep track of webhook invocations for security and debugging
+1. **Set Appropriate Expirations**: For security, use short-lived keys when possible.
+2. **Limit Walker Access**: Specify only the walkers that should be accessible for each key.
+3. **Use Specific Node Restrictions**: When possible, limit which nodes can be accessed.
+4. **Regularly Rotate Keys**: Create a process to regularly generate new keys and invalidate old ones.
+5. **Use Headers by Default**: Header-based API keys are generally more secure than query parameters or body values.
 
-## Common Webhook Use Cases
+## Common Use Cases
 
-1. **GitHub/GitLab Integration**: Trigger builds or deployments on code changes
-2. **Payment Processing**: Handle payment webhooks from Stripe, PayPal, etc.
-3. **IoT Device Updates**: Receive data from sensors and connected devices
-4. **Third-Party Integrations**: Connect with external services like Slack, Twilio
-5. **Data Synchronization**: Keep systems in sync with real-time updates
+Webhooks are ideal for:
+
+- **Integration with Third-Party Services**: Allow external services to trigger specific actions in your application
+- **Scheduled Events**: Receive notifications from scheduling services
+- **Notifications**: Handle notifications from payment processors, source control systems, etc.
+- **IoT Communication**: Enable secure communication from IoT devices
+- **CI/CD Pipelines**: Trigger deployments or other actions from CI/CD systems
+
+## Troubleshooting
+
+If your webhook isn't working:
+
+1. Verify the API key hasn't expired
+2. Ensure you're sending the key in the correct location (header, query, path, or body)
+3. Check that the parameter name matches your configuration
+4. Confirm the walker and node are allowed for the API key
+5. Check the logs for any errors
 
 ## Next Steps
 
-- Learn about [WebSocket Communication](websocket.md) for real-time features
-- Explore [Task Scheduling](scheduler.md) for automated background tasks
-- Set up [Logging & Monitoring](logging.md) to track webhook usage
+- Learn about [WebSocket Communication](websocket.md) for real-time bidirectional communication
+- Explore [Task Scheduling](scheduler.md) for running walkers on a schedule
+- See how to properly [Deploy to Production](deployment.md) with secure webhook configurations

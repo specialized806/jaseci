@@ -1,188 +1,238 @@
-# Real-Time Communication with WebSockets
+# WebSocket: Real-Time Communication
 
-## What Are WebSockets?
+## Overview
 
-WebSockets enable real-time, two-way communication between your Jac Cloud server and clients. Unlike regular HTTP requests, WebSockets maintain a persistent connection, allowing you to build:
+WebSockets enable real-time, bidirectional communication between clients and your Jac application. This is particularly useful for:
 
-- Live chat applications
-- Real-time notifications
-- Collaborative editing tools
-- Live dashboards
-- Multiplayer games
+- Chat applications
+- Real-time dashboards
+- Collaborative tools
+- Live notifications
+- Any application requiring instant updates
 
-## Getting Started in 5 Minutes
+## Walker Declaration for WebSockets
 
-### Step 1: Create a WebSocket Walker
+You can declare a walker to handle WebSocket connections by setting the `methods` property to include `"websocket"` in the `__specs__` configuration:
 
-To create a WebSocket endpoint, add the `"websocket"` method to your walker's `__specs__` configuration:
-
-```jac
-walker chat_service {
-    has message: str;
+```python
+walker your_event_name {
+    has val: int;
 
     can enter with `root entry {
-        report "Received: " + self.message;
+        report "Do something!";
     }
 
     class __specs__ {
-        has methods: list = ["websocket"];  // This makes it a WebSocket endpoint
+        has methods: list = ["websocket"];
     }
 }
 ```
 
-!!! tip "WebSocket + HTTP"
-    WebSocket walkers can also support other HTTP methods (GET, POST, etc.), but file uploads are not supported via WebSocket connections.
+**Note**: WebSocket walkers can still work with other HTTP methods; however, they currently don't support file uploads.
 
-### Step 2: Connect From a Client
+## WebSocket Connection Details
 
-Use standard WebSocket clients to connect to your endpoint:
+### Connection URL and Parameters
 
-**Connection Details:**
-
-- **Protocol**: `ws://` (or `wss://` for secure connections)
+- **Protocol**: `ws`
 - **URL**: `/websocket`
 - **Optional Header**: `Authorization: Bearer {{USER-TOKEN}}`
 - **Optional Query Parameter**: `?channel_id=anystring`
 
-When connected, you'll receive a connection event with client information:
+### Connection Process
 
-```json
+When a client connects to the WebSocket endpoint, it will immediately receive a connection information event:
+
+```python
 {
-    "type": "connection",
-    "data": {
-        "client_id": "1730887348:f46d85203c704c099e9f44e948322a20",
-        "root_id": "n::672b35cec309e5ef8469c372",
-        "channel_id": "1730887348:796ad2e9fa3e484ebe01f071c381b7e8"
+	"type": "connection",
+	"data": {
+        # your websocket client id
+		"client_id": "1730887348:f46d85203c704c099e9f44e948322a20",
+
+        # user's root_id
+		"root_id": "n::672b35cec309e5ef8469c372",
+
+        # non authenticated
+		# "root_id": "n::000000000000000000000001",
+
+        # user's channel id, random if not specified
+		"channel_id": "1730887348:796ad2e9fa3e484ebe01f071c381b7e8"
+	}
+}
+```
+
+### Connection Types
+
+There are two types of connections:
+
+1. **Authenticated Connection** - Uses a valid Authorization token
+2. **Non-Authenticated Connection** - Public access
+
+### Channel Subscription
+
+You can specify a `channel_id` via query parameter to receive notifications from a specific channel. This is particularly useful for group chat or notification applications.
+
+## Client Event Types
+
+Clients can send different types of events to the server through the WebSocket connection:
+
+### 1. Walker Event
+
+Triggers a walker just like a REST API call:
+
+```python
+{
+    # event type
+	"type": "walker",
+
+    # walker's name
+	"walker": "your_event_name",
+
+    # if you want to receive a notification for response
+	"response": true,
+
+    # walker's request context
+	"context": {
+        "val": 1
     }
 }
 ```
 
-## Sending Messages From Clients
+### 2. User Event
 
-### Trigger a Walker Execution
+Sends a notification to specific users:
 
-```json
+```python
 {
-    "type": "walker",
-    "walker": "chat_service",
-    "response": true,
-    "context": {
-        "message": "Hello, server!"
-    }
-}
-```
+    # event type
+	"type": "user",
 
-### Send a Message to Specific Users
-
-```json
-{
-    "type": "user",
+    # target user/s via root_id
     "root_ids": ["n::672b35cec309e5ef8469c372"],
-    "data": {
-        "message": "Hello, specific user!"
+
+    # data you want to send
+	"data": {
+        "val": 1
     }
 }
 ```
 
-### Send a Message to a Channel
+### 3. Channel Event
 
-```json
+Sends a notification to all clients subscribed to specific channels:
+
+```python
 {
-    "type": "channel",
-    "channel_ids": ["room_123"],
-    "data": {
-        "message": "Hello, everyone in this channel!"
+    # event type
+	"type": "channel",
+
+    # target channel_id/s
+    "channel_ids": ["anystring"],
+
+    # data you want to send
+	"data": {
+        "val": 1
     }
 }
 ```
 
-### Send a Message to Specific Clients
+### 4. Client Event
 
-```json
+Sends a notification to specific clients:
+
+```python
 {
-    "type": "client",
+    # event type
+	"type": "client",
+
+    # target client_ids
     "client_ids": ["1730887348:f46d85203c704c099e9f44e948322a20"],
-    "data": {
-        "message": "Hello, specific client!"
+
+    # data you want to send
+	"data": {
+        "val": 1
     }
 }
 ```
 
-### Switch Between Authenticated and Public User
+### 5. Change User Event
 
-```json
+Switches between authenticated and public user:
+
+```python
 {
-    "type": "connection",
-    "token": "Bearer {{user's token}}"
+    # event type
+	"type": "change_user",
+
+    # optional - defaults to public user
+	"token": "bearer {{user's token}}"
 }
 ```
 
-## Sending Messages From the Server
+## Server-Side Notification Methods
 
-To send notifications from your walkers, import the WebSocket manager:
+### Prerequisites
 
-```jac
+To send notifications from your walker, import the WebSocket manager:
+
+```python
 import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 ```
 
-### Notification Methods
+### Available Notification Methods
 
-#### Notify Current Client
+#### 1. Self Notification
 
-```jac
-socket.notify_self({
-    "progress": "0%",
-    "status": "started"
-});
+Sends a notification to the current WebSocket client (only valid on WebSocket walker events):
+
+```python
+socket.notify_self({"any_field": "for_progress", "progress": "0%", "status": "started"});
 ```
 
-#### Notify Specific Users
+#### 2. User Notification
 
-```jac
-socket.notify_users([root_id], {
-    "progress": "50%",
-    "status": "processing"
-});
+Sends a notification to all clients of specific users:
+
+```python
+socket.notify_users([root], {"any_field": "for_progress", "progress": "0%", "status": "started"});
 ```
 
-#### Notify Channels
+#### 3. Channel Notification
 
-```jac
-socket.notify_channels([channel_id], {
-    "progress": "75%",
-    "status": "finalizing"
-});
+Sends a notification to all clients subscribed to specific channels:
+
+```python
+socket.notify_channels([channel_id], {"any_field": "for_progress", "progress": "0%", "status": "started"});
 ```
 
-#### Notify Specific Clients
+#### 4. Client Notification
 
-```jac
-socket.notify_clients([client_id], {
-    "progress": "100%",
-    "status": "completed"
-});
+Sends a notification to specific client connections:
+
+```python
+socket.notify_clients([client_id], {"any_field": "for_progress", "progress": "0%", "status": "started"});
 ```
 
-## Complete Example: Chat Application
+## End-to-End Integration Example
 
-### Server-Side Code (Jac)
+### Server-Side (Jac)
 
-```jac
-"""Simple WebSocket chat application example."""
+```python
+"""Websocket scenarios."""
 import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 
-// Send message to a specific user
+###########################################################
+#                   WEBSOCKET ENDPOINTS                   #
+###########################################################
+
 walker send_chat_to_user {
     has root_id: str;
-    has message: str = "Hello user!";
 
-    can enter with `root entry {
+    can enter1 with `root entry {
         _root = &(self.root_id);
-        socket.notify_users([_root], {
-            "type": "chat",
-            "data": {"message": self.message}
-        });
-        report "Message sent to user!";
+
+        socket.notify_users([_root], {"type": "chat", "data": {"message": "string"}});
     }
 
     class __specs__ {
@@ -190,17 +240,24 @@ walker send_chat_to_user {
     }
 }
 
-// Send message to a channel/group
+
 walker send_chat_to_group {
     has channel_id: str;
-    has message: str = "Hello channel!";
 
-    can enter with `root entry {
-        socket.notify_channels([self.channel_id], {
-            "type": "chat",
-            "data": {"message": self.message}
-        });
-        report "Message sent to channel!";
+    can enter1 with `root entry {
+        socket.notify_channels([self.channel_id], {"type": "chat", "data": {"message": "string"}});
+    }
+
+    class __specs__ {
+        has methods: list = ["websocket", "post"];
+    }
+}
+
+walker send_chat_to_client {
+    has client_id: str;
+
+    can enter1 with `root entry {
+        socket.notify_clients([self.client_id], {"type": "chat", "data": {"message": "string"}});
     }
 
     class __specs__ {
@@ -209,95 +266,138 @@ walker send_chat_to_group {
 }
 ```
 
-### Client-Side Code (JavaScript)
+### Client-Side (JavaScript)
 
-#### Connecting to WebSocket
+#### WebSocket Connection
 
-```javascript
-// Non-authenticated connection (standard WebSocket)
+**Important Note**: The JavaScript WebSockets API doesn't natively support headers for authentication. You'll need to use the `change_user` event or a third-party WebSocket library that supports headers.
+
+```js
+//####################################################//
+//           NOT AUTHENTICATED - JS LIBRARY           //
+//####################################################//
 const client = new WebSocket("ws://localhost:8000/websocket");
 
-// Authenticated connection with change_user event
+//####################################################//
+//             AUTHENTICATED - JS LIBRARY             //
+//####################################################//
+
 const client = new WebSocket("ws://localhost:8000/websocket");
 client.onopen = (event) => {
   client.send(JSON.stringify({
     "type": "change_user",
-    "token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "token": "Bearer {{user's token}}" // optional - default to public user
   }));
 };
-```
 
-!!! warning "Browser WebSocket Limitations"
-    The standard browser WebSocket API doesn't support custom headers.
-    For authenticated connections in browsers, use the change_user event after connecting.
+//####################################################//
+//           AUTHENTICATED - NPM WS LIBRARY           //
+//####################################################//
+import WebSocket from 'ws';
 
-#### Handling Messages
-
-```javascript
-client.onmessage = (event) => {
-  const msg = JSON.parse(event.data);
-
-  switch (msg.type) {
-    case "connection":
-      console.log("Connected with client ID:", msg.data.client_id);
-      break;
-    case "chat":
-      console.log("Received chat:", msg.data.message);
-      // Update UI with the new message
-      displayMessage(msg.data.message);
-      break;
-    default:
-      console.log("Received event:", msg.type, msg.data);
+const client = new WebSocket('ws://localhost:8000/websocket', {
+  headers: {
+    "Authorization": "Bearer {{user's token}}"
   }
-};
-
-// Example function to display messages in UI
-function displayMessage(message) {
-  const messageElement = document.createElement("div");
-  messageElement.textContent = message;
-  document.getElementById("chat-messages").appendChild(messageElement);
-}
-```
-
-#### Sending Messages
-
-```javascript
-// Function to send a message
-function sendMessage(message) {
-  // Trigger the send_chat_to_group walker
-  client.send(JSON.stringify({
-    "type": "walker",
-    "walker": "send_chat_to_group",
-    "response": true,
-    "context": {
-      "channel_id": "room_123",
-      "message": message
-    }
-  }));
-}
-
-// Example: Connect send button to the function
-document.getElementById("send-button").addEventListener("click", () => {
-  const messageInput = document.getElementById("message-input");
-  sendMessage(messageInput.value);
-  messageInput.value = "";
 });
 ```
 
-## WebSocket Best Practices
+#### Consuming Events
 
-1. **Use typed events**: Include a "type" field in your data to easily differentiate message types
-2. **Handle reconnection**: Implement reconnection logic in your client to handle network issues
-3. **Validate permissions**: Check user permissions before broadcasting sensitive information
-4. **Structure data consistently**: Maintain a consistent data structure for your WebSocket messages
-5. **Consider scalability**: For high-traffic applications, consider using the channel-based approach
+```js
+client.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  switch (msg.type) {
+    case "connection":
+      // to check connection info
+    case "chat":
+      console.log(msg.data)
+    case "your_event1":
+      console.log(msg.data)
+    case "your_event2":
+      console.log(msg.data)
+    case "your_event3":
+      console.log(msg.data)
+  }
+};
+```
 
-## Additional Resources
+#### Publishing Events
 
-For a complete working example, you can download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia).
+```js
+// TRIGGER WALKER EVENT
+client.send(JSON.stringify({
+	"type": "walker",
+	"walker": "your_walker_name",
+	"response": true,
+	"context": {}
+}));
 
-## Next Steps
+// TRIGGER CLIENT EVENT (ex: direct chat)
+client.send(JSON.stringify({
+	"type": "client",
+	"client_ids": ["target client_id from connection event"],
+	"data": {
+		"type": "chat",
+    "data": {
+      "any_field": "any_value"
+    }
+	}
+}));
 
-- Learn about [Webhook Integration](webhook.md) for third-party service integration
-- Explore [Task Scheduling](scheduler.md) for automated background tasks
-- Implement [Authentication & Permissions](permission.md) for secure applications
+// TRIGGER CHANNEL EVENT (ex: group chat or chat blast)
+client.send(JSON.stringify({
+	"type": "channel",
+	"channel_ids": ["target channel_id from connection event"],
+	"data": {
+		"type": "chat",
+    "data": {
+      "any_field": "any_value"
+    }
+	}
+}));
+
+// TRIGGER USER EVENT (ex: chat but all target user's client)
+client.send(JSON.stringify({
+	"type": "user",
+	"root_ids": ["target root_id from connection event"],
+	"data": {
+		"type": "chat",
+    "data": {
+      "any_field": "any_value"
+    }
+	}
+}));
+
+// TRIGGER CONNECTION EVENT - to get connection info)
+client.send(JSON.stringify({
+	"type": "connection"
+}));
+```
+
+## Best Practices
+
+1. **Use Channels for Group Communication**: Instead of sending messages to multiple clients individually, use channels.
+2. **Handle Reconnection Logic**: Implement reconnection logic in your client to handle network disruptions.
+3. **Validate All Messages**: Always validate incoming messages to prevent security issues.
+4. **Set Ping/Pong Timeouts**: Configure appropriate ping/pong intervals to detect disconnected clients.
+5. **Use Authorization**: For private communications, always use authenticated connections.
+
+## Common Use Cases
+
+- **Chat Applications**: Real-time messaging between users
+- **Notifications**: Instant alerts and notifications
+- **Live Updates**: Real-time updates to dashboards or data displays
+- **Collaborative Tools**: Multiple users working on the same document or project
+- **Gaming**: Real-time multiplayer games
+
+## Troubleshooting
+
+- **Connection Issues**: Verify the WebSocket URL and ensure your server is running
+- **Authentication Problems**: Check that your token is valid and properly formatted
+- **Message Delivery Failures**: Confirm that client IDs, user IDs, or channel IDs are correct
+- **Performance Issues**: Consider using channels instead of individual client notifications for better performance
+
+---
+### Additional Resources
+For a complete working example, you may download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia)

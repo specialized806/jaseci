@@ -1,245 +1,248 @@
 # Task Scheduling: Automate Your Jac Applications
 
-## What is Task Scheduling?
+## Overview
 
-Jac Cloud's task scheduling system lets you run walkers at specified times or intervals without manual intervention. This powerful feature enables you to:
+Jac Cloud's scheduler allows you to run walkers automatically at specific times or intervals. This is useful for:
 
-- Run daily reports or data processing
-- Send scheduled notifications or emails
-- Perform regular maintenance tasks
-- Execute periodic data synchronization
-- Trigger time-sensitive workflows
+- Running periodic background tasks
+- Processing data at scheduled intervals
+- Sending scheduled notifications
+- Executing maintenance operations
+- Any task that needs to happen on a recurring basis
 
-## Quick Start: Schedule Your First Task
+## Scheduler Configuration
 
-### Step 1: Create a Scheduled Walker
+To configure a scheduled walker, add a `schedule` dictionary to the walker's `__specs__` configuration. The schedule supports three trigger types:
 
-Add a `schedule` object to your walker's `__specs__` class:
+1. **Cron** - Schedule using cron expressions
+2. **Interval** - Schedule at regular time intervals
+3. **Date** - Schedule at a specific date and time
 
-```jac
-walker daily_greeting {
-    has name: str = "World";
+### Common Configuration Options
+
+| **NAME**      | **TYPE**               | **DESCRIPTION**                                                                                   | **DEFAULT** |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------- | ----------- |
+| trigger       | str                    | trigger type (`cron`, `interval`, `date`)                                                         | N/A         |
+| node          | str or None            | entry node if necessary, defaults to root                                                         | None        |
+| args          | list[Any] or None      | list of arguments to initialize the walker                                                        | None        |
+| kwargs        | dict[str, Any] or None | dict of keyword arguments to initialize the walker                                                | None        |
+| max_instances | int                    | max simultaneous running job per walker type                                                      | 1           |
+| next_run_time | datetime or None       | target date before the first trigger will happen                                                  | None        |
+| propagate     | bool                   | if multiple jac-cloud service can trigger at the same time or first service only per trigger only | false       |
+| save          | bool                   | if walker instance will be save to the db including the results                                   | false       |
+
+## Cron Trigger
+
+The cron trigger uses a cron-like expression to schedule tasks with high precision.
+
+### Additional Cron Configuration Options
+
+| **NAME**    | **TYPES**               | **DESCRIPTION**                                                | **DEFAULT** |
+| ----------- | ----------------------- | -------------------------------------------------------------- | ----------- |
+| year        | int or str              | 4-digit year                                                   | \*          |
+| month       | int or str              | month (1-12)                                                   | \*          |
+| day         | int or str              | day of month (1-31)                                            | \*          |
+| week        | int or str              | ISO week (1-53)                                                | \*          |
+| day_of_week | int or str              | number or name of weekday (0-6 or mon,tue,wed,thu,fri,sat,sun) | \*          |
+| hour        | int or str              | hour (0-23)                                                    | \*          |
+| minute      | int or str              | minute (0-59)                                                  | \*          |
+| second      | int or str              | second (0-59)                                                  | \*          |
+| start_date  | datetime or str or None | earliest possible date/time to trigger on (inclusive)          | None        |
+| end_date    | datetime or str or None | latest possible date/time to trigger on (inclusive)            | None        |
+
+### Cron Example
+
+```python
+walker walker_cron {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
 
     can enter with `root entry {
-        // This will run every day at 9:00 AM
-        report f"Good morning, {self.name}! Today is {DateTime.now().format('%A')}";
+        print("I am a scheduled walker!")
     }
 
     class __specs__ {
-        has schedule: dict = {
-            "trigger": "cron",      // Schedule type
-            "hour": 9,              // Run at 9 AM
-            "minute": 0,            // At exactly 00 minutes
-            "args": [],             // No positional args
-            "kwargs": {             // Keyword arguments
-                "name": "Everyone"
-            },
-            "save": true            // Save results to database
-        };
-    }
-}
-```
-
-### Step 2: Start Your Server
-
-Run your Jac Cloud server as usual:
-
-```bash
-jac serve main.jac
-```
-
-Your scheduled task will now run automatically at the specified time!
-
-## Three Ways to Schedule Tasks
-
-### 1. Cron Scheduling (Time-Based)
-
-Use cron expressions to run tasks based on calendar time (like "every Monday at 9am"):
-
-```jac
-walker weekly_report {
-    can enter with `root entry {
-        // Runs every Monday at 7:30 AM
-        print("Generating weekly report...");
-    }
-
-    class __specs__ {
+        has private: bool = True;
         has schedule: dict = {
             "trigger": "cron",
-            "day_of_week": "mon",   // Monday
-            "hour": 7,              // 7 AM
-            "minute": 30,           // 30 minutes
-            "save": true
+            "args": [1, "2"],
+            "kwargs": {
+                "kwarg1": 30,
+                "kwarg2": "40"
+            },
+            # Run every day at midnight
+            "hour": "0",
+            "minute": "0",
+            "save": True
         };
     }
 }
 ```
 
-### 2. Interval Scheduling (Frequency-Based)
+## Interval Trigger
 
-Run tasks at regular intervals (every X minutes, hours, etc.):
+The interval trigger runs a task at regular time intervals.
 
-```jac
-walker system_health_check {
+### Additional Interval Configuration Options
+
+| **NAME**   | **TYPES**               | **DESCRIPTION**                             | **DEFAULT** |
+| ---------- | ----------------------- | ------------------------------------------- | ----------- |
+| weeks      | int                     | number of weeks to wait                     |             |
+| days       | int                     | number of days to wait                      |             |
+| hours      | int                     | number of hours to wait                     |             |
+| minutes    | int                     | number of minutes to wait                   |             |
+| seconds    | int                     | number of seconds to wait                   | 1           |
+| start_date | datetime or str or None | starting point for the interval calculation |             |
+| end_date   | datetime or str or None | latest possible date/time to trigger on     |             |
+
+### Interval Example
+
+```python
+walker walker_interval {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
+
     can enter with `root entry {
-        // Runs every 5 minutes
-        print("Checking system health...");
+        print("I am a scheduled walker running every 5 seconds!")
     }
 
     class __specs__ {
+        has private: bool = True;
         has schedule: dict = {
             "trigger": "interval",
-            "minutes": 5,           // Every 5 minutes
-            "save": true
+            "args": [1, "2"],
+            "kwargs": {
+                "kwarg1": 30,
+                "kwarg2": "40"
+            },
+            "seconds": 5,
+            "save": True
         };
     }
 }
 ```
 
-### 3. One-time Scheduling (Date-Based)
+## Date Trigger
 
-Run tasks once at a specific date and time:
+The date trigger runs a task once at a specific date and time.
 
-```jac
-walker special_event {
+### Additional Date Configuration Options
+
+| **NAME** | **TYPES**       | **DESCRIPTION**                 | **DEFAULT** |
+| -------- | --------------- | ------------------------------- | ----------- |
+| run_date | datetime or str | the date/time to run the job at |             |
+
+### Date Example
+
+```python
+walker walker_date {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
+
     can enter with `root entry {
-        // Runs once at the specified date/time
-        print("Running one-time special event...");
+        print("I am a scheduled walker running once at a specific time!")
     }
 
     class __specs__ {
+        has private: bool = True;
         has schedule: dict = {
             "trigger": "date",
-            "run_date": "2024-12-31T23:59:00+00:00",  // New Year's Eve
-            "save": true
-        };
-    }
-}
-```
-
-## Common Configuration Options
-
-All scheduler configurations share these parameters:
-
-| **Parameter** | **Type** | **Description** | **Default** |
-|---------------|----------|-----------------|-------------|
-| `trigger` | `str` | Type of trigger: `"cron"`, `"interval"`, or `"date"` | (Required) |
-| `node` | `str` | Entry node ID (defaults to root) | `None` |
-| `args` | `list` | Positional arguments for the walker | `None` |
-| `kwargs` | `dict` | Keyword arguments for the walker | `None` |
-| `max_instances` | `int` | Maximum simultaneous jobs per walker type | `1` |
-| `save` | `bool` | Whether to save walker instance results to database | `false` |
-
-## Cron Scheduling Reference
-
-| **Parameter** | **Type** | **Description** | **Example** |
-|---------------|----------|-----------------|-------------|
-| `year` | `int/str` | 4-digit year | `2024` or `"2024-2025"` |
-| `month` | `int/str` | Month (1-12) | `3` (March) or `"3-6"` |
-| `day` | `int/str` | Day of month (1-31) | `15` or `"1-15"` |
-| `day_of_week` | `int/str` | Weekday (0-6 or mon,tue,wed,thu,fri,sat,sun) | `"mon,wed,fri"` |
-| `hour` | `int/str` | Hour (0-23) | `9` or `"9-17"` |
-| `minute` | `int/str` | Minute (0-59) | `30` or `"*/15"` (every 15) |
-| `second` | `int/str` | Second (0-59) | `0` or `"*/30"` (every 30) |
-
-## Interval Scheduling Reference
-
-| **Parameter** | **Type** | **Description** | **Example** |
-|---------------|----------|-----------------|-------------|
-| `weeks` | `int` | Number of weeks between runs | `1` (weekly) |
-| `days` | `int` | Number of days between runs | `1` (daily) |
-| `hours` | `int` | Number of hours between runs | `12` (twice daily) |
-| `minutes` | `int` | Number of minutes between runs | `30` (half-hourly) |
-| `seconds` | `int` | Number of seconds between runs | `60` (every minute) |
-
-## Practical Examples
-
-### Daily Backup at Midnight
-
-```jac
-walker daily_backup {
-    can enter with `root entry {
-        print("Starting daily backup process...");
-        // Backup logic here
-    }
-
-    class __specs__ {
-        has schedule: dict = {
-            "trigger": "cron",
-            "hour": 0,        // Midnight
-            "minute": 0,      // On the hour
-            "save": true
-        };
-    }
-}
-```
-
-### Periodic Data Sync (Every 15 Minutes)
-
-```jac
-walker sync_data {
-    can enter with `root entry {
-        print("Syncing data with external system...");
-        // Sync logic here
-    }
-
-    class __specs__ {
-        has schedule: dict = {
-            "trigger": "interval",
-            "minutes": 15,    // Every 15 minutes
-            "save": true
-        };
-    }
-}
-```
-
-### Scheduled Email (Weekdays at 9 AM)
-
-```jac
-walker send_daily_email {
-    has recipients: list[str];
-    has subject: str;
-    has content: str;
-
-    can enter with `root entry {
-        print(f"Sending email to {len(self.recipients)} recipients");
-        // Email sending logic here
-    }
-
-    class __specs__ {
-        has schedule: dict = {
-            "trigger": "cron",
-            "day_of_week": "mon,tue,wed,thu,fri",  // Weekdays only
-            "hour": 9,                            // 9 AM
-            "minute": 0,                          // On the hour
+            "args": [1, "2"],
             "kwargs": {
-                "recipients": ["user@example.com"],
-                "subject": "Daily Update",
-                "content": "Here's your daily update!"
+                "kwarg1": 30,
+                "kwarg2": "40"
             },
-            "save": true
+            "run_date": "2025-04-30T11:12:00+00:00",
+            "save": True
         };
     }
 }
 ```
 
-## Best Practices for Beginners
+## Jac Cloud Optional Task Queue
 
-1. **Keep tasks idempotent**: Tasks should be safe to run multiple times
-2. **Set appropriate max_instances**: Prevent queue congestion by limiting concurrent instances
-3. **Enable save parameter**: Use `save: true` to track execution history
-4. **Check timezone awareness**: Cron and date triggers use server timezone unless specified
-5. **Start with longer intervals**: For testing, use longer intervals (minutes instead of seconds)
+Jac Cloud also supports asynchronous task management that can be enabled by setting the `TASK_CONSUMER_CRON_SECOND` environment variable. This allows you to create tasks that will be processed by a background worker.
 
-## Troubleshooting Common Issues
+### Example Use Case
 
-- **Tasks not running**: Check that your Jac Cloud service is running and Redis is properly configured
-- **Duplicate executions**: Ensure `propagate: false` (default) is set if multiple Jac Cloud instances are running
-- **Missing results**: Verify `save: true` is set to store task results in the database
-- **Unexpected timing**: Check server timezone vs. expected timezone
+```python
+import from jac_cloud.plugin.implementation {create_task}
+
+node TaskCounter {
+    has val: int = 0;
+}
+
+walker get_or_create_counter {
+    can enter1 with `root entry {
+        tc = TaskCounter();
+        here ++> tc;
+
+        report tc;
+    }
+
+    can enter2 with TaskCounter entry {
+        report here;
+    }
+}
+
+walker increment_counter {
+    has val: int;
+
+    can enter with TaskCounter entry {
+        here.val += self.val;
+    }
+
+    class __specs__ {
+        has private: bool = True;
+    }
+}
+
+walker trigger_counter_task {
+    can enter with `root entry {
+        tcs = [-->(`?TaskCounter)];
+        if tcs {
+            report create_task(increment_counter(val=1), tcs[0]);
+        }
+    }
+}
+```
+
+### How Tasks Work
+
+- `trigger_counter_task` creates a walker task that will be consumed by the Task Consumer
+- The task is saved to both the database and Redis
+- The polling mechanism uses Redis to avoid excessive database traffic
+  - The minimum polling interval is 1 second, configurable via `TASK_CONSUMER_CRON_SECOND`
+- Task consumption is atomic, ensuring only one Jac Cloud instance processes each task
+- If Redis is cleared, pending tasks will be repopulated from the database when Jac Cloud restarts
+
+## Best Practices
+
+1. **Set Appropriate Intervals**: Use intervals that match your application's needs (e.g., don't poll every second if hourly updates are sufficient)
+2. **Make Tasks Idempotent**: Design scheduled tasks to be safely run multiple times
+3. **Handle Failures Gracefully**: Add error handling in your scheduled walkers
+4. **Consider Time Zones**: Be aware of server time zones when scheduling date/time-specific tasks
+5. **Monitor Task Performance**: Log execution times and success rates for scheduled tasks
+
+## Debugging Scheduled Tasks
+
+If your scheduled task isn't running:
+
+1. Check that the `schedule` configuration is correctly formatted
+2. Ensure the `private` flag is set to `true` (recommended for scheduled tasks)
+3. Verify the environment variable `TASK_CONSUMER_CRON_SECOND` is set (for async tasks)
+4. Check the logs for any errors during task execution
+5. Test the walker manually to ensure it works properly
 
 ## Next Steps
 
-- Learn about [WebSocket Communication](websocket.md) for real-time features
-- Explore [Webhook Integration](webhook.md) for third-party service integration
-- Set up [Logging & Monitoring](logging.md) to track scheduled tasks
+- Learn about [WebSocket Communication](websocket.md) for real-time updates
+- Explore [Webhook Integration](webhook.md) for external service integration
+- Set up [Logging & Monitoring](logging.md) to track task execution
+- Deploy your application using [Kubernetes](deployment.md) for scalable task processing
