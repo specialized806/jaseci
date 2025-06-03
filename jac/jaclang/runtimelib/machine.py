@@ -1424,7 +1424,7 @@ class JacUtils:
         from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
 
         if not base_path:
-            base_path = JacMachine.base_path or os.getcwd()
+            base_path = JacMachine.base_path_dir or os.getcwd()
 
         if base_path and not os.path.exists(base_path):
             os.makedirs(base_path)
@@ -1481,7 +1481,7 @@ class JacUtils:
                 importer = JacImporter()
                 spec = ImportPathSpec(
                     target=module_name,
-                    base_path=JacMachine.base_path,
+                    base_path=JacMachine.base_path_dir,
                     absorb=False,
                     mdl_alias=None,
                     override_name=None,
