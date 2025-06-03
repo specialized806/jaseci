@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import ExecutionContext
 
 from .archetype import (
     AccessLevel,
@@ -50,7 +50,7 @@ class ContextResponse(Generic[RT]):
         }
 
 
-class JaseciContext(JacMachine):
+class JaseciContext(ExecutionContext):
     """Execution Context."""
 
     mem: MongoDB
@@ -59,7 +59,6 @@ class JaseciContext(JacMachine):
     system_root: NodeAnchor
     root_state: NodeAnchor
     entry_node: NodeAnchor
-    base: JacMachine | None
     connection: Request | WebSocket | None
 
     def __init__(self) -> None:

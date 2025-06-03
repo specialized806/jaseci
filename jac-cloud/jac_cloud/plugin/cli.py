@@ -6,7 +6,7 @@ from os.path import split
 from pickle import load
 from typing import Any
 
-from jaclang import JacMachine, JacMachineInterface as Jac
+from jaclang import JacMachine as Jac
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import hookimpl
 
@@ -36,7 +36,6 @@ class JacCmd:
             mod = mod[:-4]
 
             FastAPI.enable()
-            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(target=mod, base_path=base, override_name="__main__")
@@ -45,11 +44,8 @@ class JacCmd:
                     Jac.attach_program(load(f))
                     Jac.jac_import(target=mod, base_path=base, override_name="__main__")
             else:
-                mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
             FastAPI.start(host=host, port=port)
-            mach.close()
 
         @cmd_registry.register
         def create_system_admin(

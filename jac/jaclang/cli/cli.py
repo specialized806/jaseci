@@ -16,10 +16,7 @@ from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import printgraph
 from jaclang.runtimelib.constructs import WalkerArchetype
-from jaclang.runtimelib.machine import (
-    JacMachine,
-    JacMachineInterface as Jac,
-)
+from jaclang.runtimelib.machine import ExecutionContext, JacMachine as Jac
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -85,7 +82,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 
 def proc_file_sess(
     filename: str, session: str, root: Optional[str] = None
-) -> tuple[str, str, JacMachine]:
+) -> tuple[str, str, ExecutionContext]:
     """Create JacMachine and return the base path, module name, and machine state."""
     if session == "":
         session = (
@@ -98,7 +95,7 @@ def proc_file_sess(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachine(base, session=session, root=root)
+    mach = ExecutionContext(session=session, root=root)
     return base, mod, mach
 
 
@@ -128,6 +125,8 @@ def run(
     # if no session specified, check if it was defined when starting the command shell
     # otherwise default to jaclang.session
     base, mod, mach = proc_file_sess(filename, session)
+    Jac.set_base_path(base)
+    print(Jac.base_path_dir)
 
     if filename.endswith(".jac"):
         try:
@@ -278,7 +277,7 @@ def lsp() -> None:
     """
     from jaclang import JacMachineInterface as _
 
-    run_lang_server_tuple = _.py_jac_import(
+    run_lang_server_tuple = _.jac_import(
         "...jaclang.langserve.server", __file__, items={"run_lang_server": None}
     )
     run_lang_server = run_lang_server_tuple[0]
@@ -384,8 +383,6 @@ def test(
         jac test --xit               # Stop on first failure
         jac test --verbose           # Show detailed output
     """
-    mach = JacMachine()
-
     failcount = Jac.run_test(
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
@@ -395,8 +392,6 @@ def test(
         directory=directory,
         verbose=verbose,
     )
-
-    mach.close()
 
     if failcount:
         raise SystemExit(f"Tests failed: {failcount}")
@@ -515,7 +510,7 @@ def dot(
 
     if filename.endswith(".jac"):
         Jac.jac_import(target=mod, base_path=base, override_name="__main__")
-        module = jac_machine.loaded_modules.get("__main__")
+        module = Jac.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None

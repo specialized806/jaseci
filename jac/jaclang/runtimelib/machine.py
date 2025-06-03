@@ -77,6 +77,63 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
+class ExecutionContext:
+    """Execution Context."""
+
+    def __init__(
+        self,
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+    ) -> None:
+        """Initialize JacMachine."""
+        self.mem: Memory = ShelfStorage(session)
+        self.reports: list[Any] = []
+        sr_arch = Root()
+        sr_anch = sr_arch.__jac__
+        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
+        sr_anch.persistent = False
+        self.system_root = sr_anch
+        self.custom: Any = MISSING
+        if not isinstance(
+            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
+        ):
+            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
+            system_root.id = UUID(Con.SUPER_ROOT_UUID)
+            self.mem.set(system_root.id, system_root)
+
+        self.system_root = system_root
+
+        self.entry_node = self.root_state = self.init_anchor(root, self.system_root)
+
+    def init_anchor(
+        self,
+        anchor_id: str | None,
+        default: NodeAnchor,
+    ) -> NodeAnchor:
+        """Load initial anchors."""
+        if anchor_id:
+            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+                return anchor
+            raise ValueError(f"Invalid anchor id {anchor_id} !")
+        return default
+
+    def set_entry_node(self, entry_node: str | None) -> None:
+        """Override entry."""
+        self.entry_node = self.init_anchor(entry_node, self.root_state)
+
+    def close(self) -> None:
+        """Close current ExecutionContext."""
+        self.mem.close()
+
+    def get_root(self) -> Root:
+        """Get current root."""
+        return cast(Root, self.root_state.archetype)
+
+    def global_system_root(self) -> NodeAnchor:
+        """Get global system root."""
+        return self.system_root
+
+
 class JacAccessValidation:
     """Jac Access Validation Specs."""
 
@@ -511,8 +568,7 @@ class JacWalker:
             walker.next = [node]
 
         if warch.__jac_async__:
-            machine = JacMachineInterface.py_get_jac_machine()
-            _event_loop = machine._event_loop
+            _event_loop = JacMachine._event_loop
             func = partial(JacMachineInterface.spawn_call, *(walker, loc))
             return asyncio.ensure_future(
                 _event_loop.run_in_executor(None, func), loop=_event_loop
@@ -656,9 +712,9 @@ class JacBasics:
         """Set Class References."""
 
     @staticmethod
-    def get_context() -> JacMachine:
+    def get_context() -> ExecutionContext:
         """Get current execution context."""
-        return JacMachineInterface.py_get_jac_machine()
+        return JacMachine.exec_ctx
 
     @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
@@ -758,50 +814,6 @@ class JacBasics:
             return func
 
         return decorator
-
-    @staticmethod
-    def py_get_jac_machine() -> JacMachine:
-        """Get jac machine from python context."""
-        machine = JacBasics.py_find_jac_machine()
-        if not machine:
-            raise RuntimeError("Jac machine not found in python context. ")
-        return machine
-
-    @staticmethod
-    def py_find_jac_machine() -> Optional[JacMachine]:
-        """Get jac machine from python context."""
-        machine = None
-        for i in inspect.stack():
-            machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
-                "__jac_mach__"
-            )
-            if machine:
-                break
-        return machine
-
-    @staticmethod
-    def py_jac_import(
-        target: str,
-        base_path: str,
-        absorb: bool = False,
-        mdl_alias: Optional[str] = None,
-        override_name: Optional[str] = None,
-        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
-        reload_module: Optional[bool] = False,
-    ) -> tuple[types.ModuleType, ...]:
-        """Core Import Process."""
-        machine = JacBasics.py_find_jac_machine()
-        if not machine:
-            machine = JacMachine(base_path=base_path)
-        return JacMachineInterface.jac_import(
-            target=target,
-            base_path=base_path,
-            absorb=absorb,
-            mdl_alias=mdl_alias,
-            override_name=override_name,
-            items=items,
-            reload_module=reload_module,
-        )
 
     @staticmethod
     def jac_import(
@@ -1090,7 +1102,7 @@ class JacBasics:
     @staticmethod
     def root() -> Root:
         """Jac's root getter."""
-        return JacMachineInterface.py_get_jac_machine().get_root()
+        return JacMachine.get_context().get_root()
 
     @staticmethod
     def build_edge(
@@ -1539,15 +1551,13 @@ class JacUtils:
     @staticmethod
     def await_obj(obj: Any) -> Any:  # noqa: ANN401
         """Await an object if it is a coroutine or async or future function."""
-        machine = JacMachineInterface.py_get_jac_machine()
-        _event_loop = machine._event_loop
+        _event_loop = JacMachine._event_loop
         return _event_loop.run_until_complete(obj)
 
     @staticmethod
     def thread_run(func: Callable, *args: object) -> Future:  # noqa: ANN401
         """Run a function in a thread."""
-        machine = JacMachine.py_get_jac_machine()
-        _executor = machine.pool
+        _executor = JacMachine.pool
         return _executor.submit(func, *args)
 
     @staticmethod
@@ -1574,65 +1584,18 @@ class JacMachine(JacMachineInterface):
     """Jac Machine State."""
 
     loaded_modules: dict[str, types.ModuleType] = {}
-    base_path: str = os.getcwd()
-    base_path_dir: str = os.path.dirname(base_path)
+    base_path_dir: str = os.getcwd()
     program: JacProgram = JacProgram()
     pool: ThreadPoolExecutor = ThreadPoolExecutor()
     _event_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+    exec_ctx: ExecutionContext = ExecutionContext()
 
-    def __init__(
-        self,
-        base_path: str = "",
-        session: Optional[str] = None,
-        root: Optional[str] = None,
-    ) -> None:
-        """Initialize JacMachine."""
-        self.mem: Memory = ShelfStorage(session)
-        self.reports: list[Any] = []
-        sr_arch = Root()
-        sr_anch = sr_arch.__jac__
-        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
-        sr_anch.persistent = False
-        self.system_root = sr_anch
-        self.custom: Any = MISSING
-        if not isinstance(
-            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
-        ):
-            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
-            system_root.id = UUID(Con.SUPER_ROOT_UUID)
-            self.mem.set(system_root.id, system_root)
-
-        self.system_root = system_root
-
-        self.entry_node = self.root_state = self.init_anchor(root, self.system_root)
-
-    def init_anchor(
-        self,
-        anchor_id: str | None,
-        default: NodeAnchor,
-    ) -> NodeAnchor:
-        """Load initial anchors."""
-        if anchor_id:
-            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
-                return anchor
-            raise ValueError(f"Invalid anchor id {anchor_id} !")
-        return default
-
-    def set_entry_node(self, entry_node: str | None) -> None:
-        """Override entry."""
-        self.entry_node = self.init_anchor(entry_node, self.root_state)
-
-    def close(self) -> None:
-        """Close current ExecutionContext."""
-        self.mem.close()
-
-    def get_root(self) -> Root:
-        """Get current root."""
-        return cast(Root, self.root_state.archetype)
-
-    def global_system_root(self) -> NodeAnchor:
-        """Get global system root."""
-        return self.system_root
+    @staticmethod
+    def set_base_path(base_path: str) -> None:
+        """Set the base path for the machine."""
+        JacMachine.base_path_dir = (
+            base_path if os.path.isdir(base_path) else os.path.dirname(base_path)
+        )
 
 
 def generate_plugin_helpers(
