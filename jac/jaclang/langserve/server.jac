@@ -42,16 +42,19 @@ async def did_change(
     params: lspt.DidChangeTextDocumentParams
 ) -> None {
     file_path = params.text_document.uri;
-    await ls.launch_quick_check(file_path);
-    document = ls.workspace.get_text_document(file_path);
-    lines = document.source.splitlines();
-    sem_manager = ls.sem_managers[file_path.removeprefix('file://')]; 
-    sem_manager.update_sem_tokens(
-        params,sem_manager.sem_tokens,lines
-    );
-    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
-    await ls.launch_deep_check(file_path);
-    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
+    quick_check_passed = await ls.launch_quick_check(file_path);
+    
+    if quick_check_passed {
+        document = ls.workspace.get_text_document(file_path);
+        lines = document.source.splitlines();
+        sem_manager = ls.sem_managers[file_path.removeprefix('file://')]; 
+        sem_manager.update_sem_tokens(
+            params,sem_manager.sem_tokens,lines
+        );
+        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
+        await ls.launch_deep_check(file_path);
+        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
+    }
 }
 
 

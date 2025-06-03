@@ -173,8 +173,8 @@ LanguageServer) {
     }
 
     """Analyze and publish diagnostics."""
-    async def launch_quick_check(self: JacLangServer, uri: str) -> None {
-        await asyncio.get_event_loop().run_in_executor(
+    async def launch_quick_check(self: JacLangServer, uri: str) -> bool {
+        return await asyncio.get_event_loop().run_in_executor(
             self.executor,
             self.quick_check,
             uri
