@@ -179,6 +179,7 @@ extra_javascript:
   - https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js
   - https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.js
   - https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js
+  - js/jac.monarch.js
   - js/run-code.js
 
 plugins:

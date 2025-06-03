@@ -51,6 +51,19 @@ function loadMonacoEditor() {
         require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs' } });
         require(['vs/editor/editor.main'], function () {
             monacoLoaded = true;
+            monaco.languages.register({ id: 'jac' });
+            monaco.languages.setMonarchTokensProvider('jac', window.jaclangMonarchSyntax);
+
+            fetch('/../playground/language-configuration.json')
+                .then(resp => resp.json())
+                .then(config => monaco.languages.setLanguageConfiguration('jac', config));
+            monaco.editor.defineTheme('jac-theme', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: window.jacThemeRules,
+                colors: window.jacThemeColors
+            });
+            monaco.editor.setTheme('jac-theme');
             resolve();
         }, reject);
     });
@@ -85,8 +98,8 @@ async function setupCodeBlock(div) {
 
     const editor = monaco.editor.create(container, {
         value: originalCode || '# Write your Jac code here',
-        language: 'python',
-        theme: 'vs-dark',
+        language: 'jac',
+        theme: 'jac-theme',
         scrollBeyondLastLine: false,
         scrollbar: {
             vertical: 'hidden',
@@ -102,6 +115,7 @@ async function setupCodeBlock(div) {
         }
     });
 
+    // Update editor height based on content
     function updateEditorHeight() {
         const lineCount = editor.getModel().getLineCount();
         const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
@@ -131,6 +145,7 @@ async function setupCodeBlock(div) {
     });
 }
 
+// Lazy load code blocks using Intersection Observer
 const lazyObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -148,6 +163,7 @@ const lazyObserver = new IntersectionObserver((entries) => {
     threshold: 0.1
 });
 
+// Observe all uninitialized code blocks
 function observeUninitializedCodeBlocks() {
     document.querySelectorAll('.code-block').forEach((block) => {
         if (!initializedBlocks.has(block)) {
@@ -165,6 +181,7 @@ domObserver.observe(document.body, {
     subtree: true
 });
 
+// Initialize on DOMContentLoaded
 document.addEventListener("DOMContentLoaded", async () => {
     observeUninitializedCodeBlocks();
     initPyodideWorker();
