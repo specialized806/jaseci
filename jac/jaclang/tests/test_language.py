@@ -19,6 +19,7 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
+        Jac.reset_machine()
         Jac.set_base_path(self.fixture_abs_path("./"))
         Jac.attach_program(
             JacProgram(),
@@ -500,7 +501,6 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        print(output)
         self.assertIn("def greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 14)
         self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)

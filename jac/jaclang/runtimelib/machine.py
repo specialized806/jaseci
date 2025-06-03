@@ -1593,9 +1593,22 @@ class JacMachine(JacMachineInterface):
     @staticmethod
     def set_base_path(base_path: str) -> None:
         """Set the base path for the machine."""
+        JacMachine.reset_machine()
         JacMachine.base_path_dir = (
             base_path if os.path.isdir(base_path) else os.path.dirname(base_path)
         )
+
+    @staticmethod
+    def reset_machine() -> None:
+        """Reset the machine."""
+        # for i in JacMachine.loaded_modules.values():
+        #     sys.modules.pop(i.__name__, None)
+        JacMachine.loaded_modules.clear()
+        JacMachine.base_path_dir = os.getcwd()
+        JacMachine.program = JacProgram()
+        JacMachine.pool = ThreadPoolExecutor()
+        JacMachine._event_loop = asyncio.new_event_loop()
+        JacMachine.exec_ctx = ExecutionContext()
 
 
 def generate_plugin_helpers(
