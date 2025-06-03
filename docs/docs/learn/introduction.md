@@ -1,33 +1,64 @@
 <h1 style="color: orange; font-weight: bold; text-align: center;">Tour to Jac</h1>
 
-
 ## Beyond OOP with Data Spatial Programming
+
+**Imagine your code is a train, and each station is a game stage. Instead of the station pulling the train in (like in OOP), the train visits each station, performs a task, and moves to the next—this is DSP.**
 
 Data Spatial Programming (DSP) inverts the traditional relationship between data and computation. Rather than moving data to computation, DSP moves computation to data through topologically aware constructs. This paradigm introduces specialized archetypes—objects, nodes, edges and walkers—that model spatial relationships directly in the language and enable optimizations around data locality and distributed execution.
 
+### 🔄 Traditional OOP vs 🚀 Data Spatial Programming
+
+| **Traditional OOP** | **Data Spatial Programming** |
+|---------------------|------------------------------|
+| • **Centralized Control**: Logic pulls data to itself | • **Distributed Execution**: Logic travels to data |
+| • **Global Loops**: `for stage in stages: compute(stage)` | • **Spatial Awareness**: Walker visits GameStage nodes |
+| • **Data Movement**: Objects moved to processing units | • **Data Locality**: Computation happens where data lives |
+| • **Rigid Structure**: Hard-coded execution patterns | • **Composable Flows**: Stages as nodes, transitions as edges |
+| • **Single Machine**: Difficult to distribute | • **Scale-Ready**: Walkers can traverse across devices |
+
+### 🎮 Game Loop Example
+
+This example shows how computation flows spatially rather than centrally:
+
 ```jac
-node GameStage { has name: str, frame_time: float = 0.0; }
-
-walker RenderWalk {
-    has fps: int = 60;
-
-    can process with GameStage entry {
-        print(f"Processing {here.name} stage");
-        here.frame_time = 1000.0 / self.fps;  # ms per frame
-        visit [-->];  # Move to next stage
-    }
+# Define game stage nodes with properties
+node GameStage {
+   has name: str,
+   frame_time: float = 0.0;
 }
 
+# Walker that travels between game stages
+walker RenderWalk {
+   has fps: int = 60;  # Target frames per second
+
+   # Process each GameStage when walker arrives
+   can process with GameStage entry {
+       print(f"Processing {here.name} stage");
+
+       # Calculate frame time based on FPS
+       here.frame_time = 1000.0 / self.fps;  # ms per frame
+
+       # Move to next connected stage
+       visit [-->];  # Follow outgoing edges
+   }
+}
+
+# Entry point - construct the game loop graph
 with entry {
-    input_stage = GameStage(name="Input");
+   # Create the first stage
+   input_stage = GameStage(name="Input");
 
-    # Create render loop cycle
-    input_stage ++> GameStage(name="Update") ++> GameStage(name="Render") ++>
-        GameStage(name="Present") ++> input_stage;
+   # Build circular game loop using spatial connections
+   input_stage ++> GameStage(name="Update") ++>
+                  GameStage(name="Render") ++>
+                  GameStage(name="Present") ++>
+                  input_stage;  # Close the loop
 
-    RenderWalk() spawn input_stage;
+   # Spawn walker to begin traversal
+   RenderWalk() spawn input_stage;
 }
 ```
+
 A walker cycles through game stages using edges, demonstrating Data Spatial Programming for game loops.
 
 
