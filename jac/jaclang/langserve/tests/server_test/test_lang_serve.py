@@ -181,6 +181,9 @@ class TestLangServe:
             )
         )
         await did_save(ls, params)
+        sem_tokens = ls.get_semantic_tokens(uri)
+        # semantic tokens should still be present even if there is a syntax error
+        assert len(sem_tokens.data) == 300
         diagnostics = ls.diagnostics.get(uri, [])
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 1
@@ -235,6 +238,9 @@ class TestLangServe:
             text=error_code + code,
         ))
         await did_change(ls, params)
+        sem_tokens = ls.get_semantic_tokens(uri)
+        # semantic tokens should still be present even if there is a syntax error
+        assert len(sem_tokens.data) == 300
         diagnostics = ls.diagnostics.get(uri, [])
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 1
