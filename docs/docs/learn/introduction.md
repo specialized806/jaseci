@@ -103,7 +103,13 @@ This snippet natively imports Python packages `math` and `random` and runs ident
 
 Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive use of new libraries.
 
-??? info "How To Run" 1. Install the MTLLM plugin by `pip install mtllm[google]` 2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey) 3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`). > **Note:** > > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface. 4. Copy this code into `example.jac` file and run with `jac run example.jac`
+??? info "How To Run"
+    1. Install the MTLLM plugin by `pip install mtllm[google]`
+    2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+    3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`).
+    > **Note:** >
+    > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface.
+    4. Copy this code into `example.jac` file and run with `jac run example.jac`
 
 ```jac
 import from mtllm.llms { Gemini }
@@ -125,8 +131,8 @@ with entry {
 ```
 
 ??? example "Output"
-`    Introvert personality detected for Albert Einstein
-   `
+    ```    Introvert personality detected for Albert Einstein
+    ```
 
 `by llm()` delegates execution to an LLM without any extra library code.
 
@@ -134,7 +140,9 @@ with entry {
 
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
-??? info "How To Run" 1. Install the Jac Cloud by `pip install jac-cloud` 2. Copy this code into `example.jac` file and run with `jac serve example.jac`
+??? info "How To Run"
+    1. Install the Jac Cloud by `pip install jac-cloud`
+    2. Copy this code into `example.jac` file and run with `jac serve example.jac`
 
 ```jac
 node Post {
@@ -154,13 +162,13 @@ walker create_post {
 ```
 
 ??? example "Output"
-`    INFO:     Started server process [26286]
-    INFO:     Waiting for application startup.
-    INFO - DATABASE_HOST is not available! Using LocalDB...
-    INFO - Scheduler started
-    INFO:     Application startup complete.
-    INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-   `
+    ```    INFO:     Started server process [26286]
+        INFO:     Waiting for application startup.
+        INFO - DATABASE_HOST is not available! Using LocalDB...
+        INFO - Scheduler started
+        INFO:     Application startup complete.
+        INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+    ```
 
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
 
