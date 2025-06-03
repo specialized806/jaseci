@@ -81,31 +81,6 @@ def get_type_annotation(data: Any) -> str:  # noqa: ANN401
         return str(type(data).__name__)
 
 
-# NOTE:
-# This function is not used anywhere and it was brought from the first version mtllm
-# That was unmaintained for a while. This is now breaking mypy because of the .registry
-# attribute. Uncomment and investigate the old implementation or understand and re-implement
-# if needed.
-#
-# def get_filtered_registry(mod_registry: SemRegistry, scope: SemScope) -> SemRegistry:
-#     """Get the filtered registry based on the scope."""
-#     avail_scopes = []
-#     while True:
-#         avail_scopes.append(str(scope))
-#         if not scope.parent:
-#             break
-#         scope = scope.parent
-#
-#     print(f"Available scopes: {avail_scopes}")
-#
-#     filtered_registry = SemRegistry()
-#     for _scope, sem_info_list in mod_registry.registry.items():
-#         if str(_scope) in avail_scopes:
-#             filtered_registry.registry[_scope] = sem_info_list
-#
-#     return filtered_registry
-
-
 def extract_template_placeholders(template: str) -> list:
     """Extract placeholders from the template."""
     return re.findall(r"{(.*?)}", template)
