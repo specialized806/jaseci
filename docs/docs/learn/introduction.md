@@ -8,13 +8,13 @@ Data Spatial Programming (DSP) inverts the traditional relationship between data
 
 ### 🔄 Traditional OOP vs 🚀 Data Spatial Programming
 
-| **Traditional OOP** | **Data Spatial Programming** |
-|---------------------|------------------------------|
-| • **Centralized Control**: Logic pulls data to itself | • **Distributed Execution**: Logic travels to data |
-| • **Global Loops**: `for stage in stages: compute(stage)` | • **Spatial Awareness**: Walker visits GameStage nodes |
-| • **Data Movement**: Objects moved to processing units | • **Data Locality**: Computation happens where data lives |
-| • **Rigid Structure**: Hard-coded execution patterns | • **Composable Flows**: Stages as nodes, transitions as edges |
-| • **Single Machine**: Difficult to distribute | • **Scale-Ready**: Walkers can traverse across devices |
+| **Traditional OOP**                                       | **Data Spatial Programming**                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------- |
+| • **Centralized Control**: Logic pulls data to itself     | • **Distributed Execution**: Logic travels to data            |
+| • **Global Loops**: `for stage in stages: compute(stage)` | • **Spatial Awareness**: Walker visits GameStage nodes        |
+| • **Data Movement**: Objects moved to processing units    | • **Data Locality**: Computation happens where data lives     |
+| • **Rigid Structure**: Hard-coded execution patterns      | • **Composable Flows**: Stages as nodes, transitions as edges |
+| • **Single Machine**: Difficult to distribute             | • **Scale-Ready**: Walkers can traverse across devices        |
 
 ### 🎮 Game Loop Example
 
@@ -60,8 +60,7 @@ with entry {
 ```
 
 ??? example "Output"
-    ```
-    Processing Input stage
+`    Processing Input stage
     Processing Update stage
     Processing Render stage
     Processing Present stage
@@ -70,12 +69,11 @@ with entry {
     Processing Render stage
     Processing Present stage
     ...
-    ```
+   `
 
 A walker cycles through game stages using edges, demonstrating Data Spatial Programming for game loops.
 
-
-## Python Superset Phylosophy: All of Python Plus More
+## Python Superset Philosophy: All of Python Plus More
 
 Jac is a drop-in replacement for Python and supersets Python, much like Typescript supersets Javascript or C++ supersets C. It extends Python's semantics while maintaining full interoperability with the Python ecosystem, introducing cutting-edge abstractions designed to minimize complexity and embrace AI-forward development.
 
@@ -98,21 +96,14 @@ with entry {
     print("Distance:", round(distance, 2), ", Circle area:", round(area, 2));
 }
 ```
-This snippet natively imports python packages `math` and `random` and runs identically to its Python counterpart. Jac targets python bytecode, so all python libraries work with Jac.
 
+This snippet natively imports Python packages `math` and `random` and runs identically to its Python counterpart. Jac targets Python bytecode, so all Python libraries work with Jac.
 
 ## Programming Abstractions for AI
 
-Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive new libraries.
+Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive use of new libraries.
 
-??? info "How To Run"
-    1. Install the MTLLM plugin by ```pip install mtllm[google]```
-    2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-    3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`).
-    > **Note:**
-    >
-    > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface.
-    4. Copy this code into `example.jac` file and run with `jac run example.jac`
+??? info "How To Run" 1. Install the MTLLM plugin by `pip install mtllm[google]` 2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey) 3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`). > **Note:** > > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface. 4. Copy this code into `example.jac` file and run with `jac run example.jac`
 
 ```jac
 import from mtllm.llms { Gemini }
@@ -132,22 +123,18 @@ with entry {
     print(f"{result.value} personality detected for {name}");
 }
 ```
+
 ??? example "Output"
-    ```
-    Introvert personality detected for Albert Einstein
-    ```
+`    Introvert personality detected for Albert Einstein
+   `
 
 `by llm()` delegates execution to an LLM without any extra library code.
 
-
-## Zero to Infinite Scale with no Code Changes
+## Zero to Infinite Scale without any Code Changes
 
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
-??? info "How To Run"
-    1. Install the jac cloud by ```pip install jac-cloud```
-    2. Copy this code into `example.jac` file and run with `jac serve example.jac`
-
+??? info "How To Run" 1. Install the Jac Cloud by `pip install jac-cloud` 2. Copy this code into `example.jac` file and run with `jac serve example.jac`
 
 ```jac
 node Post {
@@ -167,19 +154,15 @@ walker create_post {
 ```
 
 ??? example "Output"
-    ```
-    INFO:     Started server process [26286]
+`    INFO:     Started server process [26286]
     INFO:     Waiting for application startup.
     INFO - DATABASE_HOST is not available! Using LocalDB...
     INFO - Scheduler started
     INFO:     Application startup complete.
     INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-    ```
+   `
 
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
-
-
-
 
 ## Better Organized and Well Typed Codebases
 
@@ -224,23 +207,20 @@ This shows how declarations and implementations can live in separate files for m
 
 <div class="grid cards" markdown>
 
--   __In The Works__
+- **In The Works**
 
-    ---
+  ***
 
-    *Roadmap Items*
+  _Roadmap Items_
 
-    [In The Roadmap](bigfeatures.md){ .md-button .md-button--primary }
+  [In The Roadmap](bigfeatures.md){ .md-button .md-button--primary }
 
--   __In The Future__
+- **In The Future**
 
-    ---
+  ***
 
-    *Research in Jac/Jaseci*
+  _Research in Jac/Jaseci_
 
-
-    [In Research](research.md){ .md-button }
-
+  [In Research](research.md){ .md-button }
 
 </div>
-
