@@ -144,19 +144,38 @@ with entry {
 
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
+??? info "How To Run"
+    1. Install the jac cloud by ```pip install jac-cloud```
+    2. Copy this code into `example.jac` file and run with `jac serve example.jac`
+
+
 ```jac
-node Post { has content: str, author: str; }
+node Post {
+    has content: str;
+    has author: str;
+}
 
 walker create_post {
     has content: str, author: str;
 
-    can with root entry {
+    can func_name with `root entry {
         new_post = Post(content=self.content, author=self.author);
         here ++> new_post;
         report {"id": new_post.id, "status": "posted"};
     }
 }
 ```
+
+??? example "Output"
+    ```
+    INFO:     Started server process [26286]
+    INFO:     Waiting for application startup.
+    INFO - DATABASE_HOST is not available! Using LocalDB...
+    INFO - Scheduler started
+    INFO:     Application startup complete.
+    INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+    ```
+
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
 
 
@@ -170,7 +189,7 @@ Jac focuses on type safety and readability. Type hints are required and the buil
 
     ```jac
     obj Tweet {
-        has content: str, author: str, likes: int = 0, timestamp: str;
+        has content: str, author: str, timestamp: str, likes: int = 0;
 
         def like() -> None;
         def unlike() -> None;
