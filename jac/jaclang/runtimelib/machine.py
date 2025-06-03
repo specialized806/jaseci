@@ -794,7 +794,6 @@ class JacBasics:
         if not machine:
             machine = JacMachine(base_path=base_path)
         return JacMachineInterface.jac_import(
-            mach=machine,
             target=target,
             base_path=base_path,
             absorb=absorb,
@@ -806,7 +805,6 @@ class JacBasics:
 
     @staticmethod
     def jac_import(
-        mach: JacMachine,
         target: str,
         base_path: str,
         absorb: bool = False,
@@ -834,8 +832,8 @@ class JacBasics:
             items,
         )
 
-        if not mach.program:
-            JacMachineInterface.attach_program(mach, JacProgram())
+        if not JacMachine.program:
+            JacMachineInterface.attach_program(JacProgram())
 
         if lng == "py":
             import_result = PythonImporter(mach).run_import(spec)
@@ -864,7 +862,6 @@ class JacBasics:
 
     @staticmethod
     def run_test(
-        mach: JacMachine,
         filepath: str,
         func_name: Optional[str] = None,
         filter: Optional[str] = None,
@@ -884,9 +881,7 @@ class JacBasics:
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                JacMachineInterface.jac_import(
-                    mach=mach, target=mod_name, base_path=base
-                )
+                JacMachineInterface.jac_import(target=mod_name, base_path=base)
                 JacTestCheck.run_test(
                     xit, maxfail, verbose, os.path.abspath(filepath), func_name
                 )
@@ -915,7 +910,7 @@ class JacBasics:
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
                         JacMachineInterface.jac_import(
-                            mach=mach, target=file[:-4], base_path=root_dir
+                            target=file[:-4], base_path=root_dir
                         )
                         JacTestCheck.run_test(
                             xit, maxfail, verbose, os.path.abspath(file), func_name
@@ -1351,27 +1346,28 @@ class JacUtils:
     """Jac Machine Utilities."""
 
     @staticmethod
-    def attach_program(mach: JacMachine, jac_program: JacProgram) -> None:
+    def attach_program(jac_program: JacProgram) -> None:
         """Attach a JacProgram to the machine."""
-        mach.program = jac_program
+        JacMachine.program = jac_program
 
     @staticmethod
     def load_module(
-        mach: JacMachine, module_name: str, module: types.ModuleType
+        module_name: str, module: types.ModuleType, force: bool = False
     ) -> None:
         """Load a module into the machine."""
-        mach.loaded_modules[module_name] = module
-        sys.modules[module_name] = module  # TODO: May want to nuke this one day
+        if module_name not in JacMachine.loaded_modules or force:
+            JacMachine.loaded_modules[module_name] = module
+            sys.modules[module_name] = module  # TODO: May want to nuke this one day
 
     @staticmethod
     def list_modules(mach: JacMachine) -> list[str]:
         """List all loaded modules."""
-        return list(mach.loaded_modules.keys())
+        return list(JacMachine.loaded_modules.keys())
 
     @staticmethod
-    def list_walkers(mach: JacMachine, module_name: str) -> list[str]:
+    def list_walkers(module_name: str) -> list[str]:
         """List all walkers in a specific module."""
-        module = mach.loaded_modules.get(module_name)
+        module = JacMachine.loaded_modules.get(module_name)
         if module:
             walkers = []
             for name, obj in inspect.getmembers(module):
@@ -1381,9 +1377,9 @@ class JacUtils:
         return []
 
     @staticmethod
-    def list_nodes(mach: JacMachine, module_name: str) -> list[str]:
+    def list_nodes(module_name: str) -> list[str]:
         """List all nodes in a specific module."""
-        module = mach.loaded_modules.get(module_name)
+        module = JacMachine.loaded_modules.get(module_name)
         if module:
             nodes = []
             for name, obj in inspect.getmembers(module):
@@ -1393,9 +1389,9 @@ class JacUtils:
         return []
 
     @staticmethod
-    def list_edges(mach: JacMachine, module_name: str) -> list[str]:
+    def list_edges(module_name: str) -> list[str]:
         """List all edges in a specific module."""
-        module = mach.loaded_modules.get(module_name)
+        module = JacMachine.loaded_modules.get(module_name)
         if module:
             nodes = []
             for name, obj in inspect.getmembers(module):
@@ -1406,7 +1402,6 @@ class JacUtils:
 
     @staticmethod
     def create_archetype_from_source(
-        mach: JacMachine,
         source_code: str,
         module_name: Optional[str] = None,
         base_path: Optional[str] = None,
@@ -1417,12 +1412,12 @@ class JacUtils:
         from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
 
         if not base_path:
-            base_path = mach.base_path or os.getcwd()
+            base_path = JacMachine.base_path or os.getcwd()
 
         if base_path and not os.path.exists(base_path):
             os.makedirs(base_path)
         if not module_name:
-            module_name = f"_dynamic_module_{len(mach.loaded_modules)}"
+            module_name = f"_dynamic_module_{len(JacMachine.loaded_modules)}"
         with tempfile.NamedTemporaryFile(
             mode="w",
             suffix=".jac",
@@ -1451,7 +1446,7 @@ class JacUtils:
             import_result = importer.run_import(spec, reload=False)
             module = import_result.ret_mod
 
-            mach.loaded_modules[module_name] = module
+            JacMachine.loaded_modules[module_name] = module
             return module
         except Exception as e:
             logger.error(f"Error importing dynamic module '{module_name}': {e}")
@@ -1462,20 +1457,19 @@ class JacUtils:
 
     @staticmethod
     def update_walker(
-        mach: JacMachine,
         module_name: str,
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
         """Reimport the module."""
         from .importer import JacImporter, ImportPathSpec
 
-        if module_name in mach.loaded_modules:
+        if module_name in JacMachine.loaded_modules:
             try:
-                old_module = mach.loaded_modules[module_name]
+                old_module = JacMachine.loaded_modules[module_name]
                 importer = JacImporter(mach)
                 spec = ImportPathSpec(
                     target=module_name,
-                    base_path=mach.base_path,
+                    base_path=JacMachine.base_path,
                     absorb=False,
                     mdl_alias=None,
                     override_name=None,
@@ -1504,13 +1498,12 @@ class JacUtils:
 
     @staticmethod
     def spawn_node(
-        mach: JacMachine,
         node_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
     ) -> NodeArchetype:
         """Spawn a node instance of the given node_name with attributes."""
-        node_class = JacMachineInterface.get_archetype(mach, module_name, node_name)
+        node_class = JacMachineInterface.get_archetype(module_name, node_name)
         if isinstance(node_class, type) and issubclass(node_class, NodeArchetype):
             if attributes is None:
                 attributes = {}
@@ -1521,13 +1514,12 @@ class JacUtils:
 
     @staticmethod
     def spawn_walker(
-        mach: JacMachine,
         walker_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
     ) -> WalkerArchetype:
         """Spawn a walker instance of the given walker_name."""
-        walker_class = JacMachineInterface.get_archetype(mach, module_name, walker_name)
+        walker_class = JacMachineInterface.get_archetype(module_name, walker_name)
         if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchetype):
             if attributes is None:
                 attributes = {}
@@ -1537,11 +1529,9 @@ class JacUtils:
             raise ValueError(f"Walker {walker_name} not found.")
 
     @staticmethod
-    def get_archetype(
-        mach: JacMachine, module_name: str, archetype_name: str
-    ) -> Optional[Archetype]:
+    def get_archetype(module_name: str, archetype_name: str) -> Optional[Archetype]:
         """Retrieve an archetype class from a module."""
-        module = mach.loaded_modules.get(module_name)
+        module = JacMachine.loaded_modules.get(module_name)
         if module:
             return getattr(module, archetype_name, None)
         return None
@@ -1583,6 +1573,13 @@ class JacMachineInterface(
 class JacMachine(JacMachineInterface):
     """Jac Machine State."""
 
+    loaded_modules: dict[str, types.ModuleType] = {}
+    base_path: str = os.getcwd()
+    base_path_dir: str = os.path.dirname(base_path)
+    program: JacProgram = JacProgram()
+    pool: ThreadPoolExecutor = ThreadPoolExecutor()
+    _event_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+
     def __init__(
         self,
         base_path: str = "",
@@ -1590,19 +1587,6 @@ class JacMachine(JacMachineInterface):
         root: Optional[str] = None,
     ) -> None:
         """Initialize JacMachine."""
-        self.loaded_modules: dict[str, types.ModuleType] = {}
-        if not base_path:
-            base_path = os.getcwd()
-        # Ensure the base_path is a list rather than a string
-        self.base_path = base_path
-        self.base_path_dir = (
-            os.path.dirname(base_path)
-            if not os.path.isdir(base_path)
-            else os.path.abspath(base_path)
-        )
-        self.program: JacProgram = JacProgram()
-        self.pool = ThreadPoolExecutor()
-        self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
         sr_arch = Root()
@@ -1640,7 +1624,7 @@ class JacMachine(JacMachineInterface):
 
     def close(self) -> None:
         """Close current ExecutionContext."""
-        call_jac_func_with_machine(mach=self, func=self.mem.close)
+        self.mem.close()
 
     def get_root(self) -> Root:
         """Get current root."""
@@ -1649,14 +1633,6 @@ class JacMachine(JacMachineInterface):
     def global_system_root(self) -> NodeAnchor:
         """Get global system root."""
         return self.system_root
-
-
-def call_jac_func_with_machine(  # TODO: remove this
-    mach: JacMachine, func: Callable, *args: Any  # noqa: ANN401
-) -> Any:  # noqa: ANN401
-    """Call Jac function with machine context in local."""
-    __jac_mach__ = mach  # noqa: F841
-    return func(*args)
 
 
 def generate_plugin_helpers(
