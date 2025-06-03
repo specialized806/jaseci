@@ -124,14 +124,12 @@ class FastAPI:
     @classmethod
     def start(
         cls,
-        mach: JacMachine,
         host: str | None = None,
         port: int | None = None,
         emailer: type[Emailer] | None = None,
         **kwargs: Any,  # noqa ANN401
     ) -> None:
         """Run FastAPI Handler via Uvicorn."""
-        cls.__jac_mach__ = mach
         if emailer:
             emailer.start()
         _run(

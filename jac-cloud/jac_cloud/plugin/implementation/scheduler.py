@@ -214,10 +214,6 @@ def run_task(
     save: bool = True,
 ) -> None:
     """Run task."""
-    from ..jaseci import FastAPI
-
-    __jac_mach__ = FastAPI.__jac_mach__  # noqa: F841
-
     jctx = JaseciContext.create(None, node or root)
 
     if root:
