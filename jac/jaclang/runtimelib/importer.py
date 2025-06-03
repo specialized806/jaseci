@@ -84,7 +84,6 @@ class ImportReturn:
         lang: Optional[str],
     ) -> None:
         """Process items within a module by handling renaming and potentially loading missing attributes."""
-        from jaclang.runtimelib.machine import JacMachine
 
         def handle_item_loading(
             item: types.ModuleType, alias: Union[str, Optional[str]]
@@ -96,49 +95,8 @@ class ImportReturn:
                     setattr(module, alias, item)
 
         for name, alias in items.items():
-            try:
-                item = getattr(module, name)
-                handle_item_loading(item, alias)
-            except AttributeError:
-                found = False
-                if lang == "jac":
-                    jac_file_path = (
-                        os.path.join(module.__path__[0], f"{name}.jac")
-                        if hasattr(module, "__path__")
-                        else module.__file__
-                    )
-                    if hasattr(module, "__path__"):
-                        init_jac = os.path.join(module.__path__[0], "__init__.jac")
-                        if os.path.isfile(init_jac):
-                            package_name = module.__name__
-                            init_mod = JacMachine.loaded_modules.get(
-                                package_name,
-                                self.load_jac_mod_as_item(
-                                    module=module,
-                                    name="__init__",
-                                    jac_file_path=init_jac,
-                                ),
-                            )
-                            # Attach all public names from __init__.jac to the package module
-                            for k, v in init_mod.__dict__.items():
-                                if not k.startswith("_"):
-                                    setattr(module, k, v)
-                            if hasattr(module, name):
-                                item = getattr(module, name)
-                                handle_item_loading(item, alias)
-                                found = True
-                    if not found and jac_file_path and os.path.isfile(jac_file_path):
-                        item = self.load_jac_mod_as_item(
-                            module=module,
-                            name=name,
-                            jac_file_path=jac_file_path,
-                        )
-                        handle_item_loading(item, alias)
-                else:
-                    if hasattr(module, "__path__"):
-                        full_module_name = f"{module.__name__}.{name}"
-                        item = importlib.import_module(full_module_name)
-                        handle_item_loading(item, alias)
+            item = getattr(module, name)
+            handle_item_loading(item, alias)
 
     def load_jac_mod_as_item(
         self,
