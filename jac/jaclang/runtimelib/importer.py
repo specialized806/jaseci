@@ -296,6 +296,34 @@ class JacImporter(Importer):
         module.__file__ = None
 
         JacMachineInterface.load_module(module_name, module)
+
+        # If the directory contains an __init__.jac, execute it so that the
+        # package namespace is populated immediately (mirrors Python's own
+        # package behaviour with __init__.py).
+        init_jac = os.path.join(full_mod_path, "__init__.jac")
+        if os.path.isfile(init_jac):
+            from jaclang.runtimelib.machine import JacMachine
+
+            # Point the package's __file__ to the init file for introspection
+            module.__file__ = init_jac
+
+            codeobj = JacMachine.program.get_bytecode(full_target=init_jac)
+            if not codeobj:
+                # Compilation should have provided bytecode for __init__.jac.
+                # Raising ImportError here surfaces compile-time issues clearly.
+                raise ImportError(f"No bytecode found for {init_jac}")
+
+            try:
+                # Ensure the directory is on sys.path while executing so that
+                # relative imports inside __init__.jac resolve correctly.
+                with sys_path_context(full_mod_path):
+                    exec(codeobj, module.__dict__)
+            except Exception as e:
+                # Log detailed traceback for easier debugging and re-raise.
+                logger.error(e)
+                logger.error(dump_traceback(e))
+                raise e
+
         return module
 
     def create_jac_py_module(
