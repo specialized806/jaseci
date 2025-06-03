@@ -60,7 +60,8 @@ with entry {
 ```
 
 ??? example "Output"
-`    Processing Input stage
+    ```
+    Processing Input stage
     Processing Update stage
     Processing Render stage
     Processing Present stage
@@ -69,7 +70,8 @@ with entry {
     Processing Render stage
     Processing Present stage
     ...
-   `
+    ```
+
 
 A walker cycles through game stages using edges, demonstrating Data Spatial Programming for game loops.
 
@@ -162,13 +164,15 @@ walker create_post {
 ```
 
 ??? example "Output"
-    ```    INFO:     Started server process [26286]
-        INFO:     Waiting for application startup.
-        INFO - DATABASE_HOST is not available! Using LocalDB...
-        INFO - Scheduler started
-        INFO:     Application startup complete.
-        INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
     ```
+    INFO:     Started server process [26286]
+    INFO:     Waiting for application startup.
+    INFO - DATABASE_HOST is not available! Using LocalDB...
+    INFO - Scheduler started
+    INFO:     Application startup complete.
+    INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+    ```
+
 
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
 
