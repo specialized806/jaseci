@@ -124,6 +124,7 @@ class ExecutionContext:
     def close(self) -> None:
         """Close current ExecutionContext."""
         self.mem.close()
+        JacMachine.reset_machine()
 
     def get_root(self) -> Root:
         """Get current root."""
@@ -1597,6 +1598,11 @@ class JacMachine(JacMachineInterface):
         JacMachine.base_path_dir = (
             base_path if os.path.isdir(base_path) else os.path.dirname(base_path)
         )
+
+    @staticmethod
+    def set_context(context: ExecutionContext) -> None:
+        """Set the context for the machine."""
+        JacMachine.exec_ctx = context
 
     @staticmethod
     def reset_machine() -> None:

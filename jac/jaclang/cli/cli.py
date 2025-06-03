@@ -96,6 +96,7 @@ def proc_file_sess(
     base = base if base else "./"
     mod = mod[:-4]
     mach = ExecutionContext(session=session, root=root)
+    Jac.set_context(mach)
     return base, mod, mach
 
 
@@ -196,7 +197,6 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
         data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
-
     mach.close()
     return data
 
@@ -344,7 +344,6 @@ def enter(
                 mach.entry_node
             ):
                 Jac.spawn(mach.entry_node.archetype, archetype)
-
     mach.close()
 
 
