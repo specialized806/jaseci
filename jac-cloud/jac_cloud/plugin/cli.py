@@ -39,26 +39,16 @@ class JacCmd:
             mach = JacMachine(base)
 
             if filename.endswith(".jac"):
-                Jac.jac_import(
-                    mach=mach,
-                    target=mod,
-                    base_path=base,
-                    override_name="__main__",
-                )
+                Jac.jac_import(target=mod, base_path=base, override_name="__main__")
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    Jac.attach_program(mach, load(f))
-                    Jac.jac_import(
-                        mach=mach,
-                        target=mod,
-                        base_path=base,
-                        override_name="__main__",
-                    )
+                    Jac.attach_program(load(f))
+                    Jac.jac_import(target=mod, base_path=base, override_name="__main__")
             else:
                 mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(mach=mach, host=host, port=port)
+            FastAPI.start(host=host, port=port)
             mach.close()
 
         @cmd_registry.register
@@ -75,20 +65,17 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
-            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
-                    mach=mach,
                     target=mod,
                     base_path=base,
                     override_name="__main__",
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    Jac.attach_program(mach, load(f))
+                    Jac.attach_program(load(f))
                     Jac.jac_import(
-                        mach=mach,
                         target=mod,
                         base_path=base,
                         override_name="__main__",

@@ -19,7 +19,6 @@ from jaclang.runtimelib.constructs import WalkerArchetype
 from jaclang.runtimelib.machine import (
     JacMachine,
     JacMachineInterface as Jac,
-    call_jac_func_with_machine,
 )
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
@@ -133,7 +132,6 @@ def run(
     if filename.endswith(".jac"):
         try:
             Jac.jac_import(
-                mach=mach,
                 target=mod,
                 base_path=base,
                 override_name="__main__" if main else None,
@@ -143,9 +141,8 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                Jac.attach_program(mach, pickle.load(f))
+                Jac.attach_program(pickle.load(f))
                 Jac.jac_import(
-                    mach=mach,
                     target=mod,
                     base_path=base,
                     override_name="__main__" if main else None,
@@ -179,19 +176,14 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
 
     if filename.endswith(".jac"):
         Jac.jac_import(
-            mach=mach,
             target=mod,
             base_path=base,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            Jac.attach_program(
-                mach,
-                pickle.load(f),
-            )
+            Jac.attach_program(pickle.load(f))
             Jac.jac_import(
-                mach=mach,
                 target=mod,
                 base_path=base,
                 override_name="__main__" if main else None,
@@ -201,7 +193,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    obj = call_jac_func_with_machine(mach, Jac.get_object, id)
+    obj = Jac.get_object(id)
     if obj:
         data = obj.__jac__.__getstate__()
     else:
@@ -326,19 +318,14 @@ def enter(
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
-            mach=mach,
             target=mod,
             base_path=base,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            Jac.attach_program(
-                mach,
-                pickle.load(f),
-            )
+            Jac.attach_program(pickle.load(f))
             ret_module = Jac.jac_import(
-                mach=mach,
                 target=mod,
                 base_path=base,
                 override_name="__main__" if main else None,
@@ -355,8 +342,8 @@ def enter(
             archetype = getattr(loaded_mod, entrypoint)(*args)
 
             mach.set_entry_node(node)
-            if isinstance(archetype, WalkerArchetype) and call_jac_func_with_machine(
-                mach, Jac.check_read_access, mach.entry_node
+            if isinstance(archetype, WalkerArchetype) and Jac.check_read_access(
+                mach.entry_node
             ):
                 Jac.spawn(mach.entry_node.archetype, archetype)
 
@@ -400,7 +387,6 @@ def test(
     mach = JacMachine()
 
     failcount = Jac.run_test(
-        mach=mach,
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
         filter=filter,
@@ -528,9 +514,7 @@ def dot(
     base, mod, jac_machine = proc_file_sess(filename, session)
 
     if filename.endswith(".jac"):
-        Jac.jac_import(
-            mach=jac_machine, target=mod, base_path=base, override_name="__main__"
-        )
+        Jac.jac_import(target=mod, base_path=base, override_name="__main__")
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:

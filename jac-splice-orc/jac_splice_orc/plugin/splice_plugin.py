@@ -644,12 +644,12 @@ class SpliceOrcPlugin:
         )
 
         if not mach.program:
-            JacMachineInterface.attach_program(mach, JacProgram())
+            JacMachineInterface.attach_program(JacProgram())
 
         if lng == "py":
-            import_result = PythonImporter(mach).run_import(spec)
+            import_result = PythonImporter().run_import(spec)
         else:
-            import_result = JacImporter(mach).run_import(spec, reload_module)
+            import_result = JacImporter().run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)

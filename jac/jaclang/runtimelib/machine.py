@@ -836,9 +836,9 @@ class JacBasics:
             JacMachineInterface.attach_program(JacProgram())
 
         if lng == "py":
-            import_result = PythonImporter(mach).run_import(spec)
+            import_result = PythonImporter().run_import(spec)
         else:
-            import_result = JacImporter(mach).run_import(spec, reload_module)
+            import_result = JacImporter().run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)
@@ -1429,7 +1429,7 @@ class JacUtils:
             tmp_file.write(source_code)
 
         try:
-            importer = JacImporter(mach)
+            importer = JacImporter()
             tmp_file_basename = os.path.basename(tmp_file_path)
             tmp_module_name, _ = os.path.splitext(tmp_file_basename)
 
@@ -1466,7 +1466,7 @@ class JacUtils:
         if module_name in JacMachine.loaded_modules:
             try:
                 old_module = JacMachine.loaded_modules[module_name]
-                importer = JacImporter(mach)
+                importer = JacImporter()
                 spec = ImportPathSpec(
                     target=module_name,
                     base_path=JacMachine.base_path,
