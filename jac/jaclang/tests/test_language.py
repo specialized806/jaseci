@@ -28,6 +28,7 @@ class JacLanguageTests(TestCase):
 
     def tearDown(self) -> None:
         """Tear down test."""
+        Jac.reset_machine()
         return super().tearDown()
 
     def test_sub_abilities(self) -> None:
@@ -796,6 +797,7 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        os.remove(session)
         expected_output = "Created 5 items."
         self.assertIn(expected_output, stdout_value.split("\n"))
         # Define the new behavior to be added

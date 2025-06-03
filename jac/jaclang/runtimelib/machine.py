@@ -1372,7 +1372,7 @@ class JacUtils:
             sys.modules[module_name] = module  # TODO: May want to nuke this one day
 
     @staticmethod
-    def list_modules(mach: JacMachine) -> list[str]:
+    def list_modules() -> list[str]:
         """List all loaded modules."""
         return list(JacMachine.loaded_modules.keys())
 
