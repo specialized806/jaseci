@@ -14,7 +14,7 @@ class Game:
 class GuessTheNumberGame(Game):
     def __init__(self, attempts=10):
         super().__init__(attempts)
-        self.correct_number = random.randint(1, 20)
+        self.correct_number = random.randint(1, 10)
 
     def play(self):
         while self.attempts > 0:
