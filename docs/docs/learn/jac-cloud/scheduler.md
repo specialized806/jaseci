@@ -99,7 +99,7 @@ The interval trigger runs a task at regular time intervals.
 
 ### Interval Example
 
-```python
+```jac
 walker walker_interval {
     has arg1: int;
     has arg2: str;
@@ -107,7 +107,7 @@ walker walker_interval {
     has kwarg2: str = "4";
 
     can enter with `root entry {
-        print("I am a scheduled walker running every 5 seconds!")
+        print("I am a scheduled walker running every 5 seconds!");
     }
 
     class __specs__ {
@@ -138,7 +138,7 @@ The date trigger runs a task once at a specific date and time.
 
 ### Date Example
 
-```python
+```jac
 walker walker_date {
     has arg1: int;
     has arg2: str;
@@ -146,7 +146,7 @@ walker walker_date {
     has kwarg2: str = "4";
 
     can enter with `root entry {
-        print("I am a scheduled walker running once at a specific time!")
+        print("I am a scheduled walker running once at a specific time!");
     }
 
     class __specs__ {
@@ -171,7 +171,7 @@ Jac Cloud also supports asynchronous task management that can be enabled by sett
 
 ### Example Use Case
 
-```python
+```jac
 import from jac_cloud.plugin.implementation {create_task}
 
 node TaskCounter {

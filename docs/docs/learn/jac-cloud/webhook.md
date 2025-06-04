@@ -15,7 +15,7 @@ Webhooks are a way for external services to securely call your Jac Cloud applica
 
 To declare a walker as a webhook endpoint, add a `webhook` configuration to the `__specs__` class:
 
-```python
+```jac
 walker webhook {
     can enter1 with `root entry {
         report here;
@@ -144,7 +144,7 @@ Here are examples of different webhook implementations:
 
 ### 1. Using Header for API Key (Default)
 
-```python
+```jac
 walker webhook_by_header {
     can enter1 with `root entry {
         report here;
@@ -167,7 +167,7 @@ curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_header' \
 
 ### 2. Using Query Parameter for API Key
 
-```python
+```jac
 walker webhook_by_query {
     can enter1 with `root entry {
         report here;
@@ -189,7 +189,7 @@ curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_query?test_key=Y
 
 ### 3. Using Path Parameter for API Key
 
-```python
+```jac
 walker webhook_by_path {
     can enter1 with `root entry {
         report here;
@@ -211,7 +211,7 @@ curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_path/YOUR-GENERA
 
 ### 4. Using Request Body for API Key
 
-```python
+```jac
 walker webhook_by_body {
     can enter1 with `root entry {
         report here;

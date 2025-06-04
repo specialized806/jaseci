@@ -103,7 +103,7 @@ walker make_public {
 walker make_private {
     can make_private with post entry {
         // Remove all access
-        _.restrict(here);
+        _.perm_revoke(here);
         report "Post is now private!";
     }
 }
@@ -164,11 +164,11 @@ walker check_access {
     has viewer_id: str;
 
     can check with post entry {
-        owner = [<--created_by];
+        owner = [<--];
 
         // Check if viewer is friends with owner
         is_friend = false;
-        for friend in owner[-->friend] {
+        for friend in owner[-->] {
             if friend.id == self.viewer_id {
                 is_friend = true;
                 break;

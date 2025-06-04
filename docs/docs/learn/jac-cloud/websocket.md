@@ -218,7 +218,7 @@ socket.notify_clients([client_id], {"any_field": "for_progress", "progress": "0%
 
 ### Server-Side (Jac)
 
-```python
+```jac
 """Websocket scenarios."""
 import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 

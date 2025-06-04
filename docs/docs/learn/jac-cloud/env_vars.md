@@ -139,7 +139,7 @@ export LOGGER_USE_UTC="true"                      # Use UTC timestamps
 | **Variable** | **Description** | **Default** | **Example** |
 |--------------|-----------------|-------------|-------------|
 | `DISABLE_AUTO_ENDPOINT` | Disable automatic API endpoints | `false` | `true` |
-| `SHOW_ENDPOINT_RETURNS` | Include walker return values | `false` | `true` |
+<!-- | `SHOW_ENDPOINT_RETURNS` | Include walker return values | `false` | `true` | -->
 | `DISABLE_AUTO_CLEANUP` | Disable automatic deletion of disconnected nodes | `false` | `true` |
 | `SINGLE_QUERY` | Use individual queries instead of batch | `false` | `true` |
 | `SESSION_MAX_TRANSACTION_RETRY` | MongoDB's transactional retry | `1` | `3` |
