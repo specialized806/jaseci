@@ -849,15 +849,15 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         return None
 
 
-class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
+class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstAsyncNode, AstDocNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(
         self, decorators: Sequence[Expr] | None, is_async: bool = False
     ) -> None:
         self.decorators = decorators
-        self.is_async = is_async
         CodeBlockStmt.__init__(self)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class MatchPattern(UniNode):
@@ -878,47 +878,6 @@ class SubTag(UniNode, Generic[T]):
     def normalize(self, deep: bool = False) -> bool:
         res = self.tag.normalize() if deep else True
         self.set_kids(nodes=[self.gen_token(Tok.COLON), self.tag])
-        return res
-
-
-# SubNodeList were created to simplify the type safety of the
-# parser's implementation. We basically need to maintain tokens
-# of mixed type in the kid list of the subnodelist as well as
-# separating out typed items of interest in the ast node class body.
-class SubNodeList(UniNode, Generic[T]):
-    """SubNodeList node type for Jac Ast."""
-
-    def __init__(
-        self,
-        items: list[T],
-        delim: Optional[Tok],
-        kid: Sequence[UniNode],
-        left_enc: Optional[Token] = None,
-        right_enc: Optional[Token] = None,
-    ) -> None:
-        self.items: list[T] = items
-        self.delim = delim
-        self.left_enc = left_enc
-        self.right_enc = right_enc
-        UniNode.__init__(self, kid=kid)
-
-    def normalize(self, deep: bool = False) -> bool:
-        res = True
-        if deep:
-            for i in self.items:
-                res = res and i.normalize()
-        new_kid: list[UniNode] = []
-        if self.left_enc:
-            new_kid.append(self.left_enc)
-        for i in self.items:
-            new_kid.append(i)
-            if self.delim:
-                new_kid.append(self.gen_token(self.delim))
-        if self.delim and self.items:
-            new_kid.pop()
-        if self.right_enc:
-            new_kid.append(self.right_enc)
-        self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
         return res
 
 
@@ -1568,7 +1527,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         decorators: Optional[Sequence[Expr]],
         target: Sequence[NameAtom],
         spec: Sequence[Expr] | FuncSignature | EventSignature | None,
-        body: Sequence[CodeBlockStmt] | FuncCall,
+        body: Sequence[CodeBlockStmt] | Sequence[EnumBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decl_link: Optional[UniNode] = None,
@@ -1802,17 +1761,14 @@ class Ability(
     @property
     def method_owner(self) -> Optional[Archetype | Enum]:
         found = (
-            self.parent.parent
-            if self.parent
-            and self.parent.parent
-            and isinstance(self.parent.parent, (Archetype, Enum))
+            self.parent
+            if self.parent and isinstance(self.parent, (Archetype, Enum))
             else None
         ) or (
-            self.parent.parent.decl_link
+            self.parent.decl_link
             if self.parent
-            and self.parent.parent
-            and isinstance(self.parent.parent, ImplDef)
-            and isinstance(self.parent.parent.decl_link, Archetype)
+            and isinstance(self.parent, ImplDef)
+            and isinstance(self.parent.decl_link, (Archetype, Enum))
             else None
         )
         return found
@@ -1958,12 +1914,10 @@ class EventSignature(WalkerStmtOnlyNode):
         self,
         event: Token,
         arch_tag_info: Optional[Expr],
-        return_type: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
         self.event = event
         self.arch_tag_info = arch_tag_info
-        self.return_type = return_type
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
 
@@ -1976,14 +1930,10 @@ class EventSignature(WalkerStmtOnlyNode):
                 if self.arch_tag_info
                 else res
             )
-            res = res and self.return_type.normalize(deep) if self.return_type else res
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_WITH)]
         if self.arch_tag_info:
             new_kid.append(self.arch_tag_info)
         new_kid.append(self.event)
-        if self.return_type:
-            new_kid.append(self.gen_token(Tok.RETURN_HINT))
-            new_kid.append(self.return_type)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -4629,11 +4579,7 @@ class String(Literal):
             ) and not self.find_parent_of_type(FString):
                 return repr_str[3:-3]
             if (not self.find_parent_of_type(FString)) or (
-                not (
-                    self.parent
-                    and self.parent.parent
-                    and isinstance(self.parent.parent, FString)
-                )
+                not (self.parent and isinstance(self.parent, FString))
             ):
                 return repr_str[1:-1]
             return repr_str
