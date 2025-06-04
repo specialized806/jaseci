@@ -6,7 +6,7 @@ from jaclang.utils.test import TestCase
 import unittest
 
 
-@unittest.skip("Skipping CFG build pass tests")
+# @unittest.skip("Skipping CFG build pass tests")
 class TestCFGBuildPass(TestCase):
     """Test FuseTypeInfoPass module."""
 
@@ -33,6 +33,9 @@ class TestCFGBuildPass(TestCase):
         )
 
         dot = cfg_pass.printgraph_cfg()
+
+        with open(self.fixture_abs_path("cfg_gen.dot"), "w") as f:
+            f.write(dot)
 
         expected_dot = (
             "digraph G {\n"
