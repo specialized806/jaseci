@@ -14,12 +14,13 @@ import types
 from collections import OrderedDict
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
-from functools import partial, wraps
+from functools import wraps
 from inspect import getfile
 from logging import getLogger
 from typing import (
     Any,
     Callable,
+    Coroutine,
     Mapping,
     Optional,
     ParamSpec,
@@ -493,7 +494,7 @@ class JacWalker:
         # walker ability on any entry
         for i in warch._jac_entry_funcs_:
             if not i.trigger:
-                JacWalker.execute_ability(i.func, (warch, current_loc))
+                i.func(warch, current_loc)
             if walker.disengaged:
                 return warch
 
@@ -504,19 +505,19 @@ class JacWalker:
                     if (
                         i.trigger
                         and (
-                            all_issubclass(i.trigger, JacMachine.Node)
-                            or all_issubclass(i.trigger, JacMachine.Edge)
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
-                        JacWalker.execute_ability(i.func, (warch, current_loc))
+                        i.func(warch, current_loc)
                     if walker.disengaged:
                         return warch
 
                 # loc ability with any entry
                 for i in current_loc._jac_entry_funcs_:
                     if not i.trigger:
-                        JacWalker.execute_ability(i.func, (current_loc, warch))
+                        i.func(current_loc, warch)
                     if walker.disengaged:
                         return warch
 
@@ -524,10 +525,10 @@ class JacWalker:
                 for i in current_loc._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, JacMachine.Walker)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
-                        JacWalker.execute_ability(i.func, (current_loc, warch))
+                        i.func(current_loc, warch)
                     if walker.disengaged:
                         return warch
 
@@ -535,17 +536,17 @@ class JacWalker:
                 for i in current_loc._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, JacMachine.Walker)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
-                        JacWalker.execute_ability(i.func, (current_loc, warch))
+                        i.func(current_loc, warch)
                     if walker.disengaged:
                         return warch
 
                 # loc ability with any exit
                 for i in current_loc._jac_exit_funcs_:
                     if not i.trigger:
-                        JacWalker.execute_ability(i.func, (current_loc, warch))
+                        i.func(current_loc, warch)
                     if walker.disengaged:
                         return warch
 
@@ -554,8 +555,8 @@ class JacWalker:
                     if (
                         i.trigger
                         and (
-                            all_issubclass(i.trigger, JacMachine.Node)
-                            or all_issubclass(i.trigger, JacMachine.Edge)
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
@@ -565,7 +566,7 @@ class JacWalker:
         # walker ability with any exit
         for i in warch._jac_exit_funcs_:
             if not i.trigger:
-                JacWalker.execute_ability(i.func, (warch, current_loc))
+                i.func(warch, current_loc)
             if walker.disengaged:
                 return warch
 
@@ -573,21 +574,99 @@ class JacWalker:
         return warch
 
     @staticmethod
-    def execute_ability(func: Callable, args: tuple) -> None:
-        """Execute abilities."""
-        if inspect.iscoroutinefunction(func):
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                asyncio.run(func(*args))
-            else:
-                future = asyncio.ensure_future(func(*args))
-                loop.run_until_complete(future)
-        else:
-            func(*args)
+    async def async_spawn_call(
+        walker: WalkerAnchor,
+        node: NodeAnchor | EdgeAnchor,
+    ) -> WalkerArchetype:
+        """Jac's spawn operator feature."""
+        warch = walker.archetype
+        walker.path = []
+        current_loc = node.archetype
+
+        # walker ability on any entry
+        for i in warch._jac_entry_funcs_:
+            if not i.trigger:
+                i.func(warch, current_loc)
+            if walker.disengaged:
+                return warch
+
+        while len(walker.next):
+            if current_loc := walker.next.pop(0).archetype:
+                # walker ability with loc entry
+                for i in warch._jac_entry_funcs_:
+                    if (
+                        i.trigger
+                        and (
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
+                        )
+                        and isinstance(current_loc, i.trigger)
+                    ):
+                        i.func(warch, current_loc)
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with any entry
+                for i in current_loc._jac_entry_funcs_:
+                    if not i.trigger:
+                        i.func(current_loc, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with walker entry
+                for i in current_loc._jac_entry_funcs_:
+                    if (
+                        i.trigger
+                        and all_issubclass(i.trigger, WalkerArchetype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        i.func(current_loc, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with walker exit
+                for i in current_loc._jac_exit_funcs_:
+                    if (
+                        i.trigger
+                        and all_issubclass(i.trigger, WalkerArchetype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        i.func(current_loc, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with any exit
+                for i in current_loc._jac_exit_funcs_:
+                    if not i.trigger:
+                        i.func(current_loc, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # walker ability with loc exit
+                for i in warch._jac_exit_funcs_:
+                    if (
+                        i.trigger
+                        and (
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
+                        )
+                        and isinstance(current_loc, i.trigger)
+                    ):
+                        i.func(warch, current_loc)
+                    if walker.disengaged:
+                        return warch
+        # walker ability with any exit
+        for i in warch._jac_exit_funcs_:
+            if not i.trigger:
+                i.func(warch, current_loc)
+            if walker.disengaged:
+                return warch
+
+        walker.ignores = []
+        return warch
 
     @staticmethod
-    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | asyncio.Future:
+    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | Coroutine:
         """Jac's spawn operator feature."""
         edge: EdgeAnchor | None = None
         if isinstance(op1, WalkerArchetype):
@@ -621,11 +700,7 @@ class JacWalker:
             walker.next = [node]
 
         if warch.__jac_async__:
-            _event_loop = JacMachine._event_loop
-            func = partial(JacMachineInterface.spawn_call, *(walker, loc))
-            return asyncio.ensure_future(
-                _event_loop.run_in_executor(None, func), loop=_event_loop
-            )
+            return JacMachineInterface.async_spawn_call(walker=walker, node=loc)
         else:
             return JacMachineInterface.spawn_call(walker=walker, node=loc)
 

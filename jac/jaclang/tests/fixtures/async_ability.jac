@@ -13,10 +13,10 @@ async def fun{
 walker MyWalker {
     has name:str;
 
-    async can do_print with MyNode entry {
+    can do_print with MyNode entry {
         print("I am here man", here);
         visit [-->];
-        await fun();
+        # await fun();
     }
 }
 
