@@ -476,7 +476,19 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(parts))
+        not_broke = self.group(self.concat(parts))
+        parts = []
+        for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.COMMA:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.LSQUARE:
+                parts.append(self.hard_line())
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+        broke = self.group(self.concat(parts))
+        node.gen.doc_ir = self.if_break(broke, not_broke)
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
         """Generate DocIR for dictionary values."""
@@ -582,7 +594,19 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(parts))
+        not_broke = self.group(self.concat(parts))
+        parts = []
+        for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.COMMA:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.LSQUARE:
+                parts.append(self.hard_line())
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+        broke = self.group(self.concat(parts))
+        node.gen.doc_ir = self.if_break(broke, not_broke)
 
     def exit_multi_string(self, node: uni.MultiString) -> None:
         """Generate DocIR for multiline strings."""
