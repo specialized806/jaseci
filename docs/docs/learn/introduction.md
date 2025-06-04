@@ -20,6 +20,11 @@ Data Spatial Programming (DSP) inverts the traditional relationship between data
 
 This example shows how computation flows spatially rather than centrally:
 
+??? info "How To Run"
+    1. Install the Jac Cloud by `pip install jaclang`
+    2. Copy this code into `example.jac` file and run with `jac serve example.jac`
+
+
 ```jac
 # Define game stage nodes with properties
 node GameStage {
