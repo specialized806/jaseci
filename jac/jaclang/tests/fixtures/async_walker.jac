@@ -8,7 +8,7 @@ node A {
 async walker W {
     has num: int;
 
-    can do1 with A entry {
+    async can do1 with A entry {
         print("A Entry action ", here.val);
         visit [here-->];
     }

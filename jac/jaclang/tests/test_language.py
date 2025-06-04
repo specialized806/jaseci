@@ -1289,6 +1289,9 @@ class JacLanguageTests(TestCase):
         Jac.jac_import("async_ability", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("I am here man MyNode(val=5)", stdout_value[0])
-        # self.assertIn("Async function", stdout_value[1])
-        self.assertIn("I am here man MyNode(val=1)", stdout_value[1])
+        self.assertIn("Let's start the task", stdout_value[0])
+        self.assertIn("It is Coroutine task True", stdout_value[1])
+        self.assertIn("I am here man MyNode(val=5)", stdout_value[2])
+        self.assertIn("Async function", stdout_value[3])
+        self.assertIn("I am here man MyNode(val=10)", stdout_value[4])
+        self.assertIn("Coroutine task is completed", stdout_value[8])

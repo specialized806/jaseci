@@ -1,3 +1,6 @@
+import asyncio;
+import from typing {Coroutine}
+
 node MyNode {
     has val:int;
 }
@@ -10,19 +13,27 @@ async def fun{
     print("Async function");
 }
 
-walker MyWalker {
+async walker MyWalker {
     has name:str;
 
-    can do_print with MyNode entry {
+    async can do_print with MyNode entry {
         print("I am here man", here);
         visit [-->];
-        # await fun();
+        await fun();
     }
 }
 
 with entry {
     root ++> (node1:= MyNode(5));
-    node1 +>:MyEdge(100):+> [MyNode(i) for i in range(1,10,5)];
+    node1 +>:MyEdge(100):+> MyNode(10);
+    node1 +>:MyEdge(200):+> MyNode(15);
     walker1 = MyWalker("Mylife");
-    walker1 spawn node1;
+    async def foo(w:W, a:A)-> None {
+        print("Let's start the task");
+        x = w spawn a;
+        print("It is Coroutine task", isinstance(x, Coroutine));
+        await x;
+        print("Coroutine task is completed");
+    }
+    asyncio.run(foo(walker1,node1));
 }
