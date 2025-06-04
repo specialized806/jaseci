@@ -20,11 +20,7 @@ Data Spatial Programming (DSP) inverts the traditional relationship between data
 
 This example shows how computation flows spatially rather than centrally:
 
-??? info "How To Run"
-    1. Install the Jac Cloud by `pip install jaclang`
-    2. Copy this code into `example.jac` file and run with `jac serve example.jac`
-
-
+<div class="code-block">
 ```jac
 # Define game stage nodes with properties
 node GameStage {
@@ -63,19 +59,8 @@ with entry {
    RenderWalk() spawn input_stage;
 }
 ```
+</div>
 
-??? example "Output"
-    ```
-    Processing Input stage
-    Processing Update stage
-    Processing Render stage
-    Processing Present stage
-    Processing Input stage
-    Processing Update stage
-    Processing Render stage
-    Processing Present stage
-    ...
-    ```
 
 
 A walker cycles through game stages using edges, demonstrating Data Spatial Programming for game loops.
