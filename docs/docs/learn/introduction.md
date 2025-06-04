@@ -1,4 +1,4 @@
-<h1 style="color: orange; font-weight: bold; text-align: center;">Tour to Jac</h1>
+<h1 style="color: orange; font-weight: bold; text-align: center;">Tour of Jac</h1>
 
 ## Beyond OOP with Data Spatial Programming
 
@@ -208,7 +208,7 @@ This shows how declarations and implementations can live in separate files for m
 
 <div class="grid cards" markdown>
 
-- __In The Works__
+-   __In The Works__
 
     ---
 
@@ -216,7 +216,7 @@ This shows how declarations and implementations can live in separate files for m
 
     [In The Roadmap](bigfeatures.md){ .md-button .md-button--primary }
 
-- __In The Future__
+-   __In The Future__
 
     ---
 
