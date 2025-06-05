@@ -3,6 +3,14 @@ import from typing {Coroutine}
 
 node MyNode {
     has val:int;
+
+    can foo1 with MyWalker entry {
+        print("foo1");
+    }
+
+    async can foo2 with MyWalker entry {
+        print("foo2");
+    }
 }
 
 edge MyEdge  {
@@ -20,6 +28,10 @@ async walker MyWalker {
         print("I am here man", here);
         visit [-->];
         await fun();
+    }
+
+    can foo3 with MyNode entry {
+        print("foo3");
     }
 }
 

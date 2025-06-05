@@ -586,7 +586,9 @@ class JacWalker:
         # walker ability on any entry
         for i in warch._jac_entry_funcs_:
             if not i.trigger:
-                await i.func(warch, current_loc)
+                result = i.func(warch, current_loc)
+                if isinstance(result, Coroutine):
+                    await result
             if walker.disengaged:
                 return warch
 
@@ -602,14 +604,18 @@ class JacWalker:
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
-                        await i.func(warch, current_loc)
+                        result = i.func(warch, current_loc)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
 
                 # loc ability with any entry
                 for i in current_loc._jac_entry_funcs_:
                     if not i.trigger:
-                        await i.func(current_loc, warch)
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
 
@@ -620,7 +626,9 @@ class JacWalker:
                         and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
-                        await i.func(current_loc, warch)
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
 
@@ -631,14 +639,18 @@ class JacWalker:
                         and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
-                        await i.func(current_loc, warch)
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
 
                 # loc ability with any exit
                 for i in current_loc._jac_exit_funcs_:
                     if not i.trigger:
-                        await i.func(current_loc, warch)
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
 
@@ -652,13 +664,17 @@ class JacWalker:
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
-                        await i.func(warch, current_loc)
+                        result = i.func(warch, current_loc)
+                        if isinstance(result, Coroutine):
+                            await result
                     if walker.disengaged:
                         return warch
         # walker ability with any exit
         for i in warch._jac_exit_funcs_:
             if not i.trigger:
-                await i.func(warch, current_loc)
+                result = i.func(warch, current_loc)
+                if isinstance(result, Coroutine):
+                    await result
             if walker.disengaged:
                 return warch
 
@@ -1656,12 +1672,6 @@ class JacUtils:
         if module:
             return getattr(module, archetype_name, None)
         return None
-
-    @staticmethod
-    def await_obj(obj: Any) -> Any:  # noqa: ANN401
-        """Await an object if it is a coroutine or async or future function."""
-        _event_loop = JacMachine._event_loop
-        return _event_loop.run_until_complete(obj)
 
     @staticmethod
     def thread_run(func: Callable, *args: object) -> Future:  # noqa: ANN401
