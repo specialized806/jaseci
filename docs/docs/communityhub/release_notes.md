@@ -7,45 +7,6 @@ This document provides a summary of new features, improvements, and bug fixes in
 *   **JacMachine Interface Reorganization**: The machine and interface have been refactored to maintain a shared global state—similar to Python's `sys.modules`—removing the need to explicitly pass execution context and dramatically improving performance.
 *   **Async Walker Support**: Introduced comprehensive async walker functionality that brings Python's async/await paradigm to data spatial programming. Async walkers enable non-blocking spawns during graph traversal, allowing for concurrent execution of multiple walkers and efficient handling of I/O-bound operations.
 
-Example:
-```jac
-async walker DataProcessor {
-    has processed_count: int = 0;
-
-    async can process_data with DataSource entry {
-        # Asynchronous processing with await
-        data = await fetch_data(here.url);  # Non-blocking operation
-        here.data = await process_data(data);
-        self.processed_count += 1;
-        visit [-->];
-    }
-}
-
-with entry {
-    async def run_async_demo() {
-        # Async walker spawning returns coroutine
-        walker = DataProcessor();
-        task = walker spawn root_node;  # Returns coroutine
-
-        # Must await the coroutine
-        await task;
-
-        # Or run multiple walkers concurrently
-        walker1 = DataProcessor();
-        walker2 = DataProcessor();
-
-        task1 = walker1 spawn root_node;
-        task2 = walker2 spawn root_node;
-
-        # Execute concurrently
-        await asyncio.gather(task1, task2);
-    }
-
-    # Must run in async context
-    asyncio.run(run_async_demo());
-}
-```
-
 ## jaclang 0.8.1 / jac-cloud 0.2.1 / mtllm 0.3.6
 
 *   **Function Renaming**: The `dotgen` built-in function has been renamed to `printgraph`. This change aims to make the function's purpose clearer, as `printgraph` more accurately reflects its action of outputting graph data. It can output in DOT format and also supports JSON output via the `as_json=True` parameter. Future enhancements may include support for other formats like Mermaid.
