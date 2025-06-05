@@ -264,6 +264,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
@@ -350,6 +351,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
@@ -520,6 +522,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_has_var(self, node: uni.HasVar) -> None:
@@ -645,6 +648,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_list_compr(self, node: uni.ListCompr) -> None:
@@ -653,6 +657,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_inner_compr(self, node: uni.InnerCompr) -> None:
@@ -661,6 +666,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_f_string(self, node: uni.FString) -> None:
@@ -684,7 +690,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
@@ -697,7 +703,6 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
-
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
@@ -772,6 +777,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_set_compr(self, node: uni.SetCompr) -> None:
@@ -780,6 +786,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_dict_compr(self, node: uni.DictCompr) -> None:
@@ -791,6 +798,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
@@ -806,6 +814,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_yield_expr(self, node: uni.YieldExpr) -> None:
@@ -814,6 +823,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
@@ -829,6 +839,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
@@ -844,6 +855,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
@@ -852,6 +864,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_raise_stmt(self, node: uni.RaiseStmt) -> None:
@@ -860,6 +873,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
@@ -996,6 +1010,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             prev_item = i
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
@@ -1108,6 +1123,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_singleton(self, node: uni.MatchSingleton) -> None:
@@ -1116,6 +1132,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_sequence(self, node: uni.MatchSequence) -> None:
@@ -1124,6 +1141,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_mapping(self, node: uni.MatchMapping) -> None:
@@ -1132,6 +1150,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_or(self, node: uni.MatchOr) -> None:
@@ -1140,6 +1159,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_as(self, node: uni.MatchAs) -> None:
@@ -1148,6 +1168,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_wild(self, node: uni.MatchWild) -> None:
@@ -1156,6 +1177,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_star(self, node: uni.MatchStar) -> None:
@@ -1164,6 +1186,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
@@ -1175,6 +1198,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_arch(self, node: uni.MatchArch) -> None:
