@@ -287,15 +287,34 @@ class DocIRGenPass(UniPass):
 
     def exit_assignment(self, node: uni.Assignment) -> None:
         """Generate DocIR for assignments."""
-        parts: list[doc.DocType] = []
+        lhs_parts: list[doc.DocType] = []
+        rhs_parts: list[doc.DocType] = []
+        eq_tok: Optional[doc.DocType] = None
+        seen_eq = False
+
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.EQ:
-                parts.append(self.space())
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.EQ and not seen_eq:
+                eq_tok = i.gen.doc_ir
+                seen_eq = True
+            elif seen_eq:
+                rhs_parts.append(i.gen.doc_ir)
             else:
-                parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(parts))
+                lhs_parts.append(i.gen.doc_ir)
+
+        if eq_tok is not None:
+            rhs_concat = self.concat(rhs_parts)
+            node.gen.doc_ir = self.group(
+                self.concat(
+                    [
+                        *lhs_parts,
+                        self.space(),
+                        eq_tok,
+                        self.indent(self.concat([self.line(), rhs_concat])),
+                    ]
+                )
+            )
+        else:
+            node.gen.doc_ir = self.group(self.concat(lhs_parts + rhs_parts))
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
@@ -1169,14 +1188,31 @@ class DocIRGenPass(UniPass):
 
     def exit_sub_tag(self, node: uni.SubTag) -> None:
         """Generate DocIR for sub-tag nodes."""
-        parts: list[doc.DocType] = []
+        before_colon: list[doc.DocType] = []
+        after_colon: list[doc.DocType] = []
+        seen_colon = False
+
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.COLON:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.COLON and not seen_colon:
+                colon_tok = i.gen.doc_ir
+                seen_colon = True
+            elif seen_colon:
+                after_colon.append(i.gen.doc_ir)
             else:
-                parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.concat(parts)
+                before_colon.append(i.gen.doc_ir)
+
+        if seen_colon:
+            flat = self.concat([*before_colon, colon_tok, self.space(), *after_colon])
+            broke = self.concat(
+                [
+                    *before_colon,
+                    colon_tok,
+                    self.indent(self.concat([self.line(), *after_colon])),
+                ]
+            )
+            node.gen.doc_ir = self.group(self.if_break(broke, flat))
+        else:
+            node.gen.doc_ir = self.concat(before_colon + after_colon)
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         """Generate DocIR for implementation definitions."""
