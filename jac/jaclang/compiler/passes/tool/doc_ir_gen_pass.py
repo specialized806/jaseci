@@ -475,7 +475,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.COMMA:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
         not_broke = self.concat(parts)
         parts = []
         for i in node.kid:
@@ -593,7 +597,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for tuple values."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.COMMA:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
         not_broke = self.concat(parts)
         parts = []
         for i in node.kid:
@@ -747,6 +755,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_gen_compr(self, node: uni.GenCompr) -> None:
