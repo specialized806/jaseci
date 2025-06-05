@@ -293,13 +293,20 @@ class DocIRGenPass(UniPass):
         seen_eq = False
 
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.EQ and not seen_eq:
+            if isinstance(i, uni.Token) and i.name == Tok.KW_LET:
+                lhs_parts.append(i.gen.doc_ir)
+                lhs_parts.append(self.space())
+            elif isinstance(i, uni.Token) and i.name == Tok.EQ and not seen_eq:
                 eq_tok = i.gen.doc_ir
                 seen_eq = True
             elif seen_eq:
                 rhs_parts.append(i.gen.doc_ir)
             else:
+                if i == node.aug_op:
+                    lhs_parts.append(self.space())
                 lhs_parts.append(i.gen.doc_ir)
+                if i == node.aug_op:
+                    lhs_parts.append(self.space())
 
         if eq_tok is not None:
             rhs_concat = self.concat(rhs_parts)
@@ -409,6 +416,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
@@ -947,6 +955,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_disconnect_op(self, node: uni.DisconnectOp) -> None:
@@ -955,6 +964,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
@@ -963,6 +973,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
@@ -1244,6 +1255,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
