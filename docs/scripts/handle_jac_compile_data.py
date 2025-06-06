@@ -4,8 +4,8 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
-import time
 import shutil
+import time
 import zipfile
 
 from jaclang.utils.lang_tools import AstTool
@@ -84,21 +84,26 @@ def copy_example_folder() -> None:
     """Copy only .jac files from the example folder to the documentation assets, preserving the folder structure."""
     try:
         if os.path.exists(EXAMPLE_TARGET_FOLDER):
-            print(f"Destination folder '{EXAMPLE_TARGET_FOLDER}' already exists. Removing it...")
+            print(
+                f"Destination folder '{EXAMPLE_TARGET_FOLDER}' already exists. Removing it..."
+            )
             shutil.rmtree(EXAMPLE_TARGET_FOLDER)
 
-        for root, dirs, files in os.walk(EXAMPLE_SOURCE_FOLDER):
+        for root, _dirs, files in os.walk(EXAMPLE_SOURCE_FOLDER):
             rel_path = os.path.relpath(root, EXAMPLE_SOURCE_FOLDER)
             target_dir = os.path.join(EXAMPLE_TARGET_FOLDER, rel_path)
             os.makedirs(target_dir, exist_ok=True)
 
             for file in files:
-                if file.endswith('.jac'):
+                if file.endswith(".jac"):
                     src_file = os.path.join(root, file)
                     dst_file = os.path.join(target_dir, file)
                     shutil.copy2(src_file, dst_file)
 
-        print(f"Copied only .jac files from '{EXAMPLE_SOURCE_FOLDER}' to '{EXAMPLE_TARGET_FOLDER}' preserving folder structure.")
+        print(
+            f"Copied only .jac files from '{EXAMPLE_SOURCE_FOLDER}' to "
+            f"'{EXAMPLE_TARGET_FOLDER}' preserving folder structure."
+        )
 
     except Exception as e:
         print(f"Error occurred: {e}")
