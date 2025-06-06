@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast as ast3
-import asyncio
 import fnmatch
 import html
 import inspect
@@ -1706,7 +1705,6 @@ class JacMachine(JacMachineInterface):
     base_path_dir: str = os.getcwd()
     program: JacProgram = JacProgram()
     pool: ThreadPoolExecutor = ThreadPoolExecutor()
-    _event_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
     exec_ctx: ExecutionContext = ExecutionContext()
 
     @staticmethod
@@ -1731,7 +1729,6 @@ class JacMachine(JacMachineInterface):
         JacMachine.base_path_dir = os.getcwd()
         JacMachine.program = JacProgram()
         JacMachine.pool = ThreadPoolExecutor()
-        JacMachine._event_loop = asyncio.new_event_loop()
         JacMachine.exec_ctx = ExecutionContext()
 
 
