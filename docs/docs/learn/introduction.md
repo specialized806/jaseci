@@ -42,8 +42,7 @@ with entry {
     # Build circular game loop using spatial connections
     input_stage ++> GameStage(name="Update") ++>
                     GameStage(name="Render") ++>
-                    GameStage(name="Present") ++>
-                    input_stage;  # Close the loop
+                    GameStage(name="Present");
 
     # Spawn walker to begin traversal
     RenderWalk() spawn input_stage;
