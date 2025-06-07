@@ -10,8 +10,6 @@ Jac defines five archetype categories that form the foundation of data spatial p
 
 **Walker (`walker`)**: Mobile computational entities that traverse node-edge structures, carrying algorithmic behaviors and state throughout the topological space. Walkers embody the "computation moving to data" paradigm central to data spatial programming.
 
-**Async Walker (`async walker`)**: Specialized walker archetypes that enable asynchronous execution during graph traversal. Async walkers support non-blocking operations and concurrent processing, allowing multiple walkers to execute simultaneously while handling I/O-bound operations efficiently.
-
 **Edge (`edge`)**: First-class relationship archetypes that connect nodes while providing their own computational capabilities. Edges represent both connectivity and transition-specific behaviors within the graph structure.
 
 **Class (`class`)**: Python-compatible class archetypes that faithfully follow Python's class syntax and semantics. Unlike other archetypes, classes require explicit `self` parameters in methods and do not support the `has` keyword for property declarations. They provide full compatibility with Python's object-oriented programming model.
@@ -197,7 +195,7 @@ This integration enables sophisticated graph-based algorithms where computation 
 
 Archetypes provide the foundational abstractions that make data spatial programming both expressive and maintainable, enabling developers to model complex systems as interconnected computational topologies.
 
-#### Async Walker Integration
+#### Async Walker
 
 Async walkers extend the walker archetype with asynchronous capabilities:
 
