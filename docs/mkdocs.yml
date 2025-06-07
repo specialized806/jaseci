@@ -22,7 +22,7 @@ nav:
         - "learn/examples/mtp_examples/fantasy_trading_game.md"
     - Learn Jac Language:
       - Jac in 2 Minutes: "learn/jac_in_a_flash.md"
-      - Coding Manual: "learn/jac_coding_manual.md"
+      - Coding Manual: "jac_book/index.md"
       - Understanding Data Spatial:
         - "learn/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
         - "learn/data_spatial/walkers.md" # Walker
@@ -85,6 +85,28 @@ nav:
         - Type Inference: "internals/planning_specs/native_type_system/type_inference.md"
         - Compiler Integration: "internals/planning_specs/native_type_system/compiler_integration.md"
         - Let's Build: "internals/planning_specs/native_type_system/lets_build.md"
+
+  - Jac Book:
+    - Introduction: "jac_book/index.md"
+    - Chapter 1 - Welcome to Jac: "jac_book/chapter_1.md"
+    - Chapter 2 - Setting Up Your Jac Environment: "jac_book/chapter_2.md"
+    - Chapter 3 - Familiar Syntax with New Semantics: "jac_book/chapter_3.md"
+    - Chapter 4 - Data Structures and Collections: "jac_book/chapter_4.md"
+    - Chapter 5 - Object-Oriented Programming Enhanced: "jac_book/chapter_5.md"
+    - Chapter 6 - Introduction to Data Spatial Concepts: "jac_book/chapter_6.md"
+    - Chapter 7 - Nodes and Edges: "jac_book/chapter_7.md"
+    - Chapter 8 - Walkers - Mobile Computation: "jac_book/chapter_8.md"
+    - Chapter 9 - Graph Traversal and Filtering: "jac_book/chapter_9.md"
+    - Chapter 10 - Automatic Persistence: "jac_book/chapter_10.md"
+    - Chapter 11 - Multi-User Support: "jac_book/chapter_11.md"
+    - Chapter 12 - Distributed Systems with Jac: "jac_book/chapter_12.md"
+    - Chapter 13 - Asynchronous Operations: "jac_book/chapter_13.md"
+    - Chapter 14 - Advanced Walker Patterns: "jac_book/chapter_14.md"
+    - Chapter 15 - Python Interoperability: "jac_book/chapter_15.md"
+    - Chapter 16 - Type System Deep Dive: "jac_book/chapter_16.md"
+    - Chapter 17 - Project - Building a Social Network: "jac_book/chapter_17.md"
+    - Chapter 18 - Project - Distributed Task Queue: "jac_book/chapter_18.md"
+    - Chapter 19 - Best Practices and Performance Tuning: "jac_book/chapter_19.md"
 
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
