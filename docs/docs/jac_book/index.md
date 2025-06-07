@@ -34,3 +34,7 @@ Welcome to the comprehensive guide to the Jac programming language, designed spe
 *   [Chapter 17: Project: Building a Social Network](./chapter_17.md)
 *   [Chapter 18: Project: Distributed Task Queue](./chapter_18.md)
 *   [Chapter 19: Best Practices and Performance Tuning](./chapter_19.md)
+
+### Part VII: Reference and Resources
+*   [Chapter 20: Quick Reference](./chapter_20.md)
+*   [Chapter 21: Best Practices](./chapter_21.md)
