@@ -45,11 +45,13 @@ carol.add_friend(dave)   # Carol ↔ Dave
 
 # Test the function
 fof_alice = find_friends_of_friends(alice)
+print(fof_alice)
 ```
 
+<div class="code-block">
 ```jac
 # Jac's Data Spatial approach
-node User {
+ node User {
     has name: str;
 }
 
@@ -58,42 +60,31 @@ edge Friendship {
 }
 
 walker FindFriendsOfFriends {
-    has visited: set = set();
-    has friends_of_friends: set = set();
+    has person: User , friends_of_friends: set = set();
 
-    can traverse with entry {
-        if here in self.visited { return; }
-        self.visited.add(here);
-
-        # First hop: direct friends
-        for friend in [->:Friendship:->(`?User)] {
-            # Second hop: friends of friends
-            for fof in [friend->:Friendship:->(`?User)] {
-                if fof != root {  # root is the starting user
-                    self.friends_of_friends.add(fof);
-                }
-            }
+    can traverse with User entry {
+        if here != self.person {
+            self.friends_of_friends.add(here);
         }
-
-        print(f"Friends of {here.name}'s friends:",
-              [fof.name for fof in self.friends_of_friends]);
+        visit [->:Friendship :->];
     }
 }
 
 with entry {
-    alice = User(name = "Alice");
-    bob = User(name = "Bob");
-    carol = User(name = "Carol");
-    dave = User(name = "Dave");
+    alice = User(name="Alice");
+    bob = User(name="Bob");
+    carol = User(name="Carol");
+    dave = User(name="Dave");
 
-    alice +>:Friendship(since="today"):+> bob;
-    bob +>:Friendship(since="yesterday"):+> carol;
-    carol +>:Friendship(since="last month"):+> dave;
+    alice +>: Friendship(since="today") :+> bob;
+    bob +>: Friendship(since="yesterday") :+> carol;
+    carol +>: Friendship(since="last month") :+> dave;
 
-
-    FindFriendsOfFriends() spawn alice;
+    fof = FindFriendsOfFriends(alice) spawn alice;
+    print(fof.friends_of_friends);
 }
 ```
+</div>
 
 #### The Paradigm Shift: From "Data to Computation" to "Computation to Data"
 
@@ -115,23 +106,31 @@ Jac inverts this relationship. In Data Spatial Programming, computation moves to
 ```mermaid
 graph TB
     subgraph "Data Spatial: Computation → Data"
-        N1[Node A<br/>Data: User]
-        N2[Node B<br/>Data: Post]
-        N3[Node C<br/>Data: Comment]
-        N4[Node D<br/>Data: User]
+        U1["Node: Alice<br/>(User)"]
+        U2["Node: Bob<br/>(User)"]
+        U3["Node: Carol<br/>(User)"]
+        U4["Node: Dave<br/>(User)"]
 
-        N1 -.->|Friendship| N4
-        N1 -->|Authored| N2
-        N2 -->|Has| N3
-        N4 -->|Authored| N3
+        U1 <--> |"Friendship"| U2
+        U2 <--> |"Friendship"| U3
+        U3 <--> |"Friendship"| U4
 
-        W[Walker<br/>≪moving computation≫]
+        W1["Walker (t=0)"]
+        W2["Walker (t=1)"]
+        W3["Walker (t=2)"]
+        W4["Walker (t=3)"]
 
-        W -.->|visits| N1
-        W -.->|visits| N2
-        W -.->|visits| N3
+        W1 -. "spawns on" .-> U1
+        W2 -. "visits" .-> U2
+        W3 -. "visits" .-> U3
+        W4 -. "visits" .-> U4
 
-        style W fill:#ff9999,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+        W1 -- "travels" --> W2 -- "travels" --> W3 -- "travels" --> W4
+
+        style W1 fill:#ff9999,stroke:#333,stroke-width:2px
+        style W2 fill:#ff9999,stroke:#333,stroke-width:2px
+        style W3 fill:#ff9999,stroke:#333,stroke-width:2px
+        style W4 fill:#ff9999,stroke:#333,stroke-width:2px
     end
 ```
 
