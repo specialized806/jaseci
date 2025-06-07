@@ -151,25 +151,41 @@ Perhaps Jac's most revolutionary feature is scale-agnostic programming. Applicat
 # - Thousands of users on one machine
 # - Millions of users across distributed systems
 
+node Profile {
+    has user_name: str,
+        user_bio: str;
+}
+
+node Post {
+    has text: str;
+}
+
+node Notification {
+    has type: str;
+}
+
+# Walkers automatically turn into API endpoints in cloud context
 walker CreatePost {
     has content: str;
     has timestamp: str;
+    has new_post: Post;
 
-    can create with entry {
+    can create with `root entry {
         # 'root' automatically refers to the current user's root node
-        new_post = here ++> Post(
+        # first class variable like 'this' or 'self' references
+        self.new_post = here ++> Post(
             content=self.content,
             timestamp=self.timestamp,
             author=here
         );
 
         # Notify followers - works regardless of scale
-        for follower in [<--:Follows:] {
-            follower ++> Notification(
-                type="new_post",
-                post=new_post
-            );
-        }
+        visit [<-:Follows:<->];
+    }
+
+    can notify with Profile entry {
+        # 'root' automatically refers to the current user's root node
+        follower ++> Notification(type="new_post") <++ self.new_post;
     }
 }
 ```
