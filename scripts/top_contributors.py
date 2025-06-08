@@ -34,18 +34,15 @@ def get_repo_from_remote() -> Tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def get_contributors_data(
+def fetch_commits(
     owner: str, repo: str, days: int, token: Optional[str] = None
 ) -> Optional[List[Dict[str, Any]]]:
-    """Fetch commit data from GitHub API and process it."""
+    """Fetch commit data from GitHub API."""
     since_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )
 
-    contributors: Dict[str, Dict[str, Any]] = defaultdict(
-        lambda: {"commits": 0, "active_days": set()}
-    )
-
+    all_commits = []
     params = {"since": since_date, "per_page": 100}
     url: str | None = (
         f"https://api.github.com/repos/{owner}/{repo}/commits?{urllib.parse.urlencode(params)}"
@@ -66,14 +63,7 @@ def get_contributors_data(
                 if not commits:
                     break
 
-                for commit in commits:
-                    if commit["author"]:
-                        author_login = commit["author"]["login"]
-                        commit_date: date = datetime.strptime(
-                            commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                        ).date()
-                        contributors[author_login]["commits"] += 1
-                        contributors[author_login]["active_days"].add(commit_date)
+                all_commits.extend(commits)
 
                 link_header = response.getheader("Link")
                 url = None
@@ -99,6 +89,27 @@ def get_contributors_data(
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON response: {e}")
             return None
+
+    return all_commits
+
+
+def process_contributors(
+    commits: List[Dict[str, Any]], days: int
+) -> List[Dict[str, Any]]:
+    """Process commits to get contributor stats for a specific period."""
+    since_date = (datetime.now(timezone.utc) - timedelta(days=days)).date()
+    contributors: Dict[str, Dict[str, Any]] = defaultdict(
+        lambda: {"commits": 0, "active_days": set()}
+    )
+
+    for commit in commits:
+        commit_date: date = datetime.strptime(
+            commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
+        ).date()
+        if commit_date >= since_date and commit["author"]:
+            author_login = commit["author"]["login"]
+            contributors[author_login]["commits"] += 1
+            contributors[author_login]["active_days"].add(commit_date)
 
     return sorted(
         [
@@ -140,8 +151,8 @@ def main() -> None:
     parser.add_argument(
         "--days",
         type=int,
-        default=7,
-        help="Number of days to look back for contributions.",
+        default=None,
+        help="Generate an additional table for a specific number of days.",
     )
     parser.add_argument(
         "--repo",
@@ -158,11 +169,29 @@ def main() -> None:
 
     owner, repo = args.repo.split("/")
 
-    token = os.getenv("GITHUB_TOKEN")
-    contributors = get_contributors_data(owner or "", repo or "", args.days, token)
+    periods = []
+    if args.days is not None:
+        periods.append(args.days)
 
-    if contributors:
-        generate_markdown_table(contributors, args.days)
+    for p in [7, 30, 180, 365]:
+        if p not in periods:
+            periods.append(p)
+
+    if not periods:
+        return
+
+    token = os.getenv("GITHUB_TOKEN")
+
+    max_days = max(periods)
+    all_commits = fetch_commits(owner or "", repo or "", max_days, token)
+
+    if all_commits is None:
+        return
+
+    for days in periods:
+        contributors = process_contributors(all_commits, days)
+        if contributors:
+            generate_markdown_table(contributors, days)
 
 
 if __name__ == "__main__":

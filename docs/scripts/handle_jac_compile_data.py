@@ -11,12 +11,12 @@ import zipfile
 from jaclang.utils.lang_tools import AstTool
 
 TARGET_FOLDER = "../jac/jaclang"
-EXTRACTED_FOLDER = "playground"
+EXTRACTED_FOLDER = "docs/playground"
 PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
-ZIP_FOLDER_NAME = "jaclang"
-UNIIR_NODE_DOC = "internals/uniir_node.md"
-LANG_REF_DOC = "learn/jac_ref.md"
-TOP_CONTRIBUTORS_DOC = "communityhub/top_contributors.md"
+ZIP_FOLDER_NAME = "docs/jaclang"
+UNIIR_NODE_DOC = "docs/internals/uniir_node.md"
+LANG_REF_DOC = "docs/learn/jac_ref.md"
+TOP_CONTRIBUTORS_DOC = "docs/communityhub/top_contributors.md"
 AST_TOOL = AstTool()
 
 
@@ -89,3 +89,6 @@ def get_top_contributors() -> str:
     return subprocess.check_output(
         ["python", "../scripts/top_contributors.py", "--days", "30"]
     ).decode("utf-8")
+
+
+pre_build_hook()
