@@ -1,270 +1,265 @@
-# LittleX Tutorial for Beginners
+# 🐦 LittleX Tutorial for Beginners
 
-Welcome to the LittleX tutorial! This guide is designed especially for beginners who want to learn Jaseci by building a simple Twitter-like application called LittleX. We'll break everything down into simple steps with clear explanations.
+Welcome to the **LittleX tutorial**! This comprehensive guide is designed especially for beginners who want to learn Jaseci by building a simple Twitter-like application called **LittleX**. We'll break everything down into simple, digestible steps with clear explanations.
 
-## What is Jaseci?
+---
 
-Jaseci is a programming framework that makes building AI applications easier. Think of it as a toolbox that lets you:
-- Store data in a connected graph (like a social network)
-- Move through this graph to perform actions
-- Add AI capabilities without complex coding
+## 🤔 What is Jaseci?
 
-## What We'll Build: LittleX
+**Jaseci** is a powerful programming framework that makes building AI applications easier and more intuitive. Think of it as a comprehensive toolbox that enables you to:
 
-LittleX is a simplified version of Twitter that lets users:
-- Create accounts and profiles
-- Post short messages (tweets)
-- Follow other users
-- See a feed of posts from people they follow
+- 📊 **Store data** in a connected graph structure (like a social network)
+- 🚶‍♂️ **Navigate** through this graph to perform complex actions
+- 🤖 **Add AI capabilities** without complex coding requirements
 
-## Getting Started
+---
 
-### 1. Install Jaseci
+## 🎯 What We'll Build: LittleX
 
-First, let's install Jaseci on your computer:
+**LittleX** is a simplified yet functional version of Twitter that allows users to:
+
+- ✅ **Create accounts** and personalized profiles
+- 📝 **Post short messages** (tweets) with rich content
+- 👥 **Follow other users** to build their network
+- 📰 **View a personalized feed** of posts from people they follow
+
+### 📋 Complete Implementation
+
+*Just **200 lines of code** to build a full social media platform!*
+
+=== "🖥️ Frontend Preview"
+    ![LittleX Frontend](src/front_end.png)
+
+=== "📄 LittleX.jac"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:125"
+    ```
+
+=== "⚙️ LittleX.impl.jac"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:121"
+    ```
+
+=== "🧪 LittleX.test.jac"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:1:88"
+    ```
+
+---
+
+## 🚀 Getting Started
+
+### 📦 Step 1: Install Jaseci
+
+First, let's install the required Jaseci libraries on your computer:
 
 ```bash
-pip install jaseci
+pip install jac_cloud
 ```
 
-### 2. Get the LittleX Code
+### 📥 Step 2: Get the LittleX Code
+
+Clone the repository and navigate to the project directory:
 
 ```bash
 git clone https://github.com/Jaseci-Labs/littleX.git
 cd littleX
 ```
 
-### 3. Install Dependencies
+### 🔧 Step 3: Install Dependencies
+
+Install backend and frontend dependencies:
 
 ```bash
+# Install backend dependencies
 pip install -r littleX_BE/requirements.txt
+
+# Install frontend dependencies
 cd littleX_FE
 npm install
 cd ..
 ```
 
-## Understanding Jaseci's Building Blocks
+---
 
-Jaseci has three main components that we'll use to build LittleX:
+## 🏗️ Understanding Jaclang's Building Blocks
 
-### 1. Nodes (The "Things")
+Jaclang has **three main components** that form the foundation of our LittleX application:
 
-Nodes are objects that store data. In LittleX, we have:
-- User nodes that store profile information
-- Post nodes that store tweet content
-- Comment nodes that store comments on tweets
+### 1. 🔵 Nodes (The "Things")
 
-Here's a simple user node in Jaseci:
+**Nodes** are objects that store data and represent entities in your application. In LittleX, we have:
 
+- 👤 **User nodes** → Store profile information
+- 📄 **Post nodes** → Store tweet content and metadata
+- 💬 **Comment nodes** → Store comments on tweets
+
+**Example: Simple User Node**
 ```jac
 node user {
     has username: str;
-    has email: str;
-    has password: str;
-    has creation_date: str;
 }
 ```
 
-This code creates a user object with username, email, password, and creation date.
+> This code creates a user object with a username property.
 
-### 2. Edges (The "Connections")
+### 2. 🔗 Edges (The "Connections")
 
-Edges connect nodes to show relationships. In LittleX, we have:
-- Follow edges (user follows another user)
-- Post edges (user created a post)
-- Like edges (user liked a post)
+**Edges** connect nodes to represent relationships between entities. In LittleX, we have:
 
-Here's how we define a simple edge:
+- ➡️ **Follow edges** → User follows another user
+- 📝 **Post edges** → User created a post
+- ❤️ **Like edges** → User liked a post
 
+**Example: Simple Follow Edge**
 ```jac
 edge Follow {}
 ```
 
-This creates a "Follow" connection that can link users together.
+> This creates a "Follow" connection that links users together.
 
-### 3. Walkers (The "Actions")
+### 3. 🚶‍♂️ Walkers (The "Actions")
 
-Walkers are like functions that move through your graph and perform actions. They're what makes things happen!
+**Walkers** are like functions that move through your graph and perform actions. They're what makes things happen in your application!
 
-Here's a simple walker that creates a new post:
-
+**Example: Tweet Creation Walker**
 ```jac
-walker create_post {
+walker create_tweet(visit_profile) {
     has content: str;
+    can tweet with Profile entry;
+}
 
-    root {
-        // Find the current user
-        user_node = here.get_user_by_id(visitor.user_id);
+impl create_tweet.tweet {
+    embedding = sentence_transformer.encode(self.content).tolist();
+    tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
+    _.perm_grant(tweet_node[0], level="CONNECT");
+    report tweet_node;
+}
+```
 
-        // Create a new post
-        post_node = spawn node::post(
-            content = content,
-            creation_date = date.datetime_now()
-        );
+> This walker creates a new post with the provided content and links it to the current user.
 
-        // Connect the post to the user
-        user_node -[edge::posted]-> post_node;
+---
 
-        // Return success message
-        report {"success": true};
+## 🔨 Building LittleX Step by Step
+
+Now let's see how these pieces come together to build our social media application:
+
+### 1. 👤 User Profile Creation
+
+When a new user registers, the system:
+
+1. ✅ Creates a new user node
+2. 💾 Stores their username and profile data
+
+```jac
+walker visit_profile {
+    can visit_profile with `root entry;
+}
+
+impl visit_profile.visit_profile {
+    visit [-->(`?Profile)] else {
+        new_profile = here ++> Profile();
+        _.perm_grant(new_profile[0], level="CONNECT");
+        visit new_profile;
     }
 }
 ```
 
-This walker creates a new post with the provided content and links it to the current user.
+### 2. 📝 Creating Posts
 
-## Building LittleX Step by Step
-
-Now let's see how these pieces come together to build our application:
-
-### 1. User Registration
-
-When a new user registers, we:
-1. Create a new user node
-2. Store their username, email, and password
-3. Add the current date as creation_date
-
-Here's how it looks in code:
+After logging in, users can create and share posts:
 
 ```jac
-walker register {
-    has username: str;
-    has email: str;
-    has password: str;
-
-    root {
-        // Check if user already exists
-        if (!here.user_exists(email)) {
-            // Create new user node
-            user = spawn node::user(
-                username = username,
-                email = email,
-                password = password,
-                creation_date = date.datetime_now()
-            );
-
-            // Add user to graph
-            here -[edge::has_user]-> user;
-
-            report {"success": true, "user_id": user.id};
-        } else {
-            report {"success": false, "error": "User already exists"};
-        }
-    }
-}
-```
-
-### 2. Creating Posts
-
-After logging in, users can create posts:
-
-```jac
-walker create_post {
+walker create_tweet(visit_profile) {
     has content: str;
+    can tweet with Profile entry;
+}
 
-    root {
-        // Get current user
-        user = here.get_current_user();
-
-        // Create post
-        post = spawn node::post(
-            content = content,
-            creation_date = date.datetime_now()
-        );
-
-        // Connect post to user
-        user -[edge::posted]-> post;
-
-        report {"success": true, "post_id": post.id};
-    }
+impl create_tweet.tweet {
+    embedding = sentence_transformer.encode(self.content).tolist();
+    tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
+    _.perm_grant(tweet_node[0], level="CONNECT");
+    report tweet_node;
 }
 ```
 
-### 3. Following Users
+### 3. 👥 Following Users
 
-Users can follow each other:
+Users can build their network by following each other:
 
 ```jac
-walker follow_user {
-    has target_user_id: str;
+walker follow_request {}
 
-    root {
-        // Get current user and target user
-        current_user = here.get_current_user();
-        target_user = here.get_user_by_id(target_user_id);
-
-        // Create follow connection
-        current_user -[edge::follows]-> target_user;
-
-        report {"success": true};
-    }
+impl Profile.follow {
+    current_profile = [root-->(`?Profile)];
+    current_profile[0] +>:Follow():+> self;
+    report self;
 }
 ```
 
-### 4. Viewing Feed
+### 4. 📰 Viewing Feed
 
-To show posts from people the user follows:
+Display posts from people the user follows:
 
 ```jac
-walker get_feed {
-    root {
-        // Get current user
-        user = here.get_current_user();
+walker load_feed(visit_profile) {
+    has search_query: str = "";
+    has results: list = [];
+    can load with Profile entry;
+}
 
-        // Initialize empty feed
-        feed = [];
-
-        // Get posts from users we follow
-        for followed_user in --> user -[edge::follows]-> {
-            for post in --> followed_user -[edge::posted]-> {
-                feed.append({
-                    "username": followed_user.username,
-                    "content": post.content,
-                    "date": post.creation_date
-                });
-            }
-        }
-
-        // Sort by date (newest first)
-        feed = feed.sort_by_key("date", reverse=true);
-
-        report {"success": true, "feed": feed};
+impl load_feed.load {
+    visit [-->(`?Tweet)];
+    for user_node in [->:Follow:->(`?Profile)] {
+        visit [user_node-->(`?Tweet)];
     }
+    report self.results;
 }
 ```
 
-## Run LittleX Locally
+---
 
-Let's run our application:
+## 🏃‍♂️ Run LittleX Locally
 
-### 1. Start the Backend Server
+Let's get your application up and running:
+
+### 🖥️ Step 1: Start the Backend Server
 
 ```bash
 jac serve littleX_BE/littleX.jac
 ```
 
-### 2. Start the Frontend
+> ✅ **Success**: Your backend server should now be running!
 
-In a new terminal:
+### 🌐 Step 2: Start the Frontend
+
+Open a **new terminal** and run:
 
 ```bash
 cd littleX_FE
 npm run dev
 ```
 
-### 3. Use the Application
+> ✅ **Success**: Your frontend development server is now active!
 
-Open your browser to http://localhost:5173 and try:
-- Creating a new account
-- Posting some tweets
-- Following other users
-- Checking your feed
+### 🎉 Step 3: Use the Application
 
-## Exploring the LittleX Code
+1. **Open your browser** to: [`http://localhost:5173`](http://localhost:5173)
 
-Let's look at some key parts of the actual LittleX application to understand how it works:
+2. **Try these features**:
+   - 📝 Creating a new account
+   - 🐦 Posting some tweets
+   - 👥 Following other users
+   - 📰 Checking your personalized feed
 
-### The Profile Node
+---
+
+## 🔍 Exploring the LittleX Code
+
+Let's examine some key components of the actual LittleX application:
+
+### 👤 The Profile Node
 
 ```jac
 node Profile {
@@ -277,9 +272,9 @@ node Profile {
 }
 ```
 
-This node represents a user profile with a username and abilities to update the profile, retrieve it, follow other users, and unfollow them.
+> This node represents a user profile with username and comprehensive social media abilities.
 
-### The Tweet Node
+### 🐦 The Tweet Node
 
 ```jac
 node Tweet {
@@ -292,13 +287,15 @@ node Tweet {
     can like_tweet with like_tweet entry;
     can remove_like with remove_like entry;
     can comment with comment_tweet entry;
+
+    def get_info() -> TweetInfo;
     can get with load_feed entry;
 }
 ```
 
-This node represents a tweet with content, embedding (for AI features), and a timestamp. It has abilities to update, delete, like, unlike, comment, and retrieve tweets.
+> This node represents a tweet with rich metadata and full social interaction capabilities.
 
-### The Follow Ability
+### 🔗 The Follow Ability
 
 ```jac
 impl Profile.follow {
@@ -308,11 +305,13 @@ impl Profile.follow {
 }
 ```
 
-This ability lets a user follow another user by creating a Follow edge between their profiles.
+> This implementation creates a follow relationship between user profiles.
 
-## Adding AI Features
+---
 
-Jaseci makes it easy to add AI to your application. Here's a simple example that summarizes tweets:
+## 🤖 Adding AI Features
+
+Jaseci makes integrating AI into your application incredibly simple. Here's an example that summarizes tweets using AI:
 
 ```jac
 import from mtllm.llms {Ollama}
@@ -322,23 +321,39 @@ can 'Summarize latest trends, major events, and notable interactions from the re
     summarise_tweets(tweets: list[str]) -> 'Summarisation': str by llm();
 ```
 
-This code uses a Llama language model to summarize a list of tweets.
+> This code leverages a Llama language model to automatically summarize tweet collections.
 
-## Try These Exercises
+---
 
-Now that you understand the basics, try these exercises:
-1. Add a feature to like posts
-2. Create a profile page that shows a user's posts
-3. Add the ability to search for users by username
+## 💪 Try These Exercises
 
-## Conclusion
+Ready to expand your skills? Try implementing these features:
 
-Congratulations! You've learned how to build a social media application with Jaseci. You've seen how:
+1. ❤️ **Add a like system** for posts
+2. 👤 **Create profile pages** that display user-specific posts
+3. 🔍 **Implement user search** functionality by username
+4. 💬 **Add comment threading** for deeper conversations
 
-- Nodes store data like users and posts
-- Edges connect these nodes to show relationships
-- Walkers perform actions like creating posts and following users
+---
 
-Jaseci's graph-based approach makes it perfect for social networks and other applications where connections between data are important.
+## 🎉 Conclusion
 
-For more information, check out the [Jaseci documentation](https://docs.jaseci.org/) or the [full LittleX guide](guide.md) for more advanced features.
+**Congratulations!** You've successfully learned how to build a complete social media application with Jaseci. You now understand how:
+
+- 🔵 **Nodes** store and organize your application data
+- 🔗 **Edges** create meaningful relationships between entities
+- 🚶‍♂️ **Walkers** perform complex actions and business logic
+
+Jaseci's **graph-based approach** makes it perfect for social networks and other applications where connections between data are crucial for functionality.
+
+---
+
+## 📚 Next Steps
+
+Ready to dive deeper? Explore these resources:
+
+- 📖 [**Jaseci Documentation**](https://jac-lang.org/) - Comprehensive guides
+- 🎓 [**Full LittleX Guide**](full_guide.md) - Advanced features and enterprise patterns
+<!-- - 🚀 [**Jac Book**](../../jac_book/chapter_1.md) - Build more complex applications -->
+
+> **Happy coding with Jaseci!** 🚀
