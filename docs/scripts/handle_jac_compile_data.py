@@ -4,9 +4,10 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
+import subprocess
 import time
 import zipfile
-import subprocess
+
 from jaclang.utils.lang_tools import AstTool
 
 TARGET_FOLDER = "../jac/jaclang"

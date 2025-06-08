@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-import os
+"""Script to generate a markdown table of top contributors from GitHub."""
+
 import argparse
 import json
-import urllib.request
-import urllib.parse
-import urllib.error
-from datetime import datetime, timedelta, timezone
-from collections import defaultdict
-import subprocess
+import os
 import re
+import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
 
-def get_repo_from_remote():
-    """Gets repository owner and name from git remote URL."""
+def get_repo_from_remote() -> Tuple[Optional[str], Optional[str]]:
+    """Get repository owner and name from git remote URL."""
     try:
         url = (
             subprocess.check_output(["git", "remote", "get-url", "origin"])
@@ -31,14 +34,22 @@ def get_repo_from_remote():
     return None, None
 
 
-def get_contributors_data(owner, repo, days, token=None):
-    """Fetches commit data from GitHub API and processes it."""
-    since_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat() + "Z"
+def get_contributors_data(
+    owner: str, repo: str, days: int, token: Optional[str] = None
+) -> Optional[List[Dict[str, Any]]]:
+    """Fetch commit data from GitHub API and process it."""
+    since_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
-    contributors = defaultdict(lambda: {"commits": 0, "active_days": set()})
+    contributors: Dict[str, Dict[str, Any]] = defaultdict(
+        lambda: {"commits": 0, "active_days": set()}
+    )
 
     params = {"since": since_date, "per_page": 100}
-    url = f"https://api.github.com/repos/{owner}/{repo}/commits?{urllib.parse.urlencode(params)}"
+    url: str | None = (
+        f"https://api.github.com/repos/{owner}/{repo}/commits?{urllib.parse.urlencode(params)}"
+    )
 
     headers = {
         "Accept": "application/vnd.github.v3+json",
@@ -58,7 +69,7 @@ def get_contributors_data(owner, repo, days, token=None):
                 for commit in commits:
                     if commit["author"]:
                         author_login = commit["author"]["login"]
-                        commit_date = datetime.strptime(
+                        commit_date: date = datetime.strptime(
                             commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
                         ).date()
                         contributors[author_login]["commits"] += 1
@@ -103,10 +114,10 @@ def get_contributors_data(owner, repo, days, token=None):
     )
 
 
-def generate_markdown_table(contributors, days):
-    """Generates a markdown table from contributor data."""
+def generate_markdown_table(contributors: List[Dict[str, Any]], days: int) -> None:
+    """Generate a markdown table from contributor data."""
     if not contributors:
-        print("No contributions found in the last {days} days.")
+        print(f"No contributions found in the last {days} days.")
         return
 
     print(f"## Top contributors in the last {days} days\n")
@@ -119,8 +130,8 @@ def generate_markdown_table(contributors, days):
         print(f"| [@{login}](https://github.com/{login}) | {commits} | {active_days} |")
 
 
-def main():
-    """Main function to run the script."""
+def main() -> None:
+    """Run the script."""
     owner, repo = get_repo_from_remote()
 
     parser = argparse.ArgumentParser(
@@ -148,7 +159,7 @@ def main():
     owner, repo = args.repo.split("/")
 
     token = os.getenv("GITHUB_TOKEN")
-    contributors = get_contributors_data(owner, repo, args.days, token)
+    contributors = get_contributors_data(owner or "", repo or "", args.days, token)
 
     if contributors:
         generate_markdown_table(contributors, args.days)
