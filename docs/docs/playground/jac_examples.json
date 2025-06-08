@@ -5,5 +5,7 @@
   "For Loop": "reference/for_statements.jac",
   "While Loop": "reference/while_statements.jac",
   "Archetypes": "reference/archetype_bodies.jac",
-  "Data Spatial Programming": "reference/data_spatial_references.jac"
+  "Data Spatial Programming": {
+    "Reference": "reference/data_spatial_references.jac"
+  }
 }
