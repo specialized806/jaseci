@@ -86,9 +86,9 @@ def create_playground_zip() -> None:
 
 def get_top_contributors() -> str:
     """Get the top contributors for the jaclang repository."""
-    return subprocess.check_output(
-        ["python", "../scripts/top_contributors.py", "--days", "30"]
-    ).decode("utf-8")
+    return subprocess.check_output(["python", "../scripts/top_contributors.py"]).decode(
+        "utf-8"
+    )
 
 
 pre_build_hook()

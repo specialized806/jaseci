@@ -139,6 +139,7 @@ def generate_markdown_table(contributors: List[Dict[str, Any]], days: int) -> No
         commits = contributor["commits"]
         active_days = contributor["active_days"]
         print(f"| [@{login}](https://github.com/{login}) | {commits} | {active_days} |")
+    print("\n\n")
 
 
 def main() -> None:
