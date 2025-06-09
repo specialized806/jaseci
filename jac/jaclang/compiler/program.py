@@ -110,8 +110,9 @@ class JacProgram:
         mod_targ = self.parse_str(use_str, file_path)
         JacAnnexPass(ir_in=mod_targ, prog=self)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
-        self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
-        self.run_schedule(mod=mod_targ, passes=py_code_gen)
+        self.schedule_runner(mod_targ, mode=mode)
+        # self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
+        # self.run_schedule(mod=mod_targ, passes=py_code_gen)
         return mod_targ
 
     def build(
