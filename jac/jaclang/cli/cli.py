@@ -274,7 +274,7 @@ def lsp() -> None:
     """
     from jaclang.langserve.server import run_lang_server
 
-    run_lang_server()  # type: ignore
+    run_lang_server()
 
 
 @cmd_registry.register

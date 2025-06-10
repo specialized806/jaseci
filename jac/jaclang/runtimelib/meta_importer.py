@@ -4,11 +4,13 @@ import importlib.abc
 import importlib.machinery
 import importlib.util
 import os
+import site
+import sys
 from types import ModuleType
 from typing import Optional, Sequence
 
+from jaclang.runtimelib.machine import JacMachine as Jac
 from jaclang.runtimelib.machine import JacMachineInterface
-from jaclang.utils import resolve_module
 
 
 class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
@@ -21,24 +23,53 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         target: Optional[ModuleType] = None,
     ) -> Optional[importlib.machinery.ModuleSpec]:
         """Find the spec for the module."""
-        search_path = path[0] if path else os.getcwd()
-        try:
-            file_path, lang = resolve_module(fullname, search_path)
-        except Exception:
-            return None
-        if lang != "jac":
-            return None
-        is_package = os.path.basename(file_path) == "__init__.jac"
-        loader = self
-        spec = importlib.util.spec_from_file_location(
-            fullname,
-            file_path,
-            loader=loader,
-            submodule_search_locations=(
-                [os.path.dirname(file_path)] if is_package else None
-            ),
-        )
-        return spec
+        if path is None:
+            # Top-level import
+            paths_to_search = sys.path[:]
+            if os.getcwd() not in paths_to_search:
+                paths_to_search.insert(0, os.getcwd())
+
+            # Add site-packages paths
+            for site_dir in site.getsitepackages():
+                if site_dir and site_dir not in paths_to_search:
+                    paths_to_search.append(site_dir)
+            user_site = getattr(site, "getusersitepackages", None)
+            if user_site:
+                user_dir = user_site()
+                if user_dir and user_dir not in paths_to_search:
+                    paths_to_search.append(user_dir)
+
+            # Add JACPATH paths
+            jacpaths = os.environ.get("JACPATH", "")
+            if jacpaths:
+                for p in jacpaths.split(":"):
+                    p = p.strip()
+                    if p and p not in paths_to_search:
+                        paths_to_search.append(p)
+            module_path_parts = fullname.split(".")
+        else:
+            # Submodule import
+            paths_to_search = [*path]
+            module_path_parts = fullname.split(".")[-1:]
+
+        for search_path in paths_to_search:
+            candidate_path = os.path.join(search_path, *module_path_parts)
+            # Check for directory package
+            if os.path.isdir(candidate_path):
+                init_file = os.path.join(candidate_path, "__init__.jac")
+                if os.path.isfile(init_file):
+                    return importlib.util.spec_from_file_location(
+                        fullname,
+                        init_file,
+                        loader=self,
+                        submodule_search_locations=[candidate_path],
+                    )
+            # Check for .jac file
+            if os.path.isfile(candidate_path + ".jac"):
+                return importlib.util.spec_from_file_location(
+                    fullname, candidate_path + ".jac", loader=self
+                )
+        return None
 
     def create_module(
         self, spec: importlib.machinery.ModuleSpec
@@ -53,6 +84,15 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                 f"Cannot find spec or origin for module {module.__name__}"
             )
         file_path = module.__spec__.origin
+        is_pkg = module.__spec__.submodule_search_locations is not None
+
+        if is_pkg:
+            codeobj = Jac.program.get_bytecode(full_target=file_path)
+            if codeobj:
+                exec(codeobj, module.__dict__)
+            JacMachineInterface.load_module(module.__name__, module)
+            return
+
         base_path = os.path.dirname(file_path)
         target = os.path.splitext(os.path.basename(file_path))[0]
         ret = JacMachineInterface.jac_import(
