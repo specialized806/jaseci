@@ -1,5 +1,7 @@
 """The Jac Programming Language."""
 
+import sys
+
 from jaclang.runtimelib.machine import (
     JacMachine,
     JacMachineImpl,
@@ -7,7 +9,6 @@ from jaclang.runtimelib.machine import (
     plugin_manager,
 )
 from jaclang.runtimelib.meta_importer import JacMetaImporter
-import sys
 
 
 plugin_manager.register(JacMachineImpl)
