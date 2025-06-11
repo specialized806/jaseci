@@ -311,7 +311,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
-            
+
         }
 
         .code-editor {
@@ -731,12 +731,12 @@
             .header-right {
                 gap: 10px;
             }
-            
+
             .search-input {
                 width: 120px;
                 font-size: 12px;
             }
-            
+
             .github-link {
                 font-size: 12px;
             }
@@ -856,7 +856,7 @@
                     <a href="/jac_book/" class="card-link">Read Book</a>
                 </div>
 
-               
+
             </div>
         </div>
     </section>
@@ -870,7 +870,7 @@
                     <div class="feature-icon">🐍</div>
                     <h3 class="feature-title">Jac supersets Python</h3>
                     <p class="feature-description">
-                        Jac is a drop-in replacement for Python and supersets Python, much like Typescript 
+                        Jac is a drop-in replacement for Python and supersets Python, much like Typescript
                         supersets Javascript or C++ supersets C.
                     </p>
                 </div>
@@ -879,8 +879,8 @@
                     <div class="feature-icon">🧠</div>
                     <h3 class="feature-title">Novel Code Construct for AI</h3>
                     <p class="feature-description">
-                        Jac introduces a new way programmers can integrate LLMs into their code. Simply 
-                        replace a function body with an llm call, need for prompt engineering, learning 
+                        Jac introduces a new way programmers can integrate LLMs into their code. Simply
+                        replace a function body with an llm call, need for prompt engineering, learning
                         extensive libraries and complicated new syntaxes.
                     </p>
                 </div>
@@ -889,8 +889,8 @@
                     <div class="feature-icon">🌐</div>
                     <h3 class="feature-title">Beyond OOP with Object-Spatial Programming</h3>
                     <p class="feature-description">
-                        Jac introduces super OOP constructs for a new paradigm called object-spatial OOP, 
-                        enhancing the handling and visualization of data in ways traditional programming 
+                        Jac introduces super OOP constructs for a new paradigm called object-spatial OOP,
+                        enhancing the handling and visualization of data in ways traditional programming
                         paradigms might not support.
                     </p>
                 </div>
@@ -899,8 +899,8 @@
                     <div class="feature-icon">☁️</div>
                     <h3 class="feature-title">Cloud Native Abstractions</h3>
                     <p class="feature-description">
-                        Jac makes persistence and user concepts part of the language, enabling simple 
-                        programs to run unchanged in terminals or across clouds. Jac streamlines 
+                        Jac makes persistence and user concepts part of the language, enabling simple
+                        programs to run unchanged in terminals or across clouds. Jac streamlines
                         development by removing the need for dev ops and cloud setup.
                     </p>
                 </div>
@@ -923,13 +923,13 @@
                     </div>
                     <div class="about-text">
                         <p class="about-description">
-                            Jac is an innovative programming language that extends Python's semantics while maintaining 
-                            full interoperability with the Python ecosystem. Created by <strong>Jac Hackers Everywhere</strong>, 
-                            it introduces cutting-edge programming models and abstractions specifically designed to minimize 
+                            Jac is an innovative programming language that extends Python's semantics while maintaining
+                            full interoperability with the Python ecosystem. Created by <strong>Jac Hackers Everywhere</strong>,
+                            it introduces cutting-edge programming models and abstractions specifically designed to minimize
                             complexity and embrace AI-forward development.
                         </p>
                         <p class="about-mission">
-                            Our mission is to automate categories of common software systems that typically require 
+                            Our mission is to automate categories of common software systems that typically require
                             manual implementation, making advanced programming paradigms accessible to developers worldwide.
                         </p>
                     </div>
@@ -997,7 +997,7 @@
             // Navigation active state based on scroll
             const navLinks = document.querySelectorAll('.nav-link');
             const sections = document.querySelectorAll('section[id]');
-            
+
             function updateActiveNav() {
                 let current = '';
                 sections.forEach(section => {
@@ -1007,7 +1007,7 @@
                         current = section.getAttribute('id');
                     }
                 });
-                
+
                 navLinks.forEach(link => {
                     link.classList.remove('active');
                     if (link.getAttribute('href') === `#${current}`) {
@@ -1015,7 +1015,7 @@
                     }
                 });
             }
-            
+
             window.addEventListener('scroll', updateActiveNav);
         });
     </script>
