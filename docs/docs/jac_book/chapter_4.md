@@ -38,20 +38,33 @@ Lists in Jac maintain order and allow duplicates, just like Python, but with typ
 ```jac
 # List creation and basic operations
 let fruits: list[str] = ["apple", "banana", "cherry"];
+let numbers: list[int] = [3, 1, 4, 1, 5, 9, 2, 6];
+
+let unique_sorted: list[int] = sorted(set(numbers));  # Remove duplicates and sort → [1, 2, 3, 4, 5, 6, 9]
+let subset: list[int] = numbers[2:5];  # Slice → [4, 1, 5]
+let reversed: list[int] = numbers[::-1];  # Reverse the list → [6, 2, 9, 5, 1, 4, 1, 3]
+
 with entry {
     fruits.append("date");
     fruits.insert(1, "blueberry");
-    print(fruits); # ["apple", "blueberry", "banana", "cherry", "date"]
+
+    print("fruits after update: ", fruits); 
+    # ['apple', 'blueberry', 'banana', 'cherry', 'date']
+
+    numbers.sort();
+    print("numbers sorted: ", numbers);  
+    # [1, 1, 2, 3, 4, 5, 6, 9]
+
+    print("unique sorted numbers: ", unique_sorted);  
+    # [1, 2, 3, 4, 5, 6, 9]
+
+    print("subset [2:5]: ", subset);  
+    # [4, 1, 5]
+
+    print("reversed numbers: ", reversed);  
+    # [6, 2, 9, 5, 1, 4, 1, 3]
 }
 
-# List methods with type safety
-let numbers: list[int] = [3, 1, 4, 1, 5, 9, 2, 6];
-numbers.sort();  # In-place sort
-let unique_sorted: list[int] = sorted(set(numbers));  # Remove duplicates and sort
-
-# Slicing works like Python
-let subset: list[int] = numbers[2:5];  # [2, 3, 4]
-let reversed: list[int] = numbers[::-1];  # Reverse the list
 
 # Multi-dimensional lists
 let matrix: list[list[int]] = [
@@ -60,12 +73,14 @@ let matrix: list[list[int]] = [
     [7, 8, 9]
 ];
 
-# Safe access with bounds checking
-can safe_get[T](lst: list[T], index: int, default: T) -> T {
-    if 0 <= index < len(lst) {
-        return lst[index];
+with entry {
+    print("matrix:");
+    for row in matrix {
+        print(row);
     }
-    return default;
+
+    print("element at [0][1]:", matrix[0][1]);  # 2
+    print("element at [2][2]:", matrix[2][2]);  # 9
 }
 ```
 
