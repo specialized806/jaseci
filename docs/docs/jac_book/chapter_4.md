@@ -48,20 +48,20 @@ with entry {
     fruits.append("date");
     fruits.insert(1, "blueberry");
 
-    print("fruits after update: ", fruits); 
+    print("fruits after update: ", fruits);
     # ['apple', 'blueberry', 'banana', 'cherry', 'date']
 
     numbers.sort();
-    print("numbers sorted: ", numbers);  
+    print("numbers sorted: ", numbers);
     # [1, 1, 2, 3, 4, 5, 6, 9]
 
-    print("unique sorted numbers: ", unique_sorted);  
+    print("unique sorted numbers: ", unique_sorted);
     # [1, 2, 3, 4, 5, 6, 9]
 
-    print("subset [2:5]: ", subset);  
+    print("subset [2:5]: ", subset);
     # [4, 1, 5]
 
-    print("reversed numbers: ", reversed);  
+    print("reversed numbers: ", reversed);
     # [6, 2, 9, 5, 1, 4, 1, 3]
 }
 
