@@ -498,6 +498,15 @@ components:
         - a
       title: post_with_body_body_model
       type: object
+    trigger_counter_task_body_model:
+      properties:
+        id:
+          title: Id
+          type: integer
+      required:
+        - id
+      title: trigger_counter_task_body_model
+      type: object
     update_custom_object_body_model:
       properties:
         object_id:
@@ -3712,6 +3721,12 @@ paths:
   /walker/trigger_counter_task:
     post:
       operationId: api_root_walker_trigger_counter_task_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/trigger_counter_task_body_model"
+        required: true
       responses:
         "200":
           content:
@@ -3719,6 +3734,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
       security:
         - HTTPBearer: []
       summary: Api Root
@@ -3736,6 +3757,12 @@ paths:
               - type: string
               - type: "null"
             title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/trigger_counter_task_body_model"
+        required: true
       responses:
         "200":
           content:
