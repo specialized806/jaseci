@@ -2324,6 +2324,17 @@ class PyastGenPass(UniPass):
                     keywords.append(x.gen.py_ast[0])
                 else:
                     self.ice("Invalid Parameter")
+
+        # if node.body_genai_call and isinstance(node.target, uni.AstSymbolNode) and node.target.sym:
+        #     ability = node.target.sym.fetch_sym_tab
+        #     if not isinstance(ability, uni.Ability):
+        #         raise self.ice()  # Althought it's not an internal error.
+        #     ret = self.gen_llm_body(ability)[0]
+        #     if not isinstance(ret, ast3.Return) or not ret.value:
+        #         raise self.ice()  # Althought it's not an internal error.
+        #     # TODO: Expression to be repllace would be ret.value.
+        #     node.gen.py_ast = [self.sync(ret.value)]
+
         if node.genai_call:
             by_llm_call_args = self.get_by_llm_call_args(node)
             node.gen.py_ast = [self.sync(self.by_llm_call(**by_llm_call_args))]

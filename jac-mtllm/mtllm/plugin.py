@@ -503,6 +503,7 @@ class JacMachine:
 
         model = node.genai_call.target.gen.py_ast[0]
         model_params, include_info, exclude_info = extract_params(node.genai_call)
+
         action = _pass.sync(
             ast3.Constant(
                 value="Create an object of the specified type, using the specifically "
