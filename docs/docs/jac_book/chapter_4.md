@@ -97,14 +97,42 @@ let even_squares: list[int] = [n * n for n in numbers if n % 2 == 0];
 let coords: list[tuple] = [(x, y) for x in range(3) for y in range(3)];
 # [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (2,0), (2,1), (2,2)]
 
-# Functional operations
-let doubled: list[int] = numbers.map(lambda x: int -> int : x * 2);
-let filtered: list[int] = numbers.filter(lambda x: int -> bool : x > 10);
-let total: int = numbers.reduce(lambda a: int, b: int -> int : a + b, 0);
+# Functional-style operations
+let doubled: list[int] = [x * 2 for x in numbers];
+let filtered: list[int] = [x for x in numbers if x > 10];
+let total: int = 0;
+
+with entry {
+    for x in numbers {
+    total += x;
+    }
+}
 
 # List flattening
 let nested: list[list[int]] = [[1, 2], [3, 4], [5, 6]];
 let flat: list[int] = [item for sublist in nested for item in sublist];
+
+with entry {
+    print("numbers:", list(numbers));
+    print("evens:", evens);
+    print("squares:", squares);
+    print("even_squares:", even_squares);
+}
+
+with entry {
+    print("coordinates:", coords);
+}
+
+with entry {
+    print("doubled:", doubled);
+    print("filtered (>10):", filtered);
+    print("total sum:", total);
+}
+
+with entry {
+    print("nested:", nested);
+    print("flat:", flat);
+}
 ```
 
 ### Dictionaries with Type Safety
