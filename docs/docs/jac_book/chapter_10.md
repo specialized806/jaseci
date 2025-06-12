@@ -181,77 +181,83 @@ Here's how to design applications with automatic persistence:
 <div class="code-block">
 
 ```jac
+import from datetime {datetime, timedelta}
+import secrets;
+
 # Application data model
 node AppData {
     has version: str = "1.0.0";
     has settings: dict = {};
-    has initialized: bool = false;
+    has initialized: bool = False;
 }
 
 node User {
     has id: str;
     has email: str;
-    has preferences: dict = {};
     has created_at: str;
+    has preferences: dict = {};
 }
 
 node Session {
     has token: str;
     has user_id: str;
     has expires_at: str;
-    has active: bool = true;
+    has active: bool = True;
 }
 
+def generate_token(length:int =32) {
+    return secrets.token_hex(length);
+}
+
+
 # Initialize or get existing app data
-can get_or_create_app_data() -> AppData {
-    let app_data_nodes = root[-->:AppData:];
+def get_or_create_app_data() -> AppData {
+    app_data_nodes = [root -->(`?AppData)];
 
     if not app_data_nodes {
         print("First run - initializing app data");
-        return root ++> AppData(
-            initialized=true,
+        app_data_node = root ++> AppData(
+            initialized=True,
             settings={
                 "theme": "light",
                 "language": "en",
-                "debug": false
+                "debug": False
             }
         );
+        return app_data_node[0];
     }
 
     return app_data_nodes[0];
 }
 
 # User management with persistence
-can create_user(email: str) -> User? {
-    let app = get_or_create_app_data();
+def create_user(email: str) -> User | None {
+    app = get_or_create_app_data();
 
     # Check if user exists
-    let existing = app[-->:User:].filter(
-        lambda u: User -> bool : u.email == email
-    );
+    existing = [app -->(`?User)](?email == email);
 
     if existing {
         print(f"User {email} already exists");
-        return None;
+        return existing[0];
     }
 
     # Create persistent user
-    let user = app ++> User(
-        id=generate_id(),
+    user = app ++> User(
+        id=len(existing),
         email=email,
-        created_at=now()
+        created_at=datetime.now()
     );
 
     print(f"Created user: {email}");
-    return user;
+    return user[0];
 }
 
 # Session management
-can create_session(user: User) -> Session {
-    import:py from datetime import datetime, timedelta;
+def create_session(user: User) -> Session {
 
     # Sessions connected to user (persistent)
-    let session = user ++> Session(
+    session = user ++> Session(
         token=generate_token(),
         user_id=user.id,
         expires_at=(datetime.now() + timedelta(hours=24)).isoformat()
@@ -262,21 +268,19 @@ can create_session(user: User) -> Session {
 
 # Example usage
 with entry {
-    let app = get_or_create_app_data();
+    app = get_or_create_app_data();
     print(f"App version: {app.version}");
 
     # Create or get user
-    let email = "alice@example.com";
-    let user = create_user(email);
+    email = "alice@example.com";
+    user = create_user(email);
 
     if user {
-        let session = create_session(user);
-        print(f"Session created: {session.token[:8]}...");
+        session = create_session(user);
+        print(f"Session created: {session[0].token[:8]}...");
     } else {
         # User already exists, find them
-        let user = app[-->:User:].filter(
-            lambda u: User -> bool : u.email == email
-        )[0];
+        user = [app -->(`?User)](?email == email);
         print(f"Welcome back, {user.email}!");
         print(f"Account created: {user.created_at}");
     }
@@ -292,27 +296,29 @@ Not everything should persist. Here's how to manage both:
 
 ```jac
 node PersistentCache {
-    has data: dict = {};
     has updated_at: str;
+    has data: dict = {};
 }
 
 node EphemeralCache {
-    has data: dict = {};
     has created_at: str;
+    has data: dict = {};
 }
 
 walker CacheManager {
     has operation: str;
     has key: str;
-    has value: any? = None;
+    has value: any = None;
 
     can manage with entry {
         # Get or create persistent cache
-        let p_cache = root[-->:PersistentCache:][0] if root[-->:PersistentCache:]
+        p_cache_list = [root -->(`?PersistentCache)] if [root -->(`?PersistentCache)]
                      else root ++> PersistentCache(updated_at=now());
+        p_cache = p_cache_list[0];
 
         # Ephemeral cache is not connected to root
-        let e_cache = EphemeralCache(created_at=now());
+        e_cache_list = EphemeralCache(created_at=now());
+        e_cache = e_cache_list[0];
 
         if self.operation == "store" {
             # Store in both caches
@@ -347,7 +353,7 @@ node FastStore {
         "misses": 0
     };
 
-    can get(key: str) -> any? {
+    def get(key: str) -> any {
         # Check memory first
         if key in self.memory_cache {
             self.stats["hits"] += 1;
@@ -365,7 +371,7 @@ node FastStore {
         return None;
     }
 
-    can store(key: str, value: any, persist: bool = true) {
+    def store(key: str, value: any, persist: bool = True) {
         self.memory_cache[key] = value;
 
         if persist {
@@ -404,18 +410,26 @@ session = Session(engine)
 
 ```jac
 
+import from datetime { datetime }
+import uuid;
+import sys;
+
 # Jac approach - just connect to root!
 node Task {
     has id: str;
     has title: str;
-    has completed: bool = false;
     has created_at: str;
-    has completed_at: str? = None;
+    has completed: bool = False;
+    has completed_at: str|None = None;
 }
 
 node TaskList {
     has name: str;
     has created_at: str;
+}
+
+def generate_id(){
+    return str(uuid.uuid4());
 }
 
 # Complete task management with zero database code
@@ -427,10 +441,10 @@ walker TaskManager {
 
     can execute with entry {
         # Get or create task list
-        let lists = root[-->:TaskList:(?.name == self.list_name):];
-        let task_list = lists[0] if lists else root ++> TaskList(
+        lists = [root -->(`?TaskList)](?name == self.list_name);
+        task_list = lists[0] if lists else root ++> TaskList(
             name=self.list_name,
-            created_at=now()
+            created_at=datetime.now()
         );
 
         match self.command {
@@ -441,45 +455,45 @@ walker TaskManager {
         }
     }
 
-    can add_task(task_list: TaskList) {
-        let task = task_list ++> Task(
+    def add_task(task_list: TaskList) -> None {
+        task = task_list ++> Task(
             id=generate_id(),
             title=self.title,
-            created_at=now()
+            created_at=datetime.now()
         );
 
-        print(f"Added task: {task.title} (ID: {task.id[:8]})");
+        print(f"Added task: {task[0].title} (ID: {task[0].id[:8]})");
     }
 
-    can complete_task(task_list: TaskList) {
-        let tasks = task_list[-->:Task:(?.id.startswith(self.task_id)):];
+    def complete_task(task_list: TaskList) {
+        tasks = [task_list-->(`?Task)](id.startswith(self.task_id));
 
         if tasks {
-            let task = tasks[0];
-            task.completed = true;
-            task.completed_at = now();
+            task = tasks[0];
+            task.completed = True;
+            task.completed_at = datetime.now();
             print(f"Completed: {task.title}");
         } else {
             print(f"Task {self.task_id} not found");
         }
     }
 
-    can list_tasks(task_list: TaskList) {
-        let tasks = task_list[-->:Task:];
+    def list_tasks(task_list: TaskList) {
+        tasks = [task_list -->(`?Task)];
         print(f"\n=== {task_list.name} Tasks ===");
 
         for task in tasks {
-            let status = "✓" if task.completed else "○";
+            status = "✓" if task.completed else "○";
             print(f"{status} [{task.id[:8]}] {task.title}");
         }
 
-        let completed = tasks.filter(lambda t: Task -> bool : t.completed);
+        completed = [task_list -->(`?Task)](?completed==True);
         print(f"\nTotal: {len(tasks)} | Completed: {len(completed)}");
     }
 
-    can show_stats(task_list: TaskList) {
-        let tasks = task_list[-->:Task:];
-        let completed = tasks.filter(lambda t: Task -> bool : t.completed);
+    def show_stats(task_list: TaskList) {
+        tasks = [task_list -->(`?Task)];
+        completed = [task_list -->(`?Task)](?completed==True);
 
         print(f"\n=== Task Statistics ===");
         print(f"List: {task_list.name}");
@@ -489,7 +503,6 @@ walker TaskManager {
 
         if completed {
             # Calculate average completion time
-            import:py from datetime import datetime;
             total_time = 0;
 
             for task in completed {
@@ -499,14 +512,13 @@ walker TaskManager {
             }
 
             avg_hours = (total_time / len(completed)) / 3600;
-            print(f"Avg completion time: {avg_hours:.1f} hours");
+            print(f"Avg completion time: {avg_hours} hours");
         }
     }
 }
 
 # Usage - all data persists automatically!
 with entry {
-    import:py sys;
 
     if len(sys.argv) < 2 {
         print("Usage: jac run tasks.jac <command> [args]");
@@ -515,11 +527,10 @@ with entry {
         print("  complete <id> - Mark task as complete");
         print("  list - Show all tasks");
         print("  stats - Show statistics");
-        return;
     }
 
-    let command = sys.argv[1];
-    let manager = TaskManager(command=command);
+    command = sys.argv[1];
+    manager = TaskManager(command=command);
 
     if command == "add" and len(sys.argv) > 2 {
         manager.title = " ".join(sys.argv[2:]);
@@ -527,7 +538,7 @@ with entry {
         manager.task_id = sys.argv[2];
     }
 
-    spawn manager on root;
+    root spawn manager;
 }
 ```
 </div>
@@ -539,12 +550,14 @@ with entry {
 <div class="code-block">
 
 ```jac
+import from datetime {datetime}
+
 node VersionedDocument {
     has id: str;
     has content: str;
-    has version: int = 1;
     has created_at: str;
     has modified_at: str;
+    has version: int = 1;
 }
 
 node DocumentVersion {
@@ -561,13 +574,13 @@ walker DocumentEditor {
 
     can edit with entry {
         # Find document
-        let docs = root[-->:VersionedDocument:(?.id == self.doc_id):];
+        docs = [root -->(`?VersionedDocument)](id == self.doc_id);
         if not docs {
             print(f"Document {self.doc_id} not found");
-            return;
+            report f"Document {self.doc_id} not found";
         }
 
-        let doc = docs[0];
+        doc = docs[0];
 
         # Save current version
         doc ++> DocumentVersion(
@@ -580,24 +593,24 @@ walker DocumentEditor {
         # Update document
         doc.content = self.new_content;
         doc.version += 1;
-        doc.modified_at = now();
+        doc.modified_at = datetime.now();
 
         print(f"Document updated to version {doc.version}");
     }
 
     can get_history with entry {
-        let docs = root[-->:VersionedDocument:(?.id == self.doc_id):];
+        let docs = [root -->(`?VersionedDocument)](id == self.doc_id);
         if not docs {
-            return;
+            report f"Document {self.doc_id} not found";
         }
 
         let doc = docs[0];
-        let versions = doc[-->:DocumentVersion:];
+        let versions = [doc -->(`?DocumentVersion)];
 
         print(f"\n=== History for {doc.id} ===");
         print(f"Current version: {doc.version}");
 
-        for v in versions.sorted(key=lambda x: x.version, reverse=true) {
+        for v in versions.sorted(key=lambda x:int : x.version, reverse=True) {
             print(f"\nVersion {v.version}:");
             print(f"  Modified: {v.modified_at}");
             print(f"  By: {v.modified_by}");
@@ -613,10 +626,12 @@ walker DocumentEditor {
 <div class="code-block">
 
 ```jac
+import time;
+
 node DataContainer {
     has id: str;
     has metadata: dict;
-    has data_loaded: bool = false;
+    has data_loaded: bool = False;
 }
 
 node HeavyData {
@@ -639,7 +654,7 @@ walker DataLoader {
                 self.load_heavy_data(here);
             }
 
-            let heavy = here[-->:HeavyData:][0];
+            heavy = [here -->(`?HeavyData)][0];
             report {
                 "metadata": here.metadata,
                 "data": heavy.payload,
@@ -648,11 +663,10 @@ walker DataLoader {
         }
     }
 
-    can load_heavy_data(container: DataContainer) {
+    def load_heavy_data(container: DataContainer) {
         print(f"Loading heavy data for {container.id}...");
 
         # Simulate loading large data
-        import:py time;
         time.sleep(1);
 
         container ++> HeavyData(
@@ -660,7 +674,7 @@ walker DataLoader {
             size_mb=7.6
         );
 
-        container.data_loaded = true;
+        container.data_loaded = True;
     }
 }
 ```
@@ -671,6 +685,8 @@ walker DataLoader {
 <div class="code-block">
 
 ```jac
+import from datetime { datetime, timedelta }
+
 node CachedItem {
     has key: str;
     has value: any;
@@ -684,7 +700,6 @@ walker CacheCleanup {
     has checked_count: int = 0;
 
     can cleanup with CachedItem entry {
-        import:py from datetime import datetime, timedelta;
 
         self.checked_count += 1;
 
@@ -695,7 +710,7 @@ walker CacheCleanup {
             print(f"Removing expired cache item: {here.key}");
 
             # Disconnect from root to remove persistence
-            for edge in here[<--] {
+            for edge in [here <--] {
                 del edge;
             }
 
@@ -715,7 +730,7 @@ walker CacheCleanup {
 # Run periodic cleanup
 with entry:cleanup {
     print("Running cache cleanup...");
-    spawn CacheCleanup() on root;
+    root spawn CacheCleanup();
 }
 ```
 </div>
@@ -728,18 +743,21 @@ While persistence is automatic, consider these patterns for optimization:
 
 ```jac
 # Indexing pattern for fast lookups
+
+node DataItem {
+    has data: dict;
+}
+
 node IndexedCollection {
     has name: str;
     has indices: dict = {};
 
-    can add_item(item: dict) {
+    def add_item(item: dict) {
         # Store item
-        let item_node = self ++> node DataItem {
-            has data: dict;
-        }(data=item);
+        item_node = self ++> DataItem(data=item);
 
         # Update indices
-        for key, value in item.items() {
+        for (key, value) in item.items() {
             if key not in self.indices {
                 self.indices[key] = {};
             }
@@ -752,7 +770,7 @@ node IndexedCollection {
         }
     }
 
-    can find_by(key: str, value: any) -> list {
+    def find_by(key: str, value: any) -> list {
         if key in self.indices and value in self.indices[key] {
             return self.indices[key][value];
         }
@@ -770,21 +788,16 @@ walker PaginatedQuery {
 
     can query with entry {
         # Get all matching items
-        let all_items = root[-->:DataItem:];
+        all_items = [root-->(`?DataItem)];
 
         # Apply filters
-        let filtered = all_items;
-        for key, value in self.filters.items() {
-            filtered = filtered.filter(
-                lambda item: DataItem -> bool : item.data.get(key) == value
-            );
-        }
+        filtered = [root-->(`?DataItem)](data.get(key) == value);
 
         self.total_count = len(filtered);
 
         # Paginate
-        let start = (self.page - 1) * self.page_size;
-        let end = start + self.page_size;
+        start = (self.page - 1) * self.page_size;
+        end = start + self.page_size;
         self.results = filtered[start:end];
 
         report {
