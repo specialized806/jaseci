@@ -600,13 +600,13 @@ walker DocumentEditor {
     }
 
     can get_history with entry {
-        let docs = [root -->(`?VersionedDocument)](id == self.doc_id);
+        docs = [root -->(`?VersionedDocument)](id == self.doc_id);
         if not docs {
             report f"Document {self.doc_id} not found";
         }
 
-        let doc = docs[0];
-        let versions = [doc -->(`?DocumentVersion)];
+        doc = docs[0];
+        versions = [doc -->(`?DocumentVersion)];
 
         print(f"\n=== History for {doc.id} ===");
         print(f"Current version: {doc.version}");
@@ -740,75 +740,129 @@ with entry {
 
 While persistence is automatic, consider these patterns for optimization:
 
+```python
+# pythonic_indexing.py - Traditional Python approach with manual indexing
+import json
+from typing import Dict, List, Any, Optional
+
+class DataItem:
+    def __init__(self, data: Dict[str, Any]):
+        self.data = data
+
+    def __repr__(self):
+        return f"DataItem({self.data})"
+
+class IndexedCollection:
+    def __init__(self, name: str):
+        self.name = name
+        self.items: List[DataItem] = []
+        self.indices: Dict[str, Dict[Any, List[DataItem]]] = {}
+
+    def add_item(self, item_data: Dict[str, Any]) -> None:
+        """Add item with automatic indexing - Pythonic approach"""
+        # Store item
+        item = DataItem(item_data)
+        self.items.append(item)
+
+        # Update indices manually (traditional Python way)
+        for key, value in item_data.items():
+            if key not in self.indices:
+                self.indices[key] = {}
+
+            if value not in self.indices[key]:
+                self.indices[key][value] = []
+
+            self.indices[key][value].append(item)
+
+    def find_by(self, key: str, value: Any) -> List[DataItem]:
+        """Fast O(1) lookup using indices - Pythonic optimization"""
+        if key in self.indices and value in self.indices[key]:
+            return self.indices[key][value]
+        return []
+
+print("=== PYTHONIC APPROACH: Manual Indexing in Python ===")
+
+# Create indexed collection
+collection = IndexedCollection("python_collection")
+
+# Add test data
+test_data = [
+    {"name": "Alice", "age": 30, "city": "New York", "department": "Engineering"},
+    {"name": "Bob", "age": 25, "city": "Boston", "department": "Sales"},
+    {"name": "Charlie", "age": 30, "city": "Chicago", "department": "Engineering"},
+    {"name": "Diana", "age": 28, "city": "New York", "department": "Marketing"},
+    {"name": "Eve", "age": 25, "city": "Seattle", "department": "Engineering"}
+]
+
+for item in test_data:
+    collection.add_item(item)
+    print("Data is added")
+
+# Fast index-based queries
+print("--- Fast Index-based Queries (O(1)) ---")
+
+age_30_users = collection.find_by("age", 30)
+print("Users with age 30")
+for user in age_30_users:
+    print(f"  - {user.data['name']} from {user.data['city']}, age {user.data['age']}")
+
+engineers = collection.find_by("department", "Engineering")
+print("Engineers")
+for engineer in engineers:
+    print(f"  - {engineer.data['name']} from {engineer.data['city']}, age {engineer.data['age']}")
+```
+
 <div class="code-block">
 
 ```jac
 # Indexing pattern for fast lookups
-
 node DataItem {
     has data: dict;
 }
 
-node IndexedCollection {
-    has name: str;
-    has indices: dict = {};
+walker add_item {
+    has data: dict;
 
-    def add_item(item: dict) {
-        # Store item
-        item_node = self ++> DataItem(data=item);
-
-        # Update indices
-        for (key, value) in item.items() {
-            if key not in self.indices {
-                self.indices[key] = {};
-            }
-
-            if value not in self.indices[key] {
-                self.indices[key][value] = [];
-            }
-
-            self.indices[key][value].append(item_node);
-        }
-    }
-
-    def find_by(key: str, value: any) -> list {
-        if key in self.indices and value in self.indices[key] {
-            return self.indices[key][value];
-        }
-        return [];
+    can add with `root entry {
+        root ++> DataItem(self.data);
+        print("Data is added");
     }
 }
 
-# Pagination pattern for large collections
-walker PaginatedQuery {
-    has page: int = 1;
-    has page_size: int = 20;
-    has filters: dict = {};
-    has total_count: int = 0;
-    has results: list = [];
+walker finder {
+    has key: str;
+    has value: any;
 
-    can query with entry {
-        # Get all matching items
-        all_items = [root-->(`?DataItem)];
-
-        # Apply filters
-        filtered = [root-->(`?DataItem)](data.get(key) == value);
-
-        self.total_count = len(filtered);
-
-        # Paginate
-        start = (self.page - 1) * self.page_size;
-        end = start + self.page_size;
-        self.results = filtered[start:end];
-
-        report {
-            "page": self.page,
-            "page_size": self.page_size,
-            "total": self.total_count,
-            "pages": (self.total_count + self.page_size - 1) // self.page_size,
-            "data": self.results
-        };
+    can find with `root entry {
+        visit [root --> (`?DataItem)];
     }
+
+    can reported with DataItem entry {
+        if here.data.get(self.key) == self.value {
+            print(f"  - {here.data['name']} from {here.data['city']}, age {here.data['age']}");
+        }
+    }
+}
+
+# Example usage
+with entry {
+    test_data = [
+        {"name": "Alice", "age": 30, "city": "New York", "department": "Engineering"},
+        {"name": "Bob", "age": 25, "city": "Boston", "department": "Sales"},
+        {"name": "Charlie", "age": 30, "city": "Chicago", "department": "Engineering"},
+        {"name": "Diana", "age": 28, "city": "New York", "department": "Marketing"},
+        {"name": "Eve", "age": 25, "city": "Seattle", "department": "Engineering"}
+    ];
+    for data in test_data {
+        add_item(data) spawn root;
+    }
+
+    print("--- Fast Jac Based Filtering ---");
+    print("Users with age 30");
+    finder("age", 30) spawn root;
+    print("Engineers");
+    finder("department", "Engineering") spawn root;
+
 }
 ```
 </div>
