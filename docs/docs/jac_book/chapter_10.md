@@ -9,26 +9,26 @@ One of Jac's most revolutionary features is automatic persistence through the ro
 The `root` keyword provides global access to a special persistent node that serves as the anchor for your application's data:
 
 ```jac
-// root is available everywhere - no imports needed
+# root is available everywhere - no imports needed
 with entry {
     print(f"Root node: {root}");
     print(f"Type: {type(root).__name__}");
 
-    // root is always the same node within a user context
+    # root is always the same node within a user context
     let id1 = id(root);
     do_something();
     let id2 = id(root);
-    assert id1 == id2;  // Always true
+    assert id1 == id2;  # Always true
 }
 
 can do_something() {
-    // root accessible in any function
+    # root accessible in any function
     root ++> node { has data: str = "test"; };
 }
 
 walker Explorer {
     can explore with entry {
-        // root accessible in walkers
+        # root accessible in walkers
         print(f"Starting from: {root}");
         visit root;
     }
@@ -36,7 +36,7 @@ walker Explorer {
 
 node CustomNode {
     can check_root with entry {
-        // root accessible in node abilities
+        # root accessible in node abilities
         print(f"Root from node: {root}");
     }
 }
@@ -53,11 +53,11 @@ The `root` node is special:
 Everything connected to root persists automatically:
 
 ```jac
-// First run - create data
+# First run - create data
 with entry {
     print("=== First Run - Creating Data ===");
 
-    // Data connected to root persists
+    # Data connected to root persists
     let user_profile = root ++> node UserProfile {
         has username: str = "alice";
         has created_at: str = "2024-01-15";
@@ -67,29 +67,29 @@ with entry {
     print(f"Created profile: {user_profile.username}");
 }
 
-// Second run - data still exists!
+# Second run - data still exists!
 with entry {
     print("=== Second Run - Data Persists ===");
 
-    // Find existing data
+    # Find existing data
     let profiles = root[-->:UserProfile:];
     if profiles {
         let profile = profiles[0];
         print(f"Found profile: {profile.username}");
         print(f"Previous logins: {profile.login_count}");
 
-        // Update persistent data
+        # Update persistent data
         profile.login_count += 1;
         print(f"Updated logins: {profile.login_count}");
     }
 }
 
-// Third run - updates persist too
+# Third run - updates persist too
 with entry {
     print("=== Third Run - Updates Persist ===");
 
     let profile = root[-->:UserProfile:][0];
-    print(f"Login count is now: {profile.login_count}");  // Shows 3
+    print(f"Login count is now: {profile.login_count}");  # Shows 3
 }
 ```
 
@@ -110,28 +110,28 @@ node Tag {
 }
 
 with entry {
-    // Connected to root = persistent
+    # Connected to root = persistent
     let doc1 = root ++> Document(
         title="My First Document",
         content="This will persist",
         created=now()
     );
 
-    // Connected to persistent node = also persistent
+    # Connected to persistent node = also persistent
     let tag1 = doc1 ++> Tag(name="important");
 
-    // NOT connected to root = temporary
+    # NOT connected to root = temporary
     let doc2 = Document(
         title="Temporary Document",
         content="This will NOT persist",
         created=now()
     );
 
-    // Connecting later makes it persistent
-    root ++> doc2;  // Now doc2 will persist
+    # Connecting later makes it persistent
+    root ++> doc2;  # Now doc2 will persist
 
-    // Disconnecting makes it non-persistent
-    del root --> doc1;  // doc1 and tag1 no longer persist
+    # Disconnecting makes it non-persistent
+    del root --> doc1;  # doc1 and tag1 no longer persist
 }
 ```
 
@@ -164,7 +164,7 @@ graph TD
 Here's how to design applications with automatic persistence:
 
 ```jac
-// Application data model
+# Application data model
 node AppData {
     has version: str = "1.0.0";
     has settings: dict = {};
@@ -185,7 +185,7 @@ node Session {
     has active: bool = true;
 }
 
-// Initialize or get existing app data
+# Initialize or get existing app data
 can get_or_create_app_data() -> AppData {
     let app_data_nodes = root[-->:AppData:];
 
@@ -204,11 +204,11 @@ can get_or_create_app_data() -> AppData {
     return app_data_nodes[0];
 }
 
-// User management with persistence
+# User management with persistence
 can create_user(email: str) -> User? {
     let app = get_or_create_app_data();
 
-    // Check if user exists
+    # Check if user exists
     let existing = app[-->:User:].filter(
         lambda u: User -> bool : u.email == email
     );
@@ -218,7 +218,7 @@ can create_user(email: str) -> User? {
         return None;
     }
 
-    // Create persistent user
+    # Create persistent user
     let user = app ++> User(
         id=generate_id(),
         email=email,
@@ -229,11 +229,11 @@ can create_user(email: str) -> User? {
     return user;
 }
 
-// Session management
+# Session management
 can create_session(user: User) -> Session {
     import:py from datetime import datetime, timedelta;
 
-    // Sessions connected to user (persistent)
+    # Sessions connected to user (persistent)
     let session = user ++> Session(
         token=generate_token(),
         user_id=user.id,
@@ -243,12 +243,12 @@ can create_session(user: User) -> Session {
     return session;
 }
 
-// Example usage
+# Example usage
 with entry {
     let app = get_or_create_app_data();
     print(f"App version: {app.version}");
 
-    // Create or get user
+    # Create or get user
     let email = "alice@example.com";
     let user = create_user(email);
 
@@ -256,7 +256,7 @@ with entry {
         let session = create_session(user);
         print(f"Session created: {session.token[:8]}...");
     } else {
-        // User already exists, find them
+        # User already exists, find them
         let user = app[-->:User:].filter(
             lambda u: User -> bool : u.email == email
         )[0];
@@ -287,15 +287,15 @@ walker CacheManager {
     has value: any? = None;
 
     can manage with entry {
-        // Get or create persistent cache
+        # Get or create persistent cache
         let p_cache = root[-->:PersistentCache:][0] if root[-->:PersistentCache:]
                      else root ++> PersistentCache(updated_at=now());
 
-        // Ephemeral cache is not connected to root
+        # Ephemeral cache is not connected to root
         let e_cache = EphemeralCache(created_at=now());
 
         if self.operation == "store" {
-            // Store in both caches
+            # Store in both caches
             p_cache.data[self.key] = self.value;
             p_cache.updated_at = now();
             e_cache.data[self.key] = self.value;
@@ -303,7 +303,7 @@ walker CacheManager {
             print(f"Stored {self.key} in both caches");
 
         } elif self.operation == "get" {
-            // Try ephemeral first (faster)
+            # Try ephemeral first (faster)
             if self.key in e_cache.data {
                 print(f"Found {self.key} in ephemeral cache");
                 report e_cache.data[self.key];
@@ -318,26 +318,26 @@ walker CacheManager {
     }
 }
 
-// Hybrid approach for performance
+# Hybrid approach for performance
 node FastStore {
-    has persistent_data: dict = {};    // Important data
-    has memory_cache: dict = {};      // Temporary cache
-    has stats: dict = {               // Temporary stats
+    has persistent_data: dict = {};    # Important data
+    has memory_cache: dict = {};      # Temporary cache
+    has stats: dict = {               # Temporary stats
         "hits": 0,
         "misses": 0
     };
 
     can get(key: str) -> any? {
-        // Check memory first
+        # Check memory first
         if key in self.memory_cache {
             self.stats["hits"] += 1;
             return self.memory_cache[key];
         }
 
-        // Check persistent
+        # Check persistent
         if key in self.persistent_data {
             self.stats["misses"] += 1;
-            // Populate memory cache
+            # Populate memory cache
             self.memory_cache[key] = self.persistent_data[key];
             return self.persistent_data[key];
         }
@@ -360,8 +360,8 @@ node FastStore {
 Jac eliminates the need for separate databases in many applications:
 
 ```jac
-// Traditional approach requires database setup
-// Python with SQLAlchemy:
+# Traditional approach requires database setup
+# Python with SQLAlchemy:
 # from sqlalchemy import create_engine, Column, String, Integer
 # from sqlalchemy.ext.declarative import declarative_base
 #
@@ -378,7 +378,7 @@ Jac eliminates the need for separate databases in many applications:
 # session = Session(engine)
 # # ... lots more boilerplate ...
 
-// Jac approach - just connect to root!
+# Jac approach - just connect to root!
 node Task {
     has id: str;
     has title: str;
@@ -392,7 +392,7 @@ node TaskList {
     has created_at: str;
 }
 
-// Complete task management with zero database code
+# Complete task management with zero database code
 walker TaskManager {
     has command: str;
     has title: str = "";
@@ -400,7 +400,7 @@ walker TaskManager {
     has task_id: str = "";
 
     can execute with entry {
-        // Get or create task list
+        # Get or create task list
         let lists = root[-->:TaskList:(?.name == self.list_name):];
         let task_list = lists[0] if lists else root ++> TaskList(
             name=self.list_name,
@@ -462,7 +462,7 @@ walker TaskManager {
         print(f"Pending: {len(tasks) - len(completed)}");
 
         if completed {
-            // Calculate average completion time
+            # Calculate average completion time
             import:py from datetime import datetime;
             total_time = 0;
 
@@ -478,7 +478,7 @@ walker TaskManager {
     }
 }
 
-// Usage - all data persists automatically!
+# Usage - all data persists automatically!
 with entry {
     import:py sys;
 
@@ -531,7 +531,7 @@ walker DocumentEditor {
     has user: str;
 
     can edit with entry {
-        // Find document
+        # Find document
         let docs = root[-->:VersionedDocument:(?.id == self.doc_id):];
         if not docs {
             print(f"Document {self.doc_id} not found");
@@ -540,7 +540,7 @@ walker DocumentEditor {
 
         let doc = docs[0];
 
-        // Save current version
+        # Save current version
         doc ++> DocumentVersion(
             version=doc.version,
             content=doc.content,
@@ -548,7 +548,7 @@ walker DocumentEditor {
             modified_by=self.user
         );
 
-        // Update document
+        # Update document
         doc.content = self.new_content;
         doc.version += 1;
         doc.modified_at = now();
@@ -598,12 +598,12 @@ walker DataLoader {
 
     can operate with DataContainer entry {
         if self.operation == "get_metadata" {
-            // Just return metadata without loading heavy data
+            # Just return metadata without loading heavy data
             report here.metadata;
 
         } elif self.operation == "load_full" {
             if not here.data_loaded {
-                // Load heavy data only when needed
+                # Load heavy data only when needed
                 self.load_heavy_data(here);
             }
 
@@ -619,7 +619,7 @@ walker DataLoader {
     can load_heavy_data(container: DataContainer) {
         print(f"Loading heavy data for {container.id}...");
 
-        // Simulate loading large data
+        # Simulate loading large data
         import:py time;
         time.sleep(1);
 
@@ -659,7 +659,7 @@ walker CacheCleanup {
         if age > timedelta(hours=here.ttl_hours) {
             print(f"Removing expired cache item: {here.key}");
 
-            // Disconnect from root to remove persistence
+            # Disconnect from root to remove persistence
             for edge in here[<--] {
                 del edge;
             }
@@ -677,7 +677,7 @@ walker CacheCleanup {
     }
 }
 
-// Run periodic cleanup
+# Run periodic cleanup
 with entry:cleanup {
     print("Running cache cleanup...");
     spawn CacheCleanup() on root;
@@ -689,18 +689,18 @@ with entry:cleanup {
 While persistence is automatic, consider these patterns for optimization:
 
 ```jac
-// Indexing pattern for fast lookups
+# Indexing pattern for fast lookups
 node IndexedCollection {
     has name: str;
     has indices: dict = {};
 
     can add_item(item: dict) {
-        // Store item
+        # Store item
         let item_node = self ++> node DataItem {
             has data: dict;
         }(data=item);
 
-        // Update indices
+        # Update indices
         for key, value in item.items() {
             if key not in self.indices {
                 self.indices[key] = {};
@@ -722,7 +722,7 @@ node IndexedCollection {
     }
 }
 
-// Pagination pattern for large collections
+# Pagination pattern for large collections
 walker PaginatedQuery {
     has page: int = 1;
     has page_size: int = 20;
@@ -731,10 +731,10 @@ walker PaginatedQuery {
     has results: list = [];
 
     can query with entry {
-        // Get all matching items
+        # Get all matching items
         let all_items = root[-->:DataItem:];
 
-        // Apply filters
+        # Apply filters
         let filtered = all_items;
         for key, value in self.filters.items() {
             filtered = filtered.filter(
@@ -744,7 +744,7 @@ walker PaginatedQuery {
 
         self.total_count = len(filtered);
 
-        // Paginate
+        # Paginate
         let start = (self.page - 1) * self.page_size;
         let end = start + self.page_size;
         self.results = filtered[start:end];
