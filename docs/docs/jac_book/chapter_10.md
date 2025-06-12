@@ -1,17 +1,19 @@
-### Chapter 10: The Root Node and Persistence
+# Chapter 10: The Root Node and Persistence
 
 One of Jac's most revolutionary features is automatic persistence through the root node. Unlike traditional applications that require explicit database operations, Jac programs naturally persist state between executions. This chapter explores how the root node enables scale-agnostic programming, where the same code works for single-user scripts and multi-user applications.
 
-#### 10.1 Understanding the Root Node
+## 10.1 Understanding the Root Node
 
 ### Global Accessibility via `root` Keyword
 
 The `root` keyword provides global access to a special persistent node that serves as the anchor for your application's data:
 
+<div class="code-block">
+
 ```jac
 def do_something() {
     # root accessible in any function
-    root ++> CustomNode(data = "test") ;
+    root ++> CustomNode(data = "test");
 }
 
 walker Explorer {
@@ -25,7 +27,7 @@ walker Explorer {
 node CustomNode {
     has data: str ;
 
-    can check_root with `root entry {
+    can check_root with root entry {
         # root accessible in node abilities
         print(f"Root from node: {root}");
     }
@@ -44,8 +46,10 @@ with entry {
 }
 
 ```
+</div>
 
 The `root` node is special:
+
 - **Always Available**: No declaration or initialization needed
 - **Globally Accessible**: Available in any context without passing
 - **Type-Safe**: It's a real node with all node capabilities
@@ -54,6 +58,8 @@ The `root` node is special:
 ### Automatic Persistence Model
 
 Everything connected to root persists automatically:
+
+<div class="code-block">
 
 ```jac
 node UserProfile {
@@ -96,10 +102,13 @@ with entry {
     print(f"Login count is now: {profile.login_count}");  # Shows 3
 }
 ```
+</div>
 
 ### Reachability-Based Persistence
 
 Nodes persist based on reachability from root:
+
+<div class="code-block">
 
 ```jac
 node Document {
@@ -138,6 +147,8 @@ with entry {
     print([root --> ]);
 }
 ```
+</div>
+
 
 ```mermaid
 graph TD
@@ -161,11 +172,13 @@ graph TD
     style T2 fill:#ffcdd2
 ```
 
-#### 10.2 Building Persistent Applications
+## 10.2 Building Persistent Applications
 
 ### Connecting to Root for Persistence
 
 Here's how to design applications with automatic persistence:
+
+<div class="code-block">
 
 ```jac
 # Application data model
@@ -269,10 +282,13 @@ with entry {
     }
 }
 ```
+</div>
 
 ### Managing Ephemeral vs Persistent State
 
 Not everything should persist. Here's how to manage both:
+
+<div class="code-block">
 
 ```jac
 node PersistentCache {
@@ -358,29 +374,35 @@ node FastStore {
     }
 }
 ```
+</div>
 
 ### Database-Free Data Persistence
 
 Jac eliminates the need for separate databases in many applications:
 
+```python
+Traditional approach requires database setup
+Python with SQLAlchemy:
+from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+engine = create_engine('sqlite:///app.db')
+
+class Task(Base):
+    __tablename__ = 'tasks'
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    completed = Column(Boolean)
+
+Base.metadata.create_all(engine)
+session = Session(engine)
+# ... lots more boilerplate ...
+```
+
+<div class="code-block">
+
 ```jac
-# Traditional approach requires database setup
-# Python with SQLAlchemy:
-# from sqlalchemy import create_engine, Column, String, Integer
-# from sqlalchemy.ext.declarative import declarative_base
-#
-# Base = declarative_base()
-# engine = create_engine('sqlite:///app.db')
-#
-# class Task(Base):
-#     __tablename__ = 'tasks'
-#     id = Column(Integer, primary_key=True)
-#     title = Column(String)
-#     completed = Column(Boolean)
-#
-# Base.metadata.create_all(engine)
-# session = Session(engine)
-# # ... lots more boilerplate ...
 
 # Jac approach - just connect to root!
 node Task {
@@ -508,10 +530,13 @@ with entry {
     spawn manager on root;
 }
 ```
+</div>
 
 ### Advanced Persistence Patterns
 
 #### Versioned Data
+
+<div class="code-block">
 
 ```jac
 node VersionedDocument {
@@ -581,8 +606,11 @@ walker DocumentEditor {
     }
 }
 ```
+</div>
 
 #### Lazy Loading Pattern
+
+<div class="code-block">
 
 ```jac
 node DataContainer {
@@ -636,8 +664,11 @@ walker DataLoader {
     }
 }
 ```
+</div>
 
 #### Garbage Collection Pattern
+
+<div class="code-block">
 
 ```jac
 node CachedItem {
@@ -687,10 +718,13 @@ with entry:cleanup {
     spawn CacheCleanup() on root;
 }
 ```
+</div>
 
 ### Performance Considerations
 
 While persistence is automatic, consider these patterns for optimization:
+
+<div class="code-block">
 
 ```jac
 # Indexing pattern for fast lookups
@@ -763,8 +797,9 @@ walker PaginatedQuery {
     }
 }
 ```
+</div>
 
-### Summary
+## Summary
 
 In this chapter, we've explored Jac's revolutionary persistence model:
 
