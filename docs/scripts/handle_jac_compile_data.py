@@ -4,6 +4,8 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
+import shutil
+import subprocess
 import time
 import zipfile
 
@@ -84,3 +86,42 @@ def create_playground_zip() -> None:
                 zipf.write(file_path, arcname)
 
     print("Zip saved to:", PLAYGROUND_ZIP_PATH)
+
+
+def get_top_contributors() -> str:
+    """Get the top contributors for the jaclang repository."""
+    return subprocess.check_output(["python", "../scripts/top_contributors.py"]).decode(
+        "utf-8"
+    )
+
+
+def copy_example_folder() -> None:
+    """Copy only .jac files from the example folder to the documentation assets, preserving the folder structure."""
+    try:
+        if os.path.exists(EXAMPLE_TARGET_FOLDER):
+            print(
+                f"Destination folder '{EXAMPLE_TARGET_FOLDER}' already exists. Removing it..."
+            )
+            shutil.rmtree(EXAMPLE_TARGET_FOLDER)
+
+        for root, _dirs, files in os.walk(EXAMPLE_SOURCE_FOLDER):
+            rel_path = os.path.relpath(root, EXAMPLE_SOURCE_FOLDER)
+            target_dir = os.path.join(EXAMPLE_TARGET_FOLDER, rel_path)
+            os.makedirs(target_dir, exist_ok=True)
+
+            for file in files:
+                if file.endswith(".jac"):
+                    src_file = os.path.join(root, file)
+                    dst_file = os.path.join(target_dir, file)
+                    shutil.copy2(src_file, dst_file)
+
+        print(
+            f"Copied only .jac files from '{EXAMPLE_SOURCE_FOLDER}' to "
+            f"'{EXAMPLE_TARGET_FOLDER}' preserving folder structure."
+        )
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+
+pre_build_hook()
