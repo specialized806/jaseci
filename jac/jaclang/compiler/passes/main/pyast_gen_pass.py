@@ -125,7 +125,9 @@ class PyastGenPass(UniPass):
         """Ensure typing is imported only once."""
         self._add_preamble_once(
             self.needs_typing.__name__,
-            ast3.Import(names=[self.sync(ast3.alias(name="typing"), jac_node=self.ir_out)]),
+            ast3.Import(
+                names=[self.sync(ast3.alias(name="typing"), jac_node=self.ir_out)]
+            ),
         )
 
     def needs_enum(self) -> None:
