@@ -2814,9 +2814,7 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [self.sync(ast3.Constant(value=float(node.value)))]
 
     def exit_int(self, node: uni.Int) -> None:
-        node.gen.py_ast = [
-            self.sync(ast3.Constant(value=int(node.value, 0)))
-        ]
+        node.gen.py_ast = [self.sync(ast3.Constant(value=int(node.value, 0)))]
 
     def exit_string(self, node: uni.String) -> None:
         node.gen.py_ast = [self.sync(ast3.Constant(value=node.lit_value))]
