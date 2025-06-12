@@ -161,7 +161,7 @@ include_tests = false
 
 #### Environment Setup
 
-#### Development Environment Variables
+##### Development Environment Variables
 
 ```bash
 # .env file
@@ -171,17 +171,15 @@ JAC_USER_CONTEXT=development
 JAC_ENABLE_METRICS=true
 ```
 
-#### Python Virtual Environment (Recommended)
+##### Python Virtual Environment (Recommended)
 
 ```bash
 # Create virtual environment
 python -m venv jac-env
 
 # Activate it
-# On Unix/macOS:
 source jac-env/bin/activate
-# On Windows:
-jac-env\Scripts\activate
+
 
 # Install Jac in the virtual environment
 pip install jaclang
@@ -206,7 +204,7 @@ if __name__ == "__main__":
 ```
 
 #### Jac Version
-
+<div class="code-block">
 ```jac
 # hello.jac
 def greet(name: str) -> str {
@@ -218,18 +216,20 @@ with entry {
     print(message);
 }
 ```
+</div>
+
 
 ##### Key differences:
-1. **Function declaration**: `can` instead of `def`
-2. **Type annotations**: Required in Jac (`name: str`)
-3. **Semicolons**: Required for statements
-4. **Entry point**: `with entry` instead of `if __name__ == "__main__"`
-5. **Curly braces**: Instead of indentation
+1. **Type annotations**: Required in Jac (`name: str`)
+2. **Semicolons**: Required for statements
+3. **Entry point**: `with entry` instead of `if __name__ == "__main__"`
+4. **Curly braces**: Instead of indentation
 
 ### Understanding Entry Blocks
 
 Entry blocks are Jac's way of organizing executable code at the module level:
 
+<div class="code-block">
 ```jac
 # Imports (similar to Python)
 import from datetime { datetime }
@@ -264,21 +264,16 @@ with entry {
         app.display_info();
     }
 }
-
-# Named entry block - alternative entry point
-with entry:cli {
-    print("Running from CLI entry point");
-    # Different initialization for CLI mode
-}
 ```
+</div>
+
 
 ### Your First Object-Spatial Program
-
 Let's create a simple but complete object-spatial program:
 
+<div class="code-block">
 ```jac
 # social_hello.jac
-
 # Define a Person node
 node Person {
     has name: str;
@@ -325,6 +320,7 @@ with entry {
     greeter spawn person1;
 }
 ```
+</div>
 
 #### Running Jac Programs
 
@@ -333,19 +329,14 @@ with entry {
 ```bash
 # Run a Jac file
 jac run hello.jac
-
-# Run with specific entry point
-jac run module_demo.jac:cli
-
-# Run with debugging
-jac run --debug social_hello.jac
+jac run social_hello.jac
 ```
 
 ##### Interactive Mode (REPL)
 
 ```bash
 # Start Jac REPL
-jac shell
+jac
 
 # In the REPL:
 > let x = 42;
@@ -378,54 +369,13 @@ test greet_with_special_characters {
 # Command: jac test test_hello.jac
 ```
 
-#### Debugging Techniques
-
-```jac
-# debug_example.jac
-
-walker DebugWalker {
-    has visited_nodes: list = [];
-
-    can walk with entry {
-        # Debug print statements
-        print(f"[DEBUG] Entering node: {here}");
-        print(f"[DEBUG] Node type: {type(here)}");
-
-        # Inspect node properties
-        ::py::
-        import pprint
-        print("[DEBUG] Node properties:")
-        pprint.pprint(here.__dict__)
-        ::py::
-
-        self.visited_nodes.append(here);
-
-        # Conditional debugging
-        if len(self.visited_nodes) > 10 {
-            print("[WARNING] Visited more than 10 nodes!");
-            disengage;  # Stop walker
-        }
-
-        visit [-->];
-    }
-}
-
-# Enable verbose logging
-with entry {
-    import logging;
-    logging.basicConfig(level=logging.DEBUG);
-
-    # Your code here
-}
-```
-
 ### Building a Complete Example
 
 Let's build a simple todo list application that showcases basic Jac features:
 
+<div class="code-block">
 ```jac
 # todo_app.jac
-
 import from datetime { datetime }
 import json;
 
@@ -440,7 +390,7 @@ node TodoItem {
     has created_at: str;
     has completed: bool = False;
     has due_date: str = "";
-    
+
 }
 
 edge Contains{}
@@ -488,7 +438,7 @@ walker ListTodos {
     }
 
     can display with TodoList exit {
-        print("\n=== Todo List ===");
+        print("=== Todo List ===");
         for (i, item) in enumerate(self.items) {
             status = f"✓" if item["completed"] else f"○";
             due = f" (due: {item['due']})" if item["due"] else "";
@@ -516,18 +466,10 @@ walker CompleteTodo {
 # Main program
 with entry {
     # Create or get existing todo list
-    lists = [root-->(`?TodoItem)];
-
-    if not lists {
-        print("Creating new todo list...");
-        my_list = TodoList(
-            name="My Tasks",
-            created_at=datetime.now().isoformat()
-        );
-    } else {
-        my_list = lists[0];
-        print("Loading existing todo list...");
-    }
+    my_list = TodoList(
+        name="My Tasks",
+        created_at=datetime.now().isoformat()
+    );
 
     # Example: Add some todos
     AddTodo(title="Learn Jac basics", due_date="2024-12-31") spawn my_list;
@@ -537,38 +479,17 @@ with entry {
     # List all todos
     ListTodos(show_completed=True) spawn my_list;
 }
-
-# CLI entry point
-with entry:add {
-    import sys;
-    if len(sys.argv) < 3 {
-        print("Usage: jac run todo_app.jac:add 'Task title' [due_date]");
-        exit(1);
-    }
-
-    title = sys.argv[2];
-    due_date = sys.argv[3] if len(sys.argv) > 3 else "";
-
-    lists = [-->(`?TodoItem)];
-    if lists {
-        AddTodo(title=title, due_date=due_date) spawn lists[0];
-        ListTodos() spawn lists[0];
-    }
-}
 ```
+</div>
 
 #### Running the Todo App
 
 ```bash
 # First run - creates the list
 jac run todo_app.jac
-
-# Add a new todo via CLI
-jac run todo_app.jac:add "Buy groceries" "2024-12-25"
-
-# Run again - todos persist!
-jac run todo_app.jac
 ```
+
+
 
 ### Development Workflow
 
