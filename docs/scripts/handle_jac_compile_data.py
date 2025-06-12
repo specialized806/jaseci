@@ -4,7 +4,6 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
-import shutil
 import time
 import zipfile
 
@@ -16,6 +15,7 @@ PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
 ZIP_FOLDER_NAME = "jaclang"
 UNIIR_NODE_DOC = "docs/internals/uniir_node.md"
 LANG_REF_DOC = "docs/learn/jac_ref.md"
+TOP_CONTRIBUTORS_DOC = "docs/communityhub/top_contributors.md"
 AST_TOOL = AstTool()
 EXAMPLE_SOURCE_FOLDER = "../jac/examples"
 EXAMPLE_TARGET_FOLDER = "docs/assets/examples"
@@ -44,6 +44,12 @@ def pre_build_hook(**kwargs: dict) -> None:
             f.write(AST_TOOL.automate_ref())
     else:
         print(f"File is recent: {LANG_REF_DOC}. Skipping creation.")
+
+    if is_file_older_than_minutes(TOP_CONTRIBUTORS_DOC, 5):
+        with open(TOP_CONTRIBUTORS_DOC, "w") as f:
+            f.write(get_top_contributors())
+    else:
+        print(f"File is recent: {TOP_CONTRIBUTORS_DOC}. Skipping creation.")
 
 
 def is_file_older_than_minutes(file_path: str, minutes: int) -> bool:
@@ -78,32 +84,3 @@ def create_playground_zip() -> None:
                 zipf.write(file_path, arcname)
 
     print("Zip saved to:", PLAYGROUND_ZIP_PATH)
-
-
-def copy_example_folder() -> None:
-    """Copy only .jac files from the example folder to the documentation assets, preserving the folder structure."""
-    try:
-        if os.path.exists(EXAMPLE_TARGET_FOLDER):
-            print(
-                f"Destination folder '{EXAMPLE_TARGET_FOLDER}' already exists. Removing it..."
-            )
-            shutil.rmtree(EXAMPLE_TARGET_FOLDER)
-
-        for root, _dirs, files in os.walk(EXAMPLE_SOURCE_FOLDER):
-            rel_path = os.path.relpath(root, EXAMPLE_SOURCE_FOLDER)
-            target_dir = os.path.join(EXAMPLE_TARGET_FOLDER, rel_path)
-            os.makedirs(target_dir, exist_ok=True)
-
-            for file in files:
-                if file.endswith(".jac"):
-                    src_file = os.path.join(root, file)
-                    dst_file = os.path.join(target_dir, file)
-                    shutil.copy2(src_file, dst_file)
-
-        print(
-            f"Copied only .jac files from '{EXAMPLE_SOURCE_FOLDER}' to "
-            f"'{EXAMPLE_TARGET_FOLDER}' preserving folder structure."
-        )
-
-    except Exception as e:
-        print(f"Error occurred: {e}")

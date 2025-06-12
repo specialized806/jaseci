@@ -849,15 +849,15 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         return None
 
 
-class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode):
+class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstAsyncNode, AstDocNode):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(
         self, decorators: Sequence[Expr] | None, is_async: bool = False
     ) -> None:
         self.decorators = decorators
-        self.is_async = is_async
         CodeBlockStmt.__init__(self)
+        AstAsyncNode.__init__(self, is_async=is_async)
 
 
 class MatchPattern(UniNode):
@@ -4572,17 +4572,21 @@ class String(Literal):
             return eval(self.value)
 
         elif self.value.startswith(("'", '"')):
-            repr_str = self.value.encode().decode("unicode_escape")
-            if (
-                (self.value.startswith('"""') and self.value.endswith('"""'))
-                or (self.value.startswith("'''") and self.value.endswith("'''"))
-            ) and not self.find_parent_of_type(FString):
-                return repr_str[3:-3]
             if (not self.find_parent_of_type(FString)) or (
                 not (self.parent and isinstance(self.parent, FString))
             ):
-                return repr_str[1:-1]
-            return repr_str
+                try:
+                    return ast3.literal_eval(self.value)
+                except (ValueError, SyntaxError):
+                    if (
+                        self.value.startswith('"""') and self.value.endswith('"""')
+                    ) or (self.value.startswith("'''") and self.value.endswith("'''")):
+                        return self.value[3:-3]
+                    return self.value[1:-1]
+            try:
+                return ast3.literal_eval(self.value)
+            except (ValueError, SyntaxError):
+                return self.value
         else:
             return self.value
 
