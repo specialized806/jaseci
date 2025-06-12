@@ -192,10 +192,14 @@ node AppData {
 }
 
 node User {
-    has id: str;
+    has id: str by postinit;
     has email: str;
     has created_at: str;
     has preferences: dict = {};
+
+    def postinit(){
+        self.id = jid(self);
+    }
 }
 
 node Session {
@@ -244,12 +248,12 @@ def create_user(email: str) -> User | None {
 
     # Create persistent user
     user = app ++> User(
-        id=len(existing),
         email=email,
         created_at=datetime.now()
     );
 
     print(f"Created user: {email}");
+    print(f"User jid {user[0].id}");
     return user[0];
 }
 
@@ -387,8 +391,8 @@ node FastStore {
 Jac eliminates the need for separate databases in many applications:
 
 ```python
-Traditional approach requires database setup
-Python with SQLAlchemy:
+# Traditional approach requires database setup
+# Python with SQLAlchemy:
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -409,27 +413,25 @@ session = Session(engine)
 <div class="code-block">
 
 ```jac
-
 import from datetime { datetime }
-import uuid;
 import sys;
 
 # Jac approach - just connect to root!
 node Task {
-    has id: str;
+    has id: str by postinit;
     has title: str;
     has created_at: str;
     has completed: bool = False;
     has completed_at: str|None = None;
+
+    def postinit() {
+        self.id = jid(self);
+    }
 }
 
 node TaskList {
     has name: str;
     has created_at: str;
-}
-
-def generate_id(){
-    return str(uuid.uuid4());
 }
 
 # Complete task management with zero database code
@@ -457,7 +459,6 @@ walker TaskManager {
 
     def add_task(task_list: TaskList) -> None {
         task = task_list ++> Task(
-            id=generate_id(),
             title=self.title,
             created_at=datetime.now()
         );
@@ -728,7 +729,7 @@ walker CacheCleanup {
 }
 
 # Run periodic cleanup
-with entry:cleanup {
+with entry {
     print("Running cache cleanup...");
     root spawn CacheCleanup();
 }
