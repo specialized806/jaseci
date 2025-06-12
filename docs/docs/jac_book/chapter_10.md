@@ -9,21 +9,9 @@ One of Jac's most revolutionary features is automatic persistence through the ro
 The `root` keyword provides global access to a special persistent node that serves as the anchor for your application's data:
 
 ```jac
-# root is available everywhere - no imports needed
-with entry {
-    print(f"Root node: {root}");
-    print(f"Type: {type(root).__name__}");
-
-    # root is always the same node within a user context
-    let id1 = id(root);
-    do_something();
-    let id2 = id(root);
-    assert id1 == id2;  # Always true
-}
-
-can do_something() {
+def do_something() {
     # root accessible in any function
-    root ++> node { has data: str = "test"; };
+    root ++> CustomNode(data = "test") ;
 }
 
 walker Explorer {
@@ -35,11 +23,26 @@ walker Explorer {
 }
 
 node CustomNode {
-    can check_root with entry {
+    has data: str ;
+
+    can check_root with `root entry {
         # root accessible in node abilities
         print(f"Root from node: {root}");
     }
 }
+
+# root is available everywhere - no imports needed
+with entry {
+    print(f"Root node: {root}");
+    print(f"Type: {type(root).__name__}");
+
+    # root is always the same node within a user context
+    id1 = id(root);
+    do_something();
+    id2 = id(root);
+    assert id1 == id2;  # Always true
+}
+
 ```
 
 The `root` node is special:
@@ -53,18 +56,18 @@ The `root` node is special:
 Everything connected to root persists automatically:
 
 ```jac
+node UserProfile {
+    has username: str;
+    has login_count: int;
+}
 # First run - create data
 with entry {
     print("=== First Run - Creating Data ===");
 
     # Data connected to root persists
-    let user_profile = root ++> node UserProfile {
-        has username: str = "alice";
-        has created_at: str = "2024-01-15";
-        has login_count: int = 1;
-    };
+    user_profile = root ++> UserProfile(username = "alice", login_count = 1);
 
-    print(f"Created profile: {user_profile.username}");
+    print(f"Created profile: {user_profile[0].username}");
 }
 
 # Second run - data still exists!
@@ -72,9 +75,9 @@ with entry {
     print("=== Second Run - Data Persists ===");
 
     # Find existing data
-    let profiles = root[-->:UserProfile:];
+    profiles = [root --> (`?UserProfile)];
     if profiles {
-        let profile = profiles[0];
+        profile = profiles[0];
         print(f"Found profile: {profile.username}");
         print(f"Previous logins: {profile.login_count}");
 
@@ -88,7 +91,8 @@ with entry {
 with entry {
     print("=== Third Run - Updates Persist ===");
 
-    let profile = root[-->:UserProfile:][0];
+    profile = [root --> (`?UserProfile)][0];
+    profile.login_count += 1;
     print(f"Login count is now: {profile.login_count}");  # Shows 3
 }
 ```
@@ -101,7 +105,6 @@ Nodes persist based on reachability from root:
 node Document {
     has title: str;
     has content: str;
-    has created: str;
 }
 
 node Tag {
@@ -111,27 +114,28 @@ node Tag {
 
 with entry {
     # Connected to root = persistent
-    let doc1 = root ++> Document(
+    doc1 = root ++> Document(
         title="My First Document",
-        content="This will persist",
-        created=now()
+        content="This will persist"
     );
 
     # Connected to persistent node = also persistent
-    let tag1 = doc1 ++> Tag(name="important");
+    tag1 = doc1[0] ++> Tag(name="important");
 
     # NOT connected to root = temporary
-    let doc2 = Document(
+    doc2 = Document(
         title="Temporary Document",
-        content="This will NOT persist",
-        created=now()
+        content="This will NOT persist"
     );
 
     # Connecting later makes it persistent
     root ++> doc2;  # Now doc2 will persist
+    print([root --> ]);
 
     # Disconnecting makes it non-persistent
-    del root --> doc1;  # doc1 and tag1 no longer persist
+    edge2 = [root -->][1];
+    del edge2;  # doc1 and tag1 no longer persist
+    print([root --> ]);
 }
 ```
 
