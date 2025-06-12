@@ -46,6 +46,12 @@ obj CoreInfo {
 
 }
 
+obj Pricing {
+    has tax_rate: float = 0;
+    has price: float = 0;
+    has discount_rate: float = 0;
+    has final_price: float = 0;
+}
 
 node Item {
     has core_info:CoreInfo;
@@ -54,6 +60,7 @@ node Item {
     has inventory:Inventory;
     has gift_option:Gift;
     has metadata:Metadata;
+    has pricing: Pricing;
 }
 
 walker create_item {
@@ -63,9 +70,12 @@ walker create_item {
     has inventory:Inventory;
     has gift_option:Gift;
     has metadata:Metadata;
+    has tax_rate: float;
 
     can create with `root entry {
-        root ++> Item(self.core_info, self.shipping, self.discount, self.inventory, self.gift_option, self.metadata);
+        final_price = self.core_info.price*(1-self.discount.discount_rate + self.tax_rate);
+        pricing = Pricing(self.tax_rate,self.core_info.price, self.discount.discount_rate,final_price);
+        root ++> Item(self.core_info, self.shipping, self.discount, self.inventory, self.gift_option, self.metadata, pricing);
         print([root -->]);
         report [root -->];
     }
