@@ -15,9 +15,6 @@ pip install jaclang
 # Verify installation
 jac --version
 # Output: Jac 0.7.19 (or current version)
-
-# Install with development tools
-pip install jaclang[dev]
 ```
 
 #### Method 2: From Source
@@ -25,7 +22,7 @@ pip install jaclang[dev]
 ```bash
 # Clone the repository
 git clone https://github.com/jaseci-labs/jaseci.git
-cd jaclang
+cd jaseci/jac
 
 # Install in development mode
 pip install -e .
@@ -183,10 +180,12 @@ if __name__ == "__main__":
 ```
 
 #### Jac Version
+
 <div class="code-block">
+
 ```jac
 # hello.jac
-def greet(name) {
+def greet(name:str) {
     return f"Hello, {name}!";
 }
 
@@ -209,6 +208,7 @@ with entry {
 Entry blocks are Jac's way of organizing executable code at the module level:
 
 <div class="code-block">
+
 ```jac
 # Imports (similar to Python)
 import from datetime { datetime }
@@ -250,6 +250,7 @@ with entry {
 Let's create a simple but complete object-spatial program:
 
 <div class="code-block">
+
 ```jac
 # social_hello.jac
 # Define a Person node
@@ -328,7 +329,7 @@ jac
 #### Testing Your Programs
 
 ```jac
-# test.hello.jac
+# social_hello.test.jac
 
 test greet_function_works_correctly {
     assert greet("Jac") == "Hello, Jac!";
@@ -341,7 +342,7 @@ test greet_with_special_characters {
 }
 
 # Run tests
-# Command: jac test test_hello.jac
+# Command: jac test social_hello.jac
 ```
 
 ### Building a Complete Example
@@ -349,6 +350,7 @@ test greet_with_special_characters {
 Let's build a simple todo list application that showcases basic Jac features:
 
 <div class="code-block">
+
 ```jac
 # todo_app.jac
 import from datetime { datetime }
