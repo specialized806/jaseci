@@ -1777,6 +1777,22 @@ class Ability(
     def is_genai_ability(self) -> bool:
         return isinstance(self.body, FuncCall)
 
+    def get_pos_argc_range(self) -> tuple[int, int]:
+        """Get the range of positional arguments for this ability.
+
+        Returns -1 for maximum number of arguments if there is an unpacked parameter (e.g., *args).
+        """
+        mn, mx = 0, 0
+        if isinstance(self.signature, FuncSignature):
+            for param in self.signature.params:
+                if param.unpack:
+                    if param.unpack == Tok.STAR_MUL:
+                        mx = -1
+                    break
+                mn += 1
+                mx += 1
+        return mn, mx
+
     def py_resolve_name(self) -> str:
         if isinstance(self.name_ref, Name):
             return self.name_ref.value

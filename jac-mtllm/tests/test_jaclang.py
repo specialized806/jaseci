@@ -52,6 +52,11 @@ class JacLanguageTests(TestCase):
         self.assertIn("LLM sentiment: Strongly Positive", stdout_value)
         self.assertIn("LLM translation: Bonjour le monde!", stdout_value)
 
+        # Check function with more args
+        self.assertIn("42\nfoo\n3.14\n[1]", stdout_value)
+        self.assertIn("1;2;3;4;5", stdout_value)
+        self.assertIn('{"foo": "42"}', stdout_value)
+
     def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()

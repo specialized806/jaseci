@@ -236,6 +236,37 @@ class JacMachine:
     # -------------------------------------------------------------------------
 
     @staticmethod
+    def _ability_positional_param(ability: uni.Ability, i: int) -> uni.ParamVar | None:
+        """Return the i-th positional parameter of the ability."""
+        if isinstance(ability.signature, uni.FuncSignature):
+            min_pos_argc, max_pos_argc = ability.get_pos_argc_range()
+            if i < min_pos_argc:
+                return ability.signature.params[i]
+            elif max_pos_argc == -1:
+                return ability.signature.params[min_pos_argc]
+        return None
+
+    @staticmethod
+    def _ability_positional_param_type_tag(
+        ability: uni.Ability, i: int
+    ) -> uni.SubTag[uni.Expr] | None:
+        """Return the type tag of the i-th positional parameter of the ability."""
+        if pos_param := JacMachine._ability_positional_param(ability, i):
+            return pos_param.type_tag
+        return None
+
+    @staticmethod
+    def _ability_param_from_name(
+        ability: uni.Ability, name: str
+    ) -> uni.ParamVar | None:
+        """Return the parameter of the ability with the given name."""
+        if isinstance(ability.signature, uni.FuncSignature):
+            for param in ability.signature.params:
+                if param.name.value == name:
+                    return param
+        return None
+
+    @staticmethod
     @hookimpl
     def gen_llm_call_override(
         _pass: PyastGenPass, node: uni.FuncCall
@@ -265,33 +296,65 @@ class JacMachine:
             model_params, include_info, exclude_info = extract_params(
                 node.body_genai_call
             )
-            inputs = (
-                [
+
+            args, kwargs = _pass.gen_call_args(node)
+
+            if not isinstance(ability.signature, uni.FuncSignature):
+                raise _pass.ice(
+                    "Semantic Error: Expected an ability with a function signature."
+                )
+
+            inputs: list[ast3.Tuple] = []
+            for i, arg in enumerate(args):
+                param = JacMachine._ability_positional_param(ability, i)
+                type_tag: uni.SubTag[uni.Expr] | None = (
+                    JacMachine._ability_positional_param_type_tag(ability, i)
+                )
+                inputs.append(
                     _pass.sync(
                         ast3.Tuple(
                             elts=[
                                 (_pass.sync(ast3.Constant(value=None))),
-                                (
-                                    cast(ast3.expr, param.type_tag.tag.gen.py_ast[0])
-                                    if param.type_tag
+                                (  # Type of the parameter.
+                                    cast(ast3.expr, type_tag.tag.gen.py_ast[0])
+                                    if type_tag
                                     else _pass.sync(ast3.Constant(value="object"))
                                 ),
-                                _pass.sync(ast3.Constant(value=param.name.value)),
-                                (
-                                    cast(ast3.expr, node.params[i].gen.py_ast[0])
-                                    if isinstance(node.params[i], uni.Expr)
-                                    else _pass.sync(ast3.Constant(value=None))
+                                (  # Name of the parameter.
+                                    _pass.sync(ast3.Constant(value=param.name.value))
+                                    if param
+                                    else _pass.sync(ast3.Constant(value="arg"))
                                 ),
+                                arg,  # Value of the parameter.
                             ],
                             ctx=ast3.Load(),
                         )
                     )
-                    for i, param in enumerate(ability.signature.params)
-                ]
-                if isinstance(ability.signature, uni.FuncSignature)
-                and ability.signature.params
-                else []
-            )
+                )
+
+            for kwarg in kwargs:
+                param = JacMachine._ability_param_from_name(ability, kwarg.arg or "")
+                type_tag = param.type_tag if param else None
+                inputs.append(
+                    _pass.sync(
+                        ast3.Tuple(
+                            elts=[
+                                (_pass.sync(ast3.Constant(value=None))),
+                                (  # Type of the parameter.
+                                    cast(ast3.expr, type_tag.tag.gen.py_ast[0])
+                                    if type_tag
+                                    else _pass.sync(ast3.Constant(value="object"))
+                                ),
+                                _pass.sync(
+                                    ast3.Constant(value=kwarg.arg or "")
+                                ),  # Name of the parameter.
+                                kwarg.value,  # Value of the parameter.
+                            ],
+                            ctx=ast3.Load(),
+                        )
+                    )
+                )
+
             outputs = [
                 (_pass.sync(ast3.Constant(value=("")))),
                 (_pass.sync(ast3.Constant(value=(extracted_type)))),
