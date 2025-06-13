@@ -131,7 +131,7 @@ When you need full Python compatibility, use the `class` archetype:
 ```jac
 # Python-style class with explicit self
 class PythonStyleClass {
-    def init(self:self, value: int) {
+    def __init__(self:self, value: int) {
         self.value = value;
         self.history = [];
     }
@@ -170,20 +170,21 @@ obj JacStyleClass {
 
 ```mermaid
 graph TD
-    A[Need a Class?] --> B{Python<br/>Compatibility?}
-    B -->|Yes| C[Use 'class']
-    B -->|No| D{Graph<br/>Structure?}
-    D -->|Yes| E{Type?}
-    D -->|No| F[Use 'obj']
-    E -->|Data Location| G[Use 'node']
-    E -->|Connection| H[Use 'edge']
-    E -->|Mobile Code| I[Use 'walker']
+    A[<b>Need a Class?</b>] --> B{<b>Python<br/>Compatibility?</b>}
+    B -->|Yes| C[<b>Use 'class'</b>]
+    B -->|No| D{<b>Graph<br/>Structure?</b>}
+    D -->|Yes| E{<b>Type?</b>}
+    D -->|No| F[<b>Use 'obj'</b>]
+    E -->|Data Location| G[<b>Use 'node'</b>]
+    E -->|Connection| H[<b>Use 'edge'</b>]
+    E -->|Mobile Code| I[<b>Use 'walker'</b>]
 
-    style C fill:#e3f2fd
-    style F fill:#e8f5e9
-    style G fill:#fff3e0
-    style H fill:#fce4ec
-    style I fill:#f3e5f5
+    %% Updated styles for better readability
+    style C fill:#1565c0,stroke:#0d47a1,color:#fff
+    style F fill:#2e7d32,stroke:#1b5e20,color:#fff
+    style G fill:#ff8f00,stroke:#ef6c00,color:#fff
+    style H fill:#c2185b,stroke:#880e4f,color:#fff
+    style I fill:#6a1b9a,stroke:#4a148c,color:#fff
 ```
 
 ### `postinit` vs Python's `__post_init__`
