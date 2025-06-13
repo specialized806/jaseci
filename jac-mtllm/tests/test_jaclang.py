@@ -34,6 +34,24 @@ class JacLanguageTests(TestCase):
         for summary in summaries:
             self.assertIn(summary, stdout_value)
 
+    def test_llm_call_override(self) -> None:
+        """Test the foo() by llm(); functionality."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("llm_call_override", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        # Check normal function outputs
+        self.assertIn("Normal function call: Howdy Alex", stdout_value)
+        self.assertIn("Normal sentiment: Neutral", stdout_value)
+        self.assertIn("Normal translation: Translation not available", stdout_value)
+
+        # Check LLM override outputs (different from normal functions)
+        self.assertIn("LLM override call: Hello there, Alex!", stdout_value)
+        self.assertIn("LLM sentiment: Strongly Positive", stdout_value)
+        self.assertIn("LLM translation: Bonjour le monde!", stdout_value)
+
     def test_with_llm_function(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
