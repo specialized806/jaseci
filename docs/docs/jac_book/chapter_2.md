@@ -2,7 +2,7 @@
 
 ## 2.1 Installation and Setup
 
-Getting started with Jac is straightforward, especially for Python developers. Jac provides multiple installation methods and integrates well with familiar development tools.
+Getting started with Jac is straightforward, especially for Python developers and integrates well with familiar development tools.
 
 ### Installing Jac Compiler and Runtime
 
@@ -24,7 +24,7 @@ pip install jaclang[dev]
 
 ```bash
 # Clone the repository
-git clone https://github.com/Jaseci-Labs/jaclang.git
+git clone https://github.com/jaseci-labs/jaseci.git
 cd jaclang
 
 # Install in development mode
@@ -32,27 +32,6 @@ pip install -e .
 
 # Run tests to verify
 python -m pytest
-```
-
-#### Method 3: Docker Container
-
-```dockerfile
-# Dockerfile for Jac development
-FROM python:3.10-slim
-
-RUN pip install jaclang
-WORKDIR /app
-
-# Copy your Jac files
-COPY . .
-
-CMD ["jac", "run", "main.jac"]
-```
-
-```bash
-# Build and run
-docker build -t my-jac-app .
-docker run -it my-jac-app
 ```
 
 ### System Requirements
@@ -207,7 +186,7 @@ if __name__ == "__main__":
 <div class="code-block">
 ```jac
 # hello.jac
-def greet(name: str) -> str {
+def greet(name) {
     return f"Hello, {name}!";
 }
 
@@ -237,7 +216,6 @@ import random;
 
 # Global variables must be declared
 glob start_time: str = datetime.now().isoformat();
-let config: dict = {"debug": True};
 
 # Function definitions
 def setup_application() -> bool {
@@ -328,7 +306,6 @@ with entry {
 
 ```bash
 # Run a Jac file
-jac run hello.jac
 jac run social_hello.jac
 ```
 
@@ -339,7 +316,7 @@ jac run social_hello.jac
 jac
 
 # In the REPL:
-> let x = 42;
+> x = 42;
 > print(x * 2);
 84
 > node TestNode { has value: int; }
@@ -351,9 +328,7 @@ jac
 #### Testing Your Programs
 
 ```jac
-# test_hello.jac
-
-import from hello { greet }
+# test.hello.jac
 
 test greet_function_works_correctly {
     assert greet("Jac") == "Hello, Jac!";
