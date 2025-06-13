@@ -113,6 +113,10 @@ obj Configuration {
     # Private fields (access control)
     has :priv secret_key: str = "";
     has :protect internal_state: dict = {};
+
+    def postinit {
+        # config_path and validated are set in postinit
+    }
 }
 
 # The 'by postinit' fields aren't in constructor
@@ -121,7 +125,6 @@ let config = Configuration(
     debug=True,
     settings={"theme": "dark"}
 );
-# config_path and validated are set in postinit
 ```
 
 ### `class` - Traditional Python-Compatible Classes
@@ -193,6 +196,8 @@ The `postinit` method runs after automatic initialization:
 
 ```python
 # Python dataclass post-init
+from dataclasses import dataclass, field
+
 @dataclass
 class PythonExample:
     radius: float
@@ -203,23 +208,27 @@ class PythonExample:
 ```
 
 ```jac
-// Jac postinit - cleaner syntax
+# Jac postinit - cleaner syntax
 obj Circle {
     has radius: float;
     has area: float by postinit;
     has circumference: float by postinit;
     has valid: bool by postinit;
 
-    can postinit {
+    def postinit {
         self.area = 3.14159 * self.radius ** 2;
         self.circumference = 2 * 3.14159 * self.radius;
         self.valid = self.radius > 0;
     }
 }
 
-// Usage
-let c = Circle(radius=5.0);
-print(f"Area: {c.area:.2f}");  // Area: 78.54
+# Usage
+with entry {
+    c = Circle(radius=5.0);
+    print(f"Area: {c.area}");  # Area: 78.53975
+    print(f"Circumference: {c.circumference}");  # Circumference: 31.4159
+    print(f"Valid: {c.valid}");  # Valid: True
+}
 ```
 
 ### Complex Initialization Patterns
@@ -227,25 +236,25 @@ print(f"Area: {c.area:.2f}");  // Area: 78.54
 ```jac
 obj DatabaseConnection {
     has host: str;
-    has port: int = 5432;
     has username: str;
     has password: str;
     has database: str;
+    has port: int = 5432;
 
-    // Runtime computed fields
+    # Runtime computed fields
     has connection_string: str by postinit;
     has connection: any by postinit;
     has connected: bool by postinit;
 
-    can postinit {
-        // Build connection string
+    def postinit {
+        # Build connection string
         self.connection_string =
-            f"postgresql://{self.username}:{self.password}@" +
+            f"postgresql:#{self.username}:{self.password}@" +
             f"{self.host}:{self.port}/{self.database}";
 
-        // Try to connect
+        # Try to connect
         try {
-            import:py psycopg2;
+            import psycopg2;
             self.connection = psycopg2.connect(self.connection_string);
             self.connected = true;
         } except Exception as e {
@@ -255,7 +264,7 @@ obj DatabaseConnection {
         }
     }
 
-    can close {
+    def close {
         if self.connection {
             self.connection.close();
             self.connected = false;
@@ -271,7 +280,7 @@ obj DatabaseConnection {
 Jac allows you to separate interface declarations from their implementations:
 
 ```jac
-// user_interface.jac - Just the interface
+# user_interface.jac - Just the interface
 obj User {
     has id: int;
     has username: str;
@@ -283,7 +292,7 @@ obj User {
     can get_permissions() -> list[str];
 }
 
-// user.impl.jac - The implementation
+# user.impl.jac - The implementation
 impl User {
     can authenticate(password: str) -> bool {
         import:py bcrypt;
@@ -295,12 +304,12 @@ impl User {
     }
 
     can update_profile(data: dict) -> bool {
-        // Validation
+        # Validation
         if "email" in data and not self.validate_email(data["email"]) {
             return false;
         }
 
-        // Update fields
+        # Update fields
         for key, value in data.items() {
             if hasattr(self, key) {
                 setattr(self, key, value);
@@ -310,7 +319,7 @@ impl User {
     }
 
     can get_permissions() -> list[str] {
-        // Load from database or cache
+        # Load from database or cache
         return ["read", "write", "comment"];
     }
 }
@@ -338,21 +347,21 @@ project/
 ### Implementation Separation Example
 
 ```jac
-// shape.jac - Abstract interface
+# shape.jac - Abstract interface
 obj Shape {
     has name: str;
 
-    can area() -> float abs;  // Abstract method
+    can area() -> float abs;  # Abstract method
     can perimeter() -> float abs;
     can describe() -> str;
 }
 
-// circle.jac - Concrete shape
+# circle.jac - Concrete shape
 obj Circle(Shape) {
     has radius: float;
 }
 
-// circle.impl.jac - Implementation
+# circle.impl.jac - Implementation
 impl Circle {
     can area() -> float {
         return 3.14159 * self.radius ** 2;
@@ -367,13 +376,13 @@ impl Circle {
     }
 }
 
-// rectangle.jac
+# rectangle.jac
 obj Rectangle(Shape) {
     has width: float;
     has height: float;
 }
 
-// rectangle.impl.jac
+# rectangle.impl.jac
 impl Rectangle {
     can area() -> float {
         return self.width * self.height;
@@ -397,7 +406,7 @@ impl Rectangle {
 4. **Better Documentation**: Interfaces serve as documentation
 
 ```jac
-// api_service.jac - Interface for external team
+# api_service.jac - Interface for external team
 obj ApiService {
     has base_url: str;
     has auth_token: str;
@@ -407,10 +416,10 @@ obj ApiService {
     can delete_resource(endpoint: str, id: str) -> bool;
 }
 
-// api_service_mock.impl.jac - Mock for testing
+# api_service_mock.impl.jac - Mock for testing
 impl ApiService {
     can fetch_data(endpoint: str) -> dict {
-        // Return mock data for testing
+        # Return mock data for testing
         return {
             "status": "success",
             "data": {"mock": true, "endpoint": endpoint}
@@ -426,11 +435,11 @@ impl ApiService {
     }
 
     can delete_resource(endpoint: str, id: str) -> bool {
-        return true;  // Always successful in tests
+        return true;  # Always successful in tests
     }
 }
 
-// api_service_real.impl.jac - Real implementation
+# api_service_real.impl.jac - Real implementation
 impl ApiService {
     can fetch_data(endpoint: str) -> dict {
         import:py requests;
@@ -447,7 +456,7 @@ impl ApiService {
         }
     }
 
-    // ... real implementations
+    # ... real implementations
 }
 ```
 
@@ -459,19 +468,19 @@ Jac provides explicit access control modifiers:
 
 ```jac
 obj BankAccount {
-    // Public - accessible from anywhere
+    # Public - accessible from anywhere
     has :pub account_number: str;
     has :pub holder_name: str;
 
-    // Protected - accessible within module and subclasses
+    # Protected - accessible within module and subclasses
     has :protect balance: float;
     has :protect transaction_history: list[dict] = [];
 
-    // Private - only accessible within this class
+    # Private - only accessible within this class
     has :priv pin: str;
     has :priv security_questions: dict[str, str] = {};
 
-    // Public methods
+    # Public methods
     can :pub get_balance() -> float {
         return self.balance;
     }
@@ -485,7 +494,7 @@ obj BankAccount {
         return false;
     }
 
-    // Protected method - for subclasses
+    # Protected method - for subclasses
     can :protect log_transaction(type: str, amount: float) {
         self.transaction_history.append({
             "type": type,
@@ -495,7 +504,7 @@ obj BankAccount {
         });
     }
 
-    // Private method - internal only
+    # Private method - internal only
     can :priv validate_pin(pin: str) -> bool {
         return self.pin == pin;
     }
@@ -533,18 +542,18 @@ class PythonBankAccount:
 ```
 
 ```jac
-// Jac - Enforced privacy
+# Jac - Enforced privacy
 obj JacBankAccount {
-    has :pub account_number: str;     // Truly public
-    has :protect balance: float = 0.0;  // Truly protected
-    has :priv pin: str;               // Truly private
+    has :pub account_number: str;     # Truly public
+    has :protect balance: float = 0.0;  # Truly protected
+    has :priv pin: str;               # Truly private
 
-    can :protect internal_method() {  // Enforced protected
-        // ...
+    can :protect internal_method() {  # Enforced protected
+        # ...
     }
 
-    can :priv private_method() {      // Enforced private
-        // ...
+    can :priv private_method() {      # Enforced private
+        # ...
     }
 }
 ```
@@ -576,7 +585,7 @@ obj ElectricVehicle(Vehicle) {
     has :protect battery_health: float = 100.0;
 
     can :pub get_range() -> float {
-        // Can access protected members from parent
+        # Can access protected members from parent
         if self.engine_code.startswith("EV") {
             return self.battery_capacity * self.battery_health / 100;
         }
@@ -584,39 +593,39 @@ obj ElectricVehicle(Vehicle) {
     }
 
     can :protect start_engine() {
-        // Override protected method
+        # Override protected method
         print("Initializing electric motor...");
-        super.start_engine();  // Call parent's protected method
+        super.start_engine();  # Call parent's protected method
     }
 
-    // Cannot access parent's private members!
-    // can test() {
-    //     print(self.vin);  // Error: Cannot access private member
-    // }
+    # Cannot access parent's private members!
+    # can test() {
+    #     print(self.vin);  # Error: Cannot access private member
+    # }
 }
 ```
 
 ### Module-Level Access Control
 
 ```jac
-// utilities.jac
+# utilities.jac
 
-// Public function - exported
+# Public function - exported
 can :pub calculate_tax(amount: float, rate: float) -> float {
     return amount * rate;
 }
 
-// Protected function - module and submodules only
+# Protected function - module and submodules only
 can :protect validate_rate(rate: float) -> bool {
     return 0.0 <= rate <= 1.0;
 }
 
-// Private function - this file only
+# Private function - this file only
 can :priv round_to_cents(amount: float) -> float {
     return round(amount, 2);
 }
 
-// Public class
+# Public class
 obj :pub TaxCalculator {
     has :priv rates: dict[str, float];
 
@@ -628,7 +637,7 @@ obj :pub TaxCalculator {
     }
 }
 
-// Private class - not exported
+# Private class - not exported
 obj :priv InternalCache {
     has data: dict = {};
 }
@@ -637,43 +646,43 @@ obj :priv InternalCache {
 ### Advanced OOP Patterns
 
 ```jac
-// Abstract base with template method pattern
+# Abstract base with template method pattern
 obj DataProcessor {
     can :pub process(data: list) -> list {
-        // Template method - defines algorithm structure
+        # Template method - defines algorithm structure
         validated = self.validate(data);
         transformed = self.transform(validated);
         return self.finalize(transformed);
     }
 
-    // Abstract methods for subclasses
+    # Abstract methods for subclasses
     can :protect validate(data: list) -> list abs;
     can :protect transform(data: list) -> list abs;
 
-    // Hook method with default implementation
+    # Hook method with default implementation
     can :protect finalize(data: list) -> list {
-        return data;  // Default: no finalization
+        return data;  # Default: no finalization
     }
 }
 
-// Concrete implementation
+# Concrete implementation
 obj CsvProcessor(DataProcessor) {
     has :priv delimiter: str = ",";
 
     can :protect validate(data: list) -> list {
-        // Remove empty rows
+        # Remove empty rows
         return [row for row in data if row.strip()];
     }
 
     can :protect transform(data: list) -> list {
-        // Parse CSV rows
+        # Parse CSV rows
         import:py csv;
         reader = csv.reader(data, delimiter=self.delimiter);
         return list(reader);
     }
 
     can :protect finalize(data: list) -> list {
-        // Convert to dictionaries using first row as headers
+        # Convert to dictionaries using first row as headers
         if not data { return []; }
 
         headers = data[0];
@@ -688,7 +697,7 @@ obj CsvProcessor(DataProcessor) {
 ### Composition over Inheritance
 
 ```jac
-// Component interfaces
+# Component interfaces
 obj Flyable {
     can fly() -> str abs;
 }
@@ -701,7 +710,7 @@ obj Walkable {
     can walk() -> str abs;
 }
 
-// Concrete components
+# Concrete components
 obj FlyingComponent(Flyable) {
     has :priv wing_span: float;
 
@@ -718,7 +727,7 @@ obj SwimmingComponent(Swimmable) {
     }
 }
 
-// Composition-based design
+# Composition-based design
 obj Duck {
     has :priv flying: Flyable;
     has :priv swimming: Swimmable;
@@ -740,26 +749,26 @@ with entry {
         swimming=SwimmingComponent(swim_speed=5.0)
     );
 
-    print(donald.fly());   // Donald: Flying with 0.5m wingspan
-    print(donald.swim());  // Donald: Swimming at 5.0 km/h
+    print(donald.fly());   # Donald: Flying with 0.5m wingspan
+    print(donald.swim());  # Donald: Swimming at 5.0 km/h
 }
 ```
 
 ### Design Patterns in Jac
 
 ```jac
-// Singleton pattern with access control
+# Singleton pattern with access control
 obj :pub Database {
     has :priv static instance: Database? = None;
     has :priv connection: any;
 
-    // Private constructor
+    # Private constructor
     can :priv init(connection_string: str) {
         import:py psycopg2;
         self.connection = psycopg2.connect(connection_string);
     }
 
-    // Public factory method
+    # Public factory method
     can :pub static get_instance() -> Database {
         if Database.instance is None {
             Database.instance = Database._create_instance();
@@ -772,7 +781,7 @@ obj :pub Database {
     }
 }
 
-// Observer pattern
+# Observer pattern
 obj :pub Subject {
     has :priv observers: list[Observer] = [];
 
@@ -800,11 +809,11 @@ obj :pub Observer {
 
 1. **Use `obj` by Default**: Unless you need Python compatibility
    ```jac
-   obj User {  // Preferred
+   obj User {  # Preferred
        has name: str;
    }
 
-   class User {  // Only for Python interop
+   class User {  # Only for Python interop
        def __init__(self, name: str) {
            self.name = name;
        }
@@ -813,13 +822,13 @@ obj :pub Observer {
 
 2. **Leverage Automatic Constructors**: Don't write boilerplate
    ```jac
-   // Good
+   # Good
    obj Point {
        has x: float;
        has y: float;
    }
 
-   // Unnecessary
+   # Unnecessary
    obj Point {
        has x: float;
        has y: float;
@@ -834,23 +843,23 @@ obj :pub Observer {
 3. **Use Access Control Meaningfully**: Don't make everything public
    ```jac
    obj Service {
-       has :pub api_key: str;      // Public: part of interface
-       has :protect cache: dict;    // Protected: for extensions
-       has :priv secrets: dict;     // Private: implementation detail
+       has :pub api_key: str;      # Public: part of interface
+       has :protect cache: dict;    # Protected: for extensions
+       has :priv secrets: dict;     # Private: implementation detail
    }
    ```
 
 4. **Separate Interface from Implementation**: For large classes
    ```jac
-   // Good for large projects
-   // user.jac - just interface
-   // user.impl.jac - implementation
-   // user.test.jac - tests
+   # Good for large projects
+   # user.jac - just interface
+   # user.impl.jac - implementation
+   # user.test.jac - tests
    ```
 
 5. **Prefer Composition for Flexibility**: Especially for cross-cutting concerns
    ```jac
-   // Instead of deep inheritance
+   # Instead of deep inheritance
    obj LoggingMixin {
        can log(message: str) {
            print(f"[{timestamp_now()}] {message}");
