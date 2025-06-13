@@ -19,26 +19,31 @@ def calculate_grade(score: float) -> str:  # Optional
 
 In Jac, type annotations are mandatory and enforced at compile time:
 
+<div class="code-block">
+
 ```jac
 # Function parameters and returns MUST have types
 def calculate_grade(score: float) -> str {
     return "A" if score >= 90.0 else "B";
 }
 
-# This would cause a compile error:
-# let mystery = "something";  # Error: missing type annotation
-
 with entry{
     # Jac - types are required and enforced
     name: str = "Alice";    # Explicit type required
-    let age: int = 30;          # Must specify type
-    let score: float = 95.5;    # Type checking enforced
+    age: int = 30;          # Must specify type
+    score: float = 95.5;    # Type checking enforced
+
+    # This would cause a compile error:
+    # mystery = "something";  # Error: missing type annotation
 }
 
 ```
+</div>
 
 ### Benefits of Mandatory Types
+
 <div class="code-block">
+
 ```jac
 # Type safety prevents runtime errors
 obj Student {
@@ -85,6 +90,7 @@ def increment():
 ```
 
 <div class="code-block">
+
 ```jac
 glob counter: int = 0;  # Explicitly global variable
 
@@ -111,7 +117,9 @@ with entry {
 
 
 ### Working with Collection Types
+
 <div class="code-block">
+
 ```jac
 with entry{
     # Lists with explicit typing
@@ -121,7 +129,7 @@ with entry{
 
     # Dictionaries with key-value types
     scores: dict[str, int] = {"Alice": 95, "Bob": 87};
-    config: dict[str, any] = {"debug": true, "port": 8080};
+    config: dict[str, any] = {"debug": True, "port": 8080};
 
     # Sets with element types
     unique_ids: set[int] = {101, 102, 103};
@@ -138,6 +146,7 @@ with entry{
 Sometimes you need dynamic typing. Jac provides `any` as an escape hatch:
 
 <div class="code-block">
+
 ```jac
 with entry{
     # Using 'any' for flexible types
@@ -181,6 +190,7 @@ else:
 ```
 
 <div class="code-block">
+
 ```jac
 with entry{
     temperature = 35;  # Temperature in Celsius
@@ -203,6 +213,7 @@ with entry{
 Jac provides multiple for loop syntaxes, including a unique `for-to-by` construct:
 
 <div class="code-block">
+
 ```jac
 with entry{
     # Traditional for-in loop (like Python)
@@ -240,6 +251,7 @@ with entry{
 
 Jac includes the familiar pattern matching from similar Python 3.10+':
 <div class="code-block">
+
 ```jac
 # Basic pattern matching
 def describe_number(n: int) -> str {
@@ -337,31 +349,35 @@ while (line := file.readline()):
 if (n := len(items)) > 10:
     print(f"Large list with {n} items")
 ```
+<div class="code-block">
 
 ```jac
-# Jac walrus operator - same syntax, similar usage
-while (line := file.readline()) {
-    process(line);
-}
+with entry {
+    # Jac walrus operator - same syntax, similar usage
+    while (line := file.readline()) {
+        process(line);
+    }
 
-if (n := len(items)) > 10 {
-    print(f"Large list with {n} items");
-}
+    if (n := len(items)) > 10 {
+        print(f"Large list with {n} items");
+    }
 
-# Useful in comprehensions
-let results: list[int] = [
-    y for x in data
-    if (y := expensive_computation(x)) > threshold
-];
+    # Useful in comprehensions
+    results: list[int] = [
+        y for x in data
+        if (y := expensive_computation(x)) > threshold
+    ];
 
-# In match statements
-match get_user() {
-    case user if (role := user.get_role()) == "admin":
-        grant_admin_access(role);
-    case _:
-        grant_basic_access();
+    # In match statements
+    match get_user() {
+        case user if (role := user.get_role()) == "admin":
+            grant_admin_access(role);
+        case _:
+            grant_basic_access();
+    }
 }
 ```
+</div>
 
 ### Control Flow Comparison
 
@@ -441,17 +457,20 @@ Jac uses the same `def` as Python for function definitions:
 def calculate_area(radius: float) -> float:
     return 3.14159 * radius ** 2
 ```
+<div class="code-block">
 
 ```jac
 # Jac function
 def calculate_area(radius: float) -> float {
     return 3.14159 * radius ** 2;
 }
-
-# Functions are first-class objects
-let area_calculator: func = calculate_area;
-let result: float = area_calculator(5.0);
+with entry {
+    # Functions are first-class objects
+    area_calculator: func = calculate_area;
+    result: float = area_calculator(5.0);
+}
 ```
+</div>
 
 ### Type Safety and Return Types
 
@@ -505,6 +524,7 @@ add = lambda x, y: x + y
 ```
 
 <div class="code-block">
+
 ```jac
 with entry {
     # Jac lambdas - types required
@@ -532,7 +552,9 @@ with entry {
 ### Function Decorators and Metadata
 
 Jac supports Python-style decorators with enhanced integration:
+
 <div class="code-block">
+
 ```jac
 import from functools { lru_cache }
 
@@ -560,7 +582,7 @@ def timing_decorator(func: callable) -> callable {
 
 @timing_decorator
 def slow_operation(n: int) -> int {
-    let result: int = 0;
+    result: int = 0;
     for i in range(n) {
         result += i ** 2;
     }
@@ -589,6 +611,7 @@ with entry {
 Jac supports asynchronous programming similar to Python:
 
 <div class="code-block">
+
 ```jac
 import asyncio;
 
@@ -617,6 +640,7 @@ with entry {
 Jac provides clear method resolution with the `super` keyword:
 
 <div class="code-block">
+
 ```jac
 obj Animal {
     has name: str;
@@ -631,7 +655,7 @@ obj Dog(Animal) {
 
     def speak() -> str {
         # Call parent method
-        let base_sound = super.speak();
+        base_sound = super.speak();
         return f"{base_sound}: Woof!";
     }
 
@@ -650,11 +674,11 @@ obj GuideDog(Dog) {
 }
 
 with entry {
-    let my_dog = Dog(name="Buddy", breed="Golden Retriever");
+    my_dog = Dog(name="Buddy", breed="Golden Retriever");
     print(my_dog.speak());  # Buddy makes a sound: Woof!
     my_dog.fetch();
 
-    let guide_dog = GuideDog(name="Max", breed="Labrador", handler="Alice");
+    guide_dog = GuideDog(name="Max", breed="Labrador", handler="Alice");
     print(guide_dog.speak());  # Max makes a sound (Guide dog for Alice): Woof!
     guide_dog.fetch();
 }
@@ -670,6 +694,7 @@ with entry {
 5. **Document Complex Logic**: Use docstrings for non-obvious behavior
 
 <div class="code-block">
+
 ```jac
 # Well-structured function example
 def calculate_discount(
@@ -683,7 +708,7 @@ def calculate_discount(
     }
 
     # Base discount by customer type
-    let base_discount: float = 0.0;
+    base_discount: float = 0.0;
 
 
     match customer_type {
@@ -692,7 +717,7 @@ def calculate_discount(
     };
 
     # Quantity bonus
-    let quantity_bonus: float = 0.0;
+    quantity_bonus: float = 0.0;
     match quantity {
         case n if n >= 100: quantity_bonus = 0.10;
         case n if n >= 50: quantity_bonus = 0.05;
@@ -700,17 +725,17 @@ def calculate_discount(
     };
 
     # Calculate total discount
-    let total_rate = min(base_discount + quantity_bonus, 0.25);
+    total_rate = min(base_discount + quantity_bonus, 0.25);
     return price * total_rate;
 }
 
 with entry {
     # Example usage
-    let price = 200.0;
-    let customer_type = "premium";
-    let quantity = 75;
+    price = 200.0;
+    customer_type = "premium";
+    quantity = 75;
 
-    let discount = calculate_discount(price, customer_type, quantity);
+    discount = calculate_discount(price, customer_type, quantity);
     print(f"Discount for {customer_type} customer buying {quantity} items at ${price} each: ${discount}");
 }
 ```
