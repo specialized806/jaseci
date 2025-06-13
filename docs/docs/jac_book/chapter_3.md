@@ -315,7 +315,7 @@ with entry {
 ```
 </div>
 
-### Walrus Operator (`:=`) 
+### Walrus Operator (`:=`)
 
 Both Python and Jac support the walrus operator for assignment expressions:
 
@@ -560,13 +560,13 @@ def slow_operation(n: int) -> int {
 
 with entry {
     print("=== Decorators Example ===");
-    
+
     # Using the cached Fibonacci function
     for i in range(10){
         print(f"Fibonacci({i}) = {fibonacci(i)}");
     }
-        
-    
+
+
     # Using the slow operation with timing decorator
     result = slow_operation(1000000);
     print(f"Result of slow operation: {result}");
@@ -674,8 +674,8 @@ def calculate_discount(
 
     # Base discount by customer type
     let base_discount: float = 0.0;
-    
-    
+
+
     match customer_type {
         case "premium": base_discount = 0.15;
         case "regular": base_discount = 0.05;
