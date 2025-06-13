@@ -139,23 +139,27 @@ with entry {
 
 ```jac
 # Dictionary creation and manipulation
-let user_scores: dict[str, int] = {
+glob user_scores: dict[str, int] = {
     "Alice": 95,
     "Bob": 87,
     "Charlie": 92
 };
 
 # Safe access patterns
-let alice_score: int = user_scores.get("Alice", 0);  # Default value
-let david_score: int = user_scores.get("David", 0);  # Returns 0
+glob alice_score: int = user_scores.get("Alice", 0);
+glob david_score: int = user_scores.get("David", 0);
 
 # Dictionary comprehensions
-let squared_scores: dict[str, int] = {
-    name: score * score for name, score in user_scores.items()
-};
+glob squared_scores: dict[str, int] = {};
+
+with entry {
+    for (name, score) in user_scores.items() {
+        squared_scores[name] = score * score;
+    }
+}
 
 # Nested dictionaries
-let user_profiles: dict[str, dict[str, any]] = {
+glob user_profiles: dict[str, dict[str, any]] = {
     "alice": {
         "email": "alice@example.com",
         "age": 30,
@@ -169,10 +173,9 @@ let user_profiles: dict[str, dict[str, any]] = {
 };
 
 # Merging dictionaries
-let defaults: dict[str, any] = {"status": "active", "role": "user"};
-let user_data: dict[str, any] = {"name": "Alice", "role": "admin"};
-let merged: dict[str, any] = {**defaults, **user_data};
-# {"status": "active", "role": "admin", "name": "Alice"}
+glob defaults: dict[str, any] = {"status": "active", "role": "user"};
+glob user_data: dict[str, any] = {"name": "Alice", "role": "admin"};
+glob merged: dict[str, any] = {**defaults, **user_data};
 ```
 
 ### Sets for Unique Collections
@@ -241,138 +244,99 @@ walker UpdateNodes {
 }
 ```
 
-### Keyword Tuples - Jac's Unique Feature
-
-One of Jac's most innovative features is keyword tuples, which combine the immutability of tuples with the clarity of named fields:
-
-```jac
-# Traditional positional tuple (like Python)
-let point_2d: tuple = (3, 4);
-let x: int = point_2d[0];  # Access by index
-
-# Keyword tuple - Jac's innovation!
-let point_named: tuple = (x=3, y=4);
-let x_coord: int = point_named.x;  # Access by name!
-let y_coord: int = point_named["y"];  # Also works
-
-# Mixed tuples (positional followed by keyword)
-let mixed: tuple = (100, 200, label="origin", visible=true);
-print(mixed[0]);  # 100 (positional)
-print(mixed.label);  # "origin" (keyword)
-
-# Practical example: Database results
-can fetch_user(id: int) -> tuple {
-    # Simulate database fetch
-    return (
-        id=id,
-        name="Alice Smith",
-        email="alice@example.com",
-        created_at="2024-01-15",
-        active=true
-    );
-}
-
-with entry {
-    let user = fetch_user(123);
-    print(f"User: {user.name} ({user.email})");
-    print(f"Active: {user.active}");
-}
-```
-
-### Keyword Tuples in Practice
-
-```jac
-# Function returning multiple named values
-can calculate_stats(data: list[float]) -> tuple {
-    let total = sum(data);
-    let count = len(data);
-    let avg = total / count if count > 0 else 0.0;
-
-    return (
-        mean=avg,
-        sum=total,
-        count=count,
-        min=min(data) if data else 0.0,
-        max=max(data) if data else 0.0
-    );
-}
-
-# Using the results
-let scores: list[float] = [85.5, 92.0, 78.5, 95.0, 88.0];
-let stats = calculate_stats(scores);
-
-print(f"Average: {stats.mean:.2f}");
-print(f"Range: {stats.min} - {stats.max}");
-
-# Keyword tuples in data structures
-let employees: list[tuple] = [
-    (id=1, name="Alice", dept="Engineering", salary=95000),
-    (id=2, name="Bob", dept="Marketing", salary=75000),
-    (id=3, name="Charlie", dept="Engineering", salary=105000)
-];
-
-# Easy filtering and processing
-let engineers = [emp for emp in employees if emp.dept == "Engineering"];
-let high_earners = [emp for emp in employees if emp.salary > 80000];
-let total_salary = sum([emp.salary for emp in employees]);
-```
-
 #### 4.2 Pipe Operators
 
-### Forward Pipe (`|>`) and Backward Pipe (`<|`)
+### Forward Pipe (`|>`)
 
 Pipe operators transform nested function calls into readable pipelines:
 
 ```jac
-# Traditional nested approach (hard to read)
-let result = process(transform(validate(parse(data))));
+# Define the data and functions first
+glob data: str = "hello world";
 
-# With forward pipe (left-to-right flow)
-let result = data
-    |> parse
-    |> validate
-    |> transform
-    |> process;
+def parse(text: str) -> str {
+    return f"parsed({text})";
+}
 
-# Backward pipe (right-to-left flow)
-let result = process
-    <| transform
-    <| validate
-    <| parse
-    <| data;
+def validate(text: str) -> str {
+    return f"validated({text})";
+}
+
+def transform(text: str) -> str {
+    return f"transformed({text})";
+}
+
+def process(text: str) -> str {
+    return f"processed({text})";
+}
+
+with entry {
+    # Traditional nested approach (hard to read)
+    let result1 = process(transform(validate(parse(data))));
+    print("Nested approach:", result1);
+
+    # With forward pipe (left-to-right flow)
+    let result2 = data
+        |> parse
+        |> validate
+        |> transform
+        |> process;
+    print("Forward pipe:", result2);
+}
 ```
 
 ### Real-World Pipeline Examples
 
 ```jac
+import string;
+
 # Data processing pipeline
-can clean_text(text: str) -> str {
+def clean_text(text: str) -> str {
     return text.strip().lower();
 }
 
-can remove_punctuation(text: str) -> str {
-    import:py string;
+def remove_punctuation(text: str) -> str {
     return "".join([c for c in text if c not in string.punctuation]);
 }
 
-can tokenize(text: str) -> list[str] {
+def tokenize(text: str) -> list[str] {
     return text.split();
 }
 
-can remove_stopwords(words: list[str]) -> list[str] {
+def remove_stopwords(words: list[str]) -> list[str] {
     let stopwords = {"the", "a", "an", "and", "or", "but", "in", "on", "at"};
     return [w for w in words if w not in stopwords];
 }
 
-# Using the pipeline
-let raw_text = "  The Quick Brown Fox Jumps Over the Lazy Dog!  ";
-let processed = raw_text
-    |> clean_text
-    |> remove_punctuation
-    |> tokenize
-    |> remove_stopwords;
+walker TextProcessingPipeline {
+    has text: str;
 
-print(processed);  # ["quick", "brown", "fox", "jumps", "over", "lazy", "dog"]
+    can clean_text with entry {
+        self.text = clean_text(self.text);
+        print("After cleaning:", self.text);
+    }
+    can remove_punctuation with entry {
+        self.text = remove_punctuation(self.text);
+        print("After removing punctuation:", self.text);
+    }
+    can tokenize with entry {
+        self.tokens = tokenize(self.text);
+        print("After tokenizing:", self.tokens);
+    }
+    can remove_stopwords with entry {
+        self.tokens = remove_stopwords(self.tokens);
+        print("After removing stopwords:", self.tokens);
+    }
+}
+
+# Using the pipeline
+with entry {
+    raw_text = "  The Quick Brown Fox Jumps Over the Lazy Dog!  ";
+    text_processor = root spawn TextProcessingPipeline(text=raw_text);
+    processed = text_processor.tokens;
+    print("Raw text:", raw_text);
+    print("Processed tokens:", processed);  # ["quick", "brown", "fox", "jumps", "over", "lazy", "dog"]
+}
 ```
 
 ### Atomic Pipes (`:>` and `<:`)
@@ -464,43 +428,6 @@ let results2 = processor
     .sort_by("priority")
     .transform(lambda d: dict -> dict : {**d, "processed": true})
     .get_results();
-```
-
-### Pipes with Keyword Tuples
-
-Keyword tuples work beautifully with pipe operators:
-
-```jac
-# Pipeline returning keyword tuple
-can analyze_text(text: str) -> tuple {
-    let words = text.split();
-    let chars = len(text);
-    let lines = text.count("\n") + 1;
-
-    return (
-        word_count=len(words),
-        char_count=chars,
-        line_count=lines,
-        avg_word_length=chars / len(words) if words else 0
-    );
-}
-
-# Function that accepts keyword tuple
-can format_analysis(stats: tuple) -> str {
-    return f"""
-    Text Analysis:
-    - Words: {stats.word_count}
-    - Characters: {stats.char_count}
-    - Lines: {stats.line_count}
-    - Avg Word Length: {stats.avg_word_length:.1f}
-    """;
-}
-
-# Using pipes to flow data
-let report = read_file("document.txt")
-    |> analyze_text
-    |> format_analysis
-    |> print;
 ```
 
 ### Advanced Pipeline Patterns
