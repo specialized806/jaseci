@@ -98,30 +98,30 @@ with entry {
 
 ```jac
 obj Configuration {
-    // Simple fields
+    # Simple fields
     has version: str;
-    has debug: bool = false;
+    has debug: bool = False;
 
-    // Complex types
+    # Complex types
     has settings: dict[str, any] = {};
     has modules: list[str] = [];
 
-    // Computed fields (set in postinit)
+    # Computed fields (set in postinit)
     has config_path: str by postinit;
     has validated: bool by postinit;
 
-    // Private fields (access control)
+    # Private fields (access control)
     has :priv secret_key: str = "";
     has :protect internal_state: dict = {};
 }
 
-// The 'by postinit' fields aren't in constructor
+# The 'by postinit' fields aren't in constructor
 let config = Configuration(
     version="1.0.0",
-    debug=true,
+    debug=True,
     settings={"theme": "dark"}
 );
-// config_path and validated are set in postinit
+# config_path and validated are set in postinit
 ```
 
 ### `class` - Traditional Python-Compatible Classes
@@ -129,38 +129,38 @@ let config = Configuration(
 When you need full Python compatibility, use the `class` archetype:
 
 ```jac
-// Python-style class with explicit self
+# Python-style class with explicit self
 class PythonStyleClass {
-    def __init__(self, value: int) {
+    def init(self:self, value: int) {
         self.value = value;
         self.history = [];
     }
 
-    def increment(self, amount: int = 1) {
+    def increment(self:self, amount: int = 1) {
         self.value += amount;
         self.history.append(("increment", amount));
     }
 
-    def get_value(self) -> int {
+    def get_value(self:self) -> int {
         return self.value;
     }
 
-    def __str__(self) -> str {
+    def __str__(self:self) -> str {
         return f"PythonStyleClass(value={self.value})";
     }
 }
 
-// Compare with obj style
+# Compare with obj style
 obj JacStyleClass {
     has value: int;
     has history: list[tuple] = [];
 
-    can increment(amount: int = 1) {
+    def increment(amount: int = 1) {
         self.value += amount;
         self.history.append(("increment", amount));
     }
 
-    can get_value() -> int {
+    def get_value() -> int {
         return self.value;
     }
 }
