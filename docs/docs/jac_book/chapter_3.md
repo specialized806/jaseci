@@ -20,11 +20,6 @@ def calculate_grade(score: float) -> str:  # Optional
 In Jac, type annotations are mandatory and enforced at compile time:
 
 ```jac
-# Jac - types are required and enforced
-let name: str = "Alice";    # Explicit type required
-let age: int = 30;          # Must specify type
-let score: float = 95.5;    # Type checking enforced
-
 # Function parameters and returns MUST have types
 def calculate_grade(score: float) -> str {
     return "A" if score >= 90.0 else "B";
@@ -32,6 +27,14 @@ def calculate_grade(score: float) -> str {
 
 # This would cause a compile error:
 # let mystery = "something";  # Error: missing type annotation
+
+with entry{
+    # Jac - types are required and enforced
+    name: str = "Alice";    # Explicit type required
+    let age: int = 30;          # Must specify type
+    let score: float = 95.5;    # Type checking enforced
+}
+
 ```
 
 ### Benefits of Mandatory Types
@@ -63,6 +66,7 @@ with entry {
     student.add_grade(95.0);     # Correct
 
     avg: float = student.get_average();  # Type-safe assignment
+    print(f"{student.name}'s average grade: {avg}");  # Should print "Bob's average grade: 95.0"
 }
 ```
 </div>
@@ -125,7 +129,6 @@ with entry{
 
     # Tuples - both positional and keyword (Jac special!)
     point: tuple = (3, 4);                    # Positional
-    person: tuple = (name="Alice", age=30);  # Keyword tuple!
 }
 ```
 </div>
@@ -139,8 +142,13 @@ Sometimes you need dynamic typing. Jac provides `any` as an escape hatch:
 with entry{
     # Using 'any' for flexible types
     flexible: any = 42;
+    print(flexible);
+
     flexible = "now a string";  # Allowed with 'any'
+    print(flexible);
+
     flexible = [1, 2, 3];      # Still allowed
+    print(flexible);
 
 
     # Useful for JSON-like data
@@ -150,6 +158,8 @@ with entry{
         "tags": ["developer", "python"],
         "active": True
     };
+    print(json_data);
+
 }
 ```
 </div>
