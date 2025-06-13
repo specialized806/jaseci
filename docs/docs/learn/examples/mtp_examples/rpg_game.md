@@ -1,4 +1,4 @@
-# Code Walkthrough: AI-Powered Game Level Generation
+# <span style="color: orange">Code Walkthrough: AI-Powered Game Level Generation
 
 Welcome to the fascinating world of AI-driven game development! In this walkthrough, we'll explore how Large Language Models (LLMs) can be seamlessly integrated into code to generate dynamic game levels. We'll dive deep into the `by llm` syntax, examine how structured datatypes provide crucial context to AI models, and see how it all comes together in a complete level generation system. The full implementation of the game is available in the [github repo](https://github.com/jaseci-labs/jaseci/tree/main/jac/examples/rpg_game).
 
@@ -9,7 +9,7 @@ Welcome to the fascinating world of AI-driven game development! In this walkthro
   </video>
 </div>
 
-## The Power of `by llm` - Delegating Logic to AI
+## <span style="color: orange">The Power of `by llm` - Delegating Logic to AI
 
 At the heart of this magic are two crucial `by llm` method definitions that delegate complex game logic entirely to the AI:
 
@@ -22,7 +22,7 @@ def create_next_map(level: Level) -> Map by llm();
 
 Let's break these down to understand what's happening under the hood.
 
-### The Level Creation Method
+### <span style="color: orange">The Level Creation Method
 
 ```jac
 def create_next_level (last_levels: list[Level], difficulty: int, level_width: int, level_height: int)
@@ -38,7 +38,7 @@ This method is absolutely brilliant in its simplicity. Notice what we're NOT doi
 
 The LLM processes this information and generates a completely new `Level` object with appropriate attributes for the given difficulty and dimensions.
 
-### The Map Generation Method
+### <span style="color: orange">The Map Generation Method
 
 ```jac
 def create_next_map(level: Level) -> Map by llm();
@@ -51,11 +51,11 @@ This is where the real magic happens. The AI takes a high-level `Level` configur
 - Where to position elements for balanced gameplay
 - How to create a playable and challenging layout
 
-## How Datatypes Become AI Context
+## <span style="color: orange">How Datatypes Become AI Context
 
 The structured datatypes aren't just code organization - they're the secret sauce that makes the AI understand our domain. Let's examine how each datatype provides crucial context:
 
-### Foundation: Position and Spatial Understanding
+### <span style="color: orange">Foundation: Position and Spatial Understanding
 
 ```jac
 obj Position {
@@ -65,7 +65,7 @@ obj Position {
 
 This simple structure teaches the AI about 2D coordinate systems. When the LLM sees `Position`, it immediately understands spatial relationships, boundaries, and movement constraints.
 
-### Building Blocks: Walls and Obstacles
+### <span style="color: orange">Building Blocks: Walls and Obstacles
 
 ```jac
 obj Wall {
@@ -78,7 +78,7 @@ By defining walls with start and end positions, we're teaching the AI about:
 - How walls can form corridors, rooms, and barriers
 - Spatial constraints for player movement
 
-### Game Configuration: The Level Object
+### <span style="color: orange">Game Configuration: The Level Object
 
 ```jac
 obj Level {
@@ -94,7 +94,7 @@ This is where the AI learns about game design principles:
 - **Game Balance**: Number of walls vs. open space, enemy density
 - **Player Experience**: Time pressure and retry mechanics
 
-### The Complete Picture: Map Object
+### <span style="color: orange">The Complete Picture: Map Object
 
 ```jac
 obj Map {
@@ -110,7 +110,7 @@ This structure gives the AI a complete mental model of a game level:
 - **Spatial Distribution**: Lists of positions create patterns and layouts
 - **Game Flow**: Player positioning relative to challenges
 
-## The Level Manager: Orchestrating AI-Driven Generation
+## <span style="color: orange">The Level Manager: Orchestrating AI-Driven Generation
 
 Now let's see how the `LevelManager` brings everything together:
 
@@ -148,7 +148,7 @@ obj LevelManager {
 }
 ```
 
-### The Intelligence Behind the Scenes
+### <span style="color: orange">The Intelligence Behind the Scenes
 
 The `LevelManager` implements several clever design patterns:
 
@@ -157,7 +157,7 @@ The `LevelManager` implements several clever design patterns:
 3. **Two-Phase Generation**: First creates the level concept, then generates the detailed map
 4. **Context Preservation**: Maintains history for the AI to create varied, non-repetitive content
 
-### Converting AI Output to Game Format
+### <span style="color: orange">Converting AI Output to Game Format
 
 Finally, the `get_map` function transforms the AI-generated `Map` object into actual game tiles:
 
@@ -192,7 +192,7 @@ def get_map(map: Map) -> str {
 
 This function demonstrates how structured AI output gets converted into the visual representation that players actually see and interact with.
 
-## The Complete Integration
+## <span style="color: orange">The Complete Integration
 
 The beauty of this system lies in how the LLM understands the entire domain through these datatypes. When `create_next_level` is called, the AI doesn't just generate random numbers - it considers:
 
@@ -208,7 +208,7 @@ When `create_next_map` is called, the AI takes that high-level design and create
 - Player spawn points that feel fair but not trivial
 - Spatial flow that encourages exploration
 
-## Wrapping Up
+## <span style="color: orange">Wrapping Up
 
 This walkthrough demonstrates the incredible power of combining structured datatypes with AI delegation. The `by llm` syntax isn't just about avoiding implementation - it's about leveraging AI's pattern recognition and creative capabilities to solve complex design problems. The datatypes become the vocabulary through which we communicate game design concepts to the AI, resulting in dynamic, engaging, and well-balanced game content.
 
