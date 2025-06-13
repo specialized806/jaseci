@@ -64,31 +64,31 @@ obj Employee {
     has id: int;
     has name: str;
     has department: str;
-    has salary: float = 50000.0;  // Default value
     has start_date: str;
-    has is_active: bool = true;
-    has skills: list[str] = [];  // Mutable default handled correctly!
+    has salary: float = 50000.0;  # Default value
+    has is_active: bool = True;
+    has skills: list[str] = [];  # Mutable default handled correctly!
 }
 
-// Automatic constructor handles all of this:
+# Automatic constructor handles all of this:
 with entry {
-    // All required fields must be provided
+    # All required fields must be provided
     let emp1 = Employee(
         id=101,
         name="Alice Smith",
         department="Engineering",
         start_date="2024-01-15"
     );
-    // salary=50000.0, is_active=true, skills=[] are defaults
+    # salary=50000.0, is_active=True, skills=[] are defaults
 
-    // Can override defaults
+    # Can override defaults
     let emp2 = Employee(
         id=102,
         name="Bob Jones",
         department="Marketing",
         salary=65000.0,
         start_date="2023-06-01",
-        is_active=true,
+        is_active=True,
         skills=["communication", "analysis"]
     );
 }
