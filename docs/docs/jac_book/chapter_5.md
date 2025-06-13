@@ -8,8 +8,11 @@ Jac takes the familiar concepts of object-oriented programming and enhances them
 
 Jac's `obj` archetype combines the best of Python classes and dataclasses with automatic constructor generation:
 
+#### Python - Traditional class
+
+- This Python example shows how you must manually define constructors and string representations for even simple classes.
+
 ```python
-# Python - Traditional class
 class Person:
     def __init__(self, name: str, age: int, email: str = ""):
         self.name = name
@@ -18,8 +21,13 @@ class Person:
 
     def __repr__(self):
         return f"Person(name={self.name}, age={self.age})"
+```
 
-# Python - Dataclass (closer to Jac's obj)
+#### Python - Dataclass (closer to Jac's `obj`)
+
+- Python’s `@dataclass` reduces boilerplate by auto-generating constructors and common methods, though it still lacks deeper architectural semantics and extensibility.
+
+```python
 from dataclasses import dataclass
 
 @dataclass
@@ -29,18 +37,21 @@ class PersonDC:
     email: str = ""
 ```
 
+#### Jac `obj` Archetype
+
+- Jac's `obj` archetype automatically handles constructors, default values, and representations with minimal syntax, offering clean and powerful object definitions.
+
 ```jac
-// Jac - obj archetype (automatic everything!)
 obj Person {
     has name: str;
     has age: int;
     has email: str = "";
 }
 
-// That's it! Constructor, initialization, all automatic
+# That's it! Constructor, initialization, all automatic
 with entry {
     let p = Person(name="Alice", age=30);
-    print(p);  // Automatic string representation
+    print(p);  # Automatic string representation
 }
 ```
 
