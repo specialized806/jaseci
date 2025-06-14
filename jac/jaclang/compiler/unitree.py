@@ -1777,6 +1777,22 @@ class Ability(
     def is_genai_ability(self) -> bool:
         return isinstance(self.body, FuncCall)
 
+    def get_pos_argc_range(self) -> tuple[int, int]:
+        """Get the range of positional arguments for this ability.
+
+        Returns -1 for maximum number of arguments if there is an unpacked parameter (e.g., *args).
+        """
+        mn, mx = 0, 0
+        if isinstance(self.signature, FuncSignature):
+            for param in self.signature.params:
+                if param.unpack:
+                    if param.unpack == Tok.STAR_MUL:
+                        mx = -1
+                    break
+                mn += 1
+                mx += 1
+        return mn, mx
+
     def py_resolve_name(self) -> str:
         if isinstance(self.name_ref, Name):
             return self.name_ref.value
@@ -3653,10 +3669,12 @@ class FuncCall(Expr):
         params: Sequence[Expr | KWPair] | None,
         genai_call: Optional[FuncCall],
         kid: Sequence[UniNode],
+        body_genai_call: Optional[FuncCall] = None,
     ) -> None:
         self.target = target
         self.params = list(params) if params else []
         self.genai_call = genai_call
+        self.body_genai_call = body_genai_call
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
@@ -4572,17 +4590,21 @@ class String(Literal):
             return eval(self.value)
 
         elif self.value.startswith(("'", '"')):
-            repr_str = self.value.encode().decode("unicode_escape")
-            if (
-                (self.value.startswith('"""') and self.value.endswith('"""'))
-                or (self.value.startswith("'''") and self.value.endswith("'''"))
-            ) and not self.find_parent_of_type(FString):
-                return repr_str[3:-3]
             if (not self.find_parent_of_type(FString)) or (
                 not (self.parent and isinstance(self.parent, FString))
             ):
-                return repr_str[1:-1]
-            return repr_str
+                try:
+                    return ast3.literal_eval(self.value)
+                except (ValueError, SyntaxError):
+                    if (
+                        self.value.startswith('"""') and self.value.endswith('"""')
+                    ) or (self.value.startswith("'''") and self.value.endswith("'''")):
+                        return self.value[3:-3]
+                    return self.value[1:-1]
+            try:
+                return ast3.literal_eval(self.value)
+            except (ValueError, SyntaxError):
+                return self.value
         else:
             return self.value
 
