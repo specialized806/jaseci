@@ -10,9 +10,10 @@ The CFG provides a foundation for data flow analysis, optimization, and understa
 The pass also includes functionality to coalesce basic blocks and generate visual representations of the CFG.
 """
 
+from typing import Sequence
+
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import UniPass
-from typing import Sequence
 
 
 class CFGBuildPass(UniPass):
@@ -74,7 +75,7 @@ class CFGBuildPass(UniPass):
         if hasattr(node, "body") and isinstance(node.body, Sequence):
             for bbs in node.body:
                 if isinstance(bbs, uni.UniCFGNode):
-                    sequence.append(bbs.unparse())
+                    sequence.append(bbs)
             if sequence:
                 return sequence
             else:
@@ -85,20 +86,19 @@ class CFGBuildPass(UniPass):
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter BasicBlockStmt nodes."""
         if isinstance(node, uni.UniCFGNode) and not isinstance(node, uni.Semi):
+            # check if the current node is a CodeBlockStmt in a sequence of statements
+            bb_stmts = self.get_code_block_sequence(node.parent)
             if (
                 isinstance(node, uni.CodeBlockStmt)
                 and node.parent
-                and (
-                    not (isinstance(node, uni.ElseIf) or isinstance(node, uni.ElseStmt))
-                )
-                and self.get_code_block_sequence(node.parent)
+                and (not (isinstance(node, (uni.ElseIf, uni.ElseStmt))))
+                and bb_stmts
                 and self.first_exit
             ):
-                bb_stmts = self.get_code_block_sequence(node.parent)
+                # bb_stmts = self.get_code_block_sequence(node.parent)
                 # bb_stmts = [
                 #     bbs for bbs in node.parent.body if isinstance(bbs, uni.UniCFGNode)
                 # ]
-                print(f"Node: {node.unparse()} | BB stmts: {bb_stmts}")
                 if (
                     node.parent
                     and isinstance(node.parent, uni.Archetype)
@@ -116,9 +116,9 @@ class CFGBuildPass(UniPass):
                         parent_bb = self.get_parent_bb_stmt(node)
                         if parent_bb:
                             self.link_bbs(parent_bb, node)
-                elif self.to_connect:
-                    print(f">>>>Node: {node.unparse()}")
-                    print(f"To connect: {self.to_connect}")
+                elif self.to_connect and not isinstance(
+                    node, (uni.ElseIf, uni.ElseStmt)
+                ):
                     to_remove = []
                     for parent in self.to_connect:
                         if isinstance(parent, uni.UniCFGNode):
@@ -133,9 +133,7 @@ class CFGBuildPass(UniPass):
                             self.link_bbs(parent_bb, node)
 
             else:
-                print(f"---------Node: {node.unparse()}")
                 parent_bb = self.get_parent_bb_stmt(node)
-                print(f"Parent BB: {parent_bb}")
                 if parent_bb:
                     self.link_bbs(parent_bb, node)
             if isinstance(node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)):
@@ -187,16 +185,6 @@ class CFGBuildPass(UniPass):
                     parent_bb = self.get_parent_bb_stmt(node)
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
-
-        cfg_pass = CoalesceBBPass(
-            ir_in=self.ir_in,
-            prog=self.prog,
-        )
-
-        dot = cfg_pass.printgraph_cfg()
-
-        with open("cfg_gen.dot", "w") as f:
-            f.write(dot)
 
 
 class CoalesceBBPass(UniPass):
