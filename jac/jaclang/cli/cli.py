@@ -12,7 +12,7 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
+from jaclang.compiler.passes.main import PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import printgraph
 from jaclang.runtimelib.constructs import WalkerArchetype
@@ -221,10 +221,7 @@ def build(filename: str) -> None:
         jac build myprogram.jac --no-typecheck
     """
     if filename.endswith(".jac"):
-        (out := JacProgram()).compile(
-            file_path=filename,
-            mode=CMode.COMPILE,
-        )
+        (out := JacProgram()).compile(file_path=filename)
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
@@ -250,10 +247,7 @@ def check(filename: str, print_errs: bool = True) -> None:
         jac check myprogram.jac --no-print_errs
     """
     if filename.endswith(".jac"):
-        (prog := JacProgram()).compile(
-            file_path=filename,
-            mode=CMode.TYPECHECK,
-        )
+        (prog := JacProgram()).compile(file_path=filename)
 
         errs = len(prog.errors_had)
         warnings = len(prog.warnings_had)
@@ -278,13 +272,9 @@ def lsp() -> None:
     Examples:
         jac lsp
     """
-    from jaclang import JacMachineInterface as _
+    from jaclang.langserve.server import run_lang_server
 
-    run_lang_server_tuple = _.jac_import(
-        "...jaclang.langserve.server", __file__, items={"run_lang_server": None}
-    )
-    run_lang_server = run_lang_server_tuple[0]
-    run_lang_server()  # type: ignore
+    run_lang_server()
 
 
 @cmd_registry.register
