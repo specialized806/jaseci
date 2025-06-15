@@ -9,17 +9,26 @@ Jac's automatic user isolation transforms single-user code into multi-user appli
 In Jac, each user automatically gets their own isolated root node:
 
 ```jac
+import from datetime { datetime }
+
+node UserProfile {
+    has created_at: str;
+    has last_login: str;
+    has preferences: dict = {};
+    has subscription: str = "free";
+}
+
 # This same code works for ANY user
 with entry {
     # 'root' always refers to the current user's root
-    profile = [root -->:UserProfile:];
+    profile = [root -->(`?UserProfile)];
 
     if not profile {
         # First time user
         print("Welcome! Creating your profile...");
         root ++> UserProfile(
-            created_at=now(),
-            last_login=now()
+            created_at=datetime.now(),
+            last_login=datetime.now()
         );
     } else {
         # Returning user
@@ -27,13 +36,6 @@ with entry {
         print(f"Welcome back! Last login: {prof.last_login}");
         prof.last_login = now();
     }
-}
-
-node UserProfile {
-    has created_at: str;
-    has last_login: str;
-    has preferences: dict = {};
-    has subscription: str = "free";
 }
 ```
 
@@ -78,6 +80,15 @@ graph TD
 Jac handles user sessions automatically:
 
 ```jac
+import from datetime { datetime }
+
+node Task {
+    has title: str;
+    has created_at: str;
+    has owner: str;
+    has completed: bool = False;
+}
+
 # No session management code needed!
 walker TodoManager {
     has command: str;
@@ -92,20 +103,20 @@ walker TodoManager {
         }
     }
 
-    can add_task {
+    def add_task {
         # Creates task in current user's space
         task = root ++> Task(
             title=self.task_title,
-            created_at=now(),
+            created_at=datetime.now(),
             owner=get_current_user_id()  # Automatic!
         );
 
         print(f"Task added: {task.title}");
     }
 
-    can list_tasks {
+    def list_tasks {
         # Only sees current user's tasks
-        tasks = [root -->:Task:];
+        tasks = [root -->(`?Task)];
 
         print(f"\nYour tasks ({len(tasks)} total):");
         for task in tasks {
@@ -114,13 +125,6 @@ walker TodoManager {
         }
     }
 }
-
-node Task {
-    has title: str;
-    has completed: bool = false;
-    has created_at: str;
-    has owner: str;
-}
 ```
 
 ### Security Through Topology
@@ -128,29 +132,29 @@ node Task {
 User isolation is enforced at the graph level:
 
 ```jac
+node PrivateData {
+    has content: str;
+    has classification: str = "confidential";
+}
+
 # Attempting cross-user access
 walker SecurityTest {
     has target_user_id: str;
 
     can test_isolation with entry {
         # This will NEVER access another user's data
-        my_data = [root -->:PrivateData:];
+        my_data = [root -->(`?PrivateData)];
         print(f"Found {len(my_data)} private items");
 
         # Even if you somehow got another user's node reference,
         # the runtime prevents cross-user traversal
         try {
             other_root = self.get_other_user_root(self.target_user_id);
-            their_data = other_root[-->:PrivateData:];  # BLOCKED!
+            their_data = [other_root -->(`?PrivateData)];  # BLOCKED!
         } except SecurityError as e {
             print(f"Security: {e}");  # "Cross-user access denied"
         }
     }
-}
-
-node PrivateData {
-    has content: str;
-    has classification: str = "confidential";
 }
 ```
 
@@ -161,6 +165,8 @@ node PrivateData {
 Best practices for organizing user-specific data:
 
 ```jac
+import from datetime { datetime }
+
 # User data hierarchy pattern
 node UserSpace {
     has user_id: str;
@@ -177,9 +183,9 @@ node Settings {
     has theme: str = "light";
     has language: str = "en";
     has notifications: dict = {
-        "email": true,
-        "push": false,
-        "sms": false
+        "email": True,
+        "push": False,
+        "sms": False
     };
 }
 
@@ -190,7 +196,7 @@ walker InitializeUser {
 
     can setup with entry {
         # Check if already initialized
-        existing = [root -->:UserSpace:];
+        existing = [root -->(`?UserSpace)];
         if existing {
             print(f"User {self.user_id} already initialized");
             return;
@@ -199,7 +205,7 @@ walker InitializeUser {
         # Create organized structure
         space = root ++> UserSpace(
             user_id=self.user_id,
-            created_at=now(),
+            created_at=datetime.now(),
             tier=self.tier
         );
 
@@ -213,10 +219,10 @@ walker InitializeUser {
 # Organize user projects
 node Project {
     has name: str;
-    has description: str = "";
     has created_at: str;
     has updated_at: str;
-    has archived: bool = false;
+    has description: str = "";
+    has archived: bool = False;
     has collaborators: list[str] = [];
 }
 
@@ -227,8 +233,8 @@ walker ProjectManager {
 
     can manage with entry {
         # Get user's project container
-        space = [root -->:UserSpace:][0];
-        projects = space[-->:Projects:][0];
+        space = [root -->(`?UserSpace)][0];
+        projects = [space -->(`?Projects)][0];
 
         match self.action {
             case "create": self.create_project(projects);
@@ -238,22 +244,22 @@ walker ProjectManager {
         }
     }
 
-    can create_project(projects: Projects) {
+    def create_project(projects: Projects) {
         project = projects ++> Project(
             name=self.project_name,
             description=self.description,
-            created_at=now(),
-            updated_at=now()
+            created_at=datetime.now(),
+            updated_at=datetime.now()
         );
 
         projects.active_count += 1;
         print(f"Created project: {project.name}");
     }
 
-    can list_projects(projects: Projects) {
-        all_projects = projects[-->:Project:];
-        active = all_projects.filter(lambda p: Project -> bool : not p.archived);
-        archived = all_projects.filter(lambda p: Project -> bool : p.archived);
+    def list_projects(projects: Projects) {
+        all_projects = [projects -->(`?Project)];
+        active = [projects -->(`?Project)](archived == False);
+        archived = [projects -->(`?Project)](archived == True);
 
         print(f"\n=== Your Projects ===");
         print(f"Active ({len(active)}):");
@@ -276,6 +282,8 @@ walker ProjectManager {
 Creating controlled sharing between users:
 
 ```jac
+import from datetime { datetime }
+
 # Shared workspace pattern
 node SharedWorkspace {
     has id: str;
@@ -287,8 +295,8 @@ node SharedWorkspace {
 
 node WorkspaceLink {
     has workspace_id: str;
-    has role: str = "viewer";  # viewer, editor, admin
     has joined_at: str;
+    has role: str = "viewer";  # viewer, editor, admin
 }
 
 edge CanAccess {
@@ -311,13 +319,13 @@ walker WorkspaceManager {
         }
     }
 
-    can create_workspace {
+    def create_workspace {
         # Create in shared space (not under user root)
         workspace = SharedWorkspace(
             id=generate_id(),
             name=self.workspace_name,
             created_by=get_current_user_id(),
-            created_at=now(),
+            created_at=datetime.now(),
             members=[get_current_user_id()]
         );
 
@@ -325,16 +333,16 @@ walker WorkspaceManager {
         root ++> WorkspaceLink(
             workspace_id=workspace.id,
             role="admin",
-            joined_at=now()
+            joined_at=datetime.now()
         );
 
         print(f"Created workspace: {workspace.name} (ID: {workspace.id})");
         report workspace.id;
     }
 
-    can invite_to_workspace {
+    def invite_to_workspace {
         # Check if current user has permission
-        links = [root -->:WorkspaceLink:(?.workspace_id == self.workspace_id):];
+        links = [root -->(`?WorkspaceLink)](?workspace_id == self.workspace_id);
         if not links or links[0].role != "admin" {
             print("Only admins can invite users");
             return;
@@ -345,7 +353,7 @@ walker WorkspaceManager {
             "workspace_id": self.workspace_id,
             "invited_by": get_current_user_id(),
             "role": self.role,
-            "created_at": now()
+            "created_at": datetime.now()
         };
 
         # In real app, this would notify the other user
@@ -353,9 +361,9 @@ walker WorkspaceManager {
         report invitation;
     }
 
-    can access_workspace {
+    def access_workspace {
         # Find workspace link
-        links = [root -->:WorkspaceLink:(?.workspace_id == self.workspace_id):];
+        links = [root -->(`?WorkspaceLink)](?workspace_id == self.workspace_id);
         if not links {
             print("You don't have access to this workspace");
             return;
@@ -375,6 +383,8 @@ walker WorkspaceManager {
 Enabling users to interact while maintaining isolation:
 
 ```jac
+import from datetime { datetime }
+
 # Message passing between users
 node Message {
     has id: str;
@@ -383,11 +393,11 @@ node Message {
     has subject: str;
     has content: str;
     has sent_at: str;
-    has read_at: str? = None;
+    has read_at: str| None = None;
 }
 
-node Inbox;
-node Outbox;
+node Inbox {}
+node Outbox {}
 
 walker MessageSystem {
     has action: str;
@@ -398,10 +408,10 @@ walker MessageSystem {
 
     can setup_messaging with entry {
         # Ensure user has inbox/outbox
-        if not [root -->:Inbox:] {
+        if not [root -->(`?Inbox)] {
             root ++> Inbox();
         }
-        if not [root -->:Outbox:] {
+        if not [root -->(`?Outbox)] {
             root ++> Outbox();
         }
     }
@@ -409,7 +419,7 @@ walker MessageSystem {
     can send_message with entry {
         self.setup_messaging();
 
-        outbox = [root -->:Outbox:][0];
+        outbox = [root -->(`?Outbox)][0];
         from_user = get_current_user_id();
 
         # Create message in sender's outbox
@@ -419,7 +429,7 @@ walker MessageSystem {
             to_user=self.to_user,
             subject=self.subject,
             content=self.content,
-            sent_at=now()
+            sent_at=datetime.now()
         );
 
         # In real system, this would trigger delivery to recipient
@@ -429,7 +439,7 @@ walker MessageSystem {
         print(f"Message sent to {self.to_user}");
     }
 
-    can deliver_message(message: Message) {
+    def deliver_message(message: Message) {
         # This would run in recipient's context
         # Simulating cross-user delivery
         print(f"[System] Delivering message {message.id} to {message.to_user}");
@@ -441,16 +451,16 @@ walker MessageSystem {
     can list_inbox with entry {
         self.setup_messaging();
 
-        inbox = [root -->:Inbox:];
+        inbox = [root -->(`?Outbox)];
         if not inbox {
             print("No inbox found");
             return;
         }
 
-        messages = inbox[0][-->:Message:];
+        messages = [inbox[0] -->(`?Message)];
         print(f"\n=== Inbox ({len(messages)} messages) ===");
 
-        for msg in messages.sorted(key=lambda m: m.sent_at, reverse=true) {
+        for msg in messages.sorted(key=lambda m: str : m.sent_at, reverse=True) {
             status = "📬" if msg.read_at else "📨";
             print(f"{status} From: {msg.from_user}");
             print(f"   Subject: {msg.subject}");
@@ -465,13 +475,15 @@ walker MessageSystem {
 Allowing users to discover each other:
 
 ```jac
+import from datetime { datetime }
+
 # Public profile system
 node PublicProfile {
     has user_id: str;
     has display_name: str;
     has bio: str = "";
     has avatar_url: str = "";
-    has is_public: bool = true;
+    has is_public: bool = True;
     has followers_count: int = 0;
     has following_count: int = 0;
 }
@@ -500,9 +512,9 @@ walker ProfileManager {
         }
     }
 
-    can create_public_profile {
+    def create_public_profile {
         # Check if profile exists
-        existing = [root -->:PublicProfile:];
+        existing = [root -->(`?PublicProfile)];
         if existing {
             print("Profile already exists");
             return;
@@ -520,23 +532,23 @@ walker ProfileManager {
         print(f"Created public profile: {profile.display_name}");
     }
 
-    can follow_user {
+    def follow_user {
         # Get my profile
-        my_profile = [root -->:PublicProfile:][0];
+        my_profile = [root -->(`?PublicProfile)][0];
 
         # In real system, would find target user's profile
         # For demo, we'll simulate
         print(f"Following user: {self.target_user}");
 
         # Create follow relationship
-        my_profile ++>:Follows(since=now()):++> self.target_user;
+        my_profile +>:Follows(since=datetime.now()):+> self.target_user;
         my_profile.following_count += 1;
 
         # Target user's follower count would increase
         # target_profile.followers_count += 1;
     }
 
-    can discover_users {
+    def discover_users {
         # In real system, would search global directory
         print("\n=== Discover Users ===");
         print("Featured profiles:");
@@ -554,6 +566,8 @@ walker ProfileManager {
 Building user-specific activity streams:
 
 ```jac
+import from datetime { datetime }
+
 node Activity {
     has id: str;
     has type: str;  # post, comment, like, follow
@@ -561,7 +575,7 @@ node Activity {
     has actor_name: str;
     has content: dict;
     has created_at: str;
-    has read: bool = false;
+    has read: bool = False;
 }
 
 node ActivityFeed {
@@ -575,8 +589,8 @@ walker ActivityManager {
 
     can manage with entry {
         # Ensure feed exists
-        if not [root -->:ActivityFeed:] {
-            root ++> ActivityFeed(last_checked=now());
+        if not [root -->(`?ActivityFeed)] {
+            root ++> ActivityFeed(last_checked=datetime.now());
         }
 
         match self.action {
@@ -586,8 +600,8 @@ walker ActivityManager {
         }
     }
 
-    can add_activity {
-        feed = [root -->:ActivityFeed:][0];
+    def add_activity {
+        feed = [root -->(`?ActivityFeed)][0];
 
         feed ++> Activity(
             id=generate_id(),
@@ -595,20 +609,20 @@ walker ActivityManager {
             actor_id=get_current_user_id(),
             actor_name="Current User",
             content=self.content,
-            created_at=now()
+            created_at=datetime.now()
         );
 
         print(f"Activity added: {self.activity_type}");
     }
 
-    can view_feed {
-        feed = [root -->:ActivityFeed:][0];
-        activities = feed[-->:Activity:];
+    def view_feed {
+        feed = [root -->(`?ActivityFeed)][0];
+        activities = [feed -->(`?Activity)];
 
         # Sort by time, newest first
         sorted_activities = activities.sorted(
-            key=lambda a: a.created_at,
-            reverse=true
+            key=lambda a: str: a.created_at,
+            reverse=True
         );
 
         print(f"\n=== Activity Feed ===");
@@ -637,7 +651,7 @@ walker ActivityManager {
         }
 
         # Update last checked
-        feed.last_checked = now();
+        feed.last_checked = datetime.now();
     }
 }
 ```
@@ -667,25 +681,23 @@ walker PermissionManager {
     has user_id: str = "";
     has permissions: list[str] = [];
 
-    can check_permission(resource: Resource, permission: str) -> bool {
+    def check_permission(resource: Resource, permission: str) -> bool {
         current_user = get_current_user_id();
 
         # Owner has all permissions
         if resource.owner == current_user {
-            return true;
+            return True;
         }
 
         # Check granted permissions
-        perms = resource[<--:HasPermission:].filter(
-            lambda p: HasPermission -> bool : current_user in p.permissions
-        );
+        perms = [resource <-:HasPermission:current_user in permissions:<-];
 
-        return permission in perms[0].permissions if perms else false;
+        return permission in perms[0].permissions if perms else False;
     }
 
     can grant_permission with entry {
         # Find resource
-        resources = [root -->*:Resource:(?.id == self.resource_id):];
+        resources = [root -->(`?Resource)](?id == self.resource_id);
         if not resources {
             print("Resource not found");
             return;
@@ -700,11 +712,11 @@ walker PermissionManager {
         }
 
         # Grant permission
-        resource ++>:HasPermission(
+        resource +>:HasPermission(
             permissions=self.permissions,
             granted_by=get_current_user_id(),
-            granted_at=now()
-        ):++> self.user_id;
+            granted_at=datetime.now()
+        ):+> self.user_id;
 
         print(f"Granted {self.permissions} to {self.user_id}");
     }
@@ -716,6 +728,7 @@ walker PermissionManager {
 Aggregate analytics while preserving privacy:
 
 ```jac
+import from datetime { datetime }
 # User analytics node
 node UserAnalytics {
     has user_id: str;
@@ -737,7 +750,7 @@ walker AnalyticsTracker {
 
     can track_event with entry {
         # Get or create user analytics
-        analytics = [root -->:UserAnalytics:];
+        analytics = [root -->(`?UserAnalytics)];
         user_analytics = analytics[0] if analytics else root ++> UserAnalytics(
             user_id=get_current_user_id()
         );
@@ -746,7 +759,7 @@ walker AnalyticsTracker {
         event = {
             "type": self.event_type,
             "data": self.event_data,
-            "timestamp": now()
+            "timestamp": datetime.now()
         };
 
         user_analytics.events.append(event);
@@ -773,8 +786,8 @@ walker AnalyticsReporter {
         }
     }
 
-    can user_report {
-        analytics = [root -->:UserAnalytics:];
+    def user_report {
+        analytics = [root -->(`?UserAnalytics)];
         if not analytics {
             print("No analytics data found");
             return;
@@ -785,7 +798,7 @@ walker AnalyticsReporter {
         print(f"Total events: {len(data.events)}");
 
         print("\nEvent breakdown:");
-        for event_type, count in data.summary.items() {
+        for (event_type, count) in data.summary.items() {
             print(f"  {event_type}: {count}");
         }
 
@@ -808,7 +821,7 @@ walker AnalyticsReporter {
 node UserContent {
     has title: str;
     has content: str;
-    has private: bool = true;
+    has private: bool = True;
 }
 
 walker ContentManager {
@@ -840,9 +853,9 @@ edge MemberOf {
     has role: str;
 }
 
-can user_can_access_team(team: Team) -> bool {
+def user_can_access_team(team: Team) -> bool {
     # Check if path exists from user to team
-    return len([root -->*:MemberOf:-->:Team:(? == team):]) > 0;
+    return len([root ->:MemberOf:->(`?Team)](?role == "team")) > 0;
 }
 
 # Bad: Storing permissions in lists
@@ -866,7 +879,7 @@ node ContentRef {
 }
 
 # Users have references to shared content
-can share_content(content: SharedContent, with_user: str, perms: list[str]) {
+def share_content(content: SharedContent, with_user: str, perms: list[str]) {
     # Would create ContentRef in other user's space
     # other_user_root ++> ContentRef(content_id=content.id, permissions=perms);
 }
