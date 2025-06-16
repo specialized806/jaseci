@@ -204,28 +204,46 @@ let constants: frozenset[str] = frozenset(["PI", "E", "PHI"]);
 Jac introduces powerful filter comprehensions with null-safety:
 
 ```jac
-# Standard filter (may fail on null)
-let active_users = [user for user in users if user.is_active];
-
-# Null-safe filter with ? operator
-let active_users_safe = [user for user in users if ?user.is_active];
-
 # Special filter syntax for graph operations
 node User {
     has name: str;
     has age: int;
     has active: bool;
+    has visited: bool = False;  # Default value
+    has timestamp: datetime = now();  # Default to current time
+}
+
+
+# Standard filter (may fail on null)
+# let active_users = [user for user in users if user.is_active];
+
+# # Null-safe filter with ? operator
+# let active_users_safe = [user for user in users if user.is_active];
+
+with entry {
+    root ++> User(name= "Alice", age= 30, active= True);
+    root ++> User(name= "Bob", age= 17, active= False);
+    root ++> User(name= "Charlie", age= 25, active= True);
+    root ++> User(name= "Diana", age= 22, active= False);
+    root ++> User(name= "Eve", age= 19, active= True);
+    root ++> User(name= "Frank", age= 40, active= True);
+    root ++> User(name= "Grace", age= 15, active= False);
+    root ++> User(name= "Hank", age= 35, active= True);
+    root ++> User(name= "Ivy", age= 28, active= False);
+    root ++> User(name= "Jack", age= 20, active= True);
 }
 
 walker FindActiveAdults {
     can search with entry {
         # Filter nodes with special syntax
-        let adults = [-->(?age >= 18)];  # Null-safe property access
-        let active_adults = [-->(?age >= 18, ?active == true)];
-
+        adults = [-->(?age >= 18)];  # Null-safe property access
+        active_adults = [-->(?age >= 18, active == True)];
+        print("Active adults:", active_adults);
         # Type-specific filtering
-        let user_nodes = [-->(`User)];  # Only User nodes
-        let typed_adults = [-->(`User: ?age >= 18)];  # Typed + filtered
+        user_nodes = [-->(`?User)];  # Only User nodes
+        print("User nodes:", user_nodes);
+        typed_adults = [-->(`?User)](?age >= 18);  # Typed + filtered , age >= 18
+        print("Typed adults:", typed_adults);
     }
 }
 
@@ -233,7 +251,7 @@ walker FindActiveAdults {
 walker UpdateNodes {
     can update with entry {
         # Update all connected nodes
-        [-->](=visited: true, =timestamp: now());
+        [-->](=visited: True, =timestamp: now());
 
         # Conditional update
         [-->(?score < 50)](=needs_review: true);
@@ -241,6 +259,11 @@ walker UpdateNodes {
         # Update specific types
         [-->(`User: ?age >= 18)](=adult: true);
     }
+}
+
+
+with entry {
+    root spawn FindActiveAdults();
 }
 ```
 
