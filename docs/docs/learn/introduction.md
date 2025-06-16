@@ -35,7 +35,7 @@ Object-Spatial Programming (OSP) inverts the traditional relationship between da
 
 ### 🎮 Spatial Game Example
 
-**"Imagine your code is a train, and each station is a game stage. Instead of the station pulling the train in (like in OOP), the train visits each station, performs a task, and moves to the next—this is OSP."**
+**"Think of your data as an enemy spy network. In OOP, you'd sit at a desk phoning known contacts. In Jac, you deploy a Secret Agent (a walker) who infiltrates the network, moving from one safehouse to the next to uncover the entire plot on their own."**
 
 This example shows how computation flows spatially rather than centrally:
 
@@ -130,6 +130,9 @@ with entry {
 
 ## Zero to Infinite Scale without any Code Changes
 
+### What is Jac Cloud?
+Jac Cloud is a cloud-native execution environment designed specifically for Jac programs, allowing developers to build, deploy, and scale applications effortlessly. It integrates essential features like persistence, user management, and distributed execution directly into the language, enabling you to focus on business logic without worrying about infrastructure complexity.
+
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
 ```jac
@@ -161,6 +164,29 @@ walker create_post {
     INFO:     Application startup complete.
     INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
     ```
+
+Instantly deploy a Production ready Fast API.
+
+![Fast API Server](jac_cloud_example.jpg)
+
+### Key Features of Jac Cloud
+1. Scale-Agnostic Programming
+Write Once, Run Anywhere: Jac Cloud enables you to write your application code once and run it seamlessly on your local machine or scale it to millions of users in the cloud—without any code changes.
+
+Automatic Scaling: You can increase the number of Jac Cloud service replicas to handle higher loads. The platform manages all the complexities of scaling, so you don’t have to.
+
+2. Instant API Generation
+No Manual Endpoint Definition: Jac Cloud automatically transforms your Jac walkers into RESTful API endpoints. You don’t need to manually define API routes or handlers—your business logic is instantly accessible as web services.
+
+Supports REST and WebSockets: Applications can expose RESTful APIs, WebSocket services, and scheduled tasks with minimal configuration.
+
+3. Integrated Persistence and User Management
+Built-in Data Persistence: Data storage is handled automatically, whether you’re running locally or in the cloud. There’s no need for manual database setup or migrations.
+
+User Authentication and Authorization: Jac Cloud includes token-based authentication and role-based access control, making it easy to build secure, multi-user applications.
+
+4. Cloud-Native Abstractions
+First-Class Support for Modern Patterns: Concepts like nodes, walkers, and graphs are deeply integrated, making it straightforward to model complex data and workflows that scale
 
 
 This simple social media post system runs locally or scales infinitely in the cloud with no code changes.
