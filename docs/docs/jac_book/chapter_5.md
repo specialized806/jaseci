@@ -287,7 +287,7 @@ obj User {
     has email: str;
     has created_at: str;
 
-    has password_hash: str = "$2b$12$eIXyN/N5DwQ7IayzF6GlEu9s3WdQNmACn.wtMf7pWfd.9D6Mg4hCu";  
+    has password_hash: str = "$2b$12$eIXyN/N5DwQ7IayzF6GlEu9s3WdQNmACn.wtMf7pWfd.9D6Mg4hCu";
 
     def authenticate(password: str) -> bool;
     def update_profile(data: dict) -> bool;
