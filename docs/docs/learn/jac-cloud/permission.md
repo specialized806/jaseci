@@ -164,13 +164,13 @@ walker check_access {
     has viewer_id: str;
 
     can check with post entry {
-        owner = [<--];
+        owner = [post<--][0];
 
         # Check if viewer is friends with owner
-        is_friend = false;
-        for friend in owner[-->] {
+        is_friend = False;
+        for friend in [owner -->] {
             if friend.id == self.viewer_id {
-                is_friend = true;
+                is_friend = True;
                 break;
             }
         }
