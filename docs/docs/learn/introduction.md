@@ -130,7 +130,9 @@ with entry {
 
 ## Zero to Infinite Scale without any Code Changes
 
-### What is Jac Cloud?
+### Instantly deploy a Production ready Fast API server with no code changes !!!
+
+### What is Jac Cloud? 
 Jac Cloud is a cloud-native execution environment designed specifically for Jac programs, allowing developers to build, deploy, and scale applications effortlessly. It integrates essential features like persistence, user management, and distributed execution directly into the language, enabling you to focus on business logic without worrying about infrastructure complexity.
 
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
@@ -165,9 +167,7 @@ walker create_post {
     INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
     ```
 
-Instantly deploy a Production ready Fast API.
-
-![Fast API Server](jac_cloud_example.jpg)
+![Fast API Server](../assets/jac_cloud_example.jpg)
 
 ### Key Features of Jac Cloud
 1. Scale-Agnostic Programming
