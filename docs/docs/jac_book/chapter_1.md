@@ -60,16 +60,16 @@ edge Friendship {}
 walker FindFriendsOfFriends {
     has person: User;
     has friends_of_friends: set = set();
-    has friends: list = [];
+    has ignores: list = [];
 
 
     can traverse with User entry {
         if here == self.person {
-            self.friends = [->:Friendship:->];
-            self.friends.append(here);
+            self.ignores = [->:Friendship:->];
+            self.ignores.append(here);
         }
 
-        if here not in self.friends{
+        if here not in self.ignores {
             self.friends_of_friends.add(here);
         }
         else{
