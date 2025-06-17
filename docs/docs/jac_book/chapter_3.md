@@ -11,15 +11,18 @@ In Jac, every variable must have a type annotation:
 <div class="code-block">
 
 ```jac
-# Basic type annotations (mandatory)
-name: str = "Alice";
-age: int = 25;
-height: float = 5.7;
-is_student: bool = True;
+with entry {
+    # Basic type annotations (mandatory)
+    name: str = "Alice";
+    age: int = 25;
+    height: float = 5.7;
+    is_student: bool = True;
 
-# Type inference (type can be inferred from value)
-score = 95.5;  # Inferred as float
-count = 42;    # Inferred as int
+    # Type inference (type can be inferred from value)
+    score = 95.5;  # Inferred as float
+    count = 42;    # Inferred as int
+    print(score);
+}
 ```
 </div>
 
@@ -35,10 +38,12 @@ glob version: float = 1.0;
 glob debug_mode: bool = False;
 
 def get_app_info() -> str {
+    :g: app_name, version;
     return f"{app_name} v{version}";
 }
 
 with entry {
+    :g: debug_mode;
     print(get_app_info());
     if debug_mode {
         print("Debug mode is enabled");
@@ -53,47 +58,25 @@ with entry {
 <div class="code-block">
 
 ```jac
-# Numeric types
-whole_number: int = 42;
-decimal_number: float = 3.14;
-scientific: float = 1.23e-4;
+with entry {
+    # Numeric types
+    whole_number: int = 42;
+    decimal_number: float = 3.14;
+    scientific: float = 1.23e-4;
 
-# Text type
-message: str = "Hello, Jac!";
-multiline: str = """This is a
-multiline string
-in Jac""";
+    # Text type
+    message: str = "Hello, Jac!";
+    multiline: str = """This is a
+    multiline string
+    in Jac""";
 
-# Boolean type
-is_active: bool = True;
-is_complete: bool = False;
+    # Boolean type
+    is_active: bool = True;
+    is_complete: bool = False;
 
-# None type
-empty_value: None = None;
-```
-</div>
-
-### Optional Types
-
-Use `?` for nullable types:
-
-<div class="code-block">
-
-```jac
-# Optional types (can be None)
-maybe_name: str? = None;
-optional_age: int? = 25;
-
-def process_user(name: str?, age: int?) -> str {
-    if name is None {
-        return "Anonymous user";
-    }
-
-    user_info = f"User: {name}";
-    if age is not None {
-        user_info += f", Age: {age}";
-    }
-    return user_info;
+    # None type
+    empty_value: None = None;
+    print(scientific);
 }
 ```
 </div>
@@ -124,6 +107,12 @@ def check_grade(score: int) -> str {
 # Ternary operator
 def get_status(age: int) -> str {
     return "Adult" if age >= 18 else "Minor";
+}
+
+with entry {
+    (myscore, myage) = (73, 23);
+    print(f"Result is {check_grade(myscore)}");
+    print(f"I am {get_status(myage)}");
 }
 ```
 </div>
@@ -156,6 +145,12 @@ def countdown(start: int) -> None {
     }
     print("Blast off!");
 }
+
+with entry {
+    process_names(["John", "Emily", "Emma"]);
+    print_numbers(3);
+    countdown(2);
+}
 ```
 </div>
 
@@ -185,6 +180,10 @@ def describe_value(value: any) -> str {
         case _:
             return f"Unknown type: {type(value)}";
     }
+}
+
+with entry {
+    print(describe_value(5));
 }
 ```
 </div>
