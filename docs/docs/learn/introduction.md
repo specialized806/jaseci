@@ -116,10 +116,10 @@ with entry {
 }
 ```
 
-!!! info "How To Run" 
-    1. Install the MTLLM plugin by `pip install mtllm[google]` 
-    2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey) 
-    3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`). > **Note:** > > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface. 
+!!! info "How To Run"
+    1. Install the MTLLM plugin by `pip install mtllm[google]`
+    2. Get a free Gemini API key: Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+    3. Save your Gemini API as an environment variable (`export GEMINI_API_KEY="xxxxxxxx"`). > **Note:** > > You can use OpenAI, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface.
     4. Copy this code into `example.jac` file and run with `jac run example.jac`
 
 ??? example "Output"
@@ -155,8 +155,8 @@ walker create_post {
 }
 ```
 
-!!! info "How To Run" 
-    1. Install the Jac Cloud by `pip install jac-cloud` 
+!!! info "How To Run"
+    1. Install the Jac Cloud by `pip install jac-cloud`
     2. Copy this code into `example.jac` file and run with `jac serve example.jac`
 
 ??? example "Output"
