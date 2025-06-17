@@ -1,4 +1,4 @@
-# Chapter 5: Code Organization and External Integration
+# Chapter 5: Import System and File Operations
 
 This chapter explores how to structure your Jac programs across multiple files and modules, and how to interact with external systems through file operations. You'll learn to build well-organized, maintainable codebases that can read configuration files, process data, and integrate with external systems.
 
