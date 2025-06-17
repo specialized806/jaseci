@@ -39,7 +39,7 @@ MTLLM provides different levels of intelligence:
 
 Transform any function into an intelligent agent by adding the `by llm` declaration. Instead of writing manual API calls and prompt engineering, simply define the function signature and let MTLLM handle the implementation:
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -59,18 +59,16 @@ Docstrings serve as crucial context for your intelligent functions. MTLLM uses d
 - Desired output structure
 - Specific guidelines or requirements
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
 
-def translate(text: str, target_language: str) -> str by llm {
-    """Translate text to the target language."""
-}
+"""Translate text to the target language."""
+def translate(text: str, target_language: str) -> str by llm;
 
-def analyze_sentiment(review: str) -> tuple[str, float, list[str]] by llm {
-    """Analyze sentiment returning (sentiment, confidence, themes)."""
-}
+"""Analyze sentiment returning (sentiment, confidence, themes)."""
+def analyze_sentiment(review: str) -> tuple[str, float, list[str]] by llm;
 ```
 
 Docstrings provide minimal guidance to help MTLLM understand the function's purpose - keep them concise and focused.
@@ -79,7 +77,7 @@ Docstrings provide minimal guidance to help MTLLM understand the function's purp
 
 Add the `method='Reason'` parameter to enable step-by-step reasoning for complex tasks:
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -105,7 +103,7 @@ with entry {
 
 MTLLM excels at generating structured outputs. Define functions that return complex types:
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -127,7 +125,7 @@ Transform object methods into intelligent components that can reason about their
 
 ### Basic Object Methods
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -151,7 +149,7 @@ with entry {
 
 Create sophisticated multi-agent systems using object methods:
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
@@ -193,12 +191,12 @@ In addition to defining functions and methods with the `by llm()` syntax, Jaclan
 
 You can override any function call by appending `by llm()` to the function call:
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o");
 
-"Greet the user with the given name."
+"""Greet the user with the given name."""
 def greet(name: str) -> str {
     return "Hello " + name;
 }
@@ -231,7 +229,7 @@ In this example:
 
 The ReAct (Reasoning and Acting) method enables true agentic behavior by allowing agents to reason about problems and use external tools to solve them. This is where functions become genuinely agentic - they can autonomously decide what tools they need and how to use them.
 
-```jac
+```jac linenums="1"
 import from mtllm.llms {OpenAI}
 import from datetime {datetime}
 
@@ -242,12 +240,11 @@ obj Person {
     has dob: str;
 }
 
-def calculate_age(person: Person) -> int by llm(method="ReAct", tools=[get_date]) {
-    """Calculate the age of the person where current date can be retrieved by the get_date tool."""
-}
+"""Calculate the age of the person where current date can be retrieved by the get_date tool."""
+def calculate_age(person: Person) -> int by llm(method="ReAct", tools=[get_date]);
 
+"""Get the current date in DD-MM-YYYY format."""
 def get_date() -> str {
-    """Get the current date in DD-MM-YYYY format."""
     return datetime.now().strftime("%d-%m-%Y");
 }
 
@@ -271,14 +268,13 @@ The ReAct method demonstrates genuine agentic behavior because:
 ### 1. Clear Function Signatures
 Define clear, descriptive function signatures with proper types:
 
-```jac
+```jac linenums="1"
 # Good: Clear, specific function signature
+"""Analyze customer feedback for sentiment, rating, and issues."""
 def analyze_customer_feedback(
     feedback: str,
     product_category: str
-) -> tuple[str, int, list[str]] by llm {
-    """Analyze customer feedback for sentiment, rating, and issues."""
-}
+) -> tuple[str, int, list[str]] by llm;
 
 # Less ideal: Vague signature
 def analyze(text: str) -> str by llm;
@@ -287,20 +283,19 @@ def analyze(text: str) -> str by llm;
 ### 2. Use Docstrings for Context
 Provide clear context and instructions through docstrings:
 
-```jac
+```jac linenums="1"
+"""Generate marketing copy for a product targeting a specific audience."""
 def generate_marketing_copy(
     product: str,
     target_audience: str,
     tone: str
-) -> str by llm {
-    """Generate marketing copy for a product targeting a specific audience."""
-}
+) -> str by llm;
 ```
 
 ### 3. Agent Composition Patterns
 Build complex systems by composing simple agents:
 
-```jac
+```jac linenums="1"
 # Data processing pipeline with specialized agents
 def clean_data(raw_data: str) -> str by llm;
 def extract_insights(clean_data: str) -> dict by llm;

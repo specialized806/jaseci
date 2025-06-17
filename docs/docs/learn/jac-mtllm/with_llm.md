@@ -1,4 +1,4 @@
-# Generative AI in Jaclang - MTP
+# GenAI in Jaclang - MTP
 ### Revolutionizing AI-Integrated & Agentic Application Development
 
 <div class="hero-section" markdown>
