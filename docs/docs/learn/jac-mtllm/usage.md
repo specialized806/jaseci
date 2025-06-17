@@ -51,28 +51,6 @@ def summarize(content: str, max_words: int) -> str by llm;
 
 These functions become intelligent agents that can understand natural language inputs and produce contextually appropriate outputs.
 
-### Adding Context with Docstrings
-
-Docstrings serve as crucial context for your intelligent functions. MTLLM uses docstrings to understand:
-- What the function should accomplish
-- Expected input formats and constraints
-- Desired output structure
-- Specific guidelines or requirements
-
-```jac linenums="1"
-import from mtllm.llms {OpenAI}
-
-glob llm = OpenAI(model_name="gpt-4o");
-
-"""Translate text to the target language."""
-def translate(text: str, target_language: str) -> str by llm;
-
-"""Analyze sentiment returning (sentiment, confidence, themes)."""
-def analyze_sentiment(review: str) -> tuple[str, float, list[str]] by llm;
-```
-
-Docstrings provide minimal guidance to help MTLLM understand the function's purpose - keep them concise and focused.
-
 ### Enhanced Functions with Reasoning
 
 Add the `method='Reason'` parameter to enable step-by-step reasoning for complex tasks:
@@ -185,6 +163,92 @@ with entry {
 }
 ```
 
+## Adding Explicit Context for Functions, Methods and Objects
+
+When building AI-integrated applications, providing the right amount of context is crucial for optimal performance. MTLLM offers multiple ways to add context to your functions and objects without over-engineering prompts.
+
+### Adding Context with Docstrings
+
+Docstrings serve as crucial context for your intelligent functions. MTLLM uses docstrings to understand the function's purpose and expected behavior. Keep them concise and focused - they should guide the LLM, not replace its reasoning.
+
+```jac linenums="1"
+import from mtllm.llms {OpenAI}
+
+glob llm = OpenAI(model_name="gpt-4o");
+
+"""Translate text to the target language."""
+def translate(text: str, target_language: str) -> str by llm;
+
+"""Analyze sentiment returning (sentiment, confidence, themes)."""
+def analyze_sentiment(review: str) -> tuple[str, float, list[str]] by llm;
+
+"""Generate a professional email response based on the input message tone."""
+def generate_email_response(message: str, recipient_type: str) -> str by llm;
+```
+
+**Key principles for effective docstrings:**
+- Be specific about the function's purpose
+- Mention return format for complex outputs
+- Avoid detailed instructions - let the LLM reason
+- Keep them under one sentence when possible
+
+### Adding Context with Semantic Strings (Semstrings)
+
+For more complex scenarios where you need to describe object attributes or function parameters without cluttering your code, Jaclang provides semantic strings using the `sem` keyword. This is particularly useful for:
+
+- Describing object attributes with domain-specific meaning
+- Adding context to parameters without verbose docstrings
+- Maintaining clean code while providing rich semantic information
+
+```jac linenums="1"
+obj Person {
+    has name;
+    has dob;
+    has ssn;
+}
+
+sem Person = "Represents the personal record of a person";
+sem Person.name = "Full name of the person";
+sem Person.dob = "Date of Birth";
+sem Person.ssn = "Last four digits of the Social Security Number of a person";
+
+"""Calculate eligibility for various services based on person's data."""
+def check_eligibility(person: Person, service_type: str) -> bool by llm;
+```
+
+### Object Context in Methods
+
+When using object methods with MTLLM, you can include specific object attributes as context using the `incl_info` parameter:
+
+```jac linenums="1"
+obj Customer {
+    has name: str;
+    has purchase_history: list[str];
+    has satisfaction_score: float;
+    has membership_tier: str;
+}
+
+sem Customer = "Customer profile with purchase and satisfaction data";
+sem Customer.satisfaction_score = "Rating from 0.0 to 1.0 based on feedback";
+sem Customer.membership_tier = "bronze, silver, gold, or platinum";
+
+obj Customer {
+    """Generate personalized product recommendations."""
+    def get_recommendations(self, category: str) -> list[str] by llm(incl_info=(self.purchase_history, self.membership_tier));
+
+    """Create a tailored marketing message."""
+    def create_marketing_message(self, promotion_type: str) -> str by llm(incl_info=(self.satisfaction_score, self.membership_tier));
+}
+```
+
+### When to Use Each Approach
+
+- **Docstrings**: Use for function-level context and behavior description
+- **Semstrings**: Use for attribute-level descriptions and domain-specific terminology
+- **incl_info**: Use to selectively include relevant object state in method calls
+
+The `sem` keyword can be used in [separate implementation files](../../jac_book/chapter_5.md#declaring-interfaces-vs-implementations), allowing for cleaner code organization and better maintainability.
+
 ## LLM Function/Method Overriding
 
 In addition to defining functions and methods with the `by llm()` syntax, Jaclang also supports **LLM overriding** of existing functions. This powerful feature allows you to take any regular function and override its behavior with LLM-powered implementation at runtime using the `function_call() by llm()` syntax.
@@ -263,48 +327,4 @@ The ReAct method demonstrates genuine agentic behavior because:
 3. **Adaptive Planning**: Based on tool results, it adjusts its approach
 4. **Goal-Oriented**: It works towards solving the complete problem, not just individual steps
 
-## Best Practices for AI-Integrated Programming
-
-### 1. Clear Function Signatures
-Define clear, descriptive function signatures with proper types:
-
-```jac linenums="1"
-# Good: Clear, specific function signature
-"""Analyze customer feedback for sentiment, rating, and issues."""
-def analyze_customer_feedback(
-    feedback: str,
-    product_category: str
-) -> tuple[str, int, list[str]] by llm;
-
-# Less ideal: Vague signature
-def analyze(text: str) -> str by llm;
-```
-
-### 2. Use Docstrings for Context
-Provide clear context and instructions through docstrings:
-
-```jac linenums="1"
-"""Generate marketing copy for a product targeting a specific audience."""
-def generate_marketing_copy(
-    product: str,
-    target_audience: str,
-    tone: str
-) -> str by llm;
-```
-
-### 3. Agent Composition Patterns
-Build complex systems by composing simple agents:
-
-```jac linenums="1"
-# Data processing pipeline with specialized agents
-def clean_data(raw_data: str) -> str by llm;
-def extract_insights(clean_data: str) -> dict by llm;
-def generate_report(insights: dict) -> str by llm;
-
-def data_analysis_pipeline(raw_data: str) -> str {
-    cleaned = clean_data(raw_data);
-    insights = extract_insights(cleaned);
-    report = generate_report(insights);
-    return report;
-}
-```
+A full tutorial on [building an agentic application is available here.](../examples/mtp_examples/fantasy_trading_game.md)

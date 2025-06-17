@@ -16,9 +16,8 @@ nav:
         - "learn/examples/rag_chatbot/1_setting-up-jac-cloud.md"
         - "learn/examples/rag_chatbot/2_building-a-rag-chatbot.md"
         - "learn/examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
-      - Building Software with AI:
-        - "learn/examples/mtp_examples/rpg_game.md"
-        - "learn/examples/mtp_examples/fantasy_trading_game.md"
+      - RPG game with AI Genarated Maps: "learn/examples/mtp_examples/rpg_game.md"
+      - Agentic Fantasy Trading Game: "learn/examples/mtp_examples/fantasy_trading_game.md"
     - Learn Jac Language:
       - Jac in 2 Minutes: "learn/jac_in_a_flash.md"
       - The Jac Book: "jac_book/index.md"
