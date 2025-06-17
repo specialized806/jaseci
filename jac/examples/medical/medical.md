@@ -144,3 +144,166 @@ class InsuranceProvider:
 What happens if the `Patient` class changes its `update_balance` method name? The `InsuranceProvider` code breaks! What if the `Doctor` wants a different notification? The `Claim` class has to be changed.
 
 ## JAC to the rescue!
+
+This tight coupling is a classic software design problem. When different parts of your system are too dependent on the internal details of other parts, a small change in one place can cause a cascade of failures elsewhere. Our `InsuranceProvider` needs to know the exact method names in `Patient` and `Doctor` to function.
+
+So, how do we fix this? We can decouple the *actions* from the *data*. The data (who a patient is, what a claim costs) can live in a structured, connected way, and the actions (like processing a claim) can be independent agents that walk over this structure.
+
+This is where a graph-based approach using Jac comes in. Instead of objects calling each other's methods directly, we will model our system as a graph and use "walkers" to traverse it.
+
+## Step 1: Modeling Data as a Graph
+
+First, let's get rid of the Python classes and represent everything as **nodes** (the things) and **edges** (the relationships).
+
+In Jac, we define the blueprint for our data like this:
+
+```python
+# A person is a foundational concept
+node Person {
+    has name: str;
+}
+
+# Roles that a Person can have
+node Doctor {
+    has specialty: str;
+    has receivables: int = 0;
+}
+
+node Patient {
+    has balance: int = 0;
+}
+
+# The insurance company
+node Insurance {
+    has name: str;
+    has fraction: float = 0.8; # How much they cover by default
+}
+
+# The claim itself
+node Claim {
+    has cost: int;
+    has status: str = "Processing";
+    has insurance_pays: int = 0;
+}
+```
+
+Think of `nodes` as our nouns. They hold data but don't have complex methods for interacting with other nodes. They just exist.
+
+Next, we define the relationships between them using **edges**:
+
+```python
+# Edges define how nodes are connected
+edge has_role {}
+edge is_treating {}
+edge treated_by {}
+edge in_network_with {}
+edge has_insurance {}
+edge files_claim {}
+edge is_processed_by {}
+```
+
+Edges are the verbs. An edge connects two nodes, creating a meaningful link, like `(Person) --has_role--> (Doctor)`.
+
+## Step 2: Creating an Independent "Processor"
+
+Remember the problematic `process_claim` method inside the `InsuranceProvider` class? It was doing too much and was too tightly coupled.
+
+In Jac, we pull that logic out into a **walker**. A walker is an independent agent that can travel across the graph of nodes and edges to perform actions.
+
+Let's look at the `ClaimProcessing` walker. It's designed to do one job: process a single claim.
+
+```python
+walker ClaimProcessing {
+    has claim: Claim;
+    has fraction: float = 0; # The coverage amount we'll discover
+    has insurance_pays: int = 0;
+
+    # The main logic starts here
+    can traverse with Claim entry {
+        # Find the patient who filed this claim
+        patient = [here <-:files_claim:<-][0];
+
+        # Find that patient's insurance and doctor
+        insurance = [patient ->:has_insurance:->];
+        doctor = [patient->:treated_by:->][0];
+
+        # Check if the doctor is in the insurance network
+        if len(insurance) > 0 {
+            # is_connected is a helper that checks if an edge exists
+            # between two nodes.
+            if is_connected(doctor, in_network_with, insurance[0]) {
+                self.fraction = insurance[0].fraction; # Grab the coverage %
+                here.status = "Approved";
+            }
+        }
+
+        # Calculate payment and update the claim node
+        self.insurance_pays = int(self.claim.cost * self.fraction);
+        here.insurance_pays = self.insurance_pays;
+
+        # Now, visit the patient to update their balance
+        visit [here <-:files_claim:<-];
+    }
+}
+```
+
+Look how clean that is! The walker starts at a `Claim` node. It then "walks" along the graph's edges (`<-:files_claim:<-`, `->:has_insurance:->`) to find the `Patient`, `Insurance`, and `Doctor`. It doesn't need to have a `claim.patient` or `claim.doctor` variable passed to it. It discovers the relationships by traversing the graph.
+
+But what about updating the doctor and patient? The walker handles that too, but in a decoupled way.
+
+```python
+walker ClaimProcessing {
+    # ... (previous code) ...
+
+    # If the walker visits a Doctor node, this ability activates
+    can update_doctor with Doctor entry {
+        here.receivables += self.insurance_pays;
+    }
+
+    # If the walker visits a Patient node, this one activates
+    can update_patient with Patient entry {
+        here.balance += self.claim.cost - self.insurance_pays;
+    }
+}
+```
+
+The `visit` statement in the main traversal block (`visit [here <-:files_claim:<-];`) sends the walker over to the `Patient` node that is connected to the claim. When the walker "lands" on that `Patient` node, its `update_patient` ability automatically fires. We could easily add a similar `visit` to the doctor to update their receivables. The core logic in `ClaimProcessing` doesn't know or care *how* the `Patient` or `Doctor` node is updated; it just sends a visitor. The node itself handles the update.
+
+## Step 3: Putting It All Together
+
+So how do we build this graph and kick off the process? The `with entry` block is like our `main` function.
+
+```python
+with entry {
+    # 1. Create the nodes
+    blue_cross = spawn Insurance(name="Blue Cross Health Insurance");
+
+    dr_house_person = spawn Person(name="Gregory House");
+    dr_house_role = spawn Doctor(specialty="Internal Medicine");
+
+    john_smith_person = spawn Person(name="John Smith");
+    john_smith_role = spawn Patient();
+
+    # 2. Create the edges (relationships)
+    dr_house_person +>:has_role:+> dr_house_role; # Dr. House IS A Doctor
+    john_smith_person +>:has_role:+> john_smith_role; # John Smith IS A Patient
+
+    dr_house_person +>:in_network_with:+> blue_cross; # Link doctor to provider
+    john_smith_person +>:has_insurance:+> blue_cross; # Link patient to provider
+    john_smith_person +>:treated_by:+> dr_house_person; # Link patient to doctor
+
+    # 3. A medical event happens: a claim is created
+    claim = spawn Claim(cost=250);
+    john_smith_person +>:files_claim:+> claim; # John files the claim
+
+    # 4. Kick off the walkers!
+    spawn claim with ClaimProcessing(claim=claim);
+    spawn claim with PrintClaim();
+}
+```
+
+And that's it! We've successfully modeled a complex, real-world scenario where information is spread out and multiple parties need to be updated. The key benefits are:
+
+- **Decoupling**: The `ClaimProcessing` walker doesn't need to know the inner workings of `Patient` or `Doctor`. It just visits them.
+- **Clarity**: The model (nodes and edges) is separate from the logic (walkers). The graph clearly describes the state of the world.
+- **Flexibility**: If Brenda comes back and says the `Doctor`'s notification now needs to be an email, we simply modify the `update_doctor` ability in the walker. The `Claim` and `Patient` code remains untouched.
