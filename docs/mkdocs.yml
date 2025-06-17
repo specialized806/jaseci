@@ -42,7 +42,7 @@ nav:
         - "learn/jac-cloud/webhook.md"
       - Operations:
         - "learn/jac-cloud/deployment.md"
-    - Jac AI Programming Guides:
+    - Programming With AI:
         - "learn/jac-mtllm/with_llm.md"
         - Quick Start Guide: "learn/jac-mtllm/quickstart.md"
         - Models: "learn/jac-mtllm/model_declaration.md"
