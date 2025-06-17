@@ -4,7 +4,6 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
-import shutil
 import subprocess
 import time
 import zipfile
