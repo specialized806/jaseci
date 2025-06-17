@@ -118,7 +118,7 @@ walker check_processing {
     can enter with `root entry {
         process = &process_id;
 
-        if process.__jac__.schedule.status == "completed"{
+        if process.__jac__.schedule.status == "COMPLETED"{
             print("Results:", process.results);
         }
         else{

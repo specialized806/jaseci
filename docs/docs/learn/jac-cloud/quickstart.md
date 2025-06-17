@@ -16,8 +16,8 @@ jac serve main.jac --host 0.0.0.0 --port 8080
 
 Once started, your API will be available at:
 
-- **API Endpoint**: `http:#localhost:8000`
-- **Interactive Documentation**: `http:#localhost:8000/docs`
+- **API Endpoint**: `http://localhost:8000`
+- **Interactive Documentation**: `http://localhost:8000/docs`
 
 ## Understanding Walker Endpoints
 
