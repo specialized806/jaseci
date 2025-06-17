@@ -1,5 +1,4 @@
-# <span style="color: orange"> Generative AI in Jaclang - MTP
-## Meaning-Typed Programming (MTP)
+# Generative AI in Jaclang - MTP
 ### Revolutionizing AI-Integrated & Agentic Application Development
 
 <div class="hero-section" markdown>
