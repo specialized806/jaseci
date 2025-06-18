@@ -19,12 +19,12 @@ Jac provides a powerful module system for organizing code across multiple files 
         import sys;
 
         # Import specific functions from Python modules
-        from datetime import datetime;
-        from pathlib import Path;
+        import from datetime  {datetime}
+        import from pathlib {Path}
 
         # Import Jac modules
-        include:jac my_module;
-        include:jac utils.file_helper;
+        # include my_module;
+        # include utils.file_helper;
 
         with entry {
             # Use imported modules
@@ -166,6 +166,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             try {
                 with open(filepath, 'w') as file {
                     file.write(content);
+                }
                 return True;
             } except Exception as e {
                 print(f"Error writing file: {e}");
@@ -260,7 +261,7 @@ Jac provides a powerful module system for organizing code across multiple files 
         # config_reader.jac
         import json;
         import os;
-        from pathlib import Path;
+        import from pathlib { Path }
 
         obj ConfigReader {
             has config_file: str;
@@ -270,6 +271,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             def get_value(key: str, default: any = None) -> any;
             def set_value(key: str, value: any) -> None;
             def save_config() -> bool;
+            def create_default_config() -> None;
         }
 
         impl ConfigReader.load_config() -> bool {
@@ -282,6 +284,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             try {
                 with open(self.config_file, 'r') as file {
                     self.config_data = json.load(file);
+                }
                 print(f"Config loaded from {self.config_file}");
                 return True;
             } except json.JSONDecodeError {
@@ -305,6 +308,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             try {
                 with open(self.config_file, 'w') as file {
                     json.dump(self.config_data, file, indent=2);
+                }
                 print(f"Config saved to {self.config_file}");
                 return True;
             } except Exception as e {
@@ -313,7 +317,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             }
         }
 
-        def create_default_config(self) -> None {
+        impl ConfigReader.create_default_config() -> None {
             self.config_data = {
                 "app_name": "My Jac App",
                 "version": "1.0.0",
@@ -404,7 +408,7 @@ Jac provides a powerful module system for organizing code across multiple files 
         <div class="code-block">
         ```jac
         # app.jac
-        include:jac config_reader;
+        # include config_reader;
         import logging;
 
         obj Application {
@@ -414,6 +418,8 @@ Jac provides a powerful module system for organizing code across multiple files 
             def start() -> None;
             def setup_logging() -> None;
             def get_database_config() -> dict[str, any];
+            def run_debug_mode() -> None;
+            def run_normal_mode() -> None;
         }
 
         impl Application.start() -> None {
@@ -468,12 +474,12 @@ Jac provides a powerful module system for organizing code across multiple files 
             return self.config.get_value("database", default_db);
         }
 
-        def run_debug_mode(self) -> None {
+        impl Application.run_debug_mode() -> None {
             print(">>> Running in DEBUG mode");
             print(f">>> Full config: {self.config.config_data}");
         }
 
-        def run_normal_mode(self) -> None {
+        impl Application.run_normal_mode() -> None {
             print(">>> Running in NORMAL mode");
             print(">>> Application ready");
         }
@@ -554,7 +560,7 @@ Jac provides a powerful module system for organizing code across multiple files 
         <div class="code-block">
         ```jac
         # main.jac
-        include:jac app;
+        include app;
 
         with entry {
             print("=== Configuration Management Demo ===");
