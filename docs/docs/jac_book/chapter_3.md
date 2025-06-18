@@ -451,7 +451,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
                     total += grade;
                 }
                 average = total / len(student_grades);
-                print(f"{student}: Average = {average:.1f}");
+                print(f"{student}: Average = {average}");
             }
         }
 
@@ -469,7 +469,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
             print("Scaled scores (0-100 to 0-4.0 GPA):");
             for score = 60 to score <= 100 by score += 10 {
                 gpa = (score - 60) * 4.0 / 40.0;
-                print(f"Score {score} -> GPA {gpa:.1f}");
+                print(f"Score {score} -> GPA {gpa}");
             }
         }
         ```
@@ -484,7 +484,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
                 for grade in student_grades:
                     total += grade
                 average = total / len(student_grades)
-                print(f"{student}: Average = {average:.1f}")
+                print(f"{student}: Average = {average}")
 
         if __name__ == "__main__":
             class_grades = {
@@ -528,7 +528,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
                     return f"Letter grade received: {input}";
                 case list() if len(input) > 0:
                     avg = sum(input) / len(input);
-                    return f"Average of {len(input)} grades: {avg:.1f}";
+                    return f"Average of {len(input)} grades: {avg}";
                 case _:
                     return "Invalid grade input";
             }
@@ -601,7 +601,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
             # Test safe calculation
             valid_grades = [85, 90, 78];
             gpa = safe_calculate_gpa(valid_grades);
-            print(f"GPA: {gpa:.2f}");
+            print(f"GPA: {gpa}");
 
             # Test error handling
             try {
@@ -717,7 +717,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
             all_averages = gradebook.get_all_averages();
             for (student, avg) in all_averages.items() {
                 letter = "A" if avg >= 90 else "B" if avg >= 80 else "C" if avg >= 70 else "F";
-                print(f"{student}: {avg:.1f} ({letter})");
+                print(f"{student}: {avg} ({letter})");
             }
         }
         ```
