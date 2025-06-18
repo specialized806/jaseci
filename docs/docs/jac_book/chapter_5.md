@@ -1,175 +1,168 @@
-# Chapter 5: Import System and File Operations
+# Chapter 5: Imports System and File Operations
 
-This chapter explores how to structure your Jac programs across multiple files and modules, and how to interact with external systems through file operations. You'll learn to build well-organized, maintainable codebases that can read configuration files, process data, and integrate with external systems.
+Jac provides a powerful module system for organizing code across multiple files and seamless integration with external systems. This chapter demonstrates building a simple configuration management system that showcases import patterns and file operations.
 
-## Module System and Imports
+!!! topic "Module Organization"
+    Well-organized modules make your code maintainable, reusable, and easier to test. Jac's import system supports both local modules and Python libraries.
 
-Jac provides a powerful module system that allows you to organize your code across multiple files and create reusable components.
+## Import Statements and Module Organization
 
-### Basic Import Statements
+### Basic Import Patterns
 
-**Code Example**
-!!! example "Import Examples"
+!!! example "Basic Import Statements"
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "jac/examples/reference/import_include_statements.jac"
-        ```
-        </div>
-    === "Python"
-        ```python
-        --8<-- "jac/examples/reference/import_include_statements.py"
-        ```
+        # Import Python modules
+        import os;
+        import json;
+        import sys;
 
-**Description**
+        # Import specific functions from Python modules
+        from datetime import datetime;
+        from pathlib import Path;
 
---8<-- "jac/examples/reference/import_include_statements.md"
-
-### Implementation Files and Separation
-
-Jac supports implementation separation through `.impl.jac` files, allowing you to separate interface definitions from their implementations.
-
-**Code Example**
-!!! example "Implementation Separation"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        --8<-- "jac/examples/reference/implementations.jac"
-        ```
-        </div>
-    === "Python"
-        ```python
-        --8<-- "jac/examples/reference/implementations.py"
-        ```
-
-
-**Description**
-
---8<-- "jac/examples/reference/implementations.md"
-
-### Multi-Module Calculator Example
-
-Let's build a practical example that demonstrates module organization:
-
-**Code Example**
-!!! example "Multi-Module Calculator"
-    === "calculator/math_ops.jac"
-        <div class="code-block">
-        ```jac
-        # Basic mathematical operations module
-        can add(a: float, b: float) -> float {
-            return a + b;
-        }
-
-        can subtract(a: float, b: float) -> float {
-            return a - b;
-        }
-
-        can multiply(a: float, b: float) -> float {
-            return a * b;
-        }
-
-        can divide(a: float, b: float) -> float {
-            if b == 0 {
-                raise ValueError("Division by zero");
-            }
-            return a / b;
-        }
-        ```
-        </div>
-
-    === "calculator/advanced_ops.jac"
-        <div class="code-block">
-        ```jac
-        # Advanced mathematical operations
-        import:py math;
-
-        can power(base: float, exponent: float) -> float {
-            return math.pow(base, exponent);
-        }
-
-        can square_root(n: float) -> float {
-            if n < 0 {
-                raise ValueError("Cannot calculate square root of negative number");
-            }
-            return math.sqrt(n);
-        }
-
-        can factorial(n: int) -> int {
-            if n < 0 {
-                raise ValueError("Factorial not defined for negative numbers");
-            }
-            if n <= 1 {
-                return 1;
-            }
-            return n * factorial(n - 1);
-        }
-        ```
-        </div>
-
-    === "calculator/main.jac"
-        <div class="code-block">
-
-        ```jac
-        # Main calculator application
-        include:jac calculator.math_ops;
-        include:jac calculator.advanced_ops;
-
-        can run_calculator() {
-            print("=== Multi-Module Calculator ===");
-
-            # Basic operations
-            result1 = add(10, 5);
-            print(f"10 + 5 = {result1}");
-
-            result2 = multiply(4, 3);
-            print(f"4 * 3 = {result2}");
-
-            # Advanced operations
-            result3 = power(2, 8);
-            print(f"2^8 = {result3}");
-
-            result4 = square_root(16);
-            print(f"√16 = {result4}");
-
-            result5 = factorial(5);
-            print(f"5! = {result5}");
-        }
+        # Import Jac modules
+        include:jac my_module;
+        include:jac utils.file_helper;
 
         with entry {
-            run_calculator();
+            # Use imported modules
+            current_time = datetime.now();
+            current_dir = os.getcwd();
+            print(f"Current time: {current_time}");
+            print(f"Current directory: {current_dir}");
         }
         ```
         </div>
+    === "Python"
+        ```python
+        # Import Python modules
+        import os
+        import json
+        import sys
 
-## File Operations and External Systems
+        # Import specific functions
+        from datetime import datetime
+        from pathlib import Path
 
-Working with external files is essential for reading configuration, processing data, and integrating with other systems.
+        # Import local modules
+        import my_module
+        from utils import file_helper
 
-### File I/O Operations
+        if __name__ == "__main__":
+            # Use imported modules
+            current_time = datetime.now()
+            current_dir = os.getcwd()
+            print(f"Current time: {current_time}")
+            print(f"Current directory: {current_dir}")
+        ```
 
-**Code Example**
-!!! example "File Operations"
+### Implementation Separation
+
+!!! topic "Implementation Files"
+    Jac supports separating interface definitions from implementations using `.impl.jac` files, promoting clean architecture and modularity.
+
+!!! example "Interface and Implementation Separation"
+    === "Jac Interface (math_operations.jac)"
+        <div class="code-block">
+        ```jac
+        # Interface definition
+        obj Calculator {
+            has precision: int = 2;
+
+            def add(a: float, b: float) -> float;
+            def subtract(a: float, b: float) -> float;
+            def multiply(a: float, b: float) -> float;
+            def divide(a: float, b: float) -> float;
+        }
+        ```
+        </div>
+    === "Jac Implementation (math_operations.impl.jac)"
+        <div class="code-block">
+        ```jac
+        # Implementation file
+        impl Calculator.add(a: float, b: float) -> float {
+            result = a + b;
+            return round(result, self.precision);
+        }
+
+        impl Calculator.subtract(a: float, b: float) -> float {
+            result = a - b;
+            return round(result, self.precision);
+        }
+
+        impl Calculator.multiply(a: float, b: float) -> float {
+            result = a * b;
+            return round(result, self.precision);
+        }
+
+        impl Calculator.divide(a: float, b: float) -> float {
+            if b == 0.0 {
+                raise ValueError("Division by zero");
+            }
+            result = a / b;
+            return round(result, self.precision);
+        }
+        ```
+        </div>
+    === "Python Equivalent"
+        ```python
+        # Python class definition
+        class Calculator:
+            def __init__(self, precision: int = 2):
+                self.precision = precision
+
+            def add(self, a: float, b: float) -> float:
+                result = a + b
+                return round(result, self.precision)
+
+            def subtract(self, a: float, b: float) -> float:
+                result = a - b
+                return round(result, self.precision)
+
+            def multiply(self, a: float, b: float) -> float:
+                result = a * b
+                return round(result, self.precision)
+
+            def divide(self, a: float, b: float) -> float:
+                if b == 0.0:
+                    raise ValueError("Division by zero")
+                result = a / b
+                return round(result, self.precision)
+        ```
+
+## File Operations and External Integration
+
+!!! topic "File Handling"
+    File operations are essential for configuration management, data processing, and system integration.
+
+### Basic File Operations
+
+!!! example "File Reading and Writing"
     === "Jac"
         <div class="code-block">
         ```jac
-        import:py os;
-        import:py json;
+        import os;
+        import json;
 
-        # Reading text files
-        can read_text_file(filepath: str) -> str {
+        # Read text file safely
+        def read_file(filepath: str) -> str | None {
             try {
                 with open(filepath, 'r') as file {
                     return file.read();
                 }
             } except FileNotFoundError {
-                print(f"File {filepath} not found");
-                return "";
+                print(f"File not found: {filepath}");
+                return None;
+            } except Exception as e {
+                print(f"Error reading file: {e}");
+                return None;
             }
         }
 
-        # Writing text files
-        can write_text_file(filepath: str, content: str) -> bool {
+        # Write text file safely
+        def write_file(filepath: str, content: str) -> bool {
             try {
                 with open(filepath, 'w') as file {
                     file.write(content);
@@ -180,165 +173,354 @@ Working with external files is essential for reading configuration, processing d
             }
         }
 
-        # Reading JSON files
-        can read_json_file(filepath: str) -> dict {
+        # Read JSON file
+        def read_json(filepath: str) -> dict | None {
             try {
                 with open(filepath, 'r') as file {
                     return json.load(file);
+                }
             } except FileNotFoundError {
-                print(f"JSON file {filepath} not found");
-                return {};
+                print(f"JSON file not found: {filepath}");
+                return None;
             } except json.JSONDecodeError {
-                print(f"Invalid JSON in file {filepath}");
-                return {};
+                print(f"Invalid JSON in file: {filepath}");
+                return None;
             }
         }
 
-        # Writing JSON files
-        can write_json_file(filepath: str, data: dict) -> bool {
-            try {
-                with open(filepath, 'w') as file {
-                    json.dump(data, file, indent=2);
-                return True;
-            } except Exception as e {
-                print(f"Error writing JSON file: {e}");
-                return False;
+        with entry {
+            # Test file operations
+            test_content = "Hello from Jac!";
+            if write_file("test.txt", test_content) {
+                content = read_file("test.txt");
+                print(f"File content: {content}");
             }
         }
         ```
         </div>
+    === "Python"
+        ```python
+        import os
+        import json
+        from typing import Optional
 
-### Configuration File Reader Example
+        # Read text file safely
+        def read_file(filepath: str) -> Optional[str]:
+            try:
+                with open(filepath, 'r') as file:
+                    return file.read()
+            except FileNotFoundError:
+                print(f"File not found: {filepath}")
+                return None
+            except Exception as e:
+                print(f"Error reading file: {e}")
+                return None
 
-**Code Example**
-!!! example "Configuration Management System"
-    === "config/config_reader.jac"
+        # Write text file safely
+        def write_file(filepath: str, content: str) -> bool:
+            try:
+                with open(filepath, 'w') as file:
+                    file.write(content)
+                return True
+            except Exception as e:
+                print(f"Error writing file: {e}")
+                return False
+
+        # Read JSON file
+        def read_json(filepath: str) -> Optional[dict]:
+            try:
+                with open(filepath, 'r') as file:
+                    return json.load(file)
+            except FileNotFoundError:
+                print(f"JSON file not found: {filepath}")
+                return None
+            except json.JSONDecodeError:
+                print(f"Invalid JSON in file: {filepath}")
+                return None
+
+        if __name__ == "__main__":
+            # Test file operations
+            test_content = "Hello from Python!"
+            if write_file("test.txt", test_content):
+                content = read_file("test.txt")
+                print(f"File content: {content}")
+        ```
+
+## Complete Example: Configuration Management System
+
+!!! topic "Multi-Module Application"
+    This example demonstrates how to build a configuration system using multiple modules working together.
+
+### Configuration Reader Module
+
+!!! example "Configuration Reader (config_reader.jac)"
+    === "Jac"
         <div class="code-block">
         ```jac
-        # Configuration file reader module
-        import:py json;
-        import:py os;
+        # config_reader.jac
+        import json;
+        import os;
+        from pathlib import Path;
 
-        obj ConfigManager {
-            has config_data: dict = {};
+        obj ConfigReader {
             has config_file: str;
+            has config_data: dict[str, any] = {};
 
-            can init(config_file: str) {
-                self.config_file = config_file;
-                self.load_config();
+            def load_config() -> bool;
+            def get_value(key: str, default: any = None) -> any;
+            def set_value(key: str, value: any) -> None;
+            def save_config() -> bool;
+        }
+
+        impl ConfigReader.load_config() -> bool {
+            if not os.path.exists(self.config_file) {
+                print(f"Config file {self.config_file} not found, creating default");
+                self.create_default_config();
+                return True;
             }
 
-            can load_config() {
-                if os.path.exists(self.config_file) {
-                    try {
-                        with open(self.config_file, 'r') as file {
-                            self.config_data = json.load(file);
-                        print(f"Configuration loaded from {self.config_file}");
-                    } except json.JSONDecodeError {
-                        print(f"Error: Invalid JSON in {self.config_file}");
-                        self.config_data = {};
-                    } except Exception as e {
-                        print(f"Error loading config: {e}");
-                        self.config_data = {};
-                } else {
-                    print(f"Config file {self.config_file} not found, using defaults");
-                    self.create_default_config();
+            try {
+                with open(self.config_file, 'r') as file {
+                    self.config_data = json.load(file);
+                print(f"Config loaded from {self.config_file}");
+                return True;
+            } except json.JSONDecodeError {
+                print(f"Invalid JSON in {self.config_file}");
+                return False;
+            } except Exception as e {
+                print(f"Error loading config: {e}");
+                return False;
+            }
+        }
+
+        impl ConfigReader.get_value(key: str, default: any = None) -> any {
+            return self.config_data.get(key, default);
+        }
+
+        impl ConfigReader.set_value(key: str, value: any) -> None {
+            self.config_data[key] = value;
+        }
+
+        impl ConfigReader.save_config() -> bool {
+            try {
+                with open(self.config_file, 'w') as file {
+                    json.dump(self.config_data, file, indent=2);
+                print(f"Config saved to {self.config_file}");
+                return True;
+            } except Exception as e {
+                print(f"Error saving config: {e}");
+                return False;
+            }
+        }
+
+        def create_default_config(self) -> None {
+            self.config_data = {
+                "app_name": "My Jac App",
+                "version": "1.0.0",
+                "debug": False,
+                "database": {
+                    "host": "localhost",
+                    "port": 5432,
+                    "name": "myapp_db"
+                },
+                "logging": {
+                    "level": "INFO",
+                    "file": "app.log"
                 }
-            }
+            };
+            self.save_config();
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # config_reader.py
+        import json
+        import os
+        from pathlib import Path
+        from typing import Any, Dict, Optional
 
-            can create_default_config() {
+        class ConfigReader:
+            def __init__(self, config_file: str):
+                self.config_file = config_file
+                self.config_data: Dict[str, Any] = {}
+
+            def load_config(self) -> bool:
+                if not os.path.exists(self.config_file):
+                    print(f"Config file {self.config_file} not found, creating default")
+                    self.create_default_config()
+                    return True
+
+                try:
+                    with open(self.config_file, 'r') as file:
+                        self.config_data = json.load(file)
+                    print(f"Config loaded from {self.config_file}")
+                    return True
+                except json.JSONDecodeError:
+                    print(f"Invalid JSON in {self.config_file}")
+                    return False
+                except Exception as e:
+                    print(f"Error loading config: {e}")
+                    return False
+
+            def get_value(self, key: str, default: Any = None) -> Any:
+                return self.config_data.get(key, default)
+
+            def set_value(self, key: str, value: Any) -> None:
+                self.config_data[key] = value
+
+            def save_config(self) -> bool:
+                try:
+                    with open(self.config_file, 'w') as file:
+                        json.dump(self.config_data, file, indent=2)
+                    print(f"Config saved to {self.config_file}")
+                    return True
+                except Exception as e:
+                    print(f"Error saving config: {e}")
+                    return False
+
+            def create_default_config(self) -> None:
                 self.config_data = {
+                    "app_name": "My Python App",
+                    "version": "1.0.0",
+                    "debug": False,
                     "database": {
                         "host": "localhost",
                         "port": 5432,
-                        "name": "myapp"
+                        "name": "myapp_db"
                     },
                     "logging": {
                         "level": "INFO",
                         "file": "app.log"
-                    },
-                    "features": {
-                        "debug_mode": False,
-                        "cache_enabled": True
-                    }
-                };
-                self.save_config();
-            }
-
-            can save_config() {
-                try {
-                    with open(self.config_file, 'w') as file {
-                        json.dump(self.config_data, file, indent=2);
-                    print(f"Configuration saved to {self.config_file}");
-                } except Exception as e {
-                    print(f"Error saving config: {e}");
-                }
-            }
-
-            can get_value(key_path: str, default_value: any = None) -> any {
-                keys = key_path.split('.');
-                current = self.config_data;
-
-                for key in keys {
-                    if isinstance(current, dict) and key in current {
-                        current = current[key];
-                    } else {
-                        return default_value;
                     }
                 }
-                return current;
-            }
+                self.save_config()
+        ```
 
-            can set_value(key_path: str, value: any) {
-                keys = key_path.split('.');
-                current = self.config_data;
+### Application Module
 
-                for key in keys[:-1] {
-                    if key not in current {
-                        current[key] = {};
-                    }
-                    current = current[key];
+!!! example "Application Module (app.jac)"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        # app.jac
+        include:jac config_reader;
+        import logging;
+
+        obj Application {
+            has config: ConfigReader;
+            has logger: any;
+
+            def start() -> None;
+            def setup_logging() -> None;
+            def get_database_config() -> dict[str, any];
+        }
+
+        impl Application.start() -> None {
+            print("=== Starting Application ===");
+
+            # Load configuration
+            if self.config.load_config() {
+                self.setup_logging();
+
+                # Display app info
+                app_name = self.config.get_value("app_name", "Unknown App");
+                version = self.config.get_value("version", "1.0.0");
+                debug_mode = self.config.get_value("debug", False);
+
+                print(f"App: {app_name} v{version}");
+                print(f"Debug mode: {debug_mode}");
+
+                # Show database config
+                db_config = self.get_database_config();
+                print(f"Database: {db_config['host']}:{db_config['port']}/{db_config['name']}");
+
+                if debug_mode {
+                    self.run_debug_mode();
+                } else {
+                    self.run_normal_mode();
                 }
-
-                current[keys[-1]] = value;
-                self.save_config();
+            } else {
+                print("Failed to load configuration");
             }
+        }
 
-            can get_database_config() -> dict {
-                return self.get_value("database", {});
-            }
+        impl Application.setup_logging() -> None {
+            log_config = self.config.get_value("logging", {});
+            log_level = log_config.get("level", "INFO");
+            log_file = log_config.get("file", "app.log");
 
-            can get_logging_config() -> dict {
-                return self.get_value("logging", {});
-            }
+            logging.basicConfig(
+                level=getattr(logging, log_level),
+                format='%(asctime)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(log_file),
+                    logging.StreamHandler()
+                ]
+            );
 
-            can is_debug_enabled() -> bool {
-                return self.get_value("features.debug_mode", False);
-            }
+            self.logger = logging.getLogger("app");
+            self.logger.info("Logging configured");
+        }
+
+        impl Application.get_database_config() -> dict[str, any] {
+            default_db = {"host": "localhost", "port": 5432, "name": "default_db"};
+            return self.config.get_value("database", default_db);
+        }
+
+        def run_debug_mode(self) -> None {
+            print(">>> Running in DEBUG mode");
+            print(f">>> Full config: {self.config.config_data}");
+        }
+
+        def run_normal_mode(self) -> None {
+            print(">>> Running in NORMAL mode");
+            print(">>> Application ready");
         }
         ```
         </div>
+    === "Python"
+        ```python
+        # app.py
+        from config_reader import ConfigReader
+        import logging
+        from typing import Dict, Any
 
-    === "config/app.jac"
-        <div class="code-block">
-        ```jac
-        # Main application using configuration
-        include:jac config.config_reader;
-        import:py logging;
+        class Application:
+            def __init__(self, config_file: str):
+                self.config = ConfigReader(config_file)
+                self.logger = None
 
-        obj Application {
-            has config_manager: ConfigManager;
-            has logger: any;
+            def start(self) -> None:
+                print("=== Starting Application ===")
 
-            can init(config_file: str = "app_config.json") {
-                self.config_manager = ConfigManager(config_file);
-                self.setup_logging();
-            }
+                # Load configuration
+                if self.config.load_config():
+                    self.setup_logging()
 
-            can setup_logging() {
-                log_config = self.config_manager.get_logging_config();
-                log_level = log_config.get("level", "INFO");
-                log_file = log_config.get("file", "app.log");
+                    # Display app info
+                    app_name = self.config.get_value("app_name", "Unknown App")
+                    version = self.config.get_value("version", "1.0.0")
+                    debug_mode = self.config.get_value("debug", False)
+
+                    print(f"App: {app_name} v{version}")
+                    print(f"Debug mode: {debug_mode}")
+
+                    # Show database config
+                    db_config = self.get_database_config()
+                    print(f"Database: {db_config['host']}:{db_config['port']}/{db_config['name']}")
+
+                    if debug_mode:
+                        self.run_debug_mode()
+                    else:
+                        self.run_normal_mode()
+                else:
+                    print("Failed to load configuration")
+
+            def setup_logging(self) -> None:
+                log_config = self.config.get_value("logging", {})
+                log_level = log_config.get("level", "INFO")
+                log_file = log_config.get("file", "app.log")
 
                 logging.basicConfig(
                     level=getattr(logging, log_level),
@@ -347,266 +529,146 @@ Working with external files is essential for reading configuration, processing d
                         logging.FileHandler(log_file),
                         logging.StreamHandler()
                     ]
-                );
-                self.logger = logging.getLogger(__name__);
-                self.logger.info("Application logging configured");
-            }
+                )
 
-            can start() {
-                self.logger.info("Starting application...");
+                self.logger = logging.getLogger("app")
+                self.logger.info("Logging configured")
 
-                # Get database configuration
-                db_config = self.config_manager.get_database_config();
-                self.logger.info(f"Database: {db_config.get('host')}:{db_config.get('port')}");
+            def get_database_config(self) -> Dict[str, Any]:
+                default_db = {"host": "localhost", "port": 5432, "name": "default_db"}
+                return self.config.get_value("database", default_db)
 
-                # Check debug mode
-                if self.config_manager.is_debug_enabled() {
-                    self.logger.debug("Debug mode is enabled");
-                    self.run_debug_mode();
-                } else {
-                    self.run_normal_mode();
-                }
+            def run_debug_mode(self) -> None:
+                print(">>> Running in DEBUG mode")
+                print(f">>> Full config: {self.config.config_data}")
 
-            can run_debug_mode() {
-                self.logger.debug("Running in debug mode");
-                # Debug-specific functionality
-                print("=== DEBUG MODE ===");
-                print(f"Full config: {self.config_manager.config_data}");
-            }
+            def run_normal_mode(self) -> None:
+                print(">>> Running in NORMAL mode")
+                print(">>> Application ready")
+        ```
 
-            can run_normal_mode() {
-                self.logger.info("Running in normal mode");
-                # Normal application functionality
-                print("Application running normally");
-            }
+### Main Application Entry Point
 
-            can update_config(key: str, value: any) {
-                self.config_manager.set_value(key, value);
-                self.logger.info(f"Configuration updated: {key} = {value}");
-            }
-        }
+!!! example "Main Entry Point (main.jac)"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        # main.jac
+        include:jac app;
 
         with entry {
-            app = Application();
-            app.start();
+            print("=== Configuration Management Demo ===");
 
-            # Example of runtime configuration update
-            app.update_config("features.debug_mode", True);
-            app.start();  # Restart with new config
+            # Create and run application
+            application = Application(config=ConfigReader(config_file="app_config.json"));
+            application.start();
+
+            print("\n=== Configuration Update Demo ===");
+
+            # Update configuration at runtime
+            application.config.set_value("debug", True);
+            application.config.set_value("app_name", "Updated Jac App");
+            application.config.save_config();
+
+            # Restart with new config
+            print("\nRestarting with updated configuration:");
+            application.start();
         }
         ```
         </div>
+    === "Python"
+        ```python
+        # main.py
+        from app import Application
 
-### Shared Utilities Library Example
+        if __name__ == "__main__":
+            print("=== Configuration Management Demo ===")
 
-**Code Example**
-!!! example "Shared Utilities Library"
-    === "utils/file_utils.jac"
-        <div class="code-block">
-        ```jac
-        # File utility functions
-        import:py os;
-        import:py shutil;
-        from datetime import datetime;
+            # Create and run application
+            application = Application("app_config.json")
+            application.start()
 
-        can ensure_directory(directory_path: str) -> bool {
-            """Ensure a directory exists, create if it doesn't."""
-            try {
-                os.makedirs(directory_path, exist_ok=True);
-                return True;
-            } except Exception as e {
-                print(f"Error creating directory {directory_path}: {e}");
-                return False;
-            }
-        }
+            print("\n=== Configuration Update Demo ===")
 
-        can copy_file(source: str, destination: str) -> bool {
-            """Copy a file from source to destination."""
-            try {
-                ensure_directory(os.path.dirname(destination));
-                shutil.copy2(source, destination);
-                return True;
-            } except Exception as e {
-                print(f"Error copying file: {e}");
-                return False;
-            }
-        }
+            # Update configuration at runtime
+            application.config.set_value("debug", True)
+            application.config.set_value("app_name", "Updated Python App")
+            application.config.save_config()
 
-        can get_file_info(filepath: str) -> dict {
-            """Get detailed information about a file."""
-            try {
-                stat = os.stat(filepath);
-                return {
-                    "size": stat.st_size,
-                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    "created": datetime.fromtimestamp(stat.st_ctime).isoformat(),
-                    "exists": True
-                };
-            } except FileNotFoundError {
-                return {"exists": False};
-            } except Exception as e {
-                return {"exists": False, "error": str(e)};
-            }
-        }
-
-        can list_files(directory: str, extension: str = None) -> list {
-            """List files in a directory, optionally filtered by extension."""
-            try {
-                files = [];
-                for item in os.listdir(directory) {
-                    if os.path.isfile(os.path.join(directory, item)) {
-                        if extension is None or item.endswith(extension) {
-                            files.append(item);
-                        }
-                    }
-                }
-                return files;
-            } except Exception as e {
-                print(f"Error listing files: {e}");
-                return [];
-            }
-        }
+            # Restart with new config
+            print("\nRestarting with updated configuration:")
+            application.start()
         ```
-        </div>
 
-    === "utils/data_utils.jac"
-        <div class="code-block">
-        ```jac
-        # Data processing utilities
-        import:py json;
-        import:py csv;
+## Package Structure and Organization
 
-        can process_csv_file(filepath: str) -> list {
-            """Process a CSV file and return data as list of dictionaries."""
-            try {
-                data = [];
-                with open(filepath, 'r', newline='') as csvfile {
-                    reader = csv.DictReader(csvfile);
-                    for row in reader {
-                        data.append(dict(row));
-                    }
-                }
-                return data;
-            } except Exception as e {
-                print(f"Error processing CSV file: {e}");
-                return [];
-            }
-        }
+!!! topic "Project Structure"
+    Well-organized project structure makes your code maintainable and scalable.
 
-        can write_csv_file(filepath: str, data: list, fieldnames: list) -> bool {
-            """Write data to a CSV file."""
-            try {
-                with open(filepath, 'w', newline='') as csvfile {
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames);
-                    writer.writeheader();
-                    writer.writerows(data);
-                }
-                return True;
-            } except Exception as e {
-                print(f"Error writing CSV file: {e}");
-                return False;
-            }
-        }
-
-        can merge_data_files(file_paths: list) -> dict {
-            """Merge multiple JSON data files into one dataset."""
-            merged_data = {};
-
-            for file_path in file_paths {
-                try {
-                    with open(file_path, 'r') as file {
-                        data = json.load(file);
-                        merged_data.update(data);
-                    }
-                } except Exception as e {
-                    print(f"Error reading {file_path}: {e}");
-                }
-            }
-
-            return merged_data;
-        }
+!!! example "Recommended Project Structure"
+    === "Jac Project Structure"
         ```
-        </div>
-
-    === "example_usage.jac"
-        <div class="code-block">
-        ```jac
-        # Example usage of shared utilities
-        include:jac utils.file_utils;
-        include:jac utils.data_utils;
-
-        with entry {
-            # File operations example
-            print("=== File Operations ===");
-
-            # Create a test directory
-            test_dir = "test_data";
-            if ensure_directory(test_dir) {
-                print(f"Directory {test_dir} created successfully");
-            }
-
-            # Create sample data file
-            sample_data = {
-                "users": [
-                    {"id": 1, "name": "Alice", "email": "alice@example.com"},
-                    {"id": 2, "name": "Bob", "email": "bob@example.com"}
-                ]
-            };
-
-            data_file = f"{test_dir}/users.json";
-            with open(data_file, 'w') as file {
-                import:py json;
-                json.dump(sample_data, file, indent=2);
-            }
-
-            # Get file information
-            file_info = get_file_info(data_file);
-            print(f"File info: {file_info}");
-
-            # List files in directory
-            files = list_files(test_dir, ".json");
-            print(f"JSON files in {test_dir}: {files}");
-
-            # Data processing example
-            print("\n=== Data Processing ===");
-
-            # Create sample CSV data
-            csv_data = [
-                {"name": "Alice", "age": "25", "city": "New York"},
-                {"name": "Bob", "age": "30", "city": "San Francisco"},
-                {"name": "Charlie", "age": "35", "city": "Chicago"}
-            ];
-
-            csv_file = f"{test_dir}/people.csv";
-            if write_csv_file(csv_file, csv_data, ["name", "age", "city"]) {
-                print(f"CSV file {csv_file} created successfully");
-
-                # Read it back
-                read_data = process_csv_file(csv_file);
-                print(f"Read CSV data: {read_data}");
-            }
-        }
+        my_jac_project/
+        ├── main.jac                 # Main entry point
+        ├── app.jac                  # Application logic
+        ├── config_reader.jac        # Config management
+        ├── config_reader.impl.jac   # Config implementation
+        ├── utils/
+        │   ├── file_utils.jac       # File utilities
+        │   └── data_utils.jac       # Data processing
+        ├── models/
+        │   ├── user.jac             # User model
+        │   └── user.impl.jac        # User implementation
+        ├── tests/
+        │   ├── test_config.jac      # Config tests
+        │   └── test_app.jac         # App tests
+        ├── docs/
+        │   └── README.md            # Documentation
+        └── config/
+            └── app_config.json      # Configuration files
         ```
-        </div>
+    === "Python Project Structure"
+        ```
+        my_python_project/
+        ├── main.py                  # Main entry point
+        ├── app.py                   # Application logic
+        ├── config_reader.py         # Config management
+        ├── utils/
+        │   ├── __init__.py
+        │   ├── file_utils.py        # File utilities
+        │   └── data_utils.py        # Data processing
+        ├── models/
+        │   ├── __init__.py
+        │   └── user.py              # User model
+        ├── tests/
+        │   ├── __init__.py
+        │   ├── test_config.py       # Config tests
+        │   └── test_app.py          # App tests
+        ├── docs/
+        │   └── README.md            # Documentation
+        └── config/
+            └── app_config.json      # Configuration files
+        ```
 
 ## Best Practices
 
-### Module Organization
-- Group related functionality into logical modules
-- Use descriptive module and file names
-- Separate interface definitions from implementations when appropriate
-- Keep modules focused on a single responsibility
+!!! summary "Import and File Operation Best Practices"
+    - **Organize by functionality**: Group related code into logical modules
+    - **Use explicit imports**: Import only what you need for clarity
+    - **Handle errors gracefully**: Always use try-catch for file operations
+    - **Separate interface from implementation**: Use `.impl.jac` files for complex objects
+    - **Validate file inputs**: Check file existence and format before processing
+    - **Use configuration files**: Externalize settings for flexibility
+    - **Document your modules**: Clear documentation helps team collaboration
 
-### File Operations
-- Always use proper error handling for file operations
-- Use context managers (`with` statements) for file handling
-- Validate file paths and handle missing files gracefully
-- Consider file permissions and access rights
+## Key Takeaways
 
-### Configuration Management
-- Use structured configuration files (JSON, YAML)
-- Provide sensible defaults
-- Validate configuration values
-- Support environment-specific configurations
+!!! summary "Chapter Summary"
+    - **Import System**: Jac supports both local modules and Python libraries seamlessly
+    - **Implementation Separation**: `.impl.jac` files promote clean architecture
+    - **File Operations**: Safe file handling with proper error management
+    - **Configuration Management**: External configuration files improve flexibility
+    - **Module Organization**: Well-structured projects are easier to maintain and scale
+    - **Python Integration**: Leverage existing Python ecosystem alongside Jac features
 
-This chapter has shown you how to build well-organized Jac applications that can scale across multiple modules and integrate with external systems through file operations. These patterns form the foundation for building robust, maintainable applications.
+In the next chapter, we'll explore Jac's unique pipe operations and AI integration features that make data processing and AI workflows much more intuitive.
