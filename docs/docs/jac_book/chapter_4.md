@@ -179,7 +179,7 @@ Jac provides a powerful function system with mandatory type annotations, decorat
                 result = func(*args, **kwargs);
                 end_time = time.time();
                 execution_time = end_time - start_time;
-                print(f"{func.__name__} executed in {execution_time:.4f} seconds");
+                print(f"{func.__name__} executed in {execution_time} seconds");
                 return result;
             }
             return wrapper;
@@ -258,6 +258,21 @@ Jac provides a powerful function system with mandatory type annotations, decorat
     === "Jac"
         <div class="code-block">
         ```jac
+        import time;
+
+        # Timing decorator to measure function performance
+        def timing_decorator(func: callable) -> callable {
+            def wrapper(*args: any, **kwargs: any) -> any {
+                start_time = time.time();
+                result = func(*args, **kwargs);
+                end_time = time.time();
+                execution_time = end_time - start_time;
+                print(f"{func.__name__} executed in {execution_time} seconds");
+                return result;
+            }
+            return wrapper;
+        }
+
         # Caching decorator for expensive computations
         def cache_decorator(func: callable) -> callable {
             cache: dict[str, any] = {};
@@ -509,8 +524,8 @@ Jac provides a powerful function system with mandatory type annotations, decorat
             print(f"(4 + 1)^2 = {result}");
 
             # Reduce operations
-            sum_result = reduce_list(numbers, lambda a, b: float: a + b, 0.0);
-            product_result = reduce_list(numbers, lambda a, b: float: a * b, 1.0);
+            sum_result = reduce_list(numbers, lambda a:float, b: float: a + b, 0.0);
+            product_result = reduce_list(numbers, lambda a:float, b: float: a * b, 1.0);
 
             print(f"Sum: {sum_result}");
             print(f"Product: {product_result}");
@@ -609,7 +624,7 @@ Jac provides a powerful function system with mandatory type annotations, decorat
                 execution_time = end_time - start_time;
 
                 self.increment_counter();
-                print(f"{func.__name__} completed in {execution_time:.6f}s (Call #{self.calculation_count})");
+                print(f"{func.__name__} completed in {execution_time}s (Call #{self.calculation_count})");
                 return result;
             }
             return wrapper;
