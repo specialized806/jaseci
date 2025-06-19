@@ -87,6 +87,23 @@ class DocIRGenPass(UniPass):
         """Check if there is a gap between the previous and current node."""
         return prev_kid.loc.last_line + 1 < curr_kid.loc.first_line
 
+    def is_within(self, kid_node: uni.UniNode, block: Sequence[uni.UniNode]) -> bool:
+        """Check if kid node is within the block."""
+        if not block:
+            return False
+
+        start, end, kid = block[0].loc, block[-1].loc, kid_node.loc
+
+        first = start.first_line < kid.first_line or (
+            start.first_line == kid.first_line and start.col_start <= kid.col_start
+        )
+
+        last = end.last_line > kid.last_line or (
+            end.last_line == kid.last_line and end.col_end >= kid.col_end
+        )
+
+        return first and last
+
     def exit_module(self, node: uni.Module) -> None:
         """Exit module."""
         parts: list[doc.DocType] = []
@@ -608,25 +625,57 @@ class DocIRGenPass(UniPass):
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         """Generate DocIR for try statements."""
         parts: list[doc.DocType] = []
+        body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if self.is_within(i, node.body):
+                if i == node.body[0]:
+                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.hard_line())
+                body_parts.append(i.gen.doc_ir)
+                body_parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                (
+                    parts.append(self.space())
+                    if not isinstance(i, uni.CommentToken)
+                    else None
+                )
+        body_parts.pop()
+        print(parts)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_except(self, node: uni.Except) -> None:
         """Generate DocIR for except clauses."""
         parts: list[doc.DocType] = []
+        body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.group(self.concat(parts))
+            if self.is_within(i, node.body):
+                if i == node.body[0]:
+                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.hard_line())
+                body_parts.append(i.gen.doc_ir)
+                body_parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+        body_parts.pop()
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
         """Generate DocIR for finally statements."""
         parts: list[doc.DocType] = []
+        body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if self.is_within(i, node.body):
+                if i == node.body[0]:
+                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.hard_line())
+                body_parts.append(i.gen.doc_ir)
+                body_parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+        body_parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
