@@ -635,11 +635,7 @@ class DocIRGenPass(UniPass):
                 body_parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
-                (
-                    parts.append(self.space())
-                    if not isinstance(i, uni.CommentToken)
-                    else None
-                )
+                parts.append(self.space())
         body_parts.pop()
         print(parts)
         node.gen.doc_ir = self.group(self.concat(parts))
