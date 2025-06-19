@@ -637,7 +637,6 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         body_parts.pop()
-        print(parts)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_except(self, node: uni.Except) -> None:
