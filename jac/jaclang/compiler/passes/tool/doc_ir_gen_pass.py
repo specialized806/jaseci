@@ -625,18 +625,9 @@ class DocIRGenPass(UniPass):
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         """Generate DocIR for try statements."""
         parts: list[doc.DocType] = []
-        body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if self.is_within(i, node.body):
-                if i == node.body[0]:
-                    parts.append(self.indent(self.concat(body_parts)))
-                    parts.append(self.hard_line())
-                body_parts.append(i.gen.doc_ir)
-                body_parts.append(self.hard_line())
-            else:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-        body_parts.pop()
+            parts.append(i.gen.doc_ir)
+            parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_except(self, node: uni.Except) -> None:
