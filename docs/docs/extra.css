@@ -23,10 +23,6 @@
     color: #ffab40 !important;
 }
 
-/* .md-sidebar--secondary {
-    display: none !important;
-} */
-
 .code-block {
     margin: 1em 0;
     padding: 1em;
@@ -287,4 +283,8 @@ body,
 
 .footer-links a:hover {
     color: #ff6b35;
+}
+
+.md-main__inner.md-grid {
+    max-width: 100vw;
 }
