@@ -40,17 +40,11 @@ class Ollama(BaseLLM):
         "ReAct": REACT_SUFFIX,
     }
 
-    def __init__(
-        self,
-        verbose: bool = False,
-        max_tries: int = 10,
-        type_check: bool = False,
-        **kwargs: dict
-    ) -> None:
+    def __init__(self, verbose: bool = False, **kwargs: dict) -> None:
         """Initialize the Ollama API client."""
         import ollama  # type: ignore
 
-        super().__init__(verbose, max_tries, type_check)
+        super().__init__(verbose)
         self.client = ollama.Client(host=kwargs.get("host", "http://localhost:11434"))
         self.model_name = kwargs.get("model_name", "phi3")
         self.default_model_params = {
@@ -67,23 +61,6 @@ class Ollama(BaseLLM):
             self.download_model(model)
         model_params = {k: v for k, v in kwargs.items() if k not in ["model_name"]}
         messages = [{"role": "user", "content": meaning_in}]
-
-        # Uncomment the following lines if you want to use manual API mode.
-        #
-        # if model_params.get("manual_api"):
-        #     # Copy to clipboard ----------------
-        #     import pyperclip
-        #     pyperclip.copy(meaning_in)
-        #     # ----------------------------------
-        #     print("")
-        #     print("*** Manual API Mode:")
-        #     print("*** 1. Paste whatever in your clipboard in ChatGPT")
-        #     print("*** 2. Copy the result to clipboard")
-        #     input("*** 3 Press Enter to continue")
-        #     # Read from clipboard: --------------
-        #     output = pyperclip.paste().strip()
-        #     # ----------------------------------
-        #     return output
 
         output = self.client.chat(
             model=model,

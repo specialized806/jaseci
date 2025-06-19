@@ -192,9 +192,6 @@ class JacMachine:
         output = outputs[0] if isinstance(outputs, list) else outputs
         output_hint = OutputHint(output[0], output[1])
         type_collector.extend(output_hint.get_types())
-        output_type_explanations = get_all_type_explanations(
-            output_hint.get_types(), mod_registry
-        )
         type_explanations = get_all_type_explanations(type_collector, mod_registry)
 
         tools = model_params.pop("tools") if "tools" in model_params else None
@@ -222,14 +219,10 @@ class JacMachine:
             _globals,
             _locals,
         )
-        _output = (
-            model.resolve_output(
-                meaning_out, output_hint, output_type_explanations, _globals, _locals
-            )
-            if not raw_output
-            else meaning_out
-        )
-        return _output
+        if raw_output:
+            return meaning_out
+        _eval_output = output_hint.type != "str"
+        return model.resolve_output(meaning_out, _eval_output, _globals, _locals)
 
     # -------------------------------------------------------------------------
     # Python code generation
