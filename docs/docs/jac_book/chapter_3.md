@@ -795,4 +795,5 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
     - **Pattern Matching**: Handle complex conditional logic elegantly
     - **Error Handling**: Use try/except blocks to handle errors gracefully
 
-In the next chapter, we'll explore Jac's function system and decorators to build more modular and reusable code.
+!!! topic "Coming Up"
+    Next, we'll explore Jac's function system and decorators to build more modular and reusable code. You'll learn about function definitions with type annotations, parameter handling, decorators in the Jac context, lambda functions, and async programming patterns.
