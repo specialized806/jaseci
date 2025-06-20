@@ -596,35 +596,15 @@ Jac provides a powerful function system with mandatory type annotations, decorat
         ```jac
         import time;
 
-        # Math library with comprehensive functionality
-        obj MathLibrary {
-            has calculation_count: int = 0;
-
-            def increment_counter() -> None;
-            def get_stats() -> dict[str, any];
-        }
-
-        impl MathLibrary.increment_counter() -> None {
-            self.calculation_count += 1;
-        }
-
-        impl MathLibrary.get_stats() -> dict[str, any] {
-            return {
-                "total_calculations": self.calculation_count,
-                "library_version": "1.0"
-            };
-        }
-
         # Enhanced timing decorator that works with methods
         def enhanced_timing(func: callable) -> callable {
-            def wrapper(self, *args: any, **kwargs: any) -> any {
+            def wrapper(*args: any, **kwargs: any) -> any {
                 start_time = time.time();
-                result = func(self, *args, **kwargs);
+                result = func(*args, **kwargs);
                 end_time = time.time();
                 execution_time = end_time - start_time;
 
-                self.increment_counter();
-                print(f"{func.__name__} completed in {execution_time}s (Call #{self.calculation_count})");
+                print(f"{func.__name__} completed in {execution_time}s");
                 return result;
             }
             return wrapper;
@@ -634,7 +614,7 @@ Jac provides a powerful function system with mandatory type annotations, decorat
         def smart_cache(func: callable) -> callable {
             cache: dict[str, any] = {};
 
-            def wrapper(self, *args: any, **kwargs: any) -> any {
+            def wrapper(*args: any, **kwargs: any) -> any {
                 cache_key = f"{func.__name__}:{str(args)}";
 
                 if cache_key in cache {
@@ -642,67 +622,94 @@ Jac provides a powerful function system with mandatory type annotations, decorat
                     return cache[cache_key];
                 }
 
-                result = func(self, *args, **kwargs);
+                result = func(*args, **kwargs);
                 cache[cache_key] = result;
                 return result;
             }
             return wrapper;
         }
 
-        # Add methods to MathLibrary
-        impl MathLibrary {
+        # Math library with comprehensive functionality
+        obj MathLibrary {
+            has calculation_count: int = 0;
+
+            def increment_counter() -> None;
+            def get_stats() -> dict[str, any];
+
             @enhanced_timing
-            def fibonacci(n: int) -> int {
-                if n <= 1 {
-                    return n;
-                }
-                return self.fibonacci(n - 1) + self.fibonacci(n - 2);
-            }
+            def fibonacci(n: int) -> int;
 
             @enhanced_timing
             @smart_cache
-            def cached_fibonacci(n: int) -> int {
-                if n <= 1 {
-                    return n;
-                }
-                return self.cached_fibonacci(n - 1) + self.cached_fibonacci(n - 2);
-            }
+            def cached_fibonacci(n: int) -> int;
 
             @enhanced_timing
-            def factorial(n: int) -> int {
-                if n <= 1 {
-                    return 1;
-                }
-                return n * self.factorial(n - 1);
-            }
+            def factorial(n: int) -> int;
 
             @enhanced_timing
-            def prime_check(n: int) -> bool {
-                if n < 2 {
+            def prime_check(n: int) -> bool;
+
+            def batch_process(numbers: list[int], operation: str) -> list[any];
+        }
+
+        impl MathLibrary.increment_counter {
+            self.calculation_count += 1;
+        }
+
+        impl MathLibrary.get_stats {
+            return {
+                "total_calculations": self.calculation_count,
+                "library_version": "1.0"
+            };
+        }
+
+        # Add methods to MathLibrary
+        impl MathLibrary.fibonacci {
+            if n <= 1 {
+                return n;
+            }
+            return self.fibonacci(n - 1) + self.fibonacci(n - 2);
+        }
+
+        impl MathLibrary.cached_fibonacci {
+            if n <= 1 {
+                return n;
+            }
+            return self.cached_fibonacci(n - 1) + self.cached_fibonacci(n - 2);
+        }
+
+        impl MathLibrary.factorial {
+            if n <= 1 {
+                return 1;
+            }
+            return n * self.factorial(n - 1);
+        }
+
+        impl MathLibrary.prime_check {
+            if n < 2 {
+                return False;
+            }
+            for i in range(2, int(n ** 0.5) + 1) {
+                if n % i == 0 {
                     return False;
                 }
-                for i in range(2, int(n ** 0.5) + 1) {
-                    if n % i == 0 {
-                        return False;
-                    }
-                }
-                return True;
+            }
+            return True;
+        }
+
+        impl MathLibrary.batch_process {
+            operations = {
+                "fibonacci": self.cached_fibonacci,
+                "factorial": self.factorial,
+                "prime": self.prime_check
+            };
+
+            if operation not in operations {
+                raise ValueError(f"Unknown operation: {operation}");
             }
 
-            def batch_process(numbers: list[int], operation: str) -> list[any] {
-                operations = {
-                    "fibonacci": self.cached_fibonacci,
-                    "factorial": self.factorial,
-                    "prime": self.prime_check
-                };
-
-                if operation not in operations {
-                    raise ValueError(f"Unknown operation: {operation}");
-                }
-
-                func = operations[operation];
-                return [func(num) for num in numbers];
-            }
+            func = operations[operation];
+            return [func(num) for num in numbers];
         }
 
         with entry {
@@ -891,4 +898,5 @@ Jac provides a powerful function system with mandatory type annotations, decorat
     - **Performance**: Use decorators to add timing and caching without modifying core logic
     - **Code Organization**: Group related functions into objects or modules for better structure
 
-In the next chapter, we'll explore Jac's import system and how to organize code across multiple files and modules.
+!!! topic "Coming Up"
+    In the next chapter, we'll explore Jac's import system and how to organize code across multiple files and modules.
