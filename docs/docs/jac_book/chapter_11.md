@@ -88,6 +88,17 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
     === "Jac"
         <div class="code-block">
         ```jac
+        # Basic classroom nodes
+        node Student {
+            has name: str;
+            has messages: list[str] = [];
+        }
+
+        node Teacher {
+            has name: str;
+            has subject: str;
+        }
+
         walker MessageDelivery {
             has message: str;
             has delivery_count: int = 0;
@@ -127,10 +138,10 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             messenger = MessageDelivery(message="School assembly at 2 PM");
 
             # Spawn walker on Alice - this activates it
-            alice spawn messenger;
+            alice[0] spawn messenger;
 
             # Check Alice's messages
-            print(f"Alice's messages: {alice.messages}");
+            print(f"Alice's messages: {alice[0].messages}");
         }
         ```
         </div>
@@ -191,6 +202,46 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
     === "Jac"
         <div class="code-block">
         ```jac
+        # Basic classroom nodes
+        node Student {
+            has name: str;
+            has messages: list[str] = [];
+        }
+
+        node Teacher {
+            has name: str;
+            has subject: str;
+        }
+
+        walker MessageDelivery {
+            has message: str;
+            has delivery_count: int = 0;
+            has visited_locations: list[str] = [];
+
+            # Entry ability - triggered when entering any Student
+            can deliver_to_student with Student entry {
+                print(f"Delivering message to student {here.name}");
+                here.messages.append(self.message);
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Entry ability - triggered when entering any Teacher
+            can deliver_to_teacher with Teacher entry {
+                print(f"Delivering message to teacher {here.name} ({here.subject})");
+                # Teachers just acknowledge the message
+                print(f"  {here.name} says: 'Message received!'");
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Exit ability - triggered when leaving any node
+            can log_visit with entry {
+                node_type = type(here).__name__;
+                print(f"  Visited {node_type}");
+            }
+        }
+
         edge InClass {
             has room: str;
         }
@@ -201,7 +252,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             has people_reached: int = 0;
 
             can deliver with Student entry {
-                print(f"📢 Student {here.name}: {self.announcement}");
+                print(f" Student {here.name}: {self.announcement}");
                 self.people_reached += 1;
 
                 # Continue to connected nodes
@@ -209,7 +260,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             }
 
             can deliver with Teacher entry {
-                print(f"📢 Teacher {here.name}: {self.announcement}");
+                print(f" Teacher {here.name}: {self.announcement}");
                 self.people_reached += 1;
 
                 # Continue to connected nodes
@@ -220,14 +271,14 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 room = here.room;
                 if room not in self.rooms_visited {
                     self.rooms_visited.add(room);
-                    print(f"  📍 Now in {room}");
+                    print(f" Now in {room}");
                 }
             }
 
             can summarize with Student exit {
                 # Only report once at the end
                 if len([-->]) == 0 {  # At a node with no outgoing connections
-                    print(f"\n✅ Delivery complete!");
+                    print(f"\n Delivery complete!");
                     print(f"   People reached: {self.people_reached}");
                     print(f"   Rooms visited: {list(self.rooms_visited)}");
                 }
@@ -242,13 +293,13 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             ms_jones = root ++> Teacher(name="Ms. Jones", subject="Science");
 
             # Connect them in the same classroom
-            alice ++>:InClass(room="Room 101"):++> bob;
-            bob ++>:InClass(room="Room 101"):++> charlie;
-            charlie ++>:InClass(room="Room 101"):++> ms_jones;
+            alice +>:InClass(room="Room 101"):+> bob;
+            bob +>:InClass(room="Room 101"):+> charlie;
+            charlie +>:InClass(room="Room 101"):+> ms_jones;
 
             # Send a message through the classroom
             messenger = ClassroomMessenger(announcement="Fire drill in 5 minutes");
-            alice spawn messenger;
+            alice[0] spawn messenger;
         }
         ```
         </div>
@@ -268,17 +319,17 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 self.visited_nodes = set()
 
             def deliver_to_student(self, student):
-                print(f"📢 Student {student.name}: {self.announcement}")
+                print(f" Student {student.name}: {self.announcement}")
                 self.people_reached += 1
 
             def deliver_to_teacher(self, teacher):
-                print(f"📢 Teacher {teacher.name}: {self.announcement}")
+                print(f" Teacher {teacher.name}: {self.announcement}")
                 self.people_reached += 1
 
             def track_room(self, edge):
                 if edge.room not in self.rooms_visited:
                     self.rooms_visited.add(edge.room)
-                    print(f"  📍 Now in {edge.room}")
+                    print(f"   Now in {edge.room}")
 
             def visit_network(self, node, connections):
                 # Avoid infinite loops
@@ -300,7 +351,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
                 # Check if we're at the end
                 if not connections.get(node, []):
-                    print(f"\n✅ Delivery complete!")
+                    print(f"\n elivery complete!")
                     print(f"   People reached: {self.people_reached}")
                     print(f"   Rooms visited: {list(self.rooms_visited)}")
 
@@ -347,27 +398,27 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
             can deliver with Student entry {
                 if here.grade_level == self.target_grade {
-                    print(f"✉️  Delivering to {here.name} (Grade {here.grade_level}): {self.message}");
+                    print(f" Delivering to {here.name} (Grade {here.grade_level}): {self.message}");
                     here.messages.append(self.message);
                     self.delivered_to.append(here.name);
                 } else {
-                    print(f"⏭️  Skipping {here.name} (Grade {here.grade_level}) - not target grade");
+                    print(f" Skipping {here.name} (Grade {here.grade_level}) - not target grade");
                 }
 
                 # Continue to study group members
-                visit [-->:StudyGroup:-->];
+                visit [->:StudyGroup:->];
             }
 
             can filter_by_subject with StudyGroup entry {
-                print(f"  📚 Moving through {here.subject} study group");
+                print(f"  Moving through {here.subject} study group");
                 # Could add subject-based filtering here if needed
             }
 
             can report_delivery with Student exit {
                 # Report when we've finished exploring from a student
-                outgoing = [-->:StudyGroup:-->];
+                outgoing = [->:StudyGroup:->];
                 if not outgoing {  # No more connections
-                    print(f"\n📊 Delivery Summary:");
+                    print(f"\n Delivery Summary:");
                     print(f"   Target: Grade {self.target_grade} students");
                     print(f"   Message: '{self.message}'");
                     print(f"   Delivered to: {self.delivered_to}");
@@ -383,9 +434,9 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             diana = root ++> Student(name="Diana", grade_level=11);
 
             # Connect through study groups
-            alice ++>:StudyGroup(subject="Math"):++> bob;
-            bob ++>:StudyGroup(subject="Science"):++> charlie;
-            charlie ++>:StudyGroup(subject="History"):++> diana;
+            alice +>:StudyGroup(subject="Math"):+> bob;
+            bob +>:StudyGroup(subject="Science"):+> charlie;
+            charlie +>:StudyGroup(subject="History"):+> diana;
 
             # Send grade-specific message
             messenger = GradeSpecificMessenger(
@@ -393,7 +444,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 target_grade=9
             );
 
-            alice spawn messenger;
+            alice[0] spawn messenger;
 
             # Check who got the message
             print(f"\nAlice's messages: {alice.messages}");
@@ -430,20 +481,20 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 self.visited.add(student)
 
                 if student.grade_level == self.target_grade:
-                    print(f"✉️  Delivering to {student.name} (Grade {student.grade_level}): {self.message}")
+                    print(f"Delivering to {student.name} (Grade {student.grade_level}): {self.message}")
                     student.messages.append(self.message)
                     self.delivered_to.append(student.name)
                 else:
-                    print(f"⏭️  Skipping {student.name} (Grade {student.grade_level}) - not target grade")
+                    print(f"Skipping {student.name} (Grade {student.grade_level}) - not target grade")
 
                 # Visit connected students
                 for edge in connections.get(student, []):
-                    print(f"  📚 Moving through {edge.subject} study group")
+                    print(f"  Moving through {edge.subject} study group")
                     self.visit_student(edge.to_node, connections)
 
                 # Report if at end
                 if not connections.get(student, []):
-                    print(f"\n📊 Delivery Summary:")
+                    print(f"\n Delivery Summary:")
                     print(f"   Target: Grade {self.target_grade} students")
                     print(f"   Message: '{self.message}'")
                     print(f"   Delivered to: {self.delivered_to}")
@@ -502,16 +553,16 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 is_present = random.choice([True, False]);
 
                 if is_present {
-                    print(f"✅ {here.name} is present");
+                    print(f"{here.name} is present");
                     self.present_students.append(here.name);
                 } else {
-                    print(f"❌ {here.name} is absent");
+                    print(f"{here.name} is absent");
                     self.absent_students.append(here.name);
                 }
 
                 # Control flow based on conditions
                 if self.checks_done >= self.max_checks {
-                    print(f"📋 Reached maximum checks ({self.max_checks})");
+                    print(f"Reached maximum checks ({self.max_checks})");
                     self.report_final();
                     disengage;  # Stop the walker
                 }
@@ -519,7 +570,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 # Skip if no more connections
                 connections = [-->];
                 if not connections {
-                    print("📋 No more students to check");
+                    print("No more students to check");
                     self.report_final();
                     disengage;
                 }
@@ -529,7 +580,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             }
 
             def report_final() -> None {
-                print(f"\n📊 Attendance Report:");
+                print(f"\n Attendance Report:");
                 print(f"   Present: {self.present_students}");
                 print(f"   Absent: {self.absent_students}");
                 print(f"   Total checked: {self.checks_done}");
@@ -572,22 +623,22 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 is_present = random.choice([True, False])
 
                 if is_present:
-                    print(f"✅ {student.name} is present")
+                    print(f" {student.name} is present")
                     self.present_students.append(student.name)
                 else:
-                    print(f"❌ {student.name} is absent")
+                    print(f" {student.name} is absent")
                     self.absent_students.append(student.name)
 
                 # Control flow based on conditions
                 if self.checks_done >= self.max_checks:
-                    print(f"📋 Reached maximum checks ({self.max_checks})")
+                    print(f" Reached maximum checks ({self.max_checks})")
                     self.report_final()
                     return  # Stop checking
 
                 # Continue to next student if available
                 next_students = connections.get(student, [])
                 if not next_students:
-                    print("📋 No more students to check")
+                    print(" No more students to check")
                     self.report_final()
                     return
 
@@ -596,7 +647,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                     self.check_student(next_student, connections)
 
             def report_final(self):
-                print(f"\n📊 Attendance Report:")
+                print(f"\n Attendance Report:")
                 print(f"   Present: {self.present_students}")
                 print(f"   Absent: {self.absent_students}")
                 print(f"   Total checked: {self.checks_done}")
