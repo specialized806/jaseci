@@ -117,7 +117,7 @@ This example demonstrates how to create an endpoint from a walker that accepts q
 # GET endpoint with query parameters
 walker search_users {
     has query: str;
-    has users: list = [
+    static has users: list = [
         {"username": "alice", "email": "alice@example.com"},
         {"username": "bob", "email": "bob@example.com"}
     ];
@@ -150,25 +150,6 @@ curl -X 'GET' \
   'http://0.0.0.0:8000/walker/search_users?query=alice' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json'
-```
-But ... you may get error like this:
-```json
-{
-    "detail":[
-        {"type":"missing","loc":["body"],"msg":"Field required","input":null}
-    ]
-}
-```
-
-What happened? The result is telling us that the type of the `query` parameter is `str`, but we didn't provide it in the request body. To fix this, we need to send the `query` parameter as part of the request body.
-To do this, we can modify the `curl` command to include the `query` parameter in the request body:
-
-```bash
-curl -X 'GET' \
-  'http://0.0.0.0:8080/walker/search_users?query=alice' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{ "query": [ "string"] }'
 ```
 
 If the user is found, the response will look like this:
