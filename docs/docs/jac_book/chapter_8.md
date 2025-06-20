@@ -103,7 +103,11 @@ print(pet.get_info())
         obj Animal {
             has name: str;
             has age: int;
-            has is_healthy: bool = True;
+            has is_healthy: bool by postinit;
+
+            def postinit() -> None {
+                self.is_healthy = True;
+            }
 
             def birthday() -> None {
                 self.age += 1;
@@ -189,6 +193,23 @@ print(pet.get_info())
     === "Jac"
         <div class="code-block">
         ```jac
+        obj Pet {
+            has name: str;
+            has species: str;
+            has age: int;
+            has is_adopted: bool = False;  # Automatic default
+
+            def adopt() -> None {
+                self.is_adopted = True;
+                print(f"{self.name} has been adopted!");
+            }
+
+            def get_info() -> str {
+                status = "adopted" if self.is_adopted else "available";
+                return f"{self.name} is a {self.age}-year-old {self.species} ({status})";
+            }
+        }
+
         obj PetShop {
             has name: str;
             has pets: list[Pet] = [];
@@ -313,13 +334,13 @@ class BankAccount:
             has :pub name: str;
             has :pub species: str;
 
-            # Protected - only this class and subclasses
-            has :protect medical_history: list[str] = [];
-            has :protect last_checkup: str = "";
-
             # Private - only this class
             has :priv owner_contact: str;
             has :priv microchip_id: str;
+
+            # Protected - only this class and subclasses
+            has :protect medical_history: list[str] = [];
+            has :protect last_checkup: str = "";
 
             # Public method
             def :pub get_basic_info() -> str {
@@ -475,6 +496,23 @@ class BankAccount:
     === "Jac"
         <div class="code-block">
         ```jac
+        obj Pet {
+            has name: str;
+            has species: str;
+            has age: int;
+            has is_adopted: bool = False;  # Automatic default
+
+            def adopt() -> None {
+                self.is_adopted = True;
+                print(f"{self.name} has been adopted!");
+            }
+
+            def get_info() -> str {
+                status = "adopted" if self.is_adopted else "available";
+                return f"{self.name} is a {self.age}-year-old {self.species} ({status})";
+            }
+        }
+
         obj Employee {
             has name: str;
             has hire_date: str;
@@ -546,7 +584,7 @@ class BankAccount:
             for employee in employees {
                 print(employee.introduce());
                 weekly_pay = employee.get_weekly_pay(40.0);
-                print(f"  Weekly pay for 40 hours: ${weekly_pay:.2f}");
+                print(f"  Weekly pay for 40 hours: ${weekly_pay}");
             }
 
             # Manager-specific behavior
@@ -646,11 +684,12 @@ class BankAccount:
 
 ## Best Practices
 
-1. **Use `obj` by Default**: Unless you need Python compatibility, prefer `obj` over `class`
-2. **Leverage Automatic Constructors**: Don't write manual constructors unless necessary
-3. **Use Access Control Meaningfully**: Make intentional decisions about public vs private
-4. **Favor Composition**: When inheritance gets complex, consider composition
-5. **Type Everything**: Explicit types make code more maintainable
+!!! summary "Best Practices"
+    1. **Use `obj` by Default**: Unless you need Python compatibility, prefer `obj` over `class`
+    2. **Leverage Automatic Constructors**: Don't write manual constructors unless necessary
+    3. **Use Access Control Meaningfully**: Make intentional decisions about public vs private
+    4. **Favor Composition**: When inheritance gets complex, consider composition
+    5. **Type Everything**: Explicit types make code more maintainable
 
 ## Key Takeaways
 
