@@ -58,6 +58,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
 
         with entry {
             print(get_school_info());
+            print(f"Honor threshold is {honor_threshold}");
         }
         ```
         </div>
@@ -74,6 +75,7 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
 
         if __name__ == "__main__":
             print(get_school_info())
+            print(f"Honor threshold is {honor_threshold}")
         ```
 
 ## Basic Data Types and Type Inference
