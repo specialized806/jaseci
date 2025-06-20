@@ -227,7 +227,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:156"
+        --8<-- "docs/examples/chapter_10_school.jac:1:158"
         ```
         </div>
     === "Python"
@@ -329,7 +329,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:156"
+        --8<-- "docs/examples/chapter_10_school.jac:1:158"
         ```
         </div>
     === "Python"
@@ -397,7 +397,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:164"
+        --8<-- "docs/examples/chapter_10_school.jac:1:166"
         ```
         </div>
     === "Python"
@@ -454,7 +454,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:175"
+        --8<-- "docs/examples/chapter_10_school.jac:1:177"
         ```
         </div>
     === "Python"
