@@ -64,7 +64,7 @@ Jac provides a powerful module system for organizing code across multiple files 
     Jac supports separating interface definitions from implementations using `.impl.jac` files, promoting clean architecture and modularity.
 
 !!! example "Interface and Implementation Separation"
-    === "Jac Interface (math_operations.jac)"
+    === "math_ops.jac"
         <div class="code-block">
         ```jac
         # Interface definition
@@ -78,26 +78,26 @@ Jac provides a powerful module system for organizing code across multiple files 
         }
         ```
         </div>
-    === "Jac Implementation (math_operations.impl.jac)"
+    === "math_ops.impl.jac"
         <div class="code-block">
         ```jac
         # Implementation file
-        impl Calculator.add(a: float, b: float) -> float {
+        impl Calculator.add {
             result = a + b;
             return round(result, self.precision);
         }
 
-        impl Calculator.subtract(a: float, b: float) -> float {
+        impl Calculator.subtract {
             result = a - b;
             return round(result, self.precision);
         }
 
-        impl Calculator.multiply(a: float, b: float) -> float {
+        impl Calculator.multiply {
             result = a * b;
             return round(result, self.precision);
         }
 
-        impl Calculator.divide(a: float, b: float) -> float {
+        impl Calculator.divide {
             if b == 0.0 {
                 raise ValueError("Division by zero");
             }
@@ -274,7 +274,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             def create_default_config() -> None;
         }
 
-        impl ConfigReader.load_config() -> bool {
+        impl ConfigReader.load_config {
             if not os.path.exists(self.config_file) {
                 print(f"Config file {self.config_file} not found, creating default");
                 self.create_default_config();
@@ -296,15 +296,15 @@ Jac provides a powerful module system for organizing code across multiple files 
             }
         }
 
-        impl ConfigReader.get_value(key: str, default: any = None) -> any {
+        impl ConfigReader.get_value {
             return self.config_data.get(key, default);
         }
 
-        impl ConfigReader.set_value(key: str, value: any) -> None {
+        impl ConfigReader.set_value {
             self.config_data[key] = value;
         }
 
-        impl ConfigReader.save_config() -> bool {
+        impl ConfigReader.save_config {
             try {
                 with open(self.config_file, 'w') as file {
                     json.dump(self.config_data, file, indent=2);
@@ -317,7 +317,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             }
         }
 
-        impl ConfigReader.create_default_config() -> None {
+        impl ConfigReader.create_default_config {
             self.config_data = {
                 "app_name": "My Jac App",
                 "version": "1.0.0",
@@ -422,7 +422,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             def run_normal_mode() -> None;
         }
 
-        impl Application.start() -> None {
+        impl Application.start {
             print("=== Starting Application ===");
 
             # Load configuration
@@ -451,7 +451,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             }
         }
 
-        impl Application.setup_logging() -> None {
+        impl Application.setup_logging {
             log_config = self.config.get_value("logging", {});
             log_level = log_config.get("level", "INFO");
             log_file = log_config.get("file", "app.log");
@@ -469,17 +469,17 @@ Jac provides a powerful module system for organizing code across multiple files 
             self.logger.info("Logging configured");
         }
 
-        impl Application.get_database_config() -> dict[str, any] {
+        impl Application.get_database_config {
             default_db = {"host": "localhost", "port": 5432, "name": "default_db"};
             return self.config.get_value("database", default_db);
         }
 
-        impl Application.run_debug_mode() -> None {
+        impl Application.run_debug_mode {
             print(">>> Running in DEBUG mode");
             print(f">>> Full config: {self.config.config_data}");
         }
 
-        impl Application.run_normal_mode() -> None {
+        impl Application.run_normal_mode {
             print(">>> Running in NORMAL mode");
             print(">>> Application ready");
         }
@@ -617,17 +617,16 @@ Jac provides a powerful module system for organizing code across multiple files 
         my_jac_project/
         ├── main.jac                 # Main entry point
         ├── app.jac                  # Application logic
+        ├── app.test.jac             # App tests
         ├── config_reader.jac        # Config management
         ├── config_reader.impl.jac   # Config implementation
+        ├── config_reader.test.jac   # Config tests
         ├── utils/
         │   ├── file_utils.jac       # File utilities
         │   └── data_utils.jac       # Data processing
         ├── models/
         │   ├── user.jac             # User model
         │   └── user.impl.jac        # User implementation
-        ├── tests/
-        │   ├── test_config.jac      # Config tests
-        │   └── test_app.jac         # App tests
         ├── docs/
         │   └── README.md            # Documentation
         └── config/
