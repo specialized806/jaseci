@@ -204,11 +204,11 @@ Jac provides a powerful function system with mandatory type annotations, decorat
 
         with entry {
             print("=== Timing Decorator Demo ===");
-            result1 = slow_fibonacci(25);
-            print(f"Fibonacci(25) = {result1}");
+            result1 = slow_fibonacci(2);
+            print(f"Fibonacci(2) = {result1}");
 
-            result2 = slow_factorial(10);
-            print(f"Factorial(10) = {result2}");
+            result2 = slow_factorial(3);
+            print(f"Factorial(3) = {result2}");
         }
         ```
         </div>
@@ -245,11 +245,11 @@ Jac provides a powerful function system with mandatory type annotations, decorat
 
         if __name__ == "__main__":
             print("=== Timing Decorator Demo ===")
-            result1 = slow_fibonacci(25)
-            print(f"Fibonacci(25) = {result1}")
+            result1 = slow_fibonacci(2)
+            print(f"Fibonacci(2) = {result1}")
 
-            result2 = slow_factorial(10)
-            print(f"Factorial(10) = {result2}")
+            result2 = slow_factorial(3)
+            print(f"Factorial(3) = {result2}")
         ```
 
 ### Caching Decorator for Optimization
@@ -319,19 +319,19 @@ Jac provides a powerful function system with mandatory type annotations, decorat
             print("=== Cached Functions Demo ===");
 
             # First call - computed and cached
-            result1 = optimized_fibonacci(30);
-            print(f"Fibonacci(30) = {result1}");
+            result1 = optimized_fibonacci(3);
+            print(f"Fibonacci(3) = {result1}");
 
             # Second call - retrieved from cache
-            result2 = optimized_fibonacci(30);
-            print(f"Fibonacci(30) again = {result2}");
+            result2 = optimized_fibonacci(3);
+            print(f"Fibonacci(3) again = {result2}");
 
             # Expensive calculation test
-            result3 = expensive_calculation(1000);
+            result3 = expensive_calculation(10);
             print(f"Expensive calculation result: {result3}");
 
             # Second call to expensive calculation
-            result4 = expensive_calculation(1000);
+            result4 = expensive_calculation(10);
             print(f"Expensive calculation again: {result4}");
         }
         ```
@@ -382,19 +382,19 @@ Jac provides a powerful function system with mandatory type annotations, decorat
             print("=== Cached Functions Demo ===")
 
             # First call - computed and cached
-            result1 = optimized_fibonacci(30)
-            print(f"Fibonacci(30) = {result1}")
+            result1 = optimized_fibonacci(3)
+            print(f"Fibonacci(3) = {result1}")
 
             # Second call - retrieved from cache
-            result2 = optimized_fibonacci(30)
-            print(f"Fibonacci(30) again = {result2}")
+            result2 = optimized_fibonacci(3)
+            print(f"Fibonacci(3) again = {result2}")
 
             # Expensive calculation test
-            result3 = expensive_calculation(1000)
+            result3 = expensive_calculation(10)
             print(f"Expensive calculation result: {result3}")
 
             # Second call to expensive calculation
-            result4 = expensive_calculation(1000)
+            result4 = expensive_calculation(10)
             print(f"Expensive calculation again: {result4}")
         ```
 
@@ -719,16 +719,16 @@ Jac provides a powerful function system with mandatory type annotations, decorat
 
             # Test individual functions
             print("Testing Fibonacci (slow):");
-            result1 = math_lib.fibonacci(20);
-            print(f"Fibonacci(20) = {result1}");
+            result1 = math_lib.fibonacci(2);
+            print(f"Fibonacci(2) = {result1}");
 
             print("\nTesting Cached Fibonacci (fast):");
-            result2 = math_lib.cached_fibonacci(30);
-            print(f"Cached Fibonacci(30) = {result2}");
+            result2 = math_lib.cached_fibonacci(3);
+            print(f"Cached Fibonacci(3) = {result2}");
 
             print("\nTesting Factorial:");
-            result3 = math_lib.factorial(8);
-            print(f"Factorial(8) = {result3}");
+            result3 = math_lib.factorial(3);
+            print(f"Factorial(3) = {result3}");
 
             print("\nTesting Prime Check:");
             test_numbers = [17, 18, 19, 20, 21];
@@ -861,16 +861,16 @@ Jac provides a powerful function system with mandatory type annotations, decorat
 
             # Test individual functions
             print("Testing Fibonacci (slow):")
-            result1 = math_lib.fibonacci(20)
-            print(f"Fibonacci(20) = {result1}")
+            result1 = math_lib.fibonacci(2)
+            print(f"Fibonacci(2) = {result1}")
 
             print("\nTesting Cached Fibonacci (fast):")
-            result2 = math_lib.cached_fibonacci(30)
-            print(f"Cached Fibonacci(30) = {result2}")
+            result2 = math_lib.cached_fibonacci(3)
+            print(f"Cached Fibonacci(3) = {result2}")
 
             print("\nTesting Factorial:")
-            result3 = math_lib.factorial(8)
-            print(f"Factorial(8) = {result3}")
+            result3 = math_lib.factorial(3)
+            print(f"Factorial(3) = {result3}")
 
             print("\nTesting Prime Check:")
             test_numbers = [17, 18, 19, 20, 21]
