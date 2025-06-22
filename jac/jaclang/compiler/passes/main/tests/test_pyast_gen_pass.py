@@ -6,9 +6,8 @@ import sys
 import types
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main import CompilerMode as CMode, PyastGenPass
+from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -122,9 +121,7 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram().compile(
-            self.fixture_abs_path(filename), mode=CMode.PARSE
-        )
+        code_gen = JacProgram().compile(self.fixture_abs_path(filename))
         self.assertTrue(self.parent_scrub(code_gen))
         code_gen = JacProgram().compile(self.fixture_abs_path(filename))
         self.assertTrue(self.parent_scrub(code_gen))

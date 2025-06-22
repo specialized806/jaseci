@@ -820,10 +820,16 @@ class JacBuiltin:
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
                 f' [label="{edge_label if "GenericEdge" not in edge_label else ""}"];\n'
             )
-            mermaid_content += (
-                f"{visited_nodes.index(source)} -->"
-                f"|{edge_label if 'GenericEdge' not in edge_label else ''}| {visited_nodes.index(target)}\n"
-            )
+            if "GenericEdge" in edge_label or not edge_label.strip():
+                mermaid_content += (
+                    f"{visited_nodes.index(source)} -->"
+                    f"{visited_nodes.index(target)}\n"
+                )
+            else:
+                mermaid_content += (
+                    f"{visited_nodes.index(source)} -->"
+                    f'|"{edge_label}"| {visited_nodes.index(target)}\n'
+                )
         for node_ in visited_nodes:
             color = (
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
@@ -1341,6 +1347,40 @@ class JacBasics:
         )
 
     @staticmethod
+    def gen_llm_call_override(
+        _pass: PyastGenPass, node: ast.FuncCall
+    ) -> list[ast3.AST]:
+        """Generate python ast nodes for llm function body override syntax.
+
+        example:
+            foo() by llm();
+        """
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
+        )
+        return [
+            _pass.sync(
+                ast3.Raise(
+                    _pass.sync(
+                        ast3.Call(
+                            func=_pass.sync(
+                                ast3.Name(id="ImportError", ctx=ast3.Load())
+                            ),
+                            args=[
+                                _pass.sync(
+                                    ast3.Constant(
+                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
+                                    )
+                                )
+                            ],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
+        ]
+
+    @staticmethod
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         _pass.log_warning(
@@ -1476,6 +1516,22 @@ class JacBasics:
             "include_info": [],
             "exclude_info": [],
         }
+
+    @staticmethod
+    def get_semstr_type(
+        file_loc: str, scope: str, attr: str, return_semstr: bool
+    ) -> Optional[str]:
+        """Jac's get_semstr_type feature."""
+
+    @staticmethod
+    def obj_scope(file_loc: str, attr: str) -> str:
+        """Jac's gather_scope feature."""
+        return ""
+
+    @staticmethod
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+        """Jac's get_semstr_type implementation."""
+        return None, None
 
 
 class JacUtils:

@@ -1,12 +1,10 @@
 """Test pass module."""
 
-from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 import unittest
 
 
-@unittest.skip("Skipping CFG build pass tests")
 class TestCFGBuildPass(TestCase):
     """Test FuseTypeInfoPass module."""
 
@@ -23,9 +21,7 @@ class TestCFGBuildPass(TestCase):
         with open(file_name, "r") as f:
             file_source = f.read()
 
-        ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, mode=CMode.COMPILE
-        )
+        ir = (prog := JacProgram()).compile(use_str=file_source, file_path=file_name)
 
         cfg_pass = CoalesceBBPass(
             ir_in=ir,
@@ -71,9 +67,7 @@ class TestCFGBuildPass(TestCase):
         with open(file_name, "r") as f:
             file_source = f.read()
 
-        ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, mode=CMode.COMPILE
-        )
+        ir = (prog := JacProgram()).compile(use_str=file_source, file_path=file_name)
 
         cfg_pass = CoalesceBBPass(
             ir_in=ir,

@@ -4,6 +4,7 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
+import subprocess
 import time
 import zipfile
 
@@ -15,7 +16,10 @@ PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
 ZIP_FOLDER_NAME = "jaclang"
 UNIIR_NODE_DOC = "docs/internals/uniir_node.md"
 LANG_REF_DOC = "docs/learn/jac_ref.md"
+TOP_CONTRIBUTORS_DOC = "docs/communityhub/top_contributors.md"
 AST_TOOL = AstTool()
+EXAMPLE_SOURCE_FOLDER = "../jac/examples"
+EXAMPLE_TARGET_FOLDER = "docs/assets/examples"
 
 
 def pre_build_hook(**kwargs: dict) -> None:
@@ -24,10 +28,11 @@ def pre_build_hook(**kwargs: dict) -> None:
     This function is called before the build process starts.
     """
     print("Running pre-build hook...")
-    if not os.path.exists(PLAYGROUND_ZIP_PATH):
-        create_playground_zip()
-    else:
-        print(f"Zip file already exists: {PLAYGROUND_ZIP_PATH}. Skipping creation.")
+    if os.path.exists(PLAYGROUND_ZIP_PATH):
+        print(f"Removing existing zip file: {PLAYGROUND_ZIP_PATH}")
+        os.remove(PLAYGROUND_ZIP_PATH)
+    create_playground_zip()
+    print("Jaclang zip file created successfully.")
 
     if is_file_older_than_minutes(UNIIR_NODE_DOC, 5):
         with open(UNIIR_NODE_DOC, "w") as f:
@@ -40,6 +45,12 @@ def pre_build_hook(**kwargs: dict) -> None:
             f.write(AST_TOOL.automate_ref())
     else:
         print(f"File is recent: {LANG_REF_DOC}. Skipping creation.")
+
+    if is_file_older_than_minutes(TOP_CONTRIBUTORS_DOC, 5):
+        with open(TOP_CONTRIBUTORS_DOC, "w") as f:
+            f.write(get_top_contributors())
+    else:
+        print(f"File is recent: {TOP_CONTRIBUTORS_DOC}. Skipping creation.")
 
 
 def is_file_older_than_minutes(file_path: str, minutes: int) -> bool:
@@ -74,3 +85,13 @@ def create_playground_zip() -> None:
                 zipf.write(file_path, arcname)
 
     print("Zip saved to:", PLAYGROUND_ZIP_PATH)
+
+
+def get_top_contributors() -> str:
+    """Get the top contributors for the jaclang repository."""
+    return subprocess.check_output(["python", "../scripts/top_contributors.py"]).decode(
+        "utf-8"
+    )
+
+
+pre_build_hook()

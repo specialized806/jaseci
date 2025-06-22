@@ -5,11 +5,12 @@ import os
 import sys
 import sysconfig
 import tempfile
+import subprocess
+from pathlib import Path
 from unittest.mock import patch
 
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
-from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -188,7 +189,9 @@ class JacLanguageTests(TestCase):
 
     def test_arith_precedence(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().compile_from_str("with entry {print(4-5-4);}", "test.jac")
+        prog = JacProgram().compile(
+            use_str="with entry {print(4-5-4);}", file_path="test.jac"
+        )
         captured_output = io.StringIO()
         sys.stdout = captured_output
         exec(compile(prog.gen.py_ast[0], "test.py", "exec"))
@@ -288,13 +291,13 @@ class JacLanguageTests(TestCase):
         Jac.attach_program(
             (prog := JacProgram()),
         )
-        prog.compile(self.fixture_abs_path("./deep_import_interp.jac"))
+        prog.build(self.fixture_abs_path("./deep_import_interp.jac"))
         Jac.jac_import("deep_import_interp", base_path=self.fixture_abs_path("./"))
         self.assertEqual(len(Jac.program.mod.hub.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
-        Jac.loaded_modules.clear()
+        Jac.reset_machine()
         targets = [
             "deep",
             "deep.deeper",
@@ -305,11 +308,13 @@ class JacLanguageTests(TestCase):
         for i in targets:
             if i in sys.modules:
                 del sys.modules[i]
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
         Jac.jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
-        mods = Jac.loaded_modules.keys()
+        sys.stdout = sys.__stdout__
+        stdout_value = eval(captured_output.getvalue())
         for i in targets:
-            self.assertIn(i, mods)
-        self.assertEqual(len([i for i in mods if i.startswith("deep")]), 6)
+            self.assertIn(i, stdout_value)
 
     def test_deep_outer_imports_one(self) -> None:
         """Parse micro jac file."""
@@ -589,14 +594,14 @@ class JacLanguageTests(TestCase):
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
-        (prog := JacProgram()).compile_from_str(
-            "with entry {print.is.not.True(4-5-4);}", "test.jac"
+        (prog := JacProgram()).compile(
+            use_str="with entry {print.is.not.True(4-5-4);}", file_path="test.jac"
         )
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
 
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().compile_from_str("with entry {print(hello);}", "test.jac")
+        prog = JacProgram().compile("with entry {print(hello);}", "test.jac")
         prog.unparse()
         before = prog.format()
         prog.format()
@@ -757,6 +762,10 @@ class JacLanguageTests(TestCase):
 
     def test_list_methods(self) -> None:
         """Test list_modules, list_walkers, list_nodes, and list_edges."""
+        Jac.reset_machine()
+        Jac.set_base_path(self.fixture_abs_path("."))
+        sys.modules.pop("foo", None)
+        sys.modules.pop("bar", None)
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
@@ -784,6 +793,9 @@ class JacLanguageTests(TestCase):
 
     def test_walker_dynamic_update(self) -> None:
         """Test dynamic update of a walker during runtime."""
+        Jac.reset_machine()
+        Jac.set_base_path(self.fixture_abs_path("."))
+        sys.modules.pop("bar", None)
         session = self.fixture_abs_path("bar_walk.session")
         bar_file_path = self.fixture_abs_path("bar.jac")
         update_file_path = self.fixture_abs_path("walker_update.jac")
@@ -797,7 +809,7 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        os.remove(session)
+        os.remove(session) if os.path.exists(session) else None
         expected_output = "Created 5 items."
         self.assertIn(expected_output, stdout_value.split("\n"))
         # Define the new behavior to be added
@@ -1297,3 +1309,34 @@ class JacLanguageTests(TestCase):
         self.assertIn("foo1", stdout_value[5])
         self.assertIn("foo2", stdout_value[6])
         self.assertIn("Coroutine task is completed", stdout_value[17])
+
+    def test_unicode_string_literals(self) -> None:
+        """Test unicode characters in string literals are preserved correctly."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import("unicode_strings", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("1. ✓ 1st (due: True)", stdout_value[0])
+        self.assertIn("🌟 Star", stdout_value[2])
+        self.assertIn("Multi-line with ✓ unicode and ○ symbols", stdout_value[3])
+        self.assertIn("Raw string with ✓ and ○", stdout_value[4])
+        self.assertIn("Tab ✓", stdout_value[5])
+        self.assertIn("Newline ○", stdout_value[6])
+
+    def test_sitecustomize_meta_importer(self) -> None:
+        """Verify Jac modules importable without importing jaclang."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "mymod.jac").write_text('with entry {print("via meta");}')
+            env = os.environ.copy()
+            project_root = Path(__file__).resolve().parents[2]
+            env["PYTHONPATH"] = os.pathsep.join([str(project_root), tmpdir])
+            proc = subprocess.run(
+                [sys.executable, "-c", "import mymod"],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
+                env=env,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stdout.strip(), "via meta")
