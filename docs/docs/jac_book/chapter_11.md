@@ -381,6 +381,8 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
     === "Jac"
         <div class="code-block">
         ```jac
+        import random;
+
         node Student {
             has name: str;
             has grade_level: int;
@@ -391,65 +393,64 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             has subject: str;
         }
 
-        walker GradeSpecificMessenger {
-            has message: str;
-            has target_grade: int;
-            has delivered_to: list[str] = [];
+        walker AttendanceChecker {
+            has present_students: list[str] = [];
+            has absent_students: list[str] = [];
+            has max_checks: int = 5;
+            has checks_done: int = 0;
 
-            can deliver with Student entry {
-                if here.grade_level == self.target_grade {
-                    print(f" Delivering to {here.name} (Grade {here.grade_level}): {self.message}");
-                    here.messages.append(self.message);
-                    self.delivered_to.append(here.name);
+            can check_attendance with Student entry {
+                self.checks_done += 1;
+
+                # Simulate checking if student is present (random for demo)
+                is_present = random.choice([True, False]);
+
+                if is_present {
+                    print(f"{here.name} is present");
+                    self.present_students.append(here.name);
                 } else {
-                    print(f" Skipping {here.name} (Grade {here.grade_level}) - not target grade");
+                    print(f"{here.name} is absent");
+                    self.absent_students.append(here.name);
                 }
 
-                # Continue to study group members
-                visit [->:StudyGroup:->];
-            }
-
-            can filter_by_subject with StudyGroup entry {
-                print(f"  Moving through {here.subject} study group");
-                # Could add subject-based filtering here if needed
-            }
-
-            can report_delivery with Student exit {
-                # Report when we've finished exploring from a student
-                outgoing = [->:StudyGroup:->];
-                if not outgoing {  # No more connections
-                    print(f"\n Delivery Summary:");
-                    print(f"   Target: Grade {self.target_grade} students");
-                    print(f"   Message: '{self.message}'");
-                    print(f"   Delivered to: {self.delivered_to}");
+                # Control flow based on conditions
+                if self.checks_done >= self.max_checks {
+                    print(f"Reached maximum checks ({self.max_checks})");
+                    self.report_final();
+                    disengage;  # Stop the walker
                 }
+
+                # Skip if no more connections
+                connections = [-->];
+                if not connections {
+                    print("No more students to check");
+                    self.report_final();
+                    disengage;
+                }
+
+                # Continue to next student
+                visit [-->];
+            }
+
+            def report_final() -> None {
+                print(f"\n Attendance Report:");
+                print(f"   Present: {self.present_students}");
+                print(f"   Absent: {self.absent_students}");
+                print(f"   Total checked: {self.checks_done}");
             }
         }
 
         with entry {
-            # Create multi-grade study network
+            # Create a chain of students
             alice = root ++> Student(name="Alice", grade_level=9);
-            bob = root ++> Student(name="Bob", grade_level=10);
-            charlie = root ++> Student(name="Charlie", grade_level=9);
-            diana = root ++> Student(name="Diana", grade_level=11);
+            bob = alice ++> Student(name="Bob", grade_level=9);
+            charlie = bob ++> Student(name="Charlie", grade_level=9);
+            diana = charlie ++> Student(name="Diana", grade_level=9);
+            eve = diana ++> Student(name="Eve", grade_level=9);
 
-            # Connect through study groups
-            alice +>:StudyGroup(subject="Math"):+> bob;
-            bob +>:StudyGroup(subject="Science"):+> charlie;
-            charlie +>:StudyGroup(subject="History"):+> diana;
-
-            # Send grade-specific message
-            messenger = GradeSpecificMessenger(
-                message="Grade 9 field trip permission slips due Friday!",
-                target_grade=9
-            );
-
-            alice[0] spawn messenger;
-
-            # Check who got the message
-            print(f"\nAlice's messages: {alice.messages}");
-            print(f"Bob's messages: {bob.messages}");
-            print(f"Charlie's messages: {charlie.messages}");
+            # Start attendance check
+            checker = AttendanceChecker(max_checks=3);
+            alice[0] spawn checker;
         }
         ```
         </div>
