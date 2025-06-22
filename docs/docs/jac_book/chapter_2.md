@@ -72,6 +72,32 @@ jac --help
 jac serve filename.jac
 ```
 
+## Hello World in Jac
+
+Let's start with the traditional first program:
+
+!!! example "Hello World"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        # hello.jac
+        with entry {
+            print("Hello, Jac World!");
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # hello.py
+        print("Hello, Python World!")
+        ```
+
+Run your first Jac program:
+
+```bash
+jac run hello.jac
+```
+
 ## Project Structure Conventions
 
 !!! topic "Clean Organization"
@@ -130,37 +156,6 @@ my_project/
             def get_display_name(self) -> str:
                 return f"{self.name} <{self.email}>"
         ```
-
-## Hello World in Jac
-
-Let's start with the traditional first program:
-
-!!! example "Hello World"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        # hello.jac
-        with entry {
-            print("Hello, Jac World!");
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        # hello.py
-        print("Hello, Python World!")
-        ```
-
-Run your first Jac program:
-
-```bash
-jac run hello.jac
-```
-
-**Output:**
-```
-Hello, Jac World!
-```
 
 ## Entry Blocks and Basic Execution
 
@@ -290,23 +285,21 @@ Let's build a simple calculator to demonstrate Jac's syntax:
             return a * b;
         }
 
-        def divide(a: float, b: float) -> float {
+        def divide(a: float, b: float) -> float | str {
             if b == 0.0 {
-                print("Error: Cannot divide by zero!");
-                return 0.0;
+                return "Error: Cannot divide by zero!";
             }
             return a / b;
         }
 
-        def calculate(operation: str, x: float, y: float) -> float {
+        def calculate(operation: str, x: float, y: float) -> float | str {
             match operation {
                 case "add": return add(x, y);
                 case "sub": return subtract(x, y);
                 case "mul": return multiply(x, y);
                 case "div": return divide(x, y);
                 case _:
-                    print(f"Unknown operation: {operation}");
-                    return 0.0;
+                    return f"Unknown operation: {operation}";
             }
         }
 
