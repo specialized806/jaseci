@@ -131,6 +131,38 @@ Jac provides a powerful module system for organizing code across multiple files 
                 result = a / b
                 return round(result, self.precision)
         ```
+### Namespace Injection
+!!! topic "Namespace Injection"
+    Jac provides several mechanisms to manage namespaces clearly and effectively:
+
+    * **import**: Loads an entire Python module or package, preserving its namespace.
+
+    ```jac
+    import os;
+    os.getcwd();
+    ```
+
+    * **include**: Imports all exported symbols from a Jac module directly into the current namespace, flattening it and simplifying access.
+
+    ```jac
+    include my_utils;
+    utility_function();
+    ```
+
+    * **import from**: Explicitly imports selected symbols from a module, improving clarity and avoiding namespace pollution.
+
+    ```jac
+    import from datetime {datetime};
+    now = datetime.now();
+    ```
+
+    * **Aliasing**: Allows renaming imported modules or symbols, helping avoid naming conflicts.
+
+    ```jac
+    import json as js;
+    data = js.load(file);
+    ```
+
 ### Jac Import Internals
 !!! topic "Import Resolution Workflow"
     Jac resolves imports using a structured process:
