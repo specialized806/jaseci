@@ -61,7 +61,7 @@ Jac provides a powerful module system for organizing code across multiple files 
 ### Implementation Separation
 
 !!! topic "Implementation Files"
-    Jac supports separating interface definitions from implementations using `.impl.jac` files, promoting clean architecture and modularity.
+    Jac supports separating interface definitions from implementations using `.impl.jac` files, promoting clean architecture and modularity. This separation makes it easier to test, maintain, and update implementations without changing interfaces.
 
 !!! example "Interface and Implementation Separation"
     === "math_ops.jac"
@@ -131,6 +131,17 @@ Jac provides a powerful module system for organizing code across multiple files 
                 result = a / b
                 return round(result, self.precision)
         ```
+### Jac Import Internals
+!!! topic "Import Resolution Workflow"
+    Jac resolves imports using a structured process:
+
+    * Parses import statements to determine modules.
+    * Searches for modules in the caller directory, `JAC_PATH`, and Python's `sys.path`.
+    * Compiles `.jac` files to bytecode (`.jir`) if necessary.
+    * Executes bytecode to populate module namespaces.
+    * Caches modules to improve performance.
+
+    Common issues include missing bytecode, syntax errors, and circular dependencies.
 
 ## File Operations and External Integration
 
