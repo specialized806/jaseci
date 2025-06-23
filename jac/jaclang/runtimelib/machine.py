@@ -681,17 +681,23 @@ class JacWalker:
         return warch
 
     @staticmethod
-    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | Coroutine:
+    def spawn(
+        op1: Archetype | list[Archetype], op2: Archetype | list[Archetype]
+    ) -> WalkerArchetype | Coroutine:
         """Jac's spawn operator feature."""
-        edge: EdgeAnchor | None = None
+        loc: EdgeAnchor | NodeAnchor | None = None
         if isinstance(op1, WalkerArchetype):
             warch = op1
             walker = op1.__jac__
             if isinstance(op2, NodeArchetype):
                 node = op2.__jac__
+                loc = node
+                walker.next = [node]
             elif isinstance(op2, EdgeArchetype):
                 edge = op2.__jac__
                 node = op2.__jac__.target
+                loc = edge
+                walker.next = [edge, node]
             else:
                 raise TypeError("Invalid target object")
         elif isinstance(op2, WalkerArchetype):
@@ -699,20 +705,17 @@ class JacWalker:
             walker = op2.__jac__
             if isinstance(op1, NodeArchetype):
                 node = op1.__jac__
+                loc = node
+                walker.next = [node]
             elif isinstance(op1, EdgeArchetype):
                 edge = op1.__jac__
                 node = op1.__jac__.target
+                walker.next = [edge, node]
+                loc = edge
             else:
                 raise TypeError("Invalid target object")
         else:
             raise TypeError("Invalid walker object")
-
-        if edge is not None:
-            loc: EdgeAnchor | NodeAnchor = edge
-            walker.next = [edge, node]
-        else:
-            loc = node
-            walker.next = [node]
 
         if warch.__jac_async__:
             return JacMachineInterface.async_spawn_call(walker=walker, node=loc)
