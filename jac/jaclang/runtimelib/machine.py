@@ -683,44 +683,54 @@ class JacWalker:
     @staticmethod
     def spawn(
         op1: Archetype | list[Archetype], op2: Archetype | list[Archetype]
-    ) -> WalkerArchetype | Coroutine:
+    ) -> Union[WalkerArchetype, Coroutine]:
         """Jac's spawn operator feature."""
-        loc: EdgeAnchor | NodeAnchor | None = None
+
+        def collect_targets(
+            walker: WalkerAnchor, items: list[Archetype]
+        ) -> NodeAnchor | EdgeAnchor:
+            for i in items:
+                a = i.__jac__
+                (
+                    walker.next.append(a)
+                    if isinstance(a, (NodeAnchor, EdgeAnchor))
+                    else None
+                )
+                if isinstance(a, EdgeAnchor) and a.target:
+                    walker.next.append(a.target)
+            return walker.next[0]
+
+        def assign(
+            walker: WalkerAnchor, t: Archetype | list[Archetype]
+        ) -> NodeAnchor | EdgeAnchor:
+            if isinstance(t, NodeArchetype):
+                node = t.__jac__
+                walker.next = [node]
+                return node
+            elif isinstance(t, EdgeArchetype):
+                edge = t.__jac__
+                walker.next = [edge, edge.target]
+                return edge
+            elif isinstance(t, list) and all(
+                isinstance(i, (NodeArchetype, EdgeArchetype)) for i in t
+            ):
+                return collect_targets(walker, t)
+            else:
+                raise TypeError("Invalid target object")
+
         if isinstance(op1, WalkerArchetype):
-            warch = op1
-            walker = op1.__jac__
-            if isinstance(op2, NodeArchetype):
-                node = op2.__jac__
-                loc = node
-                walker.next = [node]
-            elif isinstance(op2, EdgeArchetype):
-                edge = op2.__jac__
-                node = op2.__jac__.target
-                loc = edge
-                walker.next = [edge, node]
-            else:
-                raise TypeError("Invalid target object")
+            warch, targ = op1, op2
         elif isinstance(op2, WalkerArchetype):
-            warch = op2
-            walker = op2.__jac__
-            if isinstance(op1, NodeArchetype):
-                node = op1.__jac__
-                loc = node
-                walker.next = [node]
-            elif isinstance(op1, EdgeArchetype):
-                edge = op1.__jac__
-                node = op1.__jac__.target
-                walker.next = [edge, node]
-                loc = edge
-            else:
-                raise TypeError("Invalid target object")
+            warch, targ = op2, op1
         else:
             raise TypeError("Invalid walker object")
 
+        walker: WalkerAnchor = warch.__jac__
+        loc: NodeAnchor | EdgeAnchor = assign(walker, targ)
+
         if warch.__jac_async__:
             return JacMachineInterface.async_spawn_call(walker=walker, node=loc)
-        else:
-            return JacMachineInterface.spawn_call(walker=walker, node=loc)
+        return JacMachineInterface.spawn_call(walker=walker, node=loc)
 
     @staticmethod
     def disengage(walker: WalkerArchetype) -> bool:
