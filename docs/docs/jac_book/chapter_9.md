@@ -110,17 +110,26 @@ In OSP, computation moves to where the data naturally lives:
             has generation: int;
         }
 
-        edge ParentOf {
-            has relationship_type: str = "parent";
-        }
+        edge Relationship{}
+        edge MarriedTo(Relationship){}
+        edge ParentOf(Relationship){}
 
         walker GenerationCounter {
             has generation_counts: dict[int, int] = {};
+            has visited: set[Person] = set();
 
             can count with Person entry {
+                if here in self.visited {
+                    return;  # Skip if already visited
+                }
+
+                self.visited.add(here);  # Mark this person as visited
+
                 # Computation happens AT each person
                 gen = here.generation;
                 self.generation_counts[gen] = self.generation_counts.get(gen, 0) + 1;
+
+                visit [<-:MarriedTo:->];  # Visit married partners
 
                 print(f"Counted {here.name} (Generation {gen})");
 
@@ -134,9 +143,12 @@ In OSP, computation moves to where the data naturally lives:
             grandpa = root ++> Person(name="Grandpa Joe", age=75, generation=1);
             grandma = root ++> Person(name="Grandma Sue", age=72, generation=1);
 
+            grandpa <+:MarriedTo:+> grandma;  # Connect grandparents
+
             # Second generation
             dad = grandpa[0] +>:ParentOf:+> Person(name="Dad Mike", age=45, generation=2);
             mom = grandma[0] +>:ParentOf:+> Person(name="Mom Lisa", age=43, generation=2);
+            dad <+:MarriedTo:+> mom;  # Connect parents
 
             # Third generation
             son = dad[0] +>:ParentOf:+> Person(name="Son Alex", age=16, generation=3);
@@ -415,7 +427,7 @@ In OSP, we think about entities and their relationships as a connected graph:
             has teacher_student_count: dict[str, int] = {};
             has student_subjects: dict[str, list[str]] = {};
 
-            can analyze with Teacher entry {
+            can analyze_teacher with Teacher entry {
                 # Count students for this teacher
                 students = [->:Teaches:->];
                 self.teacher_student_count[here.name] = len(students);
@@ -426,7 +438,7 @@ In OSP, we think about entities and their relationships as a connected graph:
                 visit students;
             }
 
-            can analyze with Student entry {
+            can analyze_student with Student entry {
                 # Find what subjects this student takes
                 teachers = [<-:Teaches:<-];
                 subjects = [teacher.subject for teacher in teachers];
@@ -438,26 +450,28 @@ In OSP, we think about entities and their relationships as a connected graph:
 
         with entry {
             # Create classroom graph
-            ms_smith = root ++> Teacher(name="Ms. Smith", subject="Math");
-            mr_jones = root ++> Teacher(name="Mr. Jones", subject="Science");
+            ms_smith = Teacher(name="Ms. Smith", subject="Math");
+            mr_jones = Teacher(name="Mr. Jones", subject="Science");
 
             # Create students
-            alice = root ++> Student(name="Alice", grade_level=9);
-            bob = root ++> Student(name="Bob", grade_level=9);
-            charlie = root ++> Student(name="Charlie", grade_level=10);
+            alice = Student(name="Alice", grade_level=9);
+            bob = Student(name="Bob", grade_level=9);
+            charlie = Student(name="Charlie", grade_level=10);
 
             # Create teaching relationships
-            ms_smith[0] +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> alice;
-            ms_smith[0] +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> bob;
-            mr_jones[0] +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> alice;
-            mr_jones[0] +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> charlie;
+            ms_smith +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> alice;
+            ms_smith +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> bob;
+            mr_jones +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> alice;
+            mr_jones +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> charlie;
 
             # Analyze the classroom network
             analyzer = ClassroomAnalyzer();
-            analyzer spawn ms_smith[0];
-            analyzer spawn mr_jones[0];
+            analyzer spawn ms_smith;
+            analyzer spawn mr_jones;
 
-            print(f"\nTeacher-student counts: {analyzer.teacher_student_count}");
+
+
+            print(f"Teacher-student counts: {analyzer.teacher_student_count}");
             print(f"Student subjects: {analyzer.student_subjects}");
         }
         ```
