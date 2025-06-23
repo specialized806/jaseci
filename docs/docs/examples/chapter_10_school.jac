@@ -42,7 +42,7 @@ edge FriendsWith {
 
 walker ClassroomExplorer {
     can explore with Classroom entry {
-        print(f"\n=== Exploring {here.room_number} ===");
+        print(f"=== Exploring {here.room_number} ===");
 
         # Find all students in this classroom
         students = [<-:EnrolledIn:<-];
@@ -97,14 +97,14 @@ walker StudentAnalyzer {
     can report with Student exit {
         # Only report once at the end
         if len([-->]) == 0 {  # At the last student
-            print("\n=== Student Analysis Report ===");
+            print("=== Student Analysis Report ===");
 
             print(f"High Performers ({len(self.high_performers)}):");
             for student in self.high_performers {
                 print(f"  {student['name']}: {student['grade']} grade, {student['attendance']}% attendance");
             }
 
-            print(f"\nNeeds Support ({len(self.needs_help)}):");
+            print(f"Needs Support ({len(self.needs_help)}):");
             for student in self.needs_help {
                 print(f"  {student['name']}: {student['grade']} grade, {student['attendance']}% attendance");
             }
