@@ -309,10 +309,9 @@ Welcome to the comprehensive guide to the Jac programming language. This book wi
 
 ## Getting Help
 
-- **Documentation**: Comprehensive guides and API references
+- **[Documentation](https://www.jac-lang.org/)**: Comprehensive guides and API references
 - **[Community](https://discord.gg/6j3QNdtcN6https://discord.gg/6j3QNdtcN6)**: Join our Discord for discussions and support
 - **[Issues](https://github.com/jaseci-labs/jaseci/issues)**: Report bugs and request features on GitHub
-- **Contact**: Reach out to the Jac team directly
 
 ---
 
