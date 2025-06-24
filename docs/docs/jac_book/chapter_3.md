@@ -440,9 +440,15 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
             print(f"Score: {student_score} -> Grade: {grade} ({status})")
         ```
 
-### Loops for Processing Student Data
+### Working with Loops
+!!! topic "Loops"
+    Jac provides multiple loop constructs including traditional `for` loops, Jac's unique `for-to-by` loops, and clear, structured `while` loops.
 
-!!! example "Processing Multiple Students"
+#### Traditional For Loops
+
+The traditional for loop is useful when iterating over collections, such as lists or dictionaries.
+
+!!! example "Iterating Over Student Grades"
     === "Jac"
         <div class="code-block">
         ```jac
@@ -466,13 +472,6 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
 
             # Process all students
             process_class_grades(class_grades);
-
-            # Jac's unique for-to-by loop for grade scaling
-            print("Scaled scores (0-100 to 0-4.0 GPA):");
-            for score = 60 to score <= 100 by score += 10 {
-                gpa = (score - 60) * 4.0 / 40.0;
-                print(f"Score {score} -> GPA {gpa}");
-            }
         }
         ```
         </div>
@@ -497,14 +496,63 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
 
             # Process all students
             process_class_grades(class_grades)
-
-            # Python equivalent of for-to-by loop
+        ```
+#### Jac's Unique For-to-by Loops
+Jac introduces the unique `for-to-by` loop, allowing clear and explicit iteration control.
+!!! example "Scaling Grades to GPA"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        with entry {
+            print("Scaled scores (0-100 to 0-4.0 GPA):");
+            for score = 60 to score <= 100 by score += 10 {
+                gpa = (score - 60) * 4.0 / 40.0;
+                print(f"Score {score} -> GPA {gpa}");
+            }
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        if __name__ == "__main__":
             print("Scaled scores (0-100 to 0-4.0 GPA):")
             score = 60
             while score <= 100:
                 gpa = (score - 60) * 4.0 / 40.0
-                print(f"Score {score} -> GPA {gpa:.1f}")
+                print(f"Score {score} -> GPA {gpa:.2f}")
                 score += 10
+        ```
+#### While Loops
+Jac supports traditional `while` loops with clear curly brace syntax for iterative logic.
+
+!!! example "Using While Loops"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        with entry {
+            count: int = 1;
+            total: int = 0;
+            while count <= 5 {
+                print(f"Adding {count} to total");
+                total += count;
+                count += 1;
+            }
+            print(f"Final total: {total}");
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        if __name__ == "__main__":
+            count = 1
+            total = 0
+
+            while count <= 5:
+                print(f"Adding {count} to total")
+                total += count
+                count += 1
+
+            print(f"Final total: {total}")
         ```
 
 ## Pattern Matching for Complex Logic
@@ -644,6 +692,49 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
             except ValueError as e:
                 print(f"Validation error: {e}")
         ```
+
+## Comments in Jac
+
+!!! topic "Comments"
+    Comments help document your Jac code clearly. Jac supports both single-line and multiline comments.
+
+!!! example "Single-line and Multiline Comments"
+    === "Jac" 
+        <div class="code-block">
+        ```jac
+        with entry {
+            # This is a single-line comment
+            student_name: str = "Alice";
+
+            #*
+                This is a
+                multi-line comment.
+            *#
+            
+            grades: list[int] = [88, 92, 85];
+
+            print(student_name);
+            print(grades);
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        if __name__ == "__main__":
+            # This is a single-line comment
+            student_name: str = "Alice"
+
+            """
+                This is a multiline comment
+                describing the following block of code.
+                It spans multiple lines.
+            """
+            grades: list[int] = [88, 92, 85]
+
+            print(student_name)
+            print(grades)
+        ```
+
 
 ## Complete Example: Simple Grade Book System
 
@@ -787,13 +878,15 @@ Jac emphasizes type safety and clear variable declarations. Unlike Python's opti
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Mandatory Typing**: All variables require type annotations for safety and clarity
-    - **Type Inference**: Types can be inferred when obvious from the assigned value
-    - **Collections**: Lists, dicts, sets, and tuples provide type-safe data structures
-    - **Comprehensions**: Process data efficiently with list, dict, and set comprehensions
-    - **Control Flow**: Use curly braces for clear, consistent code structure
-    - **Pattern Matching**: Handle complex conditional logic elegantly
+    - **Variable Declarations**: Mandatory explicit type annotations.
+    - **Data Types**: Primitive types (`int`, `float`, `str`, `bool`, and `any`).
+    - **Collections**: Type-safe lists, dictionaries, and sets.
+    - **Comprehensions**: Efficient processing using list comprehensions.
+    - **Control Flow**: Consistent use of curly braces `{}` for blocks.
+    - **Loops**: Traditional `for`, Jac's `for-to-by`, and structured `while` loops.
+    - **Pattern Matching**: Powerful conditional logic.
     - **Error Handling**: Use try/except blocks to handle errors gracefully
+    - **Comments**: Single-line (`#`) and multi-line (`#**#`) comments for readability.
 
 !!! topic "Coming Up"
     Next, we'll explore Jac's function system and decorators to build more modular and reusable code. You'll learn about function definitions with type annotations, parameter handling, decorators in the Jac context, lambda functions, and async programming patterns.
