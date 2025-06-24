@@ -411,8 +411,197 @@ Jac provides a powerful function system with mandatory type annotations, built-i
 !!! topic "Decorators"
     Decorators provide a clean way to add functionality to functions without modifying their core logic.
 
-### Timing Decorator
+### Decorator Stacking Order
+Decorator stacking applies decorators from bottom to top. The decorator closest to the function definition is applied first.
+!!! example "Decorator Stacking Order"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        import time;
 
+        def decorator_a(func: callable) -> callable {
+            def wrapper(*args: any, **kwargs: any) -> any {
+                print("Decorator A Start");
+                result = func(*args, **kwargs);
+                print("Decorator A End");
+                return result;
+            }
+            return wrapper;
+        }
+
+        def decorator_b(func: callable) -> callable {
+            def wrapper(*args: any, **kwargs: any) -> any {
+                print("Decorator B Start");
+                result = func(*args, **kwargs);
+                print("Decorator B End");
+                return result;
+            }
+            return wrapper;
+        }
+
+        @decorator_a
+        @decorator_b
+        def greet(name: str) -> None {
+            print(f"Hello, {name}!");
+        }
+
+        with entry {
+            greet("Alice");
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        import time
+
+        def decorator_a(func):
+            def wrapper(*args, **kwargs):
+                print("Decorator A Start")
+                result = func(*args, **kwargs)
+                print("Decorator A End")
+                return result
+            return wrapper
+
+        def decorator_b(func):
+            def wrapper(*args, **kwargs):
+                print("Decorator B Start")
+                result = func(*args, **kwargs)
+                print("Decorator B End")
+                return result
+            return wrapper
+
+        @decorator_a
+        @decorator_b
+        def greet(name: str) -> None:
+            print(f"Hello, {name}!")
+
+        if __name__ == "__main__":
+            greet("Alice")
+        ```
+
+### Parameterized Decorators
+Decorators can accept parameters, making them highly flexible.
+!!! example "Parameterized Decorators"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        def repeat(times: int) -> callable {
+            def decorator(func: callable) -> callable {
+                def wrapper(*args: any, **kwargs: any) -> any {
+                    result: any;
+                    for i in range(times) {
+                        print(f"Execution {i+1} of {times}");
+                        result = func(*args, **kwargs);
+                    }
+                    return result;
+                }
+                return wrapper;
+                }
+            return decorator;
+        }
+
+        @repeat(3)
+        def say_hello(name: str) -> None {
+            print(f"Hello, {name}");
+        }
+
+        with entry {
+            say_hello("Bob");
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        def repeat(times):
+            def decorator(func):
+                def wrapper(*args, **kwargs):
+                    for i in range(times):
+                        print(f"Execution {i+1} of {times}")
+                        func(*args, **kwargs)
+                return wrapper
+            return decorator
+
+        @repeat(3)
+        def say_hello(name: str) -> None:
+            print(f"Hello, {name}")
+
+        if __name__ == "__main__":
+            say_hello("Bob")
+        ```
+### Error Handling in Decorators
+
+Decorators in Jac can handle exceptions, retry operations, and log errors gracefully.
+!!! example "Error Handling with Decorators"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        import time;
+        
+        def retry_decorator(max_retries: int, delay: float) -> callable {
+            def decorator(func: callable) -> callable {
+                def wrapper(*args: any, **kwargs: any) -> any {
+                    attempts: int = 0;
+                    while attempts < max_retries {
+                        try {
+                            return func(*args, **kwargs);
+                        } except Exception as e {
+                            attempts += 1;
+                            print(f"Attempt {attempts} failed: {e}");
+                            time.sleep(delay);
+                        }
+                    }
+                    raise Exception("Maximum retries exceeded");
+                }
+                return wrapper;
+            }
+            return decorator;
+        }
+
+        @retry_decorator(max_retries=3, delay=1.0)
+        def risky_operation() -> None {
+            import random;
+            if random.random() < 0.7 {
+                raise ValueError("Random failure");
+            }
+            print("Operation succeeded!");
+        }
+
+        with entry {
+            risky_operation();
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        import time
+
+        def retry_decorator(max_retries, delay):
+            def decorator(func):
+                def wrapper(*args, **kwargs):
+                    attempts = 0
+                    while attempts < max_retries:
+                        try:
+                            return func(*args, **kwargs)
+                        except Exception as e:
+                            attempts += 1
+                            print(f"Attempt {attempts} failed: {e}")
+                            time.sleep(delay)
+                    raise Exception("Maximum retries exceeded")
+                return wrapper
+            return decorator
+
+        @retry_decorator(max_retries=3, delay=1.0)
+        def risky_operation() -> None:
+            import random
+            if random.random() < 0.7:
+                raise ValueError("Random failure")
+            print("Operation succeeded!")
+
+        if __name__ == "__main__":
+            risky_operation()
+        ```
+### Timing Decorator
+A timing decorator measures and logs execution time for performance monitoring.
 !!! example "Performance Timing Decorator"
     === "Jac"
         <div class="code-block">
@@ -499,8 +688,8 @@ Jac provides a powerful function system with mandatory type annotations, built-i
             print(f"Factorial(3) = {result2}")
         ```
 
-### Caching Decorator for Optimization
-
+### Caching (Memoization) Decorator
+A caching decorator stores results for expensive calls, improving performance on repeated invocations.
 !!! example "Memoization Decorator"
     === "Jac"
         <div class="code-block">
