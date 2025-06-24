@@ -1,544 +1,714 @@
-# Chapter 10: Nodes and Edges
+# Chapter 10: Walkers and Abilities
 
-**Nodes** and **Edges** are the fundamental building blocks of Object-Spatial Programming. Nodes represent data locations in your graph, while edges represent the relationships between them. This chapter shows you how to create, connect, and work with these spatial constructs using a simple classroom management system.
+Walkers are the heart of Object-Spatial Programming - they are mobile computational entities that traverse your graph and execute code at each location. Combined with abilities, they enable reactive, event-driven programming where computation happens exactly where and when it's needed.
 
-!!! topic "Graph-Based Data Modeling"
-    Instead of storing data in isolated objects, OSP organizes data as connected nodes in a graph. This makes relationships explicit and enables powerful traversal patterns.
+!!! topic "Mobile Computation"
+    Unlike traditional functions that operate on data passed to them, walkers travel to where data lives, making computation truly spatial and enabling powerful distributed processing patterns.
 
-## Node Creation and Properties
-Nodes are the primary objects in Jac, representing entities like students, teachers, classrooms, etc. They can have properties and can be connected to other nodes through edges. Nodes can be created with the `node` keyword, and they automatically persist when connected to the root node.
+## Walker Creation
 
+!!! topic "What are Walkers?"
+    Walkers are special objects that can move through your graph, carrying state and executing abilities when they encounter different types of nodes and edges.
 
-!!! topic "What are Nodes?"
-    Nodes are special objects that can be connected to other nodes through edges. They automatically persist when connected to the root node and can react to visiting walkers.
+### Basic Walker Declaration
 
-### Basic Node Declaration
-
-
-!!! example "Simple Node Types"
+!!! example "Simple Walker"
     === "Jac"
         <div class="code-block">
         ```jac
-        # Basic node for representing students
-        node Student {
-            has name: str;
-            has age: int;
-            has grade_level: int;
-            has student_id: str;
+        # Simple walker for visiting nodes
+        walker MessageDelivery {
+            has message: str;
+            has delivery_count: int = 0;
+            has visited_locations: list[str] = [];
+
+            # Regular methods work like normal
+            def get_status() -> str {
+                return f"Delivered {self.delivery_count} messages to {len(self.visited_locations)} locations";
+            }
         }
 
-        # Basic node for representing teachers
+        # Basic classroom nodes
+        node Student {
+            has name: str;
+            has messages: list[str] = [];
+        }
+
         node Teacher {
             has name: str;
             has subject: str;
-            has years_experience: int;
-            has email: str;
         }
 
         with entry {
-            # Create student nodes
-            alice = Student(
-                name="Alice Johnson",
-                age=16,
-                grade_level=10,
-                student_id="S001"
-            );
+            # Create walker instance (but don't activate it yet)
+            messenger = MessageDelivery(message="Hello from the principal!");
 
-            bob = Student(
-                name="Bob Smith",
-                age=15,
-                grade_level=9,
-                student_id="S002"
-            );
-
-            # Create teacher node
-            ms_brown = Teacher(
-                name="Ms. Brown",
-                subject="Mathematics",
-                years_experience=8,
-                email="brown@school.edu"
-            );
-
-            print(f"Created student: {alice.name} (Grade {alice.grade_level})");
-            print(f"Created teacher: {ms_brown.name} teaches {ms_brown.subject}");
+            # Check initial state
+            print(f"Initial status: {messenger.get_status()}");
         }
         ```
         </div>
     === "Python"
         ```python
-        # Python equivalent using regular classes
+        class MessageDelivery:
+            def __init__(self, message: str):
+                self.message = message
+                self.delivery_count = 0
+                self.visited_locations = []
+
+            def get_status(self) -> str:
+                return f"Delivered {self.delivery_count} messages to {len(self.visited_locations)} locations"
+
         class Student:
-            def __init__(self, name: str, age: int, grade_level: int, student_id: str):
+            def __init__(self, name: str):
                 self.name = name
-                self.age = age
-                self.grade_level = grade_level
-                self.student_id = student_id
+                self.messages = []
 
         class Teacher:
-            def __init__(self, name: str, subject: str, years_experience: int, email: str):
+            def __init__(self, name: str, subject: str):
                 self.name = name
                 self.subject = subject
-                self.years_experience = years_experience
-                self.email = email
 
         if __name__ == "__main__":
-            # Create student objects
-            alice = Student(
-                name="Alice Johnson",
-                age=16,
-                grade_level=10,
-                student_id="S001"
-            )
+            # Create messenger instance
+            messenger = MessageDelivery(message="Hello from the principal!")
 
-            bob = Student(
-                name="Bob Smith",
-                age=15,
-                grade_level=9,
-                student_id="S002"
-            )
-
-            # Create teacher object
-            ms_brown = Teacher(
-                name="Ms. Brown",
-                subject="Mathematics",
-                years_experience=8,
-                email="brown@school.edu"
-            )
-
-            print(f"Created student: {alice.name} (Grade {alice.grade_level})")
-            print(f"Created teacher: {ms_brown.name} teaches {ms_brown.subject}")
+            # Check initial state
+            print(f"Initial status: {messenger.get_status()}")
         ```
 
-### Node Persistence with Root
+## Ability Definitions and Triggers
 
-!!! topic "The Root Node"
-    Nodes connected to `root` (directly or indirectly) automatically persist between program runs. This gives you a database-like behavior without setup.
+!!! topic "Event-Driven Execution"
+    Abilities are methods that execute automatically when certain events occur during graph traversal. They create reactive, context-aware behavior.
 
-!!! example "Persistent Classroom Data"
+### Entry and Exit Abilities
+
+!!! example "Basic Abilities"
     === "Jac"
         <div class="code-block">
         ```jac
-        # Basic node for representing students
+        # Basic classroom nodes
         node Student {
             has name: str;
-            has age: int;
-            has grade_level: int;
-            has student_id: str;
+            has messages: list[str] = [];
         }
 
-        node Classroom {
-            has room_number: str;
-            has capacity: int;
-            has has_projector: bool = True;
+        node Teacher {
+            has name: str;
+            has subject: str;
+        }
+
+        walker MessageDelivery {
+            has message: str;
+            has delivery_count: int = 0;
+            has visited_locations: list[str] = [];
+
+            # Entry ability - triggered when entering any Student
+            can deliver_to_student with Student entry {
+                print(f"Delivering message to student {here.name}");
+                here.messages.append(self.message);
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Entry ability - triggered when entering any Teacher
+            can deliver_to_teacher with Teacher entry {
+                print(f"Delivering message to teacher {here.name} ({here.subject})");
+                # Teachers just acknowledge the message
+                print(f"  {here.name} says: 'Message received!'");
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Exit ability - triggered when leaving any node
+            can log_visit with entry {
+                node_type = type(here).__name__;
+                print(f"  Visited {node_type}");
+            }
         }
 
         with entry {
-            # Connect to root for persistence
-            math_room = root ++> Classroom(
-                room_number="101",
-                capacity=30,
-                has_projector=True
-            );
+            # Create simple classroom
+            alice = root ++> Student(name="Alice");
+            bob = root ++> Student(name="Bob");
+            ms_smith = root ++> Teacher(name="Ms. Smith", subject="Math");
 
-            # Also persistent (connected through math_room)
-            alice = math_room ++> Student(
-                name="Alice Johnson",
-                age=16,
-                grade_level=10,
-                student_id="S001"
-            );
+            # Create and activate messenger
+            messenger = MessageDelivery(message="School assembly at 2 PM");
 
-            # Temporary node (not connected to root)
-            temp_student = Student(
-                name="Temporary",
-                age=15,
-                grade_level=9,
-                student_id="TEMP"
-            );
+            # Spawn walker on Alice - this activates it
+            alice[0] spawn messenger;
 
-            print(f"Persistent classroom: {math_room[0].room_number}");
-            print(f"Persistent student: {alice[0].name}");
-            print(f"Temporary student: {temp_student.name} (will not persist)");
+            # Check Alice's messages
+            print(f"Alice's messages: {alice[0].messages}");
         }
         ```
         </div>
     === "Python"
         ```python
-        # Python simulation using a simple registry
-        class NodeRegistry:
-            def __init__(self):
-                self.nodes = {}
-                self.connections = {}
+        class MessageDelivery:
+            def __init__(self, message: str):
+                self.message = message
+                self.delivery_count = 0
+                self.visited_locations = []
 
-            def add_node(self, node_id: str, node):
-                self.nodes[node_id] = node
-                self.connections[node_id] = []
+            def deliver_to_student(self, student):
+                print(f"Delivering message to student {student.name}")
+                student.messages.append(self.message)
+                self.delivery_count += 1
+                self.visited_locations.append(student.name)
 
-            def connect(self, from_id: str, to_id: str):
-                if from_id in self.connections:
-                    self.connections[from_id].append(to_id)
+            def deliver_to_teacher(self, teacher):
+                print(f"Delivering message to teacher {teacher.name} ({teacher.subject})")
+                print(f"  {teacher.name} says: 'Message received!'")
+                self.delivery_count += 1
+                self.visited_locations.append(teacher.name)
 
-        class Classroom:
-            def __init__(self, room_number: str, capacity: int, has_projector: bool = True):
-                self.room_number = room_number
-                self.capacity = capacity
-                self.has_projector = has_projector
+            def visit_node(self, node):
+                node_type = type(node).__name__
+                print(f"  Visited {node_type}")
+
+                # Manually check type and call appropriate method
+                if isinstance(node, Student):
+                    self.deliver_to_student(node)
+                elif isinstance(node, Teacher):
+                    self.deliver_to_teacher(node)
 
         if __name__ == "__main__":
-            # Simulate persistence with a registry
-            registry = NodeRegistry()
+            # Create simple classroom
+            alice = Student("Alice")
+            bob = Student("Bob")
+            ms_smith = Teacher("Ms. Smith", "Math")
 
-            # Create classroom
-            math_room = Classroom(
-                room_number="101",
-                capacity=30,
-                has_projector=True
-            )
-            registry.add_node("math_room", math_room)
+            # Create and use messenger manually
+            messenger = MessageDelivery("School assembly at 2 PM")
 
-            # Create student connected to classroom
-            alice = Student(
-                name="Alice Johnson",
-                age=16,
-                grade_level=10,
-                student_id="S001"
-            )
-            registry.add_node("alice", alice)
-            registry.connect("math_room", "alice")
+            # Manually visit nodes (simulating walker spawn)
+            messenger.visit_node(alice)
 
-            # Temporary object (not in registry)
-            temp_student = Student(
-                name="Temporary",
-                age=15,
-                grade_level=9,
-                student_id="TEMP"
-            )
-
-            print(f"Registered classroom: {math_room.room_number}")
-            print(f"Registered student: {alice.name}")
-            print(f"Temporary student: {temp_student.name} (not registered)")
+            # Check Alice's messages
+            print(f"Alice's messages: {alice.messages}")
         ```
 
-## Edge Types and Relationships
-Edges in Jac represent relationships between nodes. They are first-class objects with their own properties and behaviors, allowing you to model complex interactions like enrollment, teaching, and friendships. Edges can be created using the `edge` keyword, and they connect nodes in meaningful ways.
+## Walker Spawn and Visit
 
-!!! topic "First-Class Relationships"
-    Edges in Jac are not just connections - they're full objects with their own properties and behaviors. This makes relationships as important as the data they connect.
+!!! topic "Graph Traversal"
+    Walkers move through graphs using `spawn` (to start) and `visit` (to continue to connected nodes). This enables complex traversal patterns with simple syntax.
 
-### Basic Edge Declaration
+### Basic Traversal Patterns
 
-!!! example "Classroom Relationships"
+!!! example "Classroom Message Delivery"
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:158"
+        # Basic classroom nodes
+        node Student {
+            has name: str;
+            has messages: list[str] = [];
+        }
+
+        node Teacher {
+            has name: str;
+            has subject: str;
+        }
+
+        walker MessageDelivery {
+            has message: str;
+            has delivery_count: int = 0;
+            has visited_locations: list[str] = [];
+
+            # Entry ability - triggered when entering any Student
+            can deliver_to_student with Student entry {
+                print(f"Delivering message to student {here.name}");
+                here.messages.append(self.message);
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Entry ability - triggered when entering any Teacher
+            can deliver_to_teacher with Teacher entry {
+                print(f"Delivering message to teacher {here.name} ({here.subject})");
+                # Teachers just acknowledge the message
+                print(f"  {here.name} says: 'Message received!'");
+                self.delivery_count += 1;
+                self.visited_locations.append(here.name);
+            }
+
+            # Exit ability - triggered when leaving any node
+            can log_visit with entry {
+                node_type = type(here).__name__;
+                print(f"  Visited {node_type}");
+            }
+        }
+
+        edge InClass {
+            has room: str;
+        }
+
+        walker ClassroomMessenger {
+            has announcement: str;
+            has rooms_visited: set[str] = {};
+            has people_reached: int = 0;
+
+            can deliver with Student entry {
+                print(f" Student {here.name}: {self.announcement}");
+                self.people_reached += 1;
+
+                # Continue to connected nodes
+                visit [-->];
+            }
+
+            can deliver with Teacher entry {
+                print(f" Teacher {here.name}: {self.announcement}");
+                self.people_reached += 1;
+
+                # Continue to connected nodes
+                visit [-->];
+            }
+
+            can track_room with InClass entry {
+                room = here.room;
+                if room not in self.rooms_visited {
+                    self.rooms_visited.add(room);
+                    print(f" Now in {room}");
+                }
+            }
+
+            can summarize with Student exit {
+                # Only report once at the end
+                if len([-->]) == 0 {  # At a node with no outgoing connections
+                    print(f" Delivery complete!");
+                    print(f"   People reached: {self.people_reached}");
+                    print(f"   Rooms visited: {list(self.rooms_visited)}");
+                }
+            }
+        }
+
+        with entry {
+            # Create classroom structure
+            alice = root ++> Student(name="Alice");
+            bob = root ++> Student(name="Bob");
+            charlie = root ++> Student(name="Charlie");
+            ms_jones = root ++> Teacher(name="Ms. Jones", subject="Science");
+
+            # Connect them in the same classroom
+            alice +>:InClass(room="Room 101"):+> bob;
+            bob +>:InClass(room="Room 101"):+> charlie;
+            charlie +>:InClass(room="Room 101"):+> ms_jones;
+
+            # Send a message through the classroom
+            messenger = ClassroomMessenger(announcement="Fire drill in 5 minutes");
+            alice[0] spawn messenger;
+        }
         ```
         </div>
     === "Python"
         ```python
-        from typing import List, Dict
-        import uuid
-
-        class Edge:
-            def __init__(self, edge_type: str, from_node, to_node, **properties):
-                self.id = str(uuid.uuid4())
-                self.edge_type = edge_type
+        class InClass:
+            def __init__(self, from_node, to_node, room: str):
                 self.from_node = from_node
                 self.to_node = to_node
-                self.properties = properties
+                self.room = room
 
-        class EnrolledIn(Edge):
-            def __init__(self, from_node, to_node, enrollment_date: str, grade: str = "Not Assigned", attendance_rate: float = 100.0):
-                super().__init__("EnrolledIn", from_node, to_node)
-                self.enrollment_date = enrollment_date
-                self.grade = grade
-                self.attendance_rate = attendance_rate
+        class ClassroomMessenger:
+            def __init__(self, announcement: str):
+                self.announcement = announcement
+                self.rooms_visited = set()
+                self.people_reached = 0
+                self.visited_nodes = set()
 
-        class Teaches(Edge):
-            def __init__(self, from_node, to_node, start_date: str, schedule: str, is_primary: bool = True):
-                super().__init__("Teaches", from_node, to_node)
-                self.start_date = start_date
-                self.schedule = schedule
-                self.is_primary = is_primary
+            def deliver_to_student(self, student):
+                print(f" Student {student.name}: {self.announcement}")
+                self.people_reached += 1
 
-        class FriendsWith(Edge):
-            def __init__(self, from_node, to_node, since: str, closeness: int = 5):
-                super().__init__("FriendsWith", from_node, to_node)
-                self.since = since
-                self.closeness = closeness
+            def deliver_to_teacher(self, teacher):
+                print(f" Teacher {teacher.name}: {self.announcement}")
+                self.people_reached += 1
 
-        class GraphDatabase:
-            def __init__(self):
-                self.nodes = {}
-                self.edges = []
+            def track_room(self, edge):
+                if edge.room not in self.rooms_visited:
+                    self.rooms_visited.add(edge.room)
+                    print(f"   Now in {edge.room}")
 
-            def add_node(self, node):
-                node.id = str(uuid.uuid4())
-                self.nodes[node.id] = node
-                return node
+            def visit_network(self, node, connections):
+                # Avoid infinite loops
+                if node in self.visited_nodes:
+                    return
 
-            def add_edge(self, edge):
-                self.edges.append(edge)
-                return edge
+                self.visited_nodes.add(node)
+
+                # Process current node
+                if isinstance(node, Student):
+                    self.deliver_to_student(node)
+                elif isinstance(node, Teacher):
+                    self.deliver_to_teacher(node)
+
+                # Visit connected nodes
+                for edge in connections.get(node, []):
+                    self.track_room(edge)
+                    self.visit_network(edge.to_node, connections)
+
+                # Check if we're at the end
+                if not connections.get(node, []):
+                    print(f" elivery complete!")
+                    print(f"   People reached: {self.people_reached}")
+                    print(f"   Rooms visited: {list(self.rooms_visited)}")
 
         if __name__ == "__main__":
-            db = GraphDatabase()
+            # Create classroom structure
+            alice = Student("Alice")
+            bob = Student("Bob")
+            charlie = Student("Charlie")
+            ms_jones = Teacher("Ms. Jones", "Science")
 
-            # Create nodes
-            math_class = db.add_node(Classroom(room_number="101", capacity=30))
-            alice = db.add_node(Student(name="Alice", age=16, grade_level=10, student_id="S001"))
-            bob = db.add_node(Student(name="Bob", age=16, grade_level=10, student_id="S002"))
-            ms_brown = db.add_node(Teacher(name="Ms. Brown", subject="Math", years_experience=8, email="brown@school.edu"))
+            # Create connections manually
+            connections = {
+                alice: [InClass(alice, bob, "Room 101")],
+                bob: [InClass(bob, charlie, "Room 101")],
+                charlie: [InClass(charlie, ms_jones, "Room 101")],
+                ms_jones: []
+            }
 
-            # Create edges with properties
-            db.add_edge(EnrolledIn(
-                alice, math_class,
-                enrollment_date="2024-08-15",
-                grade="A",
-                attendance_rate=95.0
-            ))
-
-            db.add_edge(EnrolledIn(
-                bob, math_class,
-                enrollment_date="2024-08-15",
-                grade="B+",
-                attendance_rate=88.0
-            ))
-
-            db.add_edge(Teaches(
-                ms_brown, math_class,
-                start_date="2024-08-01",
-                schedule="MWF 9:00-10:00",
-                is_primary=True
-            ))
-
-            db.add_edge(FriendsWith(
-                alice, bob,
-                since="2023-09-01",
-                closeness=8
-            ))
-
-            print("Classroom connections created successfully!")
-            print(f"Database has {len(db.nodes)} nodes and {len(db.edges)} edges")
+            # Send message through classroom
+            messenger = ClassroomMessenger("Fire drill in 5 minutes")
+            messenger.visit_network(alice, connections)
         ```
 
-## Graph Creation Syntax
+### Advanced Traversal Control
 
-!!! topic "Connection Operators"
-    Jac provides intuitive syntax for connecting nodes: `++>` creates a new connection, while `-->` references existing connections.
-
-### Connection Patterns
-Let's see how to create and connect nodes using Jac's syntax. You can create nodes and connect them in a single expression, which makes it easy to build complex relationships. The example below shows how to create a classroom, add a teacher, and enroll students in that classroom.
-
-!!! example "Building a Complete Classroom"
+!!! example "Selective Message Delivery"
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:158"
+        import random;
+
+        node Student {
+            has name: str;
+            has grade_level: int;
+            has messages: list[str] = [];
+        }
+
+        edge StudyGroup {
+            has subject: str;
+        }
+
+        walker AttendanceChecker {
+            has present_students: list[str] = [];
+            has absent_students: list[str] = [];
+            has max_checks: int = 5;
+            has checks_done: int = 0;
+
+            can check_attendance with Student entry {
+                self.checks_done += 1;
+
+                # Simulate checking if student is present (random for demo)
+                is_present = random.choice([True, False]);
+
+                if is_present {
+                    print(f"{here.name} is present");
+                    self.present_students.append(here.name);
+                } else {
+                    print(f"{here.name} is absent");
+                    self.absent_students.append(here.name);
+                }
+
+                # Control flow based on conditions
+                if self.checks_done >= self.max_checks {
+                    print(f"Reached maximum checks ({self.max_checks})");
+                    self.report_final();
+                    disengage;  # Stop the walker
+                }
+
+                # Skip if no more connections
+                connections = [-->];
+                if not connections {
+                    print("No more students to check");
+                    self.report_final();
+                    disengage;
+                }
+
+                # Continue to next student
+                visit [-->];
+            }
+
+            def report_final() -> None {
+                print(f" Attendance Report:");
+                print(f"   Present: {self.present_students}");
+                print(f"   Absent: {self.absent_students}");
+                print(f"   Total checked: {self.checks_done}");
+            }
+        }
+
+        with entry {
+            # Create a chain of students
+            alice = root ++> Student(name="Alice", grade_level=9);
+            bob = alice ++> Student(name="Bob", grade_level=9);
+            charlie = bob ++> Student(name="Charlie", grade_level=9);
+            diana = charlie ++> Student(name="Diana", grade_level=9);
+            eve = diana ++> Student(name="Eve", grade_level=9);
+
+            # Start attendance check
+            checker = AttendanceChecker(max_checks=3);
+            alice[0] spawn checker;
+        }
         ```
         </div>
     === "Python"
         ```python
+        class StudyGroup:
+            def __init__(self, from_node, to_node, subject: str):
+                self.from_node = from_node
+                self.to_node = to_node
+                self.subject = subject
+
+        class Student:
+            def __init__(self, name: str, grade_level: int):
+                self.name = name
+                self.grade_level = grade_level
+                self.messages = []
+
+        class GradeSpecificMessenger:
+            def __init__(self, message: str, target_grade: int):
+                self.message = message
+                self.target_grade = target_grade
+                self.delivered_to = []
+                self.visited = set()
+
+            def visit_student(self, student, connections):
+                if student in self.visited:
+                    return
+
+                self.visited.add(student)
+
+                if student.grade_level == self.target_grade:
+                    print(f"Delivering to {student.name} (Grade {student.grade_level}): {self.message}")
+                    student.messages.append(self.message)
+                    self.delivered_to.append(student.name)
+                else:
+                    print(f"Skipping {student.name} (Grade {student.grade_level}) - not target grade")
+
+                # Visit connected students
+                for edge in connections.get(student, []):
+                    print(f"  Moving through {edge.subject} study group")
+                    self.visit_student(edge.to_node, connections)
+
+                # Report if at end
+                if not connections.get(student, []):
+                    print(f" Delivery Summary:")
+                    print(f"   Target: Grade {self.target_grade} students")
+                    print(f"   Message: '{self.message}'")
+                    print(f"   Delivered to: {self.delivered_to}")
+
         if __name__ == "__main__":
-            db = GraphDatabase()
+            # Create multi-grade study network
+            alice = Student("Alice", 9)
+            bob = Student("Bob", 10)
+            charlie = Student("Charlie", 9)
+            diana = Student("Diana", 11)
 
-            # Create the main classroom
-            science_lab = db.add_node(Classroom(
-                room_number="Lab-A",
-                capacity=24,
-                has_projector=True
-            ))
+            # Create connections
+            connections = {
+                alice: [StudyGroup(alice, bob, "Math")],
+                bob: [StudyGroup(bob, charlie, "Science")],
+                charlie: [StudyGroup(charlie, diana, "History")],
+                diana: []
+            }
 
-            # Create teacher
-            dr_smith = db.add_node(Teacher(
-                name="Dr. Smith",
-                subject="Chemistry",
-                years_experience=12,
-                email="smith@school.edu"
-            ))
+            # Send grade-specific message
+            messenger = GradeSpecificMessenger(
+                "Grade 9 field trip permission slips due Friday!",
+                9
+            )
 
-            # Connect teacher to classroom
-            db.add_edge(Teaches(
-                dr_smith, science_lab,
-                start_date="2024-08-01",
-                schedule="TR 10:00-11:30"
-            ))
+            messenger.visit_student(alice, connections)
 
-            # Create students and enroll them
-            students = [
-                ("Charlie", 17, 11, "S003"),
-                ("Diana", 16, 11, "S004"),
-                ("Eve", 17, 11, "S005")
-            ]
-
-            for name, age, grade, id in students:
-                student = db.add_node(Student(
-                    name=name,
-                    age=age,
-                    grade_level=grade,
-                    student_id=id
-                ))
-
-                db.add_edge(EnrolledIn(
-                    student, science_lab,
-                    enrollment_date="2024-08-15",
-                    attendance_rate=92.0
-                ))
-
-                print(f"Enrolled {student.name} in {science_lab.room_number}")
-
-            print(f"Created classroom {science_lab.room_number} with {dr_smith.name}")
-            print(f"Total nodes: {len(db.nodes)}, Total edges: {len(db.edges)}")
+            # Check who got the message
+            print(f"Alice's messages: {alice.messages}")
+            print(f"Bob's messages: {bob.messages}")
+            print(f"Charlie's messages: {charlie.messages}")
         ```
 
-## Graph Navigation and Filtering
+## Walker Control Flow
 
-!!! topic "Traversal Syntax"
-    Jac provides powerful syntax for navigating graphs: `[-->]` gets outgoing connections, `[<--]` gets incoming connections, and filters can be applied to find specific nodes or edges.
+!!! topic "Traversal Control"
+    Walkers can control their movement through the graph using special statements like `visit`, `disengage`, and `skip`.
 
-### Basic Navigation
+### Controlling Walker Behavior
 
-!!! example "Finding Connected Nodes"
+!!! example "Smart Walker Control"
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:166"
+        node Student {
+            has name: str;
+            has grade_level: int;
+        }
+
+        walker AttendanceChecker {
+            has present_students: list[str] = [];
+            has absent_students: list[str] = [];
+            has max_checks: int = 5;
+            has checks_done: int = 0;
+
+            can check_attendance with Student entry {
+                self.checks_done += 1;
+
+                # Simulate checking if student is present (random for demo)
+                import random;
+                is_present = random.choice([True, False]);
+
+                if is_present {
+                    print(f"{here.name} is present");
+                    self.present_students.append(here.name);
+                } else {
+                    print(f"{here.name} is absent");
+                    self.absent_students.append(here.name);
+                }
+
+                # Control flow based on conditions
+                if self.checks_done >= self.max_checks {
+                    print(f"Reached maximum checks ({self.max_checks})");
+                    self.report_final();
+                    disengage;  # Stop the walker
+                }
+
+                # Skip if no more connections
+                connections = [-->];
+                if not connections {
+                    print("No more students to check");
+                    self.report_final();
+                    disengage;
+                }
+
+                # Continue to next student
+                visit [-->];
+            }
+
+            def report_final() -> None {
+                print(f" Attendance Report:");
+                print(f"   Present: {self.present_students}");
+                print(f"   Absent: {self.absent_students}");
+                print(f"   Total checked: {self.checks_done}");
+            }
+        }
+
+        with entry {
+            # Create a chain of students
+            alice = root ++> Student(name="Alice", grade_level=9);
+            bob = alice ++> Student(name="Bob", grade_level=9);
+            charlie = bob ++> Student(name="Charlie", grade_level=9);
+            diana = charlie ++> Student(name="Diana", grade_level=9);
+            eve = diana ++> Student(name="Eve", grade_level=9);
+
+            # Start attendance check
+            checker = AttendanceChecker(max_checks=3);
+            alice[0] spawn checker;
+        }
         ```
         </div>
     === "Python"
         ```python
-        class ClassroomExplorer:
-            def __init__(self, db: GraphDatabase):
-                self.db = db
+        import random
 
-            def explore_classroom(self, classroom):
-                print(f"=== Exploring {classroom.room_number} ===")
+        class AttendanceChecker:
+            def __init__(self, max_checks: int = 5):
+                self.present_students = []
+                self.absent_students = []
+                self.max_checks = max_checks
+                self.checks_done = 0
+                self.should_stop = False
 
-                # Find all students enrolled in this classroom
-                students = []
-                for edge in self.db.edges:
-                    if (isinstance(edge, EnrolledIn) and
-                        edge.to_node == classroom):
-                        students.append(edge.from_node)
+            def check_student(self, student, connections):
+                if self.should_stop:
+                    return
 
-                print(f"Students enrolled: {len(students)}")
-                for student in students:
-                    print(f"  - {student.name} (ID: {student.student_id})")
+                self.checks_done += 1
 
-                # Find the teacher
-                teachers = []
-                for edge in self.db.edges:
-                    if (isinstance(edge, Teaches) and
-                        edge.to_node == classroom):
-                        teachers.append(edge.from_node)
+                # Simulate checking if student is present
+                is_present = random.choice([True, False])
 
-                if teachers:
-                    teacher = teachers[0]
-                    print(f"Teacher: {teacher.name} ({teacher.subject})")
+                if is_present:
+                    print(f" {student.name} is present")
+                    self.present_students.append(student.name)
+                else:
+                    print(f" {student.name} is absent")
+                    self.absent_students.append(student.name)
 
-                # Show classroom info
-                equipment = "Projector" if classroom.has_projector else "No projector"
-                print(f"Equipment: {equipment}")
-                print(f"Capacity: {classroom.capacity} students")
+                # Control flow based on conditions
+                if self.checks_done >= self.max_checks:
+                    print(f" Reached maximum checks ({self.max_checks})")
+                    self.report_final()
+                    return  # Stop checking
 
-        if __name__ == "__main__":
-            # Continuing from previous example...
-            explorer = ClassroomExplorer(db)
+                # Continue to next student if available
+                next_students = connections.get(student, [])
+                if not next_students:
+                    print(" No more students to check")
+                    self.report_final()
+                    return
 
-            # Find all classrooms and explore them
-            classrooms = [node for node in db.nodes.values()
-                         if isinstance(node, Classroom)]
+                # Visit next student
+                for next_student in next_students:
+                    self.check_student(next_student, connections)
 
-            for classroom in classrooms:
-                explorer.explore_classroom(classroom)
-        ```
-
-### Advanced Filtering
-
-!!! example "Filtered Graph Queries"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:177"
-        ```
-        </div>
-    === "Python"
-        ```python
-        class StudentAnalyzer:
-            def __init__(self, db: GraphDatabase):
-                self.db = db
-                self.high_performers = []
-                self.needs_help = []
-
-            def analyze_all_students(self):
-                # Find all students
-                students = [node for node in self.db.nodes.values()
-                           if isinstance(node, Student)]
-
-                for student in students:
-                    self.analyze_student(student)
-
-                self.generate_report()
-
-            def analyze_student(self, student):
-                # Find enrollment information for this student
-                for edge in self.db.edges:
-                    if (isinstance(edge, EnrolledIn) and
-                        edge.from_node == student):
-
-                        grade = edge.grade
-                        attendance = edge.attendance_rate
-
-                        # Categorize students
-                        if grade in ["A", "A-", "B+"] and attendance >= 90.0:
-                            self.high_performers.append({
-                                "name": student.name,
-                                "grade": grade,
-                                "attendance": attendance
-                            })
-                        elif attendance < 85.0 or grade in ["D", "F"]:
-                            self.needs_help.append({
-                                "name": student.name,
-                                "grade": grade,
-                                "attendance": attendance
-                            })
-
-            def generate_report(self):
-                print("=== Student Analysis Report ===")
-
-                print(f"High Performers ({len(self.high_performers)}):")
-                for student in self.high_performers:
-                    print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
-
-                print(f"Needs Support ({len(self.needs_help)}):")
-                for student in self.needs_help:
-                    print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
+            def report_final(self):
+                print(f" Attendance Report:")
+                print(f"   Present: {self.present_students}")
+                print(f"   Absent: {self.absent_students}")
+                print(f"   Total checked: {self.checks_done}")
 
         if __name__ == "__main__":
-            # Continuing from previous example...
-            analyzer = StudentAnalyzer(db)
-            analyzer.analyze_all_students()
+            # Create a chain of students
+            alice = Student("Alice", 9)
+            bob = Student("Bob", 9)
+            charlie = Student("Charlie", 9)
+            diana = Student("Diana", 9)
+            eve = Student("Eve", 9)
+
+            # Create connections (linear chain)
+            connections = {
+                alice: [bob],
+                bob: [charlie],
+                charlie: [diana],
+                diana: [eve],
+                eve: []
+            }
+
+            # Start attendance check
+            checker = AttendanceChecker(max_checks=3)
+            checker.check_student(alice, connections)
         ```
 
-## Best Practices for Nodes and Edges
+## Key Concepts Summary
 
-!!! summary "Design Guidelines"
-    - **Nodes for Entities**: Use nodes for things that exist independently (students, teachers, classrooms)
-    - **Edges for Relationships**: Use edges for connections between entities (enrollment, teaching, friendship)
-    - **Rich Edge Properties**: Store relationship-specific data in edges (grades, dates, status)
-    - **Consistent Naming**: Use clear, descriptive names for node and edge types
-    - **Connect to Root**: Always connect important nodes to root for persistence
+!!! summary "Walker and Ability Fundamentals"
+    - **Walkers** are mobile computational entities that traverse graphs
+    - **Abilities** are event-driven methods that execute automatically during traversal
+    - **Entry abilities** trigger when a walker arrives at a node
+    - **Exit abilities** trigger when a walker leaves a node
+    - **Spawn** activates a walker at a specific starting location
+    - **Visit** moves a walker to connected nodes
+    - **Disengage** stops a walker's execution
+
+## Best Practices
+
+!!! summary "Walker Design Guidelines"
+    - **Keep abilities focused**: Each ability should have a single, clear purpose
+    - **Use descriptive names**: Make it clear what each walker and ability does
+    - **Handle edge cases**: Check for empty connections before visiting
+    - **Control traversal flow**: Use conditions to avoid infinite loops
+    - **Report results**: Use exit abilities to summarize walker activities
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Nodes** are spatial objects that can be connected and persisted automatically
-    - **Edges** are first-class relationships with their own properties and behaviors
-    - **Root Connection** provides automatic persistence for connected nodes
-    - **Navigation Syntax** makes finding related data intuitive with `[-->]` and `[<--]`
-    - **Filtering** enables powerful queries directly in the traversal syntax
-    - **Walkers** can traverse and analyze the graph structure effectively
+    - **Walkers** bring computation to data through graph traversal
+    - **Abilities** create reactive, event-driven behavior at each graph location
+    - **Entry/Exit patterns** provide fine-grained control over processing
+    - **Spawn and Visit** enable flexible navigation through connected data
+    - **Control flow** statements like `disengage` allow smart traversal decisions
 
-Nodes and edges form the foundation of Object-Spatial Programming. By modeling your data as connected entities rather than isolated objects, you create more natural representations that enable powerful traversal and analysis patterns.
+Walkers and abilities transform static data structures into dynamic, reactive systems. They enable algorithms that naturally adapt to the shape and content of your data, creating programs that are both intuitive and powerful.
 
-In the next chapter, we'll explore walkers and abilities - the mobile computational entities that bring your graphs to life by moving through and processing your spatial data structures.
+In the next chapter, we'll explore advanced object-spatial operations including complex traversal patterns and sophisticated filtering techniques that unlock the full potential of graph-based programming.

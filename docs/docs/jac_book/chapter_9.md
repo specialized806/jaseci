@@ -1,719 +1,544 @@
-# Chapter 9: OSP Introduction and Paradigm Shift
+# Chapter 9: Nodes and Edges
 
-Object-Spatial Programming (OSP) represents a fundamental shift in how we think about and organize computation. Instead of the traditional approach of moving data to computation, OSP moves computation to data. This chapter introduces this revolutionary paradigm through simple examples that demonstrate the power and elegance of spatial thinking.
+**Nodes** and **Edges** are the fundamental building blocks of Object-Spatial Programming. Nodes represent data locations in your graph, while edges represent the relationships between them. This chapter shows you how to create, connect, and work with these spatial constructs using a simple classroom management system.
 
-!!! topic "The Core Paradigm Shift"
-    Traditional programming brings all data to a central location for processing. OSP sends computation to where the data lives, creating more natural, efficient, and scalable programs.
+!!! topic "Graph-Based Data Modeling"
+    Instead of storing data in isolated objects, OSP organizes data as connected nodes in a graph. This makes relationships explicit and enables powerful traversal patterns.
 
-## From "Data to Computation" to "Computation to Data"
+## Node Creation and Properties
+Nodes are the primary objects in Jac, representing entities like students, teachers, classrooms, etc. They can have properties and can be connected to other nodes through edges. Nodes can be created with the `node` keyword, and they automatically persist when connected to the root node.
 
-!!! topic "Traditional vs Object-Spatial"
-    Understanding the difference between these approaches is key to unlocking the power of Jac's unique programming model.
 
-### Traditional Programming: Centralized Processing
+!!! topic "What are Nodes?"
+    Nodes are special objects that can be connected to other nodes through edges. They automatically persist when connected to the root node and can react to visiting walkers.
 
-In traditional programming, we gather all data in one place and then process it:
+### Basic Node Declaration
 
-!!! example "Traditional Data Processing"
-    === "Jac (Traditional Style)"
-        <div class="code-block">
-        ```jac
-        # Traditional approach - bring all data to one place
-        obj FamilyTraditional {
-            has members: list[dict] = [];
 
-            def add_member(name: str, age: int, generation: int) -> None {
-                self.members.append({
-                    "name": name,
-                    "age": age,
-                    "generation": generation
-                });
-            }
-
-            def count_by_generation() -> dict[int, int] {
-                counts = {};
-                # Process all data in one loop
-                for member in self.members {
-                    gen = member["generation"];
-                    counts[gen] = counts.get(gen, 0) + 1;
-                }
-                return counts;
-            }
-        }
-
-        with entry {
-            family = FamilyTraditional();
-
-            # Add all family members
-            family.add_member("Grandpa Joe", 75, 1);
-            family.add_member("Grandma Sue", 72, 1);
-            family.add_member("Dad Mike", 45, 2);
-            family.add_member("Mom Lisa", 43, 2);
-            family.add_member("Son Alex", 16, 3);
-            family.add_member("Daughter Emma", 14, 3);
-
-            # Process all data centrally
-            generation_counts = family.count_by_generation();
-            print(f"Generation counts: {generation_counts}");
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        class FamilyTraditional:
-            def __init__(self):
-                self.members = []
-
-            def add_member(self, name: str, age: int, generation: int):
-                self.members.append({
-                    "name": name,
-                    "age": age,
-                    "generation": generation
-                })
-
-            def count_by_generation(self):
-                counts = {}
-                # Process all data in one loop
-                for member in self.members:
-                    gen = member["generation"]
-                    counts[gen] = counts.get(gen, 0) + 1
-                return counts
-
-        if __name__ == "__main__":
-            family = FamilyTraditional()
-
-            # Add all family members
-            family.add_member("Grandpa Joe", 75, 1)
-            family.add_member("Grandma Sue", 72, 1)
-            family.add_member("Dad Mike", 45, 2)
-            family.add_member("Mom Lisa", 43, 2)
-            family.add_member("Son Alex", 16, 3)
-            family.add_member("Daughter Emma", 14, 3)
-
-            # Process all data centrally
-            generation_counts = family.count_by_generation()
-            print(f"Generation counts: {generation_counts}")
-        ```
-
-### Object-Spatial Programming: Distributed Processing
-
-In OSP, computation moves to where the data naturally lives:
-
-!!! example "Object-Spatial Family Tree"
+!!! example "Simple Node Types"
     === "Jac"
         <div class="code-block">
         ```jac
-        # OSP approach - computation goes to data
-        node Person {
-            has name: str;
-            has age: int;
-            has generation: int;
-        }
-
-        edge Relationship{}
-        edge MarriedTo(Relationship){}
-        edge ParentOf(Relationship){}
-
-        walker GenerationCounter {
-            has generation_counts: dict[int, int] = {};
-            has visited: set[Person] = set();
-
-            can count with Person entry {
-                if here in self.visited {
-                    return;  # Skip if already visited
-                }
-
-                self.visited.add(here);  # Mark this person as visited
-
-                # Computation happens AT each person
-                gen = here.generation;
-                self.generation_counts[gen] = self.generation_counts.get(gen, 0) + 1;
-
-                visit [<-:MarriedTo:->];  # Visit married partners
-
-                print(f"Counted {here.name} (Generation {gen})");
-
-                # Visit children
-                visit [->:ParentOf:->];
-            }
-        }
-
-        with entry {
-            # Create family tree structure
-            grandpa = root ++> Person(name="Grandpa Joe", age=75, generation=1);
-            grandma = root ++> Person(name="Grandma Sue", age=72, generation=1);
-
-            grandpa <+:MarriedTo:+> grandma;  # Connect grandparents
-
-            # Second generation
-            dad = grandpa[0] +>:ParentOf:+> Person(name="Dad Mike", age=45, generation=2);
-            mom = grandma[0] +>:ParentOf:+> Person(name="Mom Lisa", age=43, generation=2);
-            dad <+:MarriedTo:+> mom;  # Connect parents
-
-            # Third generation
-            son = dad[0] +>:ParentOf:+> Person(name="Son Alex", age=16, generation=3);
-            daughter = mom[0] +>:ParentOf:+> Person(name="Daughter Emma", age=14, generation=3);
-
-            # Send computation to the data
-            counter = GenerationCounter();
-            counter spawn grandpa[0];  # Start traversal from grandpa
-
-            print(f"Final counts: {counter.generation_counts}");
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        # Python simulation of OSP concepts
-        class Person:
-            def __init__(self, name: str, age: int, generation: int):
-                self.name = name
-                self.age = age
-                self.generation = generation
-                self.children = []
-
-            def add_child(self, child):
-                self.children.append(child)
-
-        class GenerationCounter:
-            def __init__(self):
-                self.generation_counts = {}
-
-            def count(self, person):
-                # Simulate "computation goes to data"
-                gen = person.generation
-                self.generation_counts[gen] = self.generation_counts.get(gen, 0) + 1
-
-                print(f"Counted {person.name} (Generation {gen})")
-
-                # Visit children recursively
-                for child in person.children:
-                    self.count(child)
-
-        if __name__ == "__main__":
-            # Create family tree structure
-            grandpa = Person("Grandpa Joe", 75, 1)
-            grandma = Person("Grandma Sue", 72, 1)
-
-            # Second generation
-            dad = Person("Dad Mike", 45, 2)
-            mom = Person("Mom Lisa", 43, 2)
-            grandpa.add_child(dad)
-            grandma.add_child(mom)
-
-            # Third generation
-            son = Person("Son Alex", 16, 3)
-            daughter = Person("Daughter Emma", 14, 3)
-            dad.add_child(son)
-            mom.add_child(daughter)
-
-            # Send computation to the data
-            counter = GenerationCounter()
-            counter.count(grandpa)  # Start traversal from grandpa
-
-            print(f"Final counts: {counter.generation_counts}")
-        ```
-
-## Data Spatial Programming Foundation
-
-!!! topic "Spatial Awareness"
-    In OSP, data structures are inherently spatial - they know their relationships and can react to visitors. This creates more intuitive and natural program organization.
-
-### Spatial Relationships in Data
-
-!!! example "Family Relationships"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        node FamilyMember {
-            has name: str;
-            has birth_year: int;
-
-            def get_age() -> int {
-                return 2024 - self.birth_year;
-            }
-        }
-
-        edge MarriedTo {
-            has marriage_year: int;
-
-            def get_marriage_duration() -> int {
-                return 2024 - self.marriage_year;
-            }
-        }
-
-        edge ChildOf {
-            has birth_order: int;  # 1st child, 2nd child, etc.
-        }
-
-        walker RelationshipFinder {
-            has relationships: list[str] = [];
-
-            can find_relationships with FamilyMember entry {
-                name = here.name;
-
-                # Find spouse
-                spouses= [->:MarriedTo:->];
-                for spouse in spouses {
-                    duration = [edge here --> spouse][0].get_marriage_duration();
-                    self.relationships.append(f"{name} married to {spouse.name} for {duration} years");
-                }
-
-                # Find children
-                children = [->:ChildOf:->];
-                if children {
-                    child_names = [child.name for child in children];
-                    self.relationships.append(f"{name} has children: {', '.join(child_names)}");
-                }
-
-                # Continue exploring family tree
-                visit [-->];
-            }
-        }
-
-        with entry {
-            # Create a simple family
-            john = root ++> FamilyMember(name="John", birth_year=1980);
-            mary = root ++> FamilyMember(name="Mary", birth_year=1982);
-
-            # Marriage relationship
-            john[0] +>:MarriedTo(marriage_year=2005):+> mary;
-
-            # Children
-            alice = john[0] +>:ChildOf(birth_order=1):+> FamilyMember(name="Alice", birth_year=2008);
-            bob = john[0] +>:ChildOf(birth_order=2):+> FamilyMember(name="Bob", birth_year=2010);
-
-            # Explore relationships
-            finder = RelationshipFinder();
-            finder spawn john[0];
-
-            for relationship in finder.relationships {
-                print(relationship);
-            }
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        from typing import List
-
-        class FamilyMember:
-            def __init__(self, name: str, birth_year: int):
-                self.name = name
-                self.birth_year = birth_year
-                self.spouse = None
-                self.children = []
-                self.marriage_year = None
-
-            def get_age(self) -> int:
-                return 2024 - self.birth_year
-
-            def marry(self, spouse, marriage_year: int):
-                self.spouse = spouse
-                self.marriage_year = marriage_year
-                spouse.spouse = self
-                spouse.marriage_year = marriage_year
-
-            def add_child(self, child):
-                self.children.append(child)
-
-        class RelationshipFinder:
-            def __init__(self):
-                self.relationships = []
-                self.visited = set()
-
-            def find_relationships(self, person: FamilyMember):
-                if person in self.visited:
-                    return
-
-                self.visited.add(person)
-                name = person.name
-
-                # Find spouse
-                if person.spouse:
-                    duration = 2024 - person.marriage_year
-                    self.relationships.append(f"{name} married to {person.spouse.name} for {duration} years")
-
-                # Find children
-                if person.children:
-                    child_names = [child.name for child in person.children]
-                    self.relationships.append(f"{name} has children: {', '.join(child_names)}")
-
-                # Continue exploring family tree
-                if person.spouse:
-                    self.find_relationships(person.spouse)
-                for child in person.children:
-                    self.find_relationships(child)
-
-        if __name__ == "__main__":
-            # Create a simple family
-            john = FamilyMember("John", 1980)
-            mary = FamilyMember("Mary", 1982)
-
-            # Marriage relationship
-            john.marry(mary, 2005)
-
-            # Children
-            alice = FamilyMember("Alice", 2008)
-            bob = FamilyMember("Bob", 2010)
-            john.add_child(alice)
-            john.add_child(bob)
-
-            # Explore relationships
-            finder = RelationshipFinder()
-            finder.find_relationships(john)
-
-            for relationship in finder.relationships:
-                print(relationship)
-        ```
-
-## Graph Thinking vs Object Thinking
-
-!!! topic "Mental Models"
-    OSP encourages thinking in terms of connections and relationships rather than isolated objects. This leads to more natural representations of real-world problems.
-
-### Object-Oriented Thinking
-
-In traditional OOP, we think about individual objects with their own data and methods:
-
-```python
-# Traditional OO thinking - isolated objects
-class Student:
-    def __init__(self, name):
-        self.name = name
-        self.grades = []
-
-    def add_grade(self, grade):
-        self.grades.append(grade)
-
-class Teacher:
-    def __init__(self, name):
-        self.name = name
-        self.students = []  # List of student references
-
-    def add_student(self, student):
-        self.students.append(student)
-```
-
-### Graph-Oriented Thinking
-
-In OSP, we think about entities and their relationships as a connected graph:
-
-!!! example "Classroom as a Graph"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        # Graph thinking - connected entities
+        # Basic node for representing students
         node Student {
             has name: str;
+            has age: int;
             has grade_level: int;
+            has student_id: str;
         }
 
+        # Basic node for representing teachers
         node Teacher {
             has name: str;
             has subject: str;
-        }
-
-        edge Teaches {
-            has semester: str;
-            has classroom: str;
-        }
-
-        edge Attends {
-            has grade: str = "Not Set";
-        }
-
-        walker ClassroomAnalyzer {
-            has teacher_student_count: dict[str, int] = {};
-            has student_subjects: dict[str, list[str]] = {};
-
-            can analyze_teacher with Teacher entry {
-                # Count students for this teacher
-                students = [->:Teaches:->];
-                self.teacher_student_count[here.name] = len(students);
-
-                print(f"{here.name} teaches {here.subject} to {len(students)} students");
-
-                # Visit students to gather more info
-                visit students;
-            }
-
-            can analyze_student with Student entry {
-                # Find what subjects this student takes
-                teachers = [<-:Teaches:<-];
-                subjects = [teacher.subject for teacher in teachers];
-                self.student_subjects[here.name] = subjects;
-
-                print(f"{here.name} (Grade {here.grade_level}) takes: {', '.join(subjects)}");
-            }
+            has years_experience: int;
+            has email: str;
         }
 
         with entry {
-            # Create classroom graph
-            ms_smith = Teacher(name="Ms. Smith", subject="Math");
-            mr_jones = Teacher(name="Mr. Jones", subject="Science");
+            # Create student nodes
+            alice = Student(
+                name="Alice Johnson",
+                age=16,
+                grade_level=10,
+                student_id="S001"
+            );
 
-            # Create students
-            alice = Student(name="Alice", grade_level=9);
-            bob = Student(name="Bob", grade_level=9);
-            charlie = Student(name="Charlie", grade_level=10);
+            bob = Student(
+                name="Bob Smith",
+                age=15,
+                grade_level=9,
+                student_id="S002"
+            );
 
-            # Create teaching relationships
-            ms_smith +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> alice;
-            ms_smith +>:Teaches(semester="Fall 2024", classroom="Room 101"):+> bob;
-            mr_jones +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> alice;
-            mr_jones +>:Teaches(semester="Fall 2024", classroom="Room 205"):+> charlie;
+            # Create teacher node
+            ms_brown = Teacher(
+                name="Ms. Brown",
+                subject="Mathematics",
+                years_experience=8,
+                email="brown@school.edu"
+            );
 
-            # Analyze the classroom network
-            analyzer = ClassroomAnalyzer();
-            analyzer spawn ms_smith;
-            analyzer spawn mr_jones;
-
-
-
-            print(f"Teacher-student counts: {analyzer.teacher_student_count}");
-            print(f"Student subjects: {analyzer.student_subjects}");
+            print(f"Created student: {alice.name} (Grade {alice.grade_level})");
+            print(f"Created teacher: {ms_brown.name} teaches {ms_brown.subject}");
         }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # Python equivalent using regular classes
+        class Student:
+            def __init__(self, name: str, age: int, grade_level: int, student_id: str):
+                self.name = name
+                self.age = age
+                self.grade_level = grade_level
+                self.student_id = student_id
+
+        class Teacher:
+            def __init__(self, name: str, subject: str, years_experience: int, email: str):
+                self.name = name
+                self.subject = subject
+                self.years_experience = years_experience
+                self.email = email
+
+        if __name__ == "__main__":
+            # Create student objects
+            alice = Student(
+                name="Alice Johnson",
+                age=16,
+                grade_level=10,
+                student_id="S001"
+            )
+
+            bob = Student(
+                name="Bob Smith",
+                age=15,
+                grade_level=9,
+                student_id="S002"
+            )
+
+            # Create teacher object
+            ms_brown = Teacher(
+                name="Ms. Brown",
+                subject="Mathematics",
+                years_experience=8,
+                email="brown@school.edu"
+            )
+
+            print(f"Created student: {alice.name} (Grade {alice.grade_level})")
+            print(f"Created teacher: {ms_brown.name} teaches {ms_brown.subject}")
+        ```
+
+### Node Persistence with Root
+
+!!! topic "The Root Node"
+    Nodes connected to `root` (directly or indirectly) automatically persist between program runs. This gives you a database-like behavior without setup.
+
+!!! example "Persistent Classroom Data"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        # Basic node for representing students
+        node Student {
+            has name: str;
+            has age: int;
+            has grade_level: int;
+            has student_id: str;
+        }
+
+        node Classroom {
+            has room_number: str;
+            has capacity: int;
+            has has_projector: bool = True;
+        }
+
+        with entry {
+            # Connect to root for persistence
+            math_room = root ++> Classroom(
+                room_number="101",
+                capacity=30,
+                has_projector=True
+            );
+
+            # Also persistent (connected through math_room)
+            alice = math_room ++> Student(
+                name="Alice Johnson",
+                age=16,
+                grade_level=10,
+                student_id="S001"
+            );
+
+            # Temporary node (not connected to root)
+            temp_student = Student(
+                name="Temporary",
+                age=15,
+                grade_level=9,
+                student_id="TEMP"
+            );
+
+            print(f"Persistent classroom: {math_room[0].room_number}");
+            print(f"Persistent student: {alice[0].name}");
+            print(f"Temporary student: {temp_student.name} (will not persist)");
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # Python simulation using a simple registry
+        class NodeRegistry:
+            def __init__(self):
+                self.nodes = {}
+                self.connections = {}
+
+            def add_node(self, node_id: str, node):
+                self.nodes[node_id] = node
+                self.connections[node_id] = []
+
+            def connect(self, from_id: str, to_id: str):
+                if from_id in self.connections:
+                    self.connections[from_id].append(to_id)
+
+        class Classroom:
+            def __init__(self, room_number: str, capacity: int, has_projector: bool = True):
+                self.room_number = room_number
+                self.capacity = capacity
+                self.has_projector = has_projector
+
+        if __name__ == "__main__":
+            # Simulate persistence with a registry
+            registry = NodeRegistry()
+
+            # Create classroom
+            math_room = Classroom(
+                room_number="101",
+                capacity=30,
+                has_projector=True
+            )
+            registry.add_node("math_room", math_room)
+
+            # Create student connected to classroom
+            alice = Student(
+                name="Alice Johnson",
+                age=16,
+                grade_level=10,
+                student_id="S001"
+            )
+            registry.add_node("alice", alice)
+            registry.connect("math_room", "alice")
+
+            # Temporary object (not in registry)
+            temp_student = Student(
+                name="Temporary",
+                age=15,
+                grade_level=9,
+                student_id="TEMP"
+            )
+
+            print(f"Registered classroom: {math_room.room_number}")
+            print(f"Registered student: {alice.name}")
+            print(f"Temporary student: {temp_student.name} (not registered)")
+        ```
+
+## Edge Types and Relationships
+Edges in Jac represent relationships between nodes. They are first-class objects with their own properties and behaviors, allowing you to model complex interactions like enrollment, teaching, and friendships. Edges can be created using the `edge` keyword, and they connect nodes in meaningful ways.
+
+!!! topic "First-Class Relationships"
+    Edges in Jac are not just connections - they're full objects with their own properties and behaviors. This makes relationships as important as the data they connect.
+
+### Basic Edge Declaration
+
+!!! example "Classroom Relationships"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        --8<-- "docs/examples/chapter_10_school.jac:1:158"
         ```
         </div>
     === "Python"
         ```python
         from typing import List, Dict
+        import uuid
 
-        class Student:
-            def __init__(self, name: str, grade_level: int):
-                self.name = name
-                self.grade_level = grade_level
-                self.teachers = []  # References to teachers
+        class Edge:
+            def __init__(self, edge_type: str, from_node, to_node, **properties):
+                self.id = str(uuid.uuid4())
+                self.edge_type = edge_type
+                self.from_node = from_node
+                self.to_node = to_node
+                self.properties = properties
 
-        class Teacher:
-            def __init__(self, name: str, subject: str):
-                self.name = name
-                self.subject = subject
-                self.students = []  # References to students
+        class EnrolledIn(Edge):
+            def __init__(self, from_node, to_node, enrollment_date: str, grade: str = "Not Assigned", attendance_rate: float = 100.0):
+                super().__init__("EnrolledIn", from_node, to_node)
+                self.enrollment_date = enrollment_date
+                self.grade = grade
+                self.attendance_rate = attendance_rate
 
-            def add_student(self, student: Student):
-                self.students.append(student)
-                student.teachers.append(self)
+        class Teaches(Edge):
+            def __init__(self, from_node, to_node, start_date: str, schedule: str, is_primary: bool = True):
+                super().__init__("Teaches", from_node, to_node)
+                self.start_date = start_date
+                self.schedule = schedule
+                self.is_primary = is_primary
 
-        class ClassroomAnalyzer:
+        class FriendsWith(Edge):
+            def __init__(self, from_node, to_node, since: str, closeness: int = 5):
+                super().__init__("FriendsWith", from_node, to_node)
+                self.since = since
+                self.closeness = closeness
+
+        class GraphDatabase:
             def __init__(self):
-                self.teacher_student_count = {}
-                self.student_subjects = {}
-                self.visited = set()
+                self.nodes = {}
+                self.edges = []
 
-            def analyze(self, entity):
-                if entity in self.visited:
-                    return
+            def add_node(self, node):
+                node.id = str(uuid.uuid4())
+                self.nodes[node.id] = node
+                return node
 
-                self.visited.add(entity)
-
-                if isinstance(entity, Teacher):
-                    # Count students for this teacher
-                    self.teacher_student_count[entity.name] = len(entity.students)
-                    print(f"{entity.name} teaches {entity.subject} to {len(entity.students)} students")
-
-                    # Visit students
-                    for student in entity.students:
-                        self.analyze(student)
-
-                elif isinstance(entity, Student):
-                    # Find what subjects this student takes
-                    subjects = [teacher.subject for teacher in entity.teachers]
-                    self.student_subjects[entity.name] = subjects
-                    print(f"{entity.name} (Grade {entity.grade_level}) takes: {', '.join(subjects)}")
+            def add_edge(self, edge):
+                self.edges.append(edge)
+                return edge
 
         if __name__ == "__main__":
-            # Create classroom network
-            ms_smith = Teacher("Ms. Smith", "Math")
-            mr_jones = Teacher("Mr. Jones", "Science")
+            db = GraphDatabase()
 
-            # Create students
-            alice = Student("Alice", 9)
-            bob = Student("Bob", 9)
-            charlie = Student("Charlie", 10)
+            # Create nodes
+            math_class = db.add_node(Classroom(room_number="101", capacity=30))
+            alice = db.add_node(Student(name="Alice", age=16, grade_level=10, student_id="S001"))
+            bob = db.add_node(Student(name="Bob", age=16, grade_level=10, student_id="S002"))
+            ms_brown = db.add_node(Teacher(name="Ms. Brown", subject="Math", years_experience=8, email="brown@school.edu"))
 
-            # Create teaching relationships
-            ms_smith.add_student(alice)
-            ms_smith.add_student(bob)
-            mr_jones.add_student(alice)
-            mr_jones.add_student(charlie)
+            # Create edges with properties
+            db.add_edge(EnrolledIn(
+                alice, math_class,
+                enrollment_date="2024-08-15",
+                grade="A",
+                attendance_rate=95.0
+            ))
 
-            # Analyze the classroom network
-            analyzer = ClassroomAnalyzer()
-            analyzer.analyze(ms_smith)
-            analyzer.analyze(mr_jones)
+            db.add_edge(EnrolledIn(
+                bob, math_class,
+                enrollment_date="2024-08-15",
+                grade="B+",
+                attendance_rate=88.0
+            ))
 
-            print(f"Teacher-student counts: {analyzer.teacher_student_count}")
-            print(f"Student subjects: {analyzer.student_subjects}")
+            db.add_edge(Teaches(
+                ms_brown, math_class,
+                start_date="2024-08-01",
+                schedule="MWF 9:00-10:00",
+                is_primary=True
+            ))
+
+            db.add_edge(FriendsWith(
+                alice, bob,
+                since="2023-09-01",
+                closeness=8
+            ))
+
+            print("Classroom connections created successfully!")
+            print(f"Database has {len(db.nodes)} nodes and {len(db.edges)} edges")
         ```
 
-## Benefits of the OSP Paradigm
+## Graph Creation Syntax
 
-!!! topic "Why OSP Matters"
-    The spatial approach to programming offers several key advantages over traditional centralized processing.
+!!! topic "Connection Operators"
+    Jac provides intuitive syntax for connecting nodes: `++>` creates a new connection, while `-->` references existing connections.
 
-### Natural Problem Modeling
+### Connection Patterns
+Let's see how to create and connect nodes using Jac's syntax. You can create nodes and connect them in a single expression, which makes it easy to build complex relationships. The example below shows how to create a classroom, add a teacher, and enroll students in that classroom.
 
-OSP allows you to model problems the way they naturally exist in the real world:
-
-!!! example "Three-Generation Family Tree"
+!!! example "Building a Complete Classroom"
     === "Jac"
         <div class="code-block">
         ```jac
-        node Person {
-            has name: str;
-            has birth_year: int;
-            has generation: int;
-
-            def get_age() -> int {
-                return 2024 - self.birth_year;
-            }
-        }
-
-        edge ParentChild {
-            has relationship: str;  # "father", "mother", "son", "daughter"
-        }
-
-        walker FamilyTreeExplorer {
-            has family_info: list[str] = [];
-
-            can explore with Person entry {
-                age = here.get_age();
-                gen = here.generation;
-
-                # Find parents
-                parents = [<-:ParentChild:<-];
-                parent_names = [p.name for p in parents];
-
-                # Find children
-                children = [->:ParentChild:->];
-                child_names = [c.name for c in children];
-
-                info = f"Generation {gen}: {here.name} (age {age})";
-                if parent_names {
-                    info += f" - Parents: {', '.join(parent_names)}";
-                }
-                if child_names {
-                    info += f" - Children: {', '.join(child_names)}";
-                }
-
-                self.family_info.append(info);
-
-                # Continue exploring
-                visit [->:ParentChild:->];
-            }
-        }
-
-        with entry {
-            # Generation 1 (Grandparents)
-            grandpa = root ++> Person(name="Robert", birth_year=1945, generation=1);
-            grandma = root ++> Person(name="Helen", birth_year=1948, generation=1);
-
-            # Generation 2 (Parents)
-            dad = grandpa[0] +>:ParentChild(relationship="father"):+> Person(name="Michael", birth_year=1975, generation=2);
-            mom = grandma[0] +>:ParentChild(relationship="mother"):+> Person(name="Sarah", birth_year=1977, generation=2);
-
-            # Generation 3 (Children)
-            son = dad[0] +>:ParentChild(relationship="father"):+> Person(name="David", birth_year=2005, generation=3);
-            daughter = mom[0] +>:ParentChild(relationship="mother"):+> Person(name="Emma", birth_year=2007, generation=3);
-            youngest = dad[0] +>:ParentChild(relationship="father"):+> Person(name="Luke", birth_year=2010, generation=3);
-
-            # Explore the family tree
-            explorer = FamilyTreeExplorer();
-            explorer spawn grandpa[0];
-
-            print("=== Family Tree ===");
-            for info in explorer.family_info {
-                print(info);
-            }
-        }
+        --8<-- "docs/examples/chapter_10_school.jac:1:158"
         ```
         </div>
     === "Python"
         ```python
-        class Person:
-            def __init__(self, name: str, birth_year: int, generation: int):
-                self.name = name
-                self.birth_year = birth_year
-                self.generation = generation
-                self.parents = []
-                self.children = []
+        if __name__ == "__main__":
+            db = GraphDatabase()
 
-            def get_age(self) -> int:
-                return 2024 - self.birth_year
+            # Create the main classroom
+            science_lab = db.add_node(Classroom(
+                room_number="Lab-A",
+                capacity=24,
+                has_projector=True
+            ))
 
-            def add_child(self, child):
-                self.children.append(child)
-                child.parents.append(self)
+            # Create teacher
+            dr_smith = db.add_node(Teacher(
+                name="Dr. Smith",
+                subject="Chemistry",
+                years_experience=12,
+                email="smith@school.edu"
+            ))
 
-        class FamilyTreeExplorer:
-            def __init__(self):
-                self.family_info = []
-                self.visited = set()
+            # Connect teacher to classroom
+            db.add_edge(Teaches(
+                dr_smith, science_lab,
+                start_date="2024-08-01",
+                schedule="TR 10:00-11:30"
+            ))
 
-            def explore(self, person: Person):
-                if person in self.visited:
-                    return
+            # Create students and enroll them
+            students = [
+                ("Charlie", 17, 11, "S003"),
+                ("Diana", 16, 11, "S004"),
+                ("Eve", 17, 11, "S005")
+            ]
 
-                self.visited.add(person)
+            for name, age, grade, id in students:
+                student = db.add_node(Student(
+                    name=name,
+                    age=age,
+                    grade_level=grade,
+                    student_id=id
+                ))
 
-                age = person.get_age()
-                gen = person.generation
+                db.add_edge(EnrolledIn(
+                    student, science_lab,
+                    enrollment_date="2024-08-15",
+                    attendance_rate=92.0
+                ))
 
-                # Find family relationships
-                parent_names = [p.name for p in person.parents]
-                child_names = [c.name for c in person.children]
+                print(f"Enrolled {student.name} in {science_lab.room_number}")
 
-                info = f"Generation {gen}: {person.name} (age {age})"
-                if parent_names:
-                    info += f" - Parents: {', '.join(parent_names)}"
-                if child_names:
-                    info += f" - Children: {', '.join(child_names)}"
+            print(f"Created classroom {science_lab.room_number} with {dr_smith.name}")
+            print(f"Total nodes: {len(db.nodes)}, Total edges: {len(db.edges)}")
+        ```
 
-                self.family_info.append(info)
+## Graph Navigation and Filtering
 
-                # Continue exploring
-                for child in person.children:
-                    self.explore(child)
+!!! topic "Traversal Syntax"
+    Jac provides powerful syntax for navigating graphs: `[-->]` gets outgoing connections, `[<--]` gets incoming connections, and filters can be applied to find specific nodes or edges.
+
+### Basic Navigation
+
+!!! example "Finding Connected Nodes"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        --8<-- "docs/examples/chapter_10_school.jac:1:166"
+        ```
+        </div>
+    === "Python"
+        ```python
+        class ClassroomExplorer:
+            def __init__(self, db: GraphDatabase):
+                self.db = db
+
+            def explore_classroom(self, classroom):
+                print(f"=== Exploring {classroom.room_number} ===")
+
+                # Find all students enrolled in this classroom
+                students = []
+                for edge in self.db.edges:
+                    if (isinstance(edge, EnrolledIn) and
+                        edge.to_node == classroom):
+                        students.append(edge.from_node)
+
+                print(f"Students enrolled: {len(students)}")
+                for student in students:
+                    print(f"  - {student.name} (ID: {student.student_id})")
+
+                # Find the teacher
+                teachers = []
+                for edge in self.db.edges:
+                    if (isinstance(edge, Teaches) and
+                        edge.to_node == classroom):
+                        teachers.append(edge.from_node)
+
+                if teachers:
+                    teacher = teachers[0]
+                    print(f"Teacher: {teacher.name} ({teacher.subject})")
+
+                # Show classroom info
+                equipment = "Projector" if classroom.has_projector else "No projector"
+                print(f"Equipment: {equipment}")
+                print(f"Capacity: {classroom.capacity} students")
 
         if __name__ == "__main__":
-            # Generation 1 (Grandparents)
-            grandpa = Person("Robert", 1945, 1)
-            grandma = Person("Helen", 1948, 1)
+            # Continuing from previous example...
+            explorer = ClassroomExplorer(db)
 
-            # Generation 2 (Parents)
-            dad = Person("Michael", 1975, 2)
-            mom = Person("Sarah", 1977, 2)
-            grandpa.add_child(dad)
-            grandma.add_child(mom)
+            # Find all classrooms and explore them
+            classrooms = [node for node in db.nodes.values()
+                         if isinstance(node, Classroom)]
 
-            # Generation 3 (Children)
-            son = Person("David", 2005, 3)
-            daughter = Person("Emma", 2007, 3)
-            youngest = Person("Luke", 2010, 3)
-            dad.add_child(son)
-            mom.add_child(daughter)
-            dad.add_child(youngest)
-
-            # Explore the family tree
-            explorer = FamilyTreeExplorer()
-            explorer.explore(grandpa)
-
-            print("=== Family Tree ===")
-            for info in explorer.family_info:
-                print(info)
+            for classroom in classrooms:
+                explorer.explore_classroom(classroom)
         ```
+
+### Advanced Filtering
+
+!!! example "Filtered Graph Queries"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        --8<-- "docs/examples/chapter_10_school.jac:1:177"
+        ```
+        </div>
+    === "Python"
+        ```python
+        class StudentAnalyzer:
+            def __init__(self, db: GraphDatabase):
+                self.db = db
+                self.high_performers = []
+                self.needs_help = []
+
+            def analyze_all_students(self):
+                # Find all students
+                students = [node for node in self.db.nodes.values()
+                           if isinstance(node, Student)]
+
+                for student in students:
+                    self.analyze_student(student)
+
+                self.generate_report()
+
+            def analyze_student(self, student):
+                # Find enrollment information for this student
+                for edge in self.db.edges:
+                    if (isinstance(edge, EnrolledIn) and
+                        edge.from_node == student):
+
+                        grade = edge.grade
+                        attendance = edge.attendance_rate
+
+                        # Categorize students
+                        if grade in ["A", "A-", "B+"] and attendance >= 90.0:
+                            self.high_performers.append({
+                                "name": student.name,
+                                "grade": grade,
+                                "attendance": attendance
+                            })
+                        elif attendance < 85.0 or grade in ["D", "F"]:
+                            self.needs_help.append({
+                                "name": student.name,
+                                "grade": grade,
+                                "attendance": attendance
+                            })
+
+            def generate_report(self):
+                print("=== Student Analysis Report ===")
+
+                print(f"High Performers ({len(self.high_performers)}):")
+                for student in self.high_performers:
+                    print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
+
+                print(f"Needs Support ({len(self.needs_help)}):")
+                for student in self.needs_help:
+                    print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
+
+        if __name__ == "__main__":
+            # Continuing from previous example...
+            analyzer = StudentAnalyzer(db)
+            analyzer.analyze_all_students()
+        ```
+
+## Best Practices for Nodes and Edges
+
+!!! summary "Design Guidelines"
+    - **Nodes for Entities**: Use nodes for things that exist independently (students, teachers, classrooms)
+    - **Edges for Relationships**: Use edges for connections between entities (enrollment, teaching, friendship)
+    - **Rich Edge Properties**: Store relationship-specific data in edges (grades, dates, status)
+    - **Consistent Naming**: Use clear, descriptive names for node and edge types
+    - **Connect to Root**: Always connect important nodes to root for persistence
 
 ## Key Takeaways
 
-!!! summary "OSP Paradigm Fundamentals"
-    - **Computation to Data**: Instead of gathering data centrally, send computation to where data lives
-    - **Spatial Relationships**: Model data with its natural connections and relationships
-    - **Graph Thinking**: Think in terms of nodes, edges, and traversal patterns
-    - **Natural Modeling**: Represent real-world problems in their natural graph structure
-    - **Distributed Processing**: Each piece of data can be processed independently where it lives
+!!! summary "Chapter Summary"
+    - **Nodes** are spatial objects that can be connected and persisted automatically
+    - **Edges** are first-class relationships with their own properties and behaviors
+    - **Root Connection** provides automatic persistence for connected nodes
+    - **Navigation Syntax** makes finding related data intuitive with `[-->]` and `[<--]`
+    - **Filtering** enables powerful queries directly in the traversal syntax
+    - **Walkers** can traverse and analyze the graph structure effectively
 
-The Object-Spatial Programming paradigm opens up new ways of thinking about and solving problems. By modeling the world as connected entities rather than isolated objects, we create more intuitive, efficient, and scalable programs.
+Nodes and edges form the foundation of Object-Spatial Programming. By modeling your data as connected entities rather than isolated objects, you create more natural representations that enable powerful traversal and analysis patterns.
 
-In the next chapter, we'll dive deeper into the building blocks of OSP: nodes and edges, and learn how to create rich, connected data structures that form the foundation of your spatial programs.
+In the next chapter, we'll explore walkers and abilities - the mobile computational entities that bring your graphs to life by moving through and processing your spatial data structures.

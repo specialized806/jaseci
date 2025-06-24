@@ -1,714 +1,500 @@
-# Chapter 11: Walkers and Abilities
+# Chapter 11: Advanced Object Spatial Operations
 
-Walkers are the heart of Object-Spatial Programming - they are mobile computational entities that traverse your graph and execute code at each location. Combined with abilities, they enable reactive, event-driven programming where computation happens exactly where and when it's needed.
+Now that you understand basic walkers and abilities, let's explore advanced patterns that make Object-Spatial Programming truly powerful. This chapter covers sophisticated filtering, visit control, and traversal patterns using familiar social network examples.
 
-!!! topic "Mobile Computation"
-    Unlike traditional functions that operate on data passed to them, walkers travel to where data lives, making computation truly spatial and enabling powerful distributed processing patterns.
+!!! topic "Advanced Graph Operations"
+    Complex graph operations become intuitive when you move computation to data. Instead of loading entire datasets, walkers intelligently navigate only the relevant portions of your graph.
 
-## Walker Creation
+## Advanced Filtering
 
-!!! topic "What are Walkers?"
-    Walkers are special objects that can move through your graph, carrying state and executing abilities when they encounter different types of nodes and edges.
+Advanced filtering allows you to create sophisticated queries that combine multiple criteria, making complex graph searches simple and readable.
 
-### Basic Walker Declaration
+!!! topic "Multi-Criteria Graph Queries"
+    Advanced filtering combines relationship traversal, node properties, and complex conditions to find exactly the data you need.
 
-!!! example "Simple Walker"
+### Property-Based Filtering
+
+!!! example "Finding Specific People"
     === "Jac"
         <div class="code-block">
         ```jac
-        # Simple walker for visiting nodes
-        walker MessageDelivery {
-            has message: str;
-            has delivery_count: int = 0;
-            has visited_locations: list[str] = [];
-
-            # Regular methods work like normal
-            def get_status() -> str {
-                return f"Delivered {self.delivery_count} messages to {len(self.visited_locations)} locations";
-            }
+        node Person {
+            has name: str;
+            has age: int;
+            has city: str;
         }
 
-        # Basic classroom nodes
-        node Student {
-            has name: str;
-            has messages: list[str] = [];
-        }
-
-        node Teacher {
-            has name: str;
-            has subject: str;
+        edge FriendsWith {
+            has since: str;
+            has closeness: int; # 1-10 scale
         }
 
         with entry {
-            # Create walker instance (but don't activate it yet)
-            messenger = MessageDelivery(message="Hello from the principal!");
+            # Create a social network
+            alice = root ++> Person(name="Alice", age=25, city="NYC");
+            bob = root ++> Person(name="Bob", age=30, city="SF");
+            charlie = root ++> Person(name="Charlie", age=22, city="NYC");
+            diana = root ++> Person(name="Diana", age=28, city="LA");
 
-            # Check initial state
-            print(f"Initial status: {messenger.get_status()}");
+            # Create friendships
+            alice +>:FriendsWith(since="2020", closeness=8):+> bob;
+            alice +>:FriendsWith(since="2021", closeness=9):+> charlie;
+            bob +>:FriendsWith(since="2019", closeness=6):+> diana;
+
+            # Find all young people in NYC (age < 25)
+            nyc = [root-->(`?Person)](?city == "NYC");
+            print("People in NYC:");
+            for person in nyc {
+                print(f"  {person.name}, age {person.age}");
+            }
+            young_nyc = nyc(?age < 25);
+            print("Young people in NYC:");
+            for person in young_nyc {
+                print(f"  {person.name}, age {person.age}");
+            }
+
+            # Find Alice's close friends (closeness >= 8)
+            close_friends = [alice->:FriendsWith:closeness >= 8:->(`?Person)];
+            print(f"Alice's close friends:");
+            for friend in close_friends {
+                print(f"  {friend.name}");
+            }
+
+            # Find all friendships that started before 2021
+            old_friendships = [root->:FriendsWith:since < "2021":->];
+            print(f"Old friendships: {len(old_friendships)} found");
         }
         ```
         </div>
     === "Python"
         ```python
-        class MessageDelivery:
-            def __init__(self, message: str):
-                self.message = message
-                self.delivery_count = 0
-                self.visited_locations = []
+        class Person:
+            def __init__(self, name: str, age: int, city: str):
+                self.name = name
+                self.age = age
+                self.city = city
+                self.friendships = []
 
-            def get_status(self) -> str:
-                return f"Delivered {self.delivery_count} messages to {len(self.visited_locations)} locations"
+        class FriendsWith:
+            def __init__(self, person1: Person, person2: Person, since: str, closeness: int):
+                self.person1 = person1
+                self.person2 = person2
+                self.since = since
+                self.closeness = closeness
+                person1.friendships.append(self)
+                person2.friendships.append(self)
 
-        class Student:
+        # Create a social network
+        alice = Person("Alice", 25, "NYC")
+        bob = Person("Bob", 30, "SF")
+        charlie = Person("Charlie", 22, "NYC")
+        diana = Person("Diana", 28, "LA")
+
+        # Create friendships
+        friendship1 = FriendsWith(alice, bob, "2020", 8)
+        friendship2 = FriendsWith(alice, charlie, "2021", 9)
+        friendship3 = FriendsWith(bob, diana, "2019", 6)
+
+        all_people = [alice, bob, charlie, diana]
+
+        # Find all young people in NYC (age < 25)
+        young_nyc = [p for p in all_people if p.age < 25 and p.city == "NYC"]
+        print("Young people in NYC:")
+        for person in young_nyc:
+            print(f"  {person.name}, age {person.age}")
+
+        # Find Alice's close friends (closeness >= 8)
+        close_friends = []
+        for friendship in alice.friendships:
+            if friendship.closeness >= 8:
+                friend = friendship.person2 if friendship.person1 == alice else friendship.person1
+                close_friends.append(friend)
+
+        print(f"\nAlice's close friends:")
+        for friend in close_friends:
+            print(f"  {friend.name}")
+
+        # Find all friendships that started before 2021
+        all_friendships = [friendship1, friendship2, friendship3]
+        old_friendships = [f for f in all_friendships if f.since < "2021"]
+        print(f"\nOld friendships: {len(old_friendships)} found")
+        ```
+
+### Complex Relationship Filtering
+
+!!! example "Multi-Hop Filtering"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        node Person {
+            has name: str;
+            has age: int;
+            has city: str;
+        }
+
+        edge FriendsWith {
+            has since: str;
+            has closeness: int; # 1-10 scale
+        }
+
+        with entry {
+            # Create extended family network
+            john = root ++> Person(name="John", age=45, city="NYC");
+            emma = root ++> Person(name="Emma", age=43, city="NYC");
+            alice = root ++> Person(name="Alice", age=20, city="SF");
+            bob = root ++> Person(name="Bob", age=18, city="NYC");
+
+            # Family relationships
+            john +>:FriendsWith(since="1995", closeness=10):+> emma;  # Married
+            [john[0], emma[0]] +>:FriendsWith(since="2004", closeness=10):+> alice;  # Parents
+            [john[0], emma[0]] +>:FriendsWith(since="2006", closeness=10):+> bob;    # Parents
+
+            # Find John's family members under 25
+            young_family = [john[0]->:FriendsWith:closeness == 10:->(`?Person)](?age < 25);
+            print("John's young family members:");
+            for person in young_family {
+                print(f"  {person.name}, age {person.age}");
+            }
+
+            # Find all people in NYC connected to John
+            nyc_connections = [john[0]->:FriendsWith:->(`?Person)](?city == "NYC");
+            print(f"John's NYC connections:");
+            for person in nyc_connections {
+                print(f"  {person.name}");
+            }
+
+            # Find friends of friends (2-hop connections)
+            friends_of_friends = [john[0]->:FriendsWith:->->:FriendsWith:->(`?Person)];
+            print(f"Friend of friends: {len(friends_of_friends)} found");
+            for person in friends_of_friends {
+                print(f"  {person.name}");
+            }
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # Extended family network
+        john = Person("John", 45, "NYC")
+        emma = Person("Emma", 43, "NYC")
+        alice = Person("Alice", 20, "SF")
+        bob = Person("Bob", 18, "NYC")
+
+        # Family relationships
+        family_relationships = [
+            FriendsWith(john, emma, "1995", 10),  # Married
+            FriendsWith(john, alice, "2004", 10),  # Parent
+            FriendsWith(emma, alice, "2004", 10),  # Parent
+            FriendsWith(john, bob, "2006", 10),    # Parent
+            FriendsWith(emma, bob, "2006", 10)     # Parent
+        ]
+
+        all_people = [john, emma, alice, bob]
+
+        # Find John's family members under 25
+        john_connections = []
+        for friendship in john.friendships:
+            if friendship.closeness == 10:
+                connected_person = friendship.person2 if friendship.person1 == john else friendship.person1
+                john_connections.append(connected_person)
+
+        young_family = [p for p in john_connections if p.age < 25]
+        print("John's young family members:")
+        for person in young_family:
+            print(f"  {person.name}, age {person.age}")
+
+        # Find all people in NYC connected to John
+        nyc_connections = [p for p in john_connections if p.city == "NYC"]
+        print(f"\nJohn's NYC connections:");
+        for person in nyc_connections {
+            print(f"  {person.name}");
+        }
+
+        # Find friends of friends (simplified)
+        friends_of_friends = []
+        for direct_friend in john_connections:
+            for friendship in direct_friend.friendships:
+                indirect_friend = friendship.person2 if friendship.person1 == direct_friend else friendship.person1
+                if indirect_friend != john and indirect_friend not in john_connections:
+                    friends_of_friends.append(indirect_friend)
+
+        print(f"\nFriend of friends: {len(set(f.name for f in friends_of_friends))} found")
+        for person in set(friends_of_friends):
+            print(f"  {person.name}")
+        ```
+
+## Visit Patterns
+
+Visit patterns control how walkers traverse your graph. The most powerful feature is indexed visiting using `:0:`, `:1:`, etc., which controls the order of traversal.
+
+!!! topic "Controlling Walker Navigation"
+    Visit patterns let you control exactly how walkers move through your graph - whether breadth-first, depth-first, or custom ordering based on your needs.
+
+### Breadth-First vs Depth-First Traversal
+
+!!! example "BFS vs DFS Walker Behavior"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        node Person {
+            has name: str;
+            has level: int = 0;
+        }
+
+        edge ParentOf {}
+
+        walker BFSWalker {
+            can traverse with Person entry {
+                print(f"BFS visiting: {here.name} (level {here.level})");
+
+                # Visit children - default queue behavior (breadth-first)
+                children = [->:ParentOf:->(`?Person)];
+                for child in children {
+                    child.level = here.level + 1;
+                }
+                visit children;
+            }
+        }
+
+        walker DFSWalker {
+            can traverse with Person entry {
+                print(f"DFS visiting: {here.name} (level {here.level})");
+
+                # Visit children with :0: (stack behavior for depth-first)
+                children = [->:ParentOf:->(`?Person)];
+                for child in children {
+                    child.level = here.level + 1;
+                }
+                visit :0: children;
+            }
+        }
+
+        with entry {
+            # Create family tree
+            grandpa = root ++> Person(name="Grandpa");
+            dad = root ++> Person(name="Dad");
+            mom = root ++> Person(name="Mom");
+            child1 = root ++> Person(name="Alice");
+            child2 = root ++> Person(name="Bob");
+            grandchild = root ++> Person(name="Charlie");
+
+            # Create relationships
+            grandpa +>:ParentOf:+> dad;
+            grandpa +>:ParentOf:+> mom;
+            dad +>:ParentOf:+> child1;
+            mom +>:ParentOf:+> child2;
+            child1 +>:ParentOf:+> grandchild;
+
+            print("=== Breadth-First Search ===");
+            grandpa[0] spawn BFSWalker();
+
+            # Reset levels
+            all_people = [root-->(`?Person)];
+            for person in all_people {
+                person.level = 0;
+            }
+
+            print("\n=== Depth-First Search ===");
+            grandpa[0] spawn DFSWalker();
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        from collections import deque
+
+        class Person:
             def __init__(self, name: str):
                 self.name = name
-                self.messages = []
+                self.level = 0
+                self.children = []
 
-        class Teacher:
-            def __init__(self, name: str, subject: str):
-                self.name = name
-                self.subject = subject
+        class FamilyTraverser:
+            def bfs_traversal(self, start_person: Person):
+                queue = deque([start_person])
+                visited = set()
 
-        if __name__ == "__main__":
-            # Create messenger instance
-            messenger = MessageDelivery(message="Hello from the principal!")
+                while queue:
+                    person = queue.popleft()
+                    if person in visited:
+                        continue
 
-            # Check initial state
-            print(f"Initial status: {messenger.get_status()}")
-        ```
+                    visited.add(person)
+                    print(f"BFS visiting: {person.name} (level {person.level})")
 
-## Ability Definitions and Triggers
+                    for child in person.children:
+                        if child not in visited:
+                            child.level = person.level + 1
+                            queue.append(child)
 
-!!! topic "Event-Driven Execution"
-    Abilities are methods that execute automatically when certain events occur during graph traversal. They create reactive, context-aware behavior.
+            def dfs_traversal(self, person: Person, visited=None):
+                if visited is None:
+                    visited = set()
 
-### Entry and Exit Abilities
-
-!!! example "Basic Abilities"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        # Basic classroom nodes
-        node Student {
-            has name: str;
-            has messages: list[str] = [];
-        }
-
-        node Teacher {
-            has name: str;
-            has subject: str;
-        }
-
-        walker MessageDelivery {
-            has message: str;
-            has delivery_count: int = 0;
-            has visited_locations: list[str] = [];
-
-            # Entry ability - triggered when entering any Student
-            can deliver_to_student with Student entry {
-                print(f"Delivering message to student {here.name}");
-                here.messages.append(self.message);
-                self.delivery_count += 1;
-                self.visited_locations.append(here.name);
-            }
-
-            # Entry ability - triggered when entering any Teacher
-            can deliver_to_teacher with Teacher entry {
-                print(f"Delivering message to teacher {here.name} ({here.subject})");
-                # Teachers just acknowledge the message
-                print(f"  {here.name} says: 'Message received!'");
-                self.delivery_count += 1;
-                self.visited_locations.append(here.name);
-            }
-
-            # Exit ability - triggered when leaving any node
-            can log_visit with entry {
-                node_type = type(here).__name__;
-                print(f"  Visited {node_type}");
-            }
-        }
-
-        with entry {
-            # Create simple classroom
-            alice = root ++> Student(name="Alice");
-            bob = root ++> Student(name="Bob");
-            ms_smith = root ++> Teacher(name="Ms. Smith", subject="Math");
-
-            # Create and activate messenger
-            messenger = MessageDelivery(message="School assembly at 2 PM");
-
-            # Spawn walker on Alice - this activates it
-            alice[0] spawn messenger;
-
-            # Check Alice's messages
-            print(f"Alice's messages: {alice[0].messages}");
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        class MessageDelivery:
-            def __init__(self, message: str):
-                self.message = message
-                self.delivery_count = 0
-                self.visited_locations = []
-
-            def deliver_to_student(self, student):
-                print(f"Delivering message to student {student.name}")
-                student.messages.append(self.message)
-                self.delivery_count += 1
-                self.visited_locations.append(student.name)
-
-            def deliver_to_teacher(self, teacher):
-                print(f"Delivering message to teacher {teacher.name} ({teacher.subject})")
-                print(f"  {teacher.name} says: 'Message received!'")
-                self.delivery_count += 1
-                self.visited_locations.append(teacher.name)
-
-            def visit_node(self, node):
-                node_type = type(node).__name__
-                print(f"  Visited {node_type}")
-
-                # Manually check type and call appropriate method
-                if isinstance(node, Student):
-                    self.deliver_to_student(node)
-                elif isinstance(node, Teacher):
-                    self.deliver_to_teacher(node)
-
-        if __name__ == "__main__":
-            # Create simple classroom
-            alice = Student("Alice")
-            bob = Student("Bob")
-            ms_smith = Teacher("Ms. Smith", "Math")
-
-            # Create and use messenger manually
-            messenger = MessageDelivery("School assembly at 2 PM")
-
-            # Manually visit nodes (simulating walker spawn)
-            messenger.visit_node(alice)
-
-            # Check Alice's messages
-            print(f"Alice's messages: {alice.messages}")
-        ```
-
-## Walker Spawn and Visit
-
-!!! topic "Graph Traversal"
-    Walkers move through graphs using `spawn` (to start) and `visit` (to continue to connected nodes). This enables complex traversal patterns with simple syntax.
-
-### Basic Traversal Patterns
-
-!!! example "Classroom Message Delivery"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        # Basic classroom nodes
-        node Student {
-            has name: str;
-            has messages: list[str] = [];
-        }
-
-        node Teacher {
-            has name: str;
-            has subject: str;
-        }
-
-        walker MessageDelivery {
-            has message: str;
-            has delivery_count: int = 0;
-            has visited_locations: list[str] = [];
-
-            # Entry ability - triggered when entering any Student
-            can deliver_to_student with Student entry {
-                print(f"Delivering message to student {here.name}");
-                here.messages.append(self.message);
-                self.delivery_count += 1;
-                self.visited_locations.append(here.name);
-            }
-
-            # Entry ability - triggered when entering any Teacher
-            can deliver_to_teacher with Teacher entry {
-                print(f"Delivering message to teacher {here.name} ({here.subject})");
-                # Teachers just acknowledge the message
-                print(f"  {here.name} says: 'Message received!'");
-                self.delivery_count += 1;
-                self.visited_locations.append(here.name);
-            }
-
-            # Exit ability - triggered when leaving any node
-            can log_visit with entry {
-                node_type = type(here).__name__;
-                print(f"  Visited {node_type}");
-            }
-        }
-
-        edge InClass {
-            has room: str;
-        }
-
-        walker ClassroomMessenger {
-            has announcement: str;
-            has rooms_visited: set[str] = {};
-            has people_reached: int = 0;
-
-            can deliver with Student entry {
-                print(f" Student {here.name}: {self.announcement}");
-                self.people_reached += 1;
-
-                # Continue to connected nodes
-                visit [-->];
-            }
-
-            can deliver with Teacher entry {
-                print(f" Teacher {here.name}: {self.announcement}");
-                self.people_reached += 1;
-
-                # Continue to connected nodes
-                visit [-->];
-            }
-
-            can track_room with InClass entry {
-                room = here.room;
-                if room not in self.rooms_visited {
-                    self.rooms_visited.add(room);
-                    print(f" Now in {room}");
-                }
-            }
-
-            can summarize with Student exit {
-                # Only report once at the end
-                if len([-->]) == 0 {  # At a node with no outgoing connections
-                    print(f" Delivery complete!");
-                    print(f"   People reached: {self.people_reached}");
-                    print(f"   Rooms visited: {list(self.rooms_visited)}");
-                }
-            }
-        }
-
-        with entry {
-            # Create classroom structure
-            alice = root ++> Student(name="Alice");
-            bob = root ++> Student(name="Bob");
-            charlie = root ++> Student(name="Charlie");
-            ms_jones = root ++> Teacher(name="Ms. Jones", subject="Science");
-
-            # Connect them in the same classroom
-            alice +>:InClass(room="Room 101"):+> bob;
-            bob +>:InClass(room="Room 101"):+> charlie;
-            charlie +>:InClass(room="Room 101"):+> ms_jones;
-
-            # Send a message through the classroom
-            messenger = ClassroomMessenger(announcement="Fire drill in 5 minutes");
-            alice[0] spawn messenger;
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        class InClass:
-            def __init__(self, from_node, to_node, room: str):
-                self.from_node = from_node
-                self.to_node = to_node
-                self.room = room
-
-        class ClassroomMessenger:
-            def __init__(self, announcement: str):
-                self.announcement = announcement
-                self.rooms_visited = set()
-                self.people_reached = 0
-                self.visited_nodes = set()
-
-            def deliver_to_student(self, student):
-                print(f" Student {student.name}: {self.announcement}")
-                self.people_reached += 1
-
-            def deliver_to_teacher(self, teacher):
-                print(f" Teacher {teacher.name}: {self.announcement}")
-                self.people_reached += 1
-
-            def track_room(self, edge):
-                if edge.room not in self.rooms_visited:
-                    self.rooms_visited.add(edge.room)
-                    print(f"   Now in {edge.room}")
-
-            def visit_network(self, node, connections):
-                # Avoid infinite loops
-                if node in self.visited_nodes:
+                if person in visited:
                     return
 
-                self.visited_nodes.add(node)
+                visited.add(person)
+                print(f"DFS visiting: {person.name} (level {person.level})")
 
-                # Process current node
-                if isinstance(node, Student):
-                    self.deliver_to_student(node)
-                elif isinstance(node, Teacher):
-                    self.deliver_to_teacher(node)
+                for child in person.children:
+                    if child not in visited:
+                        child.level = person.level + 1
+                        self.dfs_traversal(child, visited)
 
-                # Visit connected nodes
-                for edge in connections.get(node, []):
-                    self.track_room(edge)
-                    self.visit_network(edge.to_node, connections)
+        # Create family tree
+        grandpa = Person("Grandpa")
+        dad = Person("Dad")
+        mom = Person("Mom")
+        child1 = Person("Alice")
+        child2 = Person("Bob")
+        grandchild = Person("Charlie")
 
-                # Check if we're at the end
-                if not connections.get(node, []):
-                    print(f" elivery complete!")
-                    print(f"   People reached: {self.people_reached}")
-                    print(f"   Rooms visited: {list(self.rooms_visited)}")
+        # Create relationships
+        grandpa.children = [dad, mom]
+        dad.children = [child1]
+        mom.children = [child2]
+        child1.children = [grandchild]
 
-        if __name__ == "__main__":
-            # Create classroom structure
-            alice = Student("Alice")
-            bob = Student("Bob")
-            charlie = Student("Charlie")
-            ms_jones = Teacher("Ms. Jones", "Science")
+        traverser = FamilyTraverser()
 
-            # Create connections manually
-            connections = {
-                alice: [InClass(alice, bob, "Room 101")],
-                bob: [InClass(bob, charlie, "Room 101")],
-                charlie: [InClass(charlie, ms_jones, "Room 101")],
-                ms_jones: []
-            }
+        print("=== Breadth-First Search ===")
+        traverser.bfs_traversal(grandpa)
 
-            # Send message through classroom
-            messenger = ClassroomMessenger("Fire drill in 5 minutes")
-            messenger.visit_network(alice, connections)
+        # Reset levels
+        all_people = [grandpa, dad, mom, child1, child2, grandchild]
+        for person in all_people:
+            person.level = 0
+
+        print("\n=== Depth-First Search ===")
+        traverser.dfs_traversal(grandpa)
         ```
 
-### Advanced Traversal Control
+### Priority-Based Visiting
 
-!!! example "Selective Message Delivery"
+!!! example "Custom Visit Ordering"
     === "Jac"
         <div class="code-block">
         ```jac
-        import random;
-
-        node Student {
+        node Person {
             has name: str;
-            has grade_level: int;
-            has messages: list[str] = [];
+            has priority: int;
         }
 
-        edge StudyGroup {
-            has subject: str;
+        edge ConnectedTo {
+            has strength: int;
         }
 
-        walker AttendanceChecker {
-            has present_students: list[str] = [];
-            has absent_students: list[str] = [];
-            has max_checks: int = 5;
-            has checks_done: int = 0;
+        walker PriorityWalker {
+            can visit_by_priority with Person entry {
+                print(f"Visiting: {here.name} (priority: {here.priority})");
 
-            can check_attendance with Student entry {
-                self.checks_done += 1;
+                # Get all connections
+                connections = [->:ConnectedTo:->(`?Person)];
 
-                # Simulate checking if student is present (random for demo)
-                is_present = random.choice([True, False]);
+                if connections {
+                    print(f"  Found {len(connections)} connections");
+                    for conn in connections {
+                        print(f"    {conn.name} (priority: {conn.priority})");
+                    }
 
-                if is_present {
-                    print(f"{here.name} is present");
-                    self.present_students.append(here.name);
-                } else {
-                    print(f"{here.name} is absent");
-                    self.absent_students.append(here.name);
+                    # Visit highest priority first using :0:
+                    visit :0: connections;
                 }
-
-                # Control flow based on conditions
-                if self.checks_done >= self.max_checks {
-                    print(f"Reached maximum checks ({self.max_checks})");
-                    self.report_final();
-                    disengage;  # Stop the walker
-                }
-
-                # Skip if no more connections
-                connections = [-->];
-                if not connections {
-                    print("No more students to check");
-                    self.report_final();
-                    disengage;
-                }
-
-                # Continue to next student
-                visit [-->];
-            }
-
-            def report_final() -> None {
-                print(f" Attendance Report:");
-                print(f"   Present: {self.present_students}");
-                print(f"   Absent: {self.absent_students}");
-                print(f"   Total checked: {self.checks_done}");
             }
         }
 
         with entry {
-            # Create a chain of students
-            alice = root ++> Student(name="Alice", grade_level=9);
-            bob = alice ++> Student(name="Bob", grade_level=9);
-            charlie = bob ++> Student(name="Charlie", grade_level=9);
-            diana = charlie ++> Student(name="Diana", grade_level=9);
-            eve = diana ++> Student(name="Eve", grade_level=9);
-
-            # Start attendance check
-            checker = AttendanceChecker(max_checks=3);
-            alice[0] spawn checker;
-        }
-        ```
-        </div>
-    === "Python"
-        ```python
-        class StudyGroup:
-            def __init__(self, from_node, to_node, subject: str):
-                self.from_node = from_node
-                self.to_node = to_node
-                self.subject = subject
-
-        class Student:
-            def __init__(self, name: str, grade_level: int):
-                self.name = name
-                self.grade_level = grade_level
-                self.messages = []
-
-        class GradeSpecificMessenger:
-            def __init__(self, message: str, target_grade: int):
-                self.message = message
-                self.target_grade = target_grade
-                self.delivered_to = []
-                self.visited = set()
-
-            def visit_student(self, student, connections):
-                if student in self.visited:
-                    return
-
-                self.visited.add(student)
-
-                if student.grade_level == self.target_grade:
-                    print(f"Delivering to {student.name} (Grade {student.grade_level}): {self.message}")
-                    student.messages.append(self.message)
-                    self.delivered_to.append(student.name)
-                else:
-                    print(f"Skipping {student.name} (Grade {student.grade_level}) - not target grade")
-
-                # Visit connected students
-                for edge in connections.get(student, []):
-                    print(f"  Moving through {edge.subject} study group")
-                    self.visit_student(edge.to_node, connections)
-
-                # Report if at end
-                if not connections.get(student, []):
-                    print(f" Delivery Summary:")
-                    print(f"   Target: Grade {self.target_grade} students")
-                    print(f"   Message: '{self.message}'")
-                    print(f"   Delivered to: {self.delivered_to}")
-
-        if __name__ == "__main__":
-            # Create multi-grade study network
-            alice = Student("Alice", 9)
-            bob = Student("Bob", 10)
-            charlie = Student("Charlie", 9)
-            diana = Student("Diana", 11)
+            # Create network with different priorities
+            center = root ++> Person(name="Center", priority=5);
+            high_priority = root ++> Person(name="VIP", priority=10);
+            medium_priority = root ++> Person(name="Regular", priority=5);
+            low_priority = root ++> Person(name="Basic", priority=1);
 
             # Create connections
-            connections = {
-                alice: [StudyGroup(alice, bob, "Math")],
-                bob: [StudyGroup(bob, charlie, "Science")],
-                charlie: [StudyGroup(charlie, diana, "History")],
-                diana: []
-            }
+            center +>:ConnectedTo(strength=8):+> high_priority;
+            center +>:ConnectedTo(strength=5):+> medium_priority;
+            center +>:ConnectedTo(strength=3):+> low_priority;
 
-            # Send grade-specific message
-            messenger = GradeSpecificMessenger(
-                "Grade 9 field trip permission slips due Friday!",
-                9
-            )
-
-            messenger.visit_student(alice, connections)
-
-            # Check who got the message
-            print(f"Alice's messages: {alice.messages}")
-            print(f"Bob's messages: {bob.messages}")
-            print(f"Charlie's messages: {charlie.messages}")
-        ```
-
-## Walker Control Flow
-
-!!! topic "Traversal Control"
-    Walkers can control their movement through the graph using special statements like `visit`, `disengage`, and `skip`.
-
-### Controlling Walker Behavior
-
-!!! example "Smart Walker Control"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        node Student {
-            has name: str;
-            has grade_level: int;
-        }
-
-        walker AttendanceChecker {
-            has present_students: list[str] = [];
-            has absent_students: list[str] = [];
-            has max_checks: int = 5;
-            has checks_done: int = 0;
-
-            can check_attendance with Student entry {
-                self.checks_done += 1;
-
-                # Simulate checking if student is present (random for demo)
-                import random;
-                is_present = random.choice([True, False]);
-
-                if is_present {
-                    print(f"{here.name} is present");
-                    self.present_students.append(here.name);
-                } else {
-                    print(f"{here.name} is absent");
-                    self.absent_students.append(here.name);
-                }
-
-                # Control flow based on conditions
-                if self.checks_done >= self.max_checks {
-                    print(f"Reached maximum checks ({self.max_checks})");
-                    self.report_final();
-                    disengage;  # Stop the walker
-                }
-
-                # Skip if no more connections
-                connections = [-->];
-                if not connections {
-                    print("No more students to check");
-                    self.report_final();
-                    disengage;
-                }
-
-                # Continue to next student
-                visit [-->];
-            }
-
-            def report_final() -> None {
-                print(f" Attendance Report:");
-                print(f"   Present: {self.present_students}");
-                print(f"   Absent: {self.absent_students}");
-                print(f"   Total checked: {self.checks_done}");
-            }
-        }
-
-        with entry {
-            # Create a chain of students
-            alice = root ++> Student(name="Alice", grade_level=9);
-            bob = alice ++> Student(name="Bob", grade_level=9);
-            charlie = bob ++> Student(name="Charlie", grade_level=9);
-            diana = charlie ++> Student(name="Diana", grade_level=9);
-            eve = diana ++> Student(name="Eve", grade_level=9);
-
-            # Start attendance check
-            checker = AttendanceChecker(max_checks=3);
-            alice[0] spawn checker;
+            print("=== Priority-Based Traversal ===");
+            center[0] spawn PriorityWalker();
         }
         ```
         </div>
     === "Python"
         ```python
-        import random
+        class Person:
+            def __init__(self, name: str, priority: int):
+                self.name = name
+                self.priority = priority
+                self.connections = []
 
-        class AttendanceChecker:
-            def __init__(self, max_checks: int = 5):
-                self.present_students = []
-                self.absent_students = []
-                self.max_checks = max_checks
-                self.checks_done = 0
-                self.should_stop = False
+        class ConnectedTo:
+            def __init__(self, person1: Person, person2: Person, strength: int):
+                self.strength = strength
+                person1.connections.append(person2)
 
-            def check_student(self, student, connections):
-                if self.should_stop:
+        class PriorityWalker:
+            def __init__(self):
+                self.visited = set()
+
+            def visit_by_priority(self, person: Person):
+                if person in self.visited:
                     return
 
-                self.checks_done += 1
+                self.visited.add(person)
+                print(f"Visiting: {person.name} (priority: {person.priority})")
 
-                # Simulate checking if student is present
-                is_present = random.choice([True, False])
+                if person.connections:
+                    # Sort by priority (highest first)
+                    connections = sorted(
+                        [p for p in person.connections if p not in self.visited],
+                        key=lambda p: p.priority,
+                        reverse=True
+                    )
 
-                if is_present:
-                    print(f" {student.name} is present")
-                    self.present_students.append(student.name)
-                else:
-                    print(f" {student.name} is absent")
-                    self.absent_students.append(student.name)
+                    print(f"  Found {len(connections)} connections")
+                    for conn in connections:
+                        print(f"    {conn.name} (priority: {conn.priority})")
 
-                # Control flow based on conditions
-                if self.checks_done >= self.max_checks:
-                    print(f" Reached maximum checks ({self.max_checks})")
-                    self.report_final()
-                    return  # Stop checking
+                    # Visit highest priority first
+                    for conn in connections:
+                        self.visit_by_priority(conn)
 
-                # Continue to next student if available
-                next_students = connections.get(student, [])
-                if not next_students:
-                    print(" No more students to check")
-                    self.report_final()
-                    return
+        # Create network with different priorities
+        center = Person("Center", 5)
+        high_priority = Person("VIP", 10)
+        medium_priority = Person("Regular", 5)
+        low_priority = Person("Basic", 1)
 
-                # Visit next student
-                for next_student in next_students:
-                    self.check_student(next_student, connections)
+        # Create connections
+        ConnectedTo(center, high_priority, 8)
+        ConnectedTo(center, medium_priority, 5)
+        ConnectedTo(center, low_priority, 3)
 
-            def report_final(self):
-                print(f" Attendance Report:")
-                print(f"   Present: {self.present_students}")
-                print(f"   Absent: {self.absent_students}")
-                print(f"   Total checked: {self.checks_done}")
-
-        if __name__ == "__main__":
-            # Create a chain of students
-            alice = Student("Alice", 9)
-            bob = Student("Bob", 9)
-            charlie = Student("Charlie", 9)
-            diana = Student("Diana", 9)
-            eve = Student("Eve", 9)
-
-            # Create connections (linear chain)
-            connections = {
-                alice: [bob],
-                bob: [charlie],
-                charlie: [diana],
-                diana: [eve],
-                eve: []
-            }
-
-            # Start attendance check
-            checker = AttendanceChecker(max_checks=3)
-            checker.check_student(alice, connections)
+        print("=== Priority-Based Traversal ===")
+        walker = PriorityWalker()
+        walker.visit_by_priority(center)
         ```
 
-## Key Concepts Summary
+## Best Practices for Advanced Operations
 
-!!! summary "Walker and Ability Fundamentals"
-    - **Walkers** are mobile computational entities that traverse graphs
-    - **Abilities** are event-driven methods that execute automatically during traversal
-    - **Entry abilities** trigger when a walker arrives at a node
-    - **Exit abilities** trigger when a walker leaves a node
-    - **Spawn** activates a walker at a specific starting location
-    - **Visit** moves a walker to connected nodes
-    - **Disengage** stops a walker's execution
-
-## Best Practices
-
-!!! summary "Walker Design Guidelines"
-    - **Keep abilities focused**: Each ability should have a single, clear purpose
-    - **Use descriptive names**: Make it clear what each walker and ability does
-    - **Handle edge cases**: Check for empty connections before visiting
-    - **Control traversal flow**: Use conditions to avoid infinite loops
-    - **Report results**: Use exit abilities to summarize walker activities
+!!! summary "Design Guidelines"
+    - **Plan traversal depth**: Use depth limits to prevent infinite loops
+    - **Cache expensive calculations**: Store results in walker state
+    - **Use early returns**: Skip unnecessary processing with guards
+    - **Implement backtracking**: Remove items from paths when backtracking
+    - **Optimize filters**: Apply most selective filters first
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Walkers** bring computation to data through graph traversal
-    - **Abilities** create reactive, event-driven behavior at each graph location
-    - **Entry/Exit patterns** provide fine-grained control over processing
-    - **Spawn and Visit** enable flexible navigation through connected data
-    - **Control flow** statements like `disengage` allow smart traversal decisions
+    - **Smart visiting patterns** enable conditional and multi-path exploration
+    - **Advanced filtering** combines multiple criteria for sophisticated queries
+    - **Complex traversals** make advanced algorithms like recommendations simple
+    - **Walker state management** enables backtracking and path discovery
+    - **Object-spatial operations** naturally express graph algorithms
 
-Walkers and abilities transform static data structures into dynamic, reactive systems. They enable algorithms that naturally adapt to the shape and content of your data, creating programs that are both intuitive and powerful.
+Advanced object-spatial operations transform complex graph problems into intuitive, maintainable code. By moving computation to data and leveraging spatial relationships, algorithms that would require hundreds of lines in traditional approaches become concise and expressive.
 
-In the next chapter, we'll explore advanced object-spatial operations including complex traversal patterns and sophisticated filtering techniques that unlock the full potential of graph-based programming.
+In the next chapter, we'll explore persistence and the root node - features that make your spatial programs automatically persist state and scale from single-user scripts to multi-user applications.
