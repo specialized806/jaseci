@@ -544,7 +544,7 @@ In OSP, we think about entities and their relationships as a connected graph:
             analyzer.analyze(ms_smith)
             analyzer.analyze(mr_jones)
 
-            print(f"\nTeacher-student counts: {analyzer.teacher_student_count}")
+            print(f"Teacher-student counts: {analyzer.teacher_student_count}")
             print(f"Student subjects: {analyzer.student_subjects}")
         ```
 
