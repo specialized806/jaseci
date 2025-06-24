@@ -75,7 +75,8 @@ When Debug Mode is active, you'll notice additional controls in the Run Mode too
 - **Refresh** 🔄 - Reset the debug session
 - **Stop** ⏹️ - Terminate the current debug session
 
-![Debug Mode Interface](../assets/debug_mode.jpg)
+**Playground Code Debug Demo**
+🎥 [Click here to watch the Debug Mode Demo Video](../assets/playground_demo.mp4)
 
 The Graph Visualizer is one of Jac's most powerful debugging features, providing a real-time visual representation of your program's execution flow. This unique tool shows:
 
@@ -83,12 +84,6 @@ The Graph Visualizer is one of Jac's most powerful debugging features, providing
 - **Nodes**: Represent different stages, objects, or states in your Jac program
 - **Edges**: Show the connections and relationships between nodes
 - **Dynamic Updates**: As you step through code execution, new nodes and edges appear dynamically
-
-#### Interactive Debugging Navigation
-- Use the **Down Arrow Key** (⬇️) to step forward through code execution
-- Use the **Up Arrow Key** (⬆️) to step backward through previous execution states
-- Watch as nodes and edges populate in real-time as your program executes
-- Each step shows exactly how data flows through your Jac program's spatial structure
 
 #### Real-time Code Tracking
 - The currently executing line is highlighted in yellow in the code editor
