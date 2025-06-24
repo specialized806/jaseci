@@ -461,22 +461,9 @@ Error: Cannot divide by zero!
                 print(f"  {entry}")
         ```
 
-## Interactive Mode (REPL)
+##### Jac REPL
 
-For quick experimentation, you can use Jac interactively:
-
-```bash
-# Start interactive mode
-jac
-
-# Try some basic operations
-> x: int = 42;
-> print(x * 2);
-84
-> greeting: str = "Hello from REPL!";
-> print(greeting);
-Hello from REPL!
-```
+Note: Currently, the Jac REPL feature is not available. Please use standard Jac script execution for testing and running your code.
 
 ## Common Beginner Mistakes and Solutions
 
