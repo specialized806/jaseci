@@ -1,9 +1,9 @@
-# Chapter 4: Functions and Decorators
+# Chapter 4: Functions, AI Functions, and Decorators
 
-Jac provides a powerful function system with mandatory type annotations, decorators, and first-class support for functional programming patterns. This chapter builds a math functions library with timing capabilities to demonstrate these features.
+Jac provides a powerful function system with mandatory type annotations, built-in AI capabilities, decorators, and first-class support for functional programming patterns. This chapter builds a math functions library with AI-powered features and timing capabilities to demonstrate these features.
 
 !!! topic "Function Philosophy"
-    In Jac, functions are first-class citizens with mandatory typing that prevents runtime errors and improves code clarity.
+    In Jac, functions are first-class citizens with mandatory typing that prevents runtime errors and improves code clarity. Jac also seamlessly integrates AI capabilities directly into the language.
 
 ## Function Definitions with Type Safety
 
@@ -157,6 +157,253 @@ Jac provides a powerful function system with mandatory type annotations, decorat
             test_numbers = [1.0, 2.0, 3.0, 4.0, 5.0]
             stats = calculate_statistics(test_numbers)
             print(f"Statistics: {stats}")
+        ```
+
+## Built-in AI Function Calls
+
+!!! topic "AI-Powered Functions"
+    Jac makes AI integration simple with built-in functions that can perform natural language processing, reasoning, and other AI tasks directly in your code.
+
+### Basic AI Functions
+
+!!! example "Simple AI Function Calls"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        import from mtllm.llms { Gemini }
+
+        glob llm = Gemini(
+            model_name="gemini-2.0-flash"
+        );
+
+        glob GEMINI_API_KEY = "";
+
+        # Basic AI function calls for text processing
+        def analyze_sentiment(text: str) -> str {
+            # AI function that analyzes sentiment
+            sentiment = llm(f"Analyze the sentiment of this text: '{text}'. Return only 'positive', 'negative', or 'neutral'.");
+            return sentiment.strip().lower();
+        }
+
+        def generate_math_explanation(problem: str, solution: float) -> str {
+            # AI function that explains math solutions
+            explanation = llm(f"Explain how to solve this math problem step by step: {problem} = {solution}");
+            return explanation;
+        }
+
+        def classify_number_type(num: int) -> str {
+            # AI function that classifies numbers
+            classification = llm(f"Classify this number {num}. Is it prime, composite, or neither? Give a brief explanation.");
+            return classification;
+        }
+
+        with entry {
+            print("=== AI Function Examples ===");
+
+            # Sentiment analysis
+            texts = ["I love programming!", "This is frustrating", "The weather is okay"];
+            for text in texts {
+                sentiment = analyze_sentiment(text);
+                print(f"'{text}' -> {sentiment}");
+            }
+
+            # Math explanation
+            explanation = generate_math_explanation("5 + 3", 8.0);
+            print(f"\nMath explanation:\n{explanation}");
+
+            # Number classification
+            numbers = [7, 12, 1];
+            for num in numbers {
+                classification = classify_number_type(num);
+                print(f"\nNumber {num}: {classification}");
+            }
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        # Note: Python doesn't have built-in AI functions like Jac
+        # This would require external libraries like OpenAI API
+
+        # Simulated AI function responses for demonstration
+        def analyze_sentiment(text: str) -> str:
+            # Would need to call external API or use ML library
+            # Simplified simulation based on keywords
+            positive_words = ["love", "great", "awesome", "good"]
+            negative_words = ["hate", "bad", "terrible", "frustrating"]
+
+            text_lower = text.lower()
+            if any(word in text_lower for word in positive_words):
+                return "positive"
+            elif any(word in text_lower for word in negative_words):
+                return "negative"
+            else:
+                return "neutral"
+
+        def generate_math_explanation(problem: str, solution: float) -> str:
+            # Would need to call external AI API
+            return f"To solve {problem}: Add the numbers together to get {solution}"
+
+        def classify_number_type(num: int) -> str:
+            # Would need to call external AI API
+            if num < 2:
+                return f"{num} is neither prime nor composite"
+            for i in range(2, int(num**0.5) + 1):
+                if num % i == 0:
+                    return f"{num} is composite (divisible by {i})"
+            return f"{num} is prime (only divisible by 1 and itself)"
+
+        if __name__ == "__main__":
+            print("=== AI Function Examples ===")
+
+            # Sentiment analysis
+            texts = ["I love programming!", "This is frustrating", "The weather is okay"]
+            for text in texts:
+                sentiment = analyze_sentiment(text)
+                print(f"'{text}' -> {sentiment}")
+
+            # Math explanation
+            explanation = generate_math_explanation("5 + 3", 8.0)
+            print(f"\nMath explanation:\n{explanation}")
+
+            # Number classification
+            numbers = [7, 12, 1]
+            for num in numbers:
+                classification = classify_number_type(num)
+                print(f"\nNumber {num}: {classification}")
+        ```
+
+### AI-Enhanced Math Functions
+
+!!! example "Combining AI with Traditional Math"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        import from mtllm.llms { Gemini }
+
+        glob llm = Gemini(
+            model_name="gemini-2.0-flash"
+        );
+
+        glob GEMINI_API_KEY = "";
+
+        def calculate(text: str) -> str by llm(method='Reason');
+
+        def generate_response(original_text: str) -> str by llm(method="Reason");
+
+        # AI-enhanced math library
+        def smart_calculator(expression: str) -> dict[str, any] {
+            # Use AI to parse and solve math expressions
+            result = calculate(f"Calculate this math expression and return only the numeric result: {expression}");
+
+            try {
+                numeric_result = float(result.strip());
+                explanation = llm(f"Explain how to calculate {expression} step by step in simple terms");
+
+                return {
+                    "expression": expression,
+                    "result": numeric_result,
+                    "explanation": explanation
+                };
+            } except ValueError {
+                return {
+                    "expression": expression,
+                    "result": None,
+                    "error": "Could not parse result"
+                };
+            }
+        }
+
+        def ai_math_tutor(question: str) -> str {
+            # AI tutoring for math concepts
+            response = generate_response(f"You are a friendly math tutor. Answer this question in simple terms: {question}");
+            return response;
+        }
+
+        with entry {
+            print("=== AI-Enhanced Math Functions ===");
+
+            # Smart calculator
+            expressions = ["15 + 27", "8 * 7", "100 / 4"];
+            for expr in expressions {
+                result = smart_calculator(expr);
+                print(f"\nExpression: {result['expression']}");
+                print(f"Result: {result.get('result', 'Error')}");
+                print(f"Explanation: {result.get('explanation', 'N/A')}");
+            }
+
+            # AI math tutor
+            questions = [
+                "What is the difference between prime and composite numbers?",
+                "How do I calculate the area of a circle?"
+            ];
+
+            for question in questions {
+                answer = ai_math_tutor(question);
+                print(f"\nQ: {question}");
+                print(f"A: {answer}");
+            }
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        from typing import Dict, Any
+
+        # AI-enhanced math library (simulated)
+        def smart_calculator(expression: str) -> Dict[str, Any]:
+            # Simplified calculator without AI
+            try:
+                # Basic expression evaluation (in real scenario, use safe eval)
+                result = eval(expression)  # Note: eval is unsafe in production
+
+                return {
+                    "expression": expression,
+                    "result": float(result),
+                    "explanation": f"Calculate {expression} by performing the operation to get {result}"
+                }
+            except Exception as e:
+                return {
+                    "expression": expression,
+                    "result": None,
+                    "error": f"Could not calculate: {str(e)}"
+                }
+
+        def ai_math_tutor(question: str) -> str:
+            # Simulated AI tutor responses
+            responses = {
+                "prime": "Prime numbers are numbers greater than 1 that are only divisible by 1 and themselves. Composite numbers have other divisors too.",
+                "circle": "To find the area of a circle, use the formula A = π × r², where r is the radius."
+            }
+
+            question_lower = question.lower()
+            for key, response in responses.items():
+                if key in question_lower:
+                    return response
+
+            return "I'd be happy to help with math questions!"
+
+        if __name__ == "__main__":
+            print("=== AI-Enhanced Math Functions ===")
+
+            # Smart calculator
+            expressions = ["15 + 27", "8 * 7", "100 / 4"]
+            for expr in expressions:
+                result = smart_calculator(expr)
+                print(f"\nExpression: {result['expression']}")
+                print(f"Result: {result.get('result', 'Error')}")
+                print(f"Explanation: {result.get('explanation', 'N/A')}")
+
+            # AI math tutor
+            questions = [
+                "What is the difference between prime and composite numbers?",
+                "How do I calculate the area of a circle?"
+            ]
+
+            for question in questions:
+                answer = ai_math_tutor(question)
+                print(f"\nQ: {question}")
+                print(f"A: {answer}")
         ```
 
 ## Decorators for Enhanced Functionality
@@ -588,188 +835,196 @@ Jac provides a powerful function system with mandatory type annotations, decorat
             print(f"Product: {product_result}")
         ```
 
-## Complete Example: Math Functions Library
+## Async Functions
 
-!!! example "Complete Math Library with Timing"
+!!! topic "Asynchronous Programming"
+    Jac supports async functions for handling concurrent operations and non-blocking I/O.
+
+### Basic Async Functions
+
+!!! example "Async Function Examples"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        import asyncio;
+        import time;
+
+        # Async function for simulated API calls
+        async def fetch_data(source: str, delay: float) -> dict[str, any] {
+            print(f"Starting to fetch from {source}...");
+            await asyncio.sleep(delay);  # Simulate network delay
+
+            return {
+                "source": source,
+                "data": f"Data from {source}",
+                "timestamp": time.time()
+            };
+        }
+
+        # Async function that processes multiple sources
+        async def gather_all_data() -> list[dict[str, any]] {
+            # Run multiple async operations concurrently
+            tasks = [
+                fetch_data("API-1", 1.0),
+                fetch_data("API-2", 0.5),
+                fetch_data("API-3", 1.5)
+            ];
+
+            results = await asyncio.gather(*tasks);
+            return results;
+        }
+
+        # Regular function that uses async
+        def run_async_example() -> None {
+            print("=== Async Functions Demo ===");
+
+            # Run the async function
+            results = asyncio.run(gather_all_data());
+
+            print("All data fetched:");
+            for result in results {
+                print(f"  {result['source']}: {result['data']}");
+            }
+        }
+
+        with entry {
+            run_async_example();
+        }
+        ```
+        </div>
+    === "Python"
+        ```python
+        import asyncio
+        import time
+        from typing import Dict, Any, List
+
+        # Async function for simulated API calls
+        async def fetch_data(source: str, delay: float) -> Dict[str, Any]:
+            print(f"Starting to fetch from {source}...")
+            await asyncio.sleep(delay)  # Simulate network delay
+
+            return {
+                "source": source,
+                "data": f"Data from {source}",
+                "timestamp": time.time()
+            }
+
+        # Async function that processes multiple sources
+        async def gather_all_data() -> List[Dict[str, Any]]:
+            # Run multiple async operations concurrently
+            tasks = [
+                fetch_data("API-1", 1.0),
+                fetch_data("API-2", 0.5),
+                fetch_data("API-3", 1.5)
+            ]
+
+            results = await asyncio.gather(*tasks)
+            return results
+
+        # Regular function that uses async
+        def run_async_example() -> None:
+            print("=== Async Functions Demo ===")
+
+            # Run the async function
+            results = asyncio.run(gather_all_data())
+
+            print("All data fetched:")
+            for result in results:
+                print(f"  {result['source']}: {result['data']}")
+
+        if __name__ == "__main__":
+            run_async_example()
+        ```
+
+## Complete Example: AI-Enhanced Math Library
+
+!!! example "Complete Library with AI and Traditional Functions"
     === "Jac"
         <div class="code-block">
         ```jac
         import time;
 
-        # Enhanced timing decorator that works with methods
-        def enhanced_timing(func: callable) -> callable {
+        # Combined timing and AI analysis decorator
+        def smart_timing(func: callable) -> callable {
             def wrapper(*args: any, **kwargs: any) -> any {
                 start_time = time.time();
                 result = func(*args, **kwargs);
                 end_time = time.time();
                 execution_time = end_time - start_time;
 
-                print(f"{func.__name__} completed in {execution_time}s");
-                return result;
-            }
-            return wrapper;
-        }
+                print(f"{func.__name__} executed in {execution_time}s");
 
-        # Enhanced caching decorator
-        def smart_cache(func: callable) -> callable {
-            cache: dict[str, any] = {};
-
-            def wrapper(*args: any, **kwargs: any) -> any {
-                cache_key = f"{func.__name__}:{str(args)}";
-
-                if cache_key in cache {
-                    print(f"Cache hit for {cache_key}");
-                    return cache[cache_key];
+                # AI insight for slow functions
+                if execution_time > 0.5 {
+                    insight = llm(f"Function {func.__name__} with args {args} took {execution_time} seconds. What might be causing this performance?");
+                    print(f"AI Insight: {insight}");
                 }
 
-                result = func(*args, **kwargs);
-                cache[cache_key] = result;
                 return result;
             }
             return wrapper;
         }
 
-        # Math library with comprehensive functionality
-        obj MathLibrary {
+        # Enhanced math library with AI capabilities
+        obj SmartMathLibrary {
             has calculation_count: int = 0;
 
-            def increment_counter() -> None;
-            def get_stats() -> dict[str, any];
-
-            @enhanced_timing
+            @smart_timing
             def fibonacci(n: int) -> int;
 
-            @enhanced_timing
-            @smart_cache
-            def cached_fibonacci(n: int) -> int;
+            @smart_timing
+            def explain_calculation(operation: str, result: any) -> str;
 
-            @enhanced_timing
-            def factorial(n: int) -> int;
-
-            @enhanced_timing
-            def prime_check(n: int) -> bool;
-
-            def batch_process(numbers: list[int], operation: str) -> list[any];
+            def get_stats() -> dict[str, any];
         }
 
-        impl MathLibrary.increment_counter {
+        impl SmartMathLibrary.fibonacci {
             self.calculation_count += 1;
-        }
-
-        impl MathLibrary.get_stats {
-            return {
-                "total_calculations": self.calculation_count,
-                "library_version": "1.0"
-            };
-        }
-
-        # Add methods to MathLibrary
-        impl MathLibrary.fibonacci {
             if n <= 1 {
                 return n;
             }
             return self.fibonacci(n - 1) + self.fibonacci(n - 2);
         }
 
-        impl MathLibrary.cached_fibonacci {
-            if n <= 1 {
-                return n;
-            }
-            return self.cached_fibonacci(n - 1) + self.cached_fibonacci(n - 2);
+        impl SmartMathLibrary.explain_calculation {
+            explanation = llm(f"Explain this calculation in simple terms: {operation} = {result}");
+            return explanation;
         }
 
-        impl MathLibrary.factorial {
-            if n <= 1 {
-                return 1;
-            }
-            return n * self.factorial(n - 1);
-        }
-
-        impl MathLibrary.prime_check {
-            if n < 2 {
-                return False;
-            }
-            for i in range(2, int(n ** 0.5) + 1) {
-                if n % i == 0 {
-                    return False;
-                }
-            }
-            return True;
-        }
-
-        impl MathLibrary.batch_process {
-            operations = {
-                "fibonacci": self.cached_fibonacci,
-                "factorial": self.factorial,
-                "prime": self.prime_check
+        impl SmartMathLibrary.get_stats {
+            return {
+                "total_calculations": self.calculation_count,
+                "library_version": "2.0-AI"
             };
-
-            if operation not in operations {
-                raise ValueError(f"Unknown operation: {operation}");
-            }
-
-            func = operations[operation];
-            return [func(num) for num in numbers];
         }
 
         with entry {
-            print("=== Math Library Demo ===");
+            print("=== Smart Math Library Demo ===");
 
-            math_lib = MathLibrary();
+            math_lib = SmartMathLibrary();
 
-            # Test individual functions
-            print("Testing Fibonacci (slow):");
-            result1 = math_lib.fibonacci(2);
-            print(f"Fibonacci(2) = {result1}");
+            # Test Fibonacci
+            fib_result = math_lib.fibonacci(3);
+            print(f"Fibonacci(3) = {fib_result}");
 
-            print("\nTesting Cached Fibonacci (fast):");
-            result2 = math_lib.cached_fibonacci(3);
-            print(f"Cached Fibonacci(3) = {result2}");
+            # Get AI explanation
+            explanation = math_lib.explain_calculation("Fibonacci(3)", fib_result);
+            print(f"AI Explanation: {explanation}");
 
-            print("\nTesting Factorial:");
-            result3 = math_lib.factorial(3);
-            print(f"Factorial(3) = {result3}");
-
-            print("\nTesting Prime Check:");
-            test_numbers = [17, 18, 19, 20, 21];
-            for num in test_numbers {
-                is_prime = math_lib.prime_check(num);
-                print(f"{num} is {'prime' if is_prime else 'not prime'}");
-            }
-
-            print("\nBatch Processing:");
-            batch_numbers = [5, 6, 7, 8];
-            fib_results = math_lib.batch_process(batch_numbers, "fibonacci");
-            print(f"Fibonacci results: {fib_results}");
-
-            # Show library statistics
+            # Show stats
             stats = math_lib.get_stats();
-            print(f"\nLibrary Statistics: {stats}");
+            print(f"Library Stats: {stats}");
         }
         ```
         </div>
     === "Python"
         ```python
         import time
-        from typing import Dict, List, Any, Callable
+        from typing import Dict, Any, Callable
         from functools import wraps
 
-        # Math library with comprehensive functionality
-        class MathLibrary:
-            def __init__(self):
-                self.calculation_count = 0
-
-            def increment_counter(self) -> None:
-                self.calculation_count += 1
-
-            def get_stats(self) -> Dict[str, Any]:
-                return {
-                    "total_calculations": self.calculation_count,
-                    "library_version": "1.0"
-                }
-
-        # Enhanced timing decorator that works with methods
-        def enhanced_timing(func: Callable) -> Callable:
+        # Combined timing and AI analysis decorator (simulated)
+        def smart_timing(func: Callable) -> Callable:
             @wraps(func)
             def wrapper(self, *args: Any, **kwargs: Any) -> Any:
                 start_time = time.time()
@@ -777,126 +1032,68 @@ Jac provides a powerful function system with mandatory type annotations, decorat
                 end_time = time.time()
                 execution_time = end_time - start_time
 
-                self.increment_counter()
-                print(f"{func.__name__} completed in {execution_time:.6f}s (Call #{self.calculation_count})")
+                print(f"{func.__name__} executed in {execution_time:.4f}s")
+
+                # Simulated AI insight for slow functions
+                if execution_time > 0.001:  # Lower threshold for demo
+                    insight = f"Function {func.__name__} with args {args} took {execution_time:.4f} seconds. Consider using memoization for recursive functions."
+                    print(f"AI Insight: {insight}")
+
                 return result
             return wrapper
 
-        # Enhanced caching decorator
-        def smart_cache(func: Callable) -> Callable:
-            cache: Dict[str, Any] = {}
-
-            @wraps(func)
-            def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-                cache_key = f"{func.__name__}:{str(args)}"
-
-                if cache_key in cache:
-                    print(f"Cache hit for {cache_key}")
-                    return cache[cache_key]
-
-                result = func(self, *args, **kwargs)
-                cache[cache_key] = result
-                return result
-            return wrapper
-
-        # Add methods to MathLibrary
-        class MathLibrary:
+        # Enhanced math library with AI capabilities
+        class SmartMathLibrary:
             def __init__(self):
                 self.calculation_count = 0
 
-            def increment_counter(self) -> None:
-                self.calculation_count += 1
-
-            def get_stats(self) -> Dict[str, Any]:
-                return {
-                    "total_calculations": self.calculation_count,
-                    "library_version": "1.0"
-                }
-
-            @enhanced_timing
+            @smart_timing
             def fibonacci(self, n: int) -> int:
+                self.calculation_count += 1
                 if n <= 1:
                     return n
                 return self.fibonacci(n - 1) + self.fibonacci(n - 2)
 
-            @enhanced_timing
-            @smart_cache
-            def cached_fibonacci(self, n: int) -> int:
-                if n <= 1:
-                    return n
-                return self.cached_fibonacci(n - 1) + self.cached_fibonacci(n - 2)
+            @smart_timing
+            def explain_calculation(self, operation: str, result: Any) -> str:
+                # Simulated AI explanation
+                explanation = f"The calculation {operation} = {result} works by following the mathematical rules step by step."
+                return explanation
 
-            @enhanced_timing
-            def factorial(self, n: int) -> int:
-                if n <= 1:
-                    return 1
-                return n * self.factorial(n - 1)
-
-            @enhanced_timing
-            def prime_check(self, n: int) -> bool:
-                if n < 2:
-                    return False
-                for i in range(2, int(n ** 0.5) + 1):
-                    if n % i == 0:
-                        return False
-                return True
-
-            def batch_process(self, numbers: List[int], operation: str) -> List[Any]:
-                operations = {
-                    "fibonacci": self.cached_fibonacci,
-                    "factorial": self.factorial,
-                    "prime": self.prime_check
+            def get_stats(self) -> Dict[str, Any]:
+                return {
+                    "total_calculations": self.calculation_count,
+                    "library_version": "2.0-AI"
                 }
 
-                if operation not in operations:
-                    raise ValueError(f"Unknown operation: {operation}")
-
-                func = operations[operation]
-                return [func(num) for num in numbers]
-
         if __name__ == "__main__":
-            print("=== Math Library Demo ===")
+            print("=== Smart Math Library Demo ===")
 
-            math_lib = MathLibrary()
+            math_lib = SmartMathLibrary()
 
-            # Test individual functions
-            print("Testing Fibonacci (slow):")
-            result1 = math_lib.fibonacci(2)
-            print(f"Fibonacci(2) = {result1}")
+            # Test Fibonacci
+            fib_result = math_lib.fibonacci(3)
+            print(f"Fibonacci(3) = {fib_result}")
 
-            print("\nTesting Cached Fibonacci (fast):")
-            result2 = math_lib.cached_fibonacci(3)
-            print(f"Cached Fibonacci(3) = {result2}")
+            # Get AI explanation
+            explanation = math_lib.explain_calculation("Fibonacci(3)", fib_result)
+            print(f"AI Explanation: {explanation}")
 
-            print("\nTesting Factorial:")
-            result3 = math_lib.factorial(3)
-            print(f"Factorial(3) = {result3}")
-
-            print("\nTesting Prime Check:")
-            test_numbers = [17, 18, 19, 20, 21]
-            for num in test_numbers:
-                is_prime = math_lib.prime_check(num)
-                print(f"{num} is {'prime' if is_prime else 'not prime'}")
-
-            print("\nBatch Processing:")
-            batch_numbers = [5, 6, 7, 8]
-            fib_results = math_lib.batch_process(batch_numbers, "fibonacci")
-            print(f"Fibonacci results: {fib_results}")
-
-            # Show library statistics
+            # Show stats
             stats = math_lib.get_stats()
-            print(f"\nLibrary Statistics: {stats}")
+            print(f"Library Stats: {stats}")
         ```
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
     - **Mandatory Types**: All function parameters and return types must be explicitly declared
-    - **Decorators**: Powerful tools for adding functionality like timing, caching, and validation
+    - **AI Integration**: Built-in `by llm()` function makes AI capabilities easily accessible
+    - **Decorators**: Powerful tools for adding functionality like timing, caching, and AI analysis
     - **Lambda Functions**: Concise syntax for simple operations and functional programming
-    - **Higher-Order Functions**: Functions can accept and return other functions for flexible abstractions
-    - **Performance**: Use decorators to add timing and caching without modifying core logic
+    - **Async Functions**: Support for concurrent operations and non-blocking I/O
+    - **Performance**: Use decorators to add timing and AI insights without modifying core logic
     - **Code Organization**: Group related functions into objects or modules for better structure
 
 !!! topic "Coming Up"
-    In the next chapter, we'll explore Jac's import system and how to organize code across multiple files and modules.
+    In the next chapter, we'll dive deeper into advanced AI operations, exploring MTLLM variations, model configuration, and semantic strings for more sophisticated AI integration.

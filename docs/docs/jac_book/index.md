@@ -42,67 +42,58 @@ This book is structured to provide both theoretical understanding and practical 
 ### Chapter 4: Functions and Decorators
 - Function definitions
 - Parameter types and return annotations
+- Built-in AI function calls
 - Decorators in Jac context
 - Lambda functions and functional programming
 - Async functions
 - **Code Example Ideas**: Math functions library with timing decorator
 
-### Chapter 5: Imports System and File Operations
+### Chapter 5: Advanced AI Operations
+- MTLLM variations and basic usage
+- Model declaration and configuration
+- Semantic strings and prompt engineering
+- Multimodality support (vision, audio)
+- **Code Example Ideas**: Simple image captioning tool
+
+### Chapter 6: Imports System and File Operations
 - Import statements and module organization
 - Implementation separation (.impl.jac files)
 - Package structure and well-typed codebases
 - File operations
 - **Code Example Ideas**: Simple config file reader across multiple modules
 
-## Part III: New Features
-
-### Chapter 6: Pipe Operations and AI Integration
-- Pipe operator chains
-- Built-in AI function calls
-- Model declaration and configuration
-- MTLLM variations and basic usage
-- **Code Example Ideas**: Text summarizer using pipe operations
-
-### Chapter 7: Advanced AI Operations
-- Semantic strings and prompt engineering
-- Multimodality support (vision, audio)
-- Custom model integration
-- Embedding and vector operations
-- Performance considerations
-- **Code Example Ideas**: Simple image captioning tool
-
 ## Part IV: Object Spatial Programming (OSP)
 
-### Chapter 8: Enhanced OOP - Objects and Classes
+### Chapter 7: Enhanced OOP - Objects and Classes
 - python `class` to jac `obj`
 - Automatic constructors with `has`
 - Access control (:pub, :priv, :protect)
 - Inheritance and composition
 - **Code Example Ideas**: Simple pet shop with different animal types
 
-### Chapter 9: OSP Introduction and Paradigm Shift
+### Chapter 8: OSP Introduction and Paradigm Shift
 - From "data to computation" to "computation to data"
 - Data Spatial Programming foundation
 - Graph thinking vs object thinking
 - **Code Example Ideas**: Family tree with 3 generations
 
-### Chapter 10: Nodes and Edges
+### Chapter 9: Nodes and Edges
 - Node creation and properties
 - Edge types and relationships
 - Graph creation syntax
 - Filtering
 - **Code Example Ideas**: Simple classroom with students and teacher connections
 
-### Chapter 11: Walkers and Abilities
+### Chapter 10: Walkers and Abilities
 - Walker creation
 - Ability definitions and triggers
 - Entry/exit behaviors
 - Walker spawn and visit
 - **Code Example Ideas**: Message delivery walker in the classroom graph
 
-### Chapter 12: Advanced Object Spatial Operations
-- Advanced Filtering
+### Chapter 11: Advanced Object Spatial Operations
 - Visit patterns
+- Advanced Filtering
 - Complex traversal patterns
 - **Code Example Ideas**: Find all friends of friends in a social network
 
