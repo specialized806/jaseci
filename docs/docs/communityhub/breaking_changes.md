@@ -75,13 +75,12 @@ node MyNode {
     has val:int;
 }
 
-glob Ignore = [];
-
 walker MyWalker {
+    has Ignore: list = [];
+
     can func1 with MyNode entry {
-        :g: Ignore;
-        Ignore.append(here); # comment here to check the circular graph
-        visit [i for i in [-->] if i not in Ignore]; # now
+        self.Ignore.append(here); # comment here to check the circular graph
+        visit [i for i in [-->] if i not in self.Ignore]; # now
         print(here);
     }
 }
