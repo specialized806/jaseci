@@ -101,8 +101,8 @@ This book is structured to provide both theoretical understanding and practical 
 - **Code Example Ideas**: Message delivery walker in the classroom graph
 
 ### Chapter 12: Advanced Object Spatial Operations
-- Visit patterns
 - Advanced Filtering
+- Visit patterns
 - Complex traversal patterns
 - **Code Example Ideas**: Find all friends of friends in a social network
 
