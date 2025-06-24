@@ -58,8 +58,8 @@ The right sidebar contains a collection of sample programs organized by category
 5. **Reset When Stuck**: Use the Reset button to start with a clean slate
 
 ## Debug Mode
-
 When Debug Mode is enabled, you get additional features:
+
 - Step-by-step program execution
 - Variable state inspection
 - Detailed error reporting
