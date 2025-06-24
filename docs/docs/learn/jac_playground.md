@@ -16,18 +16,21 @@ with entry {
 
 ### Main Editor
 The left side of the screen contains the code editor where you can write your Jac programs. The editor features:
+
 - Syntax highlighting for Jac language
 - Line numbers for easy reference
 - Auto-indentation and bracket matching
 
 ### Control Panel
 At the top of the editor, you'll find:
+
 - **Run Button** ▶️ - Execute your Jac program
 - **Reset Button** 🔄 - Clear the editor and start fresh
 - **Debug Mode Toggle** 🐛 - Enable debugging features for step-by-step execution
 
 ### Output Panel
 The bottom section displays the output of your program, including:
+
 - Print statements and results
 - Error messages and debugging information
 - Program execution feedback
