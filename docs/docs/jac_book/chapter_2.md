@@ -364,17 +364,6 @@ Let's build a simple calculator to demonstrate Jac's syntax:
             print(f"{num1} / 0 = {calculate('div', num1, 0.0)}")
         ```
 
-**Output:**
-```
-=== Simple Calculator ===
-10.0 + 3.0 = 13.0
-10.0 - 3.0 = 7.0
-10.0 * 3.0 = 30.0
-10.0 / 3.0 = 3.3333333333333335
-Error: Cannot divide by zero!
-10.0 / 0 = 0.0
-```
-
 ### Enhanced Calculator with Object-Oriented Design
 
 !!! example "OOP Calculator"
@@ -461,9 +450,7 @@ Error: Cannot divide by zero!
                 print(f"  {entry}")
         ```
 
-##### Jac REPL
 
-Note: Currently, the Jac REPL feature is not available. Please use standard Jac script execution for testing and running your code.
 
 ## Common Beginner Mistakes and Solutions
 
@@ -518,6 +505,12 @@ Note: Currently, the Jac REPL feature is not available. Please use standard Jac 
 | Type hints | Optional | Required |
 | Statement termination | Newlines | Semicolons `;` |
 | Global variables | `global` keyword | `glob` declaration |
+
+##### Jac REPL
+
+!!! warning "Warning"
+    Note: Currently, the Jac REPL feature is not available. Please use standard Jac script execution for testing and running your code.
+
 
 ## What's Next?
 

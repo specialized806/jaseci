@@ -28,17 +28,6 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             }
         }
 
-        # Basic classroom nodes
-        node Student {
-            has name: str;
-            has messages: list[str] = [];
-        }
-
-        node Teacher {
-            has name: str;
-            has subject: str;
-        }
-
         with entry {
             # Create walker instance (but don't activate it yet)
             messenger = MessageDelivery(message="Hello from the principal!");
@@ -251,7 +240,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             has rooms_visited: set[str] = {};
             has people_reached: int = 0;
 
-            can deliver with Student entry {
+            can deliver_student with Student entry {
                 print(f" Student {here.name}: {self.announcement}");
                 self.people_reached += 1;
 
@@ -259,7 +248,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 visit [-->];
             }
 
-            can deliver with Teacher entry {
+            can deliver_teacher with Teacher entry {
                 print(f" Teacher {here.name}: {self.announcement}");
                 self.people_reached += 1;
 
@@ -532,7 +521,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 ## Walker Control Flow
 
 !!! topic "Traversal Control"
-    Walkers can control their movement through the graph using special statements like `visit`, `disengage`, and `skip`.
+    Walkers can control their movement through the graph using special statements like `visit` and `disengage`.
 
 ### Controlling Walker Behavior
 
@@ -711,4 +700,5 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
 Walkers and abilities transform static data structures into dynamic, reactive systems. They enable algorithms that naturally adapt to the shape and content of your data, creating programs that are both intuitive and powerful.
 
-In the next chapter, we'll explore advanced object-spatial operations including complex traversal patterns and sophisticated filtering techniques that unlock the full potential of graph-based programming.
+!!! topic "Coming Up"
+    In the next chapter, we'll explore advanced object-spatial operations including complex traversal patterns and sophisticated filtering techniques that unlock the full potential of graph-based programming.

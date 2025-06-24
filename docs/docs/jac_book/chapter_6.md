@@ -65,7 +65,7 @@ Jac provides a powerful module system for organizing code across multiple files 
 
 !!! example "Interface and Implementation Separation"
     === "math_ops.jac"
-        <div class="code-block">
+
         ```jac
         # Interface definition
         obj Calculator {
@@ -77,7 +77,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             def divide(a: float, b: float) -> float;
         }
         ```
-        </div>
+
     === "math_ops.impl.jac"
         <div class="code-block">
         ```jac
@@ -299,7 +299,7 @@ Jac provides a powerful module system for organizing code across multiple files 
 
 !!! example "Configuration Reader (config_reader.jac)"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         # config_reader.jac
         import json;
@@ -378,7 +378,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             self.save_config();
         }
         ```
-        </div>
+
     === "Python"
         ```python
         # config_reader.py
@@ -448,7 +448,7 @@ Jac provides a powerful module system for organizing code across multiple files 
 
 !!! example "Application Module (app.jac)"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         # app.jac
         # include config_reader;
@@ -527,7 +527,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             print(">>> Application ready");
         }
         ```
-        </div>
+
     === "Python"
         ```python
         # app.py
@@ -600,7 +600,7 @@ Jac provides a powerful module system for organizing code across multiple files 
 
 !!! example "Main Entry Point (main.jac)"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         # main.jac
         include app;
@@ -624,7 +624,7 @@ Jac provides a powerful module system for organizing code across multiple files 
             application.start();
         }
         ```
-        </div>
+
     === "Python"
         ```python
         # main.py
@@ -719,4 +719,5 @@ Jac provides a powerful module system for organizing code across multiple files 
     - **Module Organization**: Well-structured projects are easier to maintain and scale
     - **Python Integration**: Leverage existing Python ecosystem alongside Jac features
 
-In the next chapter, we'll explore Jac's unique pipe operations and AI integration features that make data processing and AI workflows much more intuitive.
+!!! topic "Coming Up"
+    In the next chapter, we'll explore Jac's unique pipe operations and AI integration features that make data processing and AI workflows much more intuitive.

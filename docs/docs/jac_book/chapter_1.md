@@ -621,11 +621,8 @@ Let's build a complete friend network example that demonstrates Jac's core conce
             }
 
             # Find close friendships (closeness >= 8)
-            close_friendships = [root->:FriendsWith:closeness >= 8:->];
+            close_friendships = [root-->->:FriendsWith:closeness >= 8:->];
             print(f"Close friendships ({len(close_friendships)} found):");
-            for edge in close_friendships {
-                print(f"  Strong bond between friends (closeness: {edge.closeness})");
-            }
         }
         ```
         </div>
