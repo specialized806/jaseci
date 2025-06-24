@@ -58,14 +58,9 @@ The right sidebar contains a collection of sample programs organized by category
 5. **Reset When Stuck**: Use the Reset button to start with a clean slate
 
 ## Debug Mode
-When Debug Mode is enabled, you get additional features:
-
-- Step-by-step program execution
-- Variable state inspection
-- Detailed error reporting
-- Execution flow visualization
-
 Debug Mode transforms the Jac Playground into a powerful development environment with advanced debugging capabilities. When enabled, the interface splits into two main sections: the code editor on the left and the **Jaclang Graph Visualizer** on the right.
+
+### Jaclang Graph Visualizer
 
 ![Debug Mode with Graph Visualizer](../assets/visualizer.jpg)
 
