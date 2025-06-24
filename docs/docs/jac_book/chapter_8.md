@@ -1,6 +1,6 @@
 # Chapter 8: Enhanced OOP - Objects and Classes
 
-Jac takes the familiar concepts of object-oriented programming and enhances them with modern features like automatic constructors, implementation separation, and improved access control. This chapter shows how Jac builds on traditional OOP while making it more powerful and convenient.
+Jac takes the familiar concepts of object-oriented programming and enhances them with modern features like **automatic constructors**, **implementation separation**, and **improved access control**. This chapter shows how Jac builds on traditional OOP while making it more powerful and convenient.
 
 !!! topic "Enhanced Object-Oriented Programming"
     Jac's enhanced OOP features eliminate boilerplate code while providing better type safety and code organization than traditional approaches.
@@ -236,7 +236,7 @@ print(pet.get_info())
 
             def list_available_pets() -> None {
                 available = [p for p in self.pets if not p.is_adopted];
-                print(f"\nAvailable pets at {self.name}:");
+                print(f"Available pets at {self.name}:");
                 for pet in available {
                     print(f"  - {pet.get_info()}");
                 }

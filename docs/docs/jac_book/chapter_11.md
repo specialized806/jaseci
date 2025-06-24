@@ -278,7 +278,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             can summarize with Student exit {
                 # Only report once at the end
                 if len([-->]) == 0 {  # At a node with no outgoing connections
-                    print(f"\n Delivery complete!");
+                    print(f" Delivery complete!");
                     print(f"   People reached: {self.people_reached}");
                     print(f"   Rooms visited: {list(self.rooms_visited)}");
                 }
@@ -351,7 +351,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
                 # Check if we're at the end
                 if not connections.get(node, []):
-                    print(f"\n elivery complete!")
+                    print(f" elivery complete!")
                     print(f"   People reached: {self.people_reached}")
                     print(f"   Rooms visited: {list(self.rooms_visited)}")
 
@@ -433,7 +433,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             }
 
             def report_final() -> None {
-                print(f"\n Attendance Report:");
+                print(f" Attendance Report:");
                 print(f"   Present: {self.present_students}");
                 print(f"   Absent: {self.absent_students}");
                 print(f"   Total checked: {self.checks_done}");
@@ -495,7 +495,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
                 # Report if at end
                 if not connections.get(student, []):
-                    print(f"\n Delivery Summary:")
+                    print(f" Delivery Summary:")
                     print(f"   Target: Grade {self.target_grade} students")
                     print(f"   Message: '{self.message}'")
                     print(f"   Delivered to: {self.delivered_to}")
@@ -524,7 +524,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             messenger.visit_student(alice, connections)
 
             # Check who got the message
-            print(f"\nAlice's messages: {alice.messages}")
+            print(f"Alice's messages: {alice.messages}")
             print(f"Bob's messages: {bob.messages}")
             print(f"Charlie's messages: {charlie.messages}")
         ```
@@ -540,6 +540,11 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
     === "Jac"
         <div class="code-block">
         ```jac
+        node Student {
+            has name: str;
+            has grade_level: int;
+        }
+
         walker AttendanceChecker {
             has present_students: list[str] = [];
             has absent_students: list[str] = [];
@@ -550,7 +555,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                 self.checks_done += 1;
 
                 # Simulate checking if student is present (random for demo)
-                import:py random;
+                import random;
                 is_present = random.choice([True, False]);
 
                 if is_present {
@@ -581,7 +586,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
             }
 
             def report_final() -> None {
-                print(f"\n Attendance Report:");
+                print(f" Attendance Report:");
                 print(f"   Present: {self.present_students}");
                 print(f"   Absent: {self.absent_students}");
                 print(f"   Total checked: {self.checks_done}");
@@ -598,7 +603,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
             # Start attendance check
             checker = AttendanceChecker(max_checks=3);
-            alice spawn checker;
+            alice[0] spawn checker;
         }
         ```
         </div>
@@ -648,7 +653,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
                     self.check_student(next_student, connections)
 
             def report_final(self):
-                print(f"\n Attendance Report:")
+                print(f" Attendance Report:")
                 print(f"   Present: {self.present_students}")
                 print(f"   Absent: {self.absent_students}")
                 print(f"   Total checked: {self.checks_done}")

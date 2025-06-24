@@ -1,16 +1,19 @@
 # Chapter 10: Nodes and Edges
 
-Nodes and edges are the fundamental building blocks of Object-Spatial Programming. Nodes represent data locations in your graph, while edges represent the relationships between them. This chapter shows you how to create, connect, and work with these spatial constructs using a simple classroom management system.
+**Nodes** and **Edges** are the fundamental building blocks of Object-Spatial Programming. Nodes represent data locations in your graph, while edges represent the relationships between them. This chapter shows you how to create, connect, and work with these spatial constructs using a simple classroom management system.
 
 !!! topic "Graph-Based Data Modeling"
     Instead of storing data in isolated objects, OSP organizes data as connected nodes in a graph. This makes relationships explicit and enables powerful traversal patterns.
 
 ## Node Creation and Properties
+Nodes are the primary objects in Jac, representing entities like students, teachers, classrooms, etc. They can have properties and can be connected to other nodes through edges. Nodes can be created with the `node` keyword, and they automatically persist when connected to the root node.
+
 
 !!! topic "What are Nodes?"
     Nodes are special objects that can be connected to other nodes through edges. They automatically persist when connected to the root node and can react to visiting walkers.
 
 ### Basic Node Declaration
+
 
 !!! example "Simple Node Types"
     === "Jac"
@@ -217,6 +220,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
         ```
 
 ## Edge Types and Relationships
+Edges in Jac represent relationships between nodes. They are first-class objects with their own properties and behaviors, allowing you to model complex interactions like enrollment, teaching, and friendships. Edges can be created using the `edge` keyword, and they connect nodes in meaningful ways.
 
 !!! topic "First-Class Relationships"
     Edges in Jac are not just connections - they're full objects with their own properties and behaviors. This makes relationships as important as the data they connect.
@@ -324,6 +328,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
     Jac provides intuitive syntax for connecting nodes: `++>` creates a new connection, while `-->` references existing connections.
 
 ### Connection Patterns
+Let's see how to create and connect nodes using Jac's syntax. You can create nodes and connect them in a single expression, which makes it easy to build complex relationships. The example below shows how to create a classroom, add a teacher, and enroll students in that classroom.
 
 !!! example "Building a Complete Classroom"
     === "Jac"
@@ -407,7 +412,7 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
                 self.db = db
 
             def explore_classroom(self, classroom):
-                print(f"\n=== Exploring {classroom.room_number} ===")
+                print(f"=== Exploring {classroom.room_number} ===")
 
                 # Find all students enrolled in this classroom
                 students = []
@@ -499,13 +504,13 @@ Nodes and edges are the fundamental building blocks of Object-Spatial Programmin
                             })
 
             def generate_report(self):
-                print("\n=== Student Analysis Report ===")
+                print("=== Student Analysis Report ===")
 
                 print(f"High Performers ({len(self.high_performers)}):")
                 for student in self.high_performers:
                     print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
 
-                print(f"\nNeeds Support ({len(self.needs_help)}):")
+                print(f"Needs Support ({len(self.needs_help)}):")
                 for student in self.needs_help:
                     print(f"  {student['name']}: {student['grade']} grade, {student['attendance']:.1f}% attendance")
 
