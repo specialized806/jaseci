@@ -44,13 +44,6 @@ Nodes are the primary objects in Jac, representing entities like students, teach
                 student_id="S001"
             );
 
-            bob = Student(
-                name="Bob Smith",
-                age=15,
-                grade_level=9,
-                student_id="S002"
-            );
-
             # Create teacher node
             ms_brown = Teacher(
                 name="Ms. Brown",
@@ -229,11 +222,71 @@ Edges in Jac represent relationships between nodes. They are first-class objects
 
 !!! example "Classroom Relationships"
     === "Jac"
-        <div class="code-block">
+
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:158"
+        # Basic node for representing teachers
+        node Teacher {
+            has name: str;
+            has subject: str;
+            has years_experience: int;
+            has email: str;
+        }
+
+        # Basic node for representing students
+        node Student {
+            has name: str;
+            has age: int;
+            has grade_level: int;
+            has student_id: str;
+        }
+
+        node Classroom {
+            has room_number: str;
+            has capacity: int;
+            has has_projector: bool = True;
+        }
+
+        # Edge for student enrollment
+        edge EnrolledIn {
+            has enrollment_date: str;
+            has grade: str = "Not Assigned";
+            has attendance_rate: float = 100.0;
+        }
+
+        # Edge for teaching assignments
+        edge Teaches {
+            has start_date: str;
+            has schedule: str;  # "MWF 9:00-10:00"
+            has is_primary: bool = True;
+        }
+
+        # Edge for friendship between students
+        edge FriendsWith {
+            has since: str;
+            has closeness: int = 5;  # 1-10 scale
+        }
+
+        with entry {
+            # Create the main classroom
+            science_lab = root ++> Classroom(
+                room_number="Lab-A",
+                capacity=24,
+                has_projector=True
+            );
+
+            # Create teacher and connect to classroom
+            dr_smith = science_lab +>:Teaches(
+                start_date="2024-08-01",
+                schedule="TR 10:00-11:30"
+            ):+> Teacher(
+                name="Dr. Smith",
+                subject="Chemistry",
+                years_experience=12,
+                email="smith@school.edu"
+            );
+        }
         ```
-        </div>
+
     === "Python"
         ```python
         from typing import List, Dict
@@ -334,7 +387,8 @@ Let's see how to create and connect nodes using Jac's syntax. You can create nod
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:158"
+        --8<-- "docs/examples/chapter_10_school.jac:1:42"
+        --8<-- "docs/examples/chapter_10_school.jac:117:158"
         ```
         </div>
     === "Python"
@@ -402,7 +456,8 @@ Let's see how to create and connect nodes using Jac's syntax. You can create nod
     === "Jac"
         <div class="code-block">
         ```jac
-        --8<-- "docs/examples/chapter_10_school.jac:1:166"
+        --8<-- "docs/examples/chapter_10_school.jac:1:67"
+        --8<-- "docs/examples/chapter_10_school.jac:117:166"
         ```
         </div>
     === "Python"
@@ -541,4 +596,5 @@ Let's see how to create and connect nodes using Jac's syntax. You can create nod
 
 Nodes and edges form the foundation of Object-Spatial Programming. By modeling your data as connected entities rather than isolated objects, you create more natural representations that enable powerful traversal and analysis patterns.
 
-In the next chapter, we'll explore walkers and abilities - the mobile computational entities that bring your graphs to life by moving through and processing your spatial data structures.
+!!! topic "Coming Up"
+    In the next chapter, we'll explore walkers and abilities - the mobile computational entities that bring your graphs to life by moving through and processing your spatial data structures.

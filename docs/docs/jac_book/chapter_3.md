@@ -699,7 +699,7 @@ Jac supports traditional `while` loops with clear curly brace syntax for iterati
     Comments help document your Jac code clearly. Jac supports both single-line and multiline comments.
 
 !!! example "Single-line and Multiline Comments"
-    === "Jac" 
+    === "Jac"
         <div class="code-block">
         ```jac
         with entry {
@@ -710,7 +710,7 @@ Jac supports traditional `while` loops with clear curly brace syntax for iterati
                 This is a
                 multi-line comment.
             *#
-            
+
             grades: list[int] = [88, 92, 85];
 
             print(student_name);

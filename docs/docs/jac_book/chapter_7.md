@@ -188,6 +188,7 @@ print(pet.get_info())
         ```
 
 ### Advanced Constructor Features
+Jac allows you to define constructors with more advanced features like `postinit` methods, which run after the automatic constructor is generated.
 
 !!! example "Constructor with Validation"
     === "Jac"
@@ -702,4 +703,5 @@ class BankAccount:
 
 Jac's enhanced OOP features eliminate much of the tedious boilerplate found in traditional object-oriented languages while providing better safety guarantees. This foundation prepares you for the revolutionary Object-Spatial Programming concepts we'll explore next, where these enhanced objects become spatially-aware nodes in a graph.
 
-In the next chapter, we'll dive into the core innovation of Jac: Object-Spatial Programming and the paradigm shift from moving data to computation to moving computation to data.
+!!! topic "Coming Up"
+    In the next chapter, we'll dive into the core innovation of Jac: Object-Spatial Programming and the paradigm shift from moving data to computation to moving computation to data.

@@ -497,4 +497,5 @@ Visit patterns control how walkers traverse your graph. The most powerful featur
 
 Advanced object-spatial operations transform complex graph problems into intuitive, maintainable code. By moving computation to data and leveraging spatial relationships, algorithms that would require hundreds of lines in traditional approaches become concise and expressive.
 
-In the next chapter, we'll explore persistence and the root node - features that make your spatial programs automatically persist state and scale from single-user scripts to multi-user applications.
+!!! topic "Coming Up"
+    In the next chapter, we'll explore persistence and the root node - features that make your spatial programs automatically persist state and scale from single-user scripts to multi-user applications.

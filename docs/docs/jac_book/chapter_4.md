@@ -168,7 +168,7 @@ Jac provides a powerful function system with mandatory type annotations, built-i
 
 !!! example "Simple AI Function Calls"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         import from mtllm.llms { Gemini }
 
@@ -219,7 +219,7 @@ Jac provides a powerful function system with mandatory type annotations, built-i
             }
         }
         ```
-        </div>
+
     === "Python"
         ```python
         # Note: Python doesn't have built-in AI functions like Jac
@@ -277,7 +277,7 @@ Jac provides a powerful function system with mandatory type annotations, built-i
 
 !!! example "Combining AI with Traditional Math"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         import from mtllm.llms { Gemini }
 
@@ -345,7 +345,7 @@ Jac provides a powerful function system with mandatory type annotations, built-i
             }
         }
         ```
-        </div>
+
     === "Python"
         ```python
         from typing import Dict, Any
@@ -536,7 +536,7 @@ Decorators in Jac can handle exceptions, retry operations, and log errors gracef
         <div class="code-block">
         ```jac
         import time;
-        
+
         def retry_decorator(max_retries: int, delay: float) -> callable {
             def decorator(func: callable) -> callable {
                 def wrapper(*args: any, **kwargs: any) -> any {
@@ -1033,7 +1033,7 @@ A caching decorator stores results for expensive calls, improving performance on
 
 !!! example "Async Function Examples"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         import asyncio;
         import time;
@@ -1080,7 +1080,7 @@ A caching decorator stores results for expensive calls, improving performance on
             run_async_example();
         }
         ```
-        </div>
+
     === "Python"
         ```python
         import asyncio
@@ -1129,7 +1129,7 @@ A caching decorator stores results for expensive calls, improving performance on
 
 !!! example "Complete Library with AI and Traditional Functions"
     === "Jac"
-        <div class="code-block">
+
         ```jac
         import time;
 
@@ -1205,7 +1205,7 @@ A caching decorator stores results for expensive calls, improving performance on
             print(f"Library Stats: {stats}");
         }
         ```
-        </div>
+
     === "Python"
         ```python
         import time
