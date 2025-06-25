@@ -1273,16 +1273,52 @@ A caching decorator stores results for expensive calls, improving performance on
             print(f"Library Stats: {stats}")
         ```
 
+## Best Practices
+
+!!! summary "Function Design Guidelines"
+    - **Use descriptive names**: Function names should clearly indicate their purpose
+    - **Keep functions focused**: Each function should have a single, well-defined responsibility
+    - **Handle errors gracefully**: Use appropriate return types and exception handling
+    - **Leverage decorators**: Use decorators for cross-cutting concerns like timing and caching
+    - **Document with types**: Let type annotations serve as documentation
+    - **Consider async**: Use async functions for I/O-bound operations
+
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Mandatory Types**: All function parameters and return types must be explicitly declared
-    - **AI Integration**: Built-in `by llm()` function makes AI capabilities easily accessible
-    - **Decorators**: Powerful tools for adding functionality like timing, caching, and AI analysis
-    - **Lambda Functions**: Concise syntax for simple operations and functional programming
-    - **Async Functions**: Support for concurrent operations and non-blocking I/O
-    - **Performance**: Use decorators to add timing and AI insights without modifying core logic
-    - **Code Organization**: Group related functions into objects or modules for better structure
+    **Function System:**
+
+    - **Mandatory types**: All function parameters and return types must be explicitly declared
+    - **Type safety**: Prevents runtime type errors through compile-time checking
+    - **Union types**: Support for multiple return types with `|` operator
+    - **Error handling**: Robust error management with proper return types
+
+    **AI Integration:**
+
+    - **Built-in AI functions**: Use `by llm()` for seamless AI integration
+    - **Natural language processing**: AI-powered text analysis and generation
+    - **Model configuration**: Flexible AI model setup and configuration
+    - **Semantic operations**: AI functions that understand context and meaning
+
+    **Decorators:**
+
+    - **Function enhancement**: Add functionality without modifying core logic
+    - **Performance monitoring**: Timing decorators for optimization
+    - **Caching**: Memoization for expensive computations
+    - **Error handling**: Retry mechanisms and graceful failure handling
+    - **Stacking support**: Multiple decorators with predictable execution order
+
+    **Functional Programming:**
+
+    - **Lambda functions**: Concise anonymous functions for data processing
+    - **Higher-order functions**: Functions that operate on other functions
+    - **Function composition**: Combining simple functions to create complex behavior
+    - **Async support**: Built-in support for asynchronous programming patterns
 
 !!! topic "Coming Up"
-    In the next chapter, we'll dive deeper into advanced AI operations, exploring MTLLM variations, model configuration, and semantic strings for more sophisticated AI integration.
+    In the next chapter, we'll explore advanced AI operations, including MTLLM variations, model configuration, semantic strings, and multimodal capabilities that unlock the full potential of AI-driven programming.
+
+---
+
+*You now have the tools to build sophisticated, AI-enhanced functions. Let's dive deeper into Jac's advanced AI capabilities!*
+

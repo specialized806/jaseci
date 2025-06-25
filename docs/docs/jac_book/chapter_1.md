@@ -689,17 +689,36 @@ Let's build a complete friend network example that demonstrates Jac's core conce
             print(f"  Strong bond between friends (closeness: {friendship.closeness})")
         ```
 
+## Best Practices
+
+!!! summary "Getting Started Guidelines"
+    - **Think spatially**: Model your data as connected entities rather than isolated objects
+    - **Start simple**: Begin with basic nodes and edges before adding complex walkers
+    - **Leverage persistence**: Use the root node to automatically persist your data
+    - **Use type annotations**: Take advantage of Jac's mandatory typing for better code safety
+    - **Design for scale**: Remember that your code will automatically scale from single-user to multi-user
+
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Jac is Python-like** but adds powerful graph programming concepts
-    - **Object-Spatial Programming** moves computation to data through nodes, edges, and walkers
-    - **Scale-agnostic programming** means code automatically works from single-user to distributed systems
-    - **Automatic persistence** and **multi-user isolation** are built into the language
-    - **Relationships are first-class** through typed edges, not just object references
-    - **Graph traversal** is natural and expressive through spatial syntax
+    **Core Concepts:**
+
+    - **Object-Spatial Programming (OSP)** moves computation to data through nodes, edges, and walkers
+    - **Nodes** are enhanced objects that exist in spatial relationships
+    - **Edges** represent first-class, typed relationships between nodes
+    - **Walkers** are mobile computational entities that traverse graphs
+
+    **Key Advantages:**
+
+    - **Scale-agnostic programming**: Code automatically works from single-user to distributed systems
+    - **Automatic persistence**: Data connected to root persists without manual database management
+    - **Natural relationships**: Graph traversal is intuitive and expressive
+    - **Multi-user isolation**: Built-in user separation without complex session management
+    - **Python familiarity**: Familiar syntax with powerful new capabilities
 
 !!! topic "Coming Up"
-    In the next chapter, we'll set up your Jac development environment and write your first programs, building on the concepts introduced here.
+    In the next chapter, we'll set up your Jac development environment and write your first programs, building on these foundational concepts to create working applications.
 
-Jac represents a fundamental shift in how we think about programming. By making graphs and relationships first-class citizens, it enables more natural expression of interconnected systems while automatically handling the complexities of persistence, distribution, and scale. Let's dive deeper and start building!
+---
+
+*Ready to start your Object-Spatial Programming journey? Let's get your environment set up and build your first Jac application!*

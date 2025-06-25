@@ -2,7 +2,7 @@
 
 Walkers are the heart of Object-Spatial Programming - they are mobile computational entities that traverse your graph and execute code at each location. Combined with abilities, they enable reactive, event-driven programming where computation happens exactly where and when it's needed.
 
-!!! topic "Mobile Computation"
+!!! topic "Mobile Computation Philosophy"
     Unlike traditional functions that operate on data passed to them, walkers travel to where data lives, making computation truly spatial and enabling powerful distributed processing patterns.
 
 ## Walker Creation
@@ -340,7 +340,7 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
 
                 # Check if we're at the end
                 if not connections.get(node, []):
-                    print(f" elivery complete!")
+                    print(f" Delivery complete!")
                     print(f"   People reached: {self.people_reached}")
                     print(f"   Rooms visited: {list(self.rooms_visited)}")
 
@@ -688,17 +688,42 @@ Walkers are the heart of Object-Spatial Programming - they are mobile computatio
     - **Handle edge cases**: Check for empty connections before visiting
     - **Control traversal flow**: Use conditions to avoid infinite loops
     - **Report results**: Use exit abilities to summarize walker activities
+    - **Manage state**: Use walker properties to track progress and results
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Walkers** bring computation to data through graph traversal
-    - **Abilities** create reactive, event-driven behavior at each graph location
-    - **Entry/Exit patterns** provide fine-grained control over processing
-    - **Spawn and Visit** enable flexible navigation through connected data
-    - **Control flow** statements like `disengage` allow smart traversal decisions
+    **Walker System:**
 
-Walkers and abilities transform static data structures into dynamic, reactive systems. They enable algorithms that naturally adapt to the shape and content of your data, creating programs that are both intuitive and powerful.
+    - **Mobile computation**: Walkers bring processing directly to data locations
+    - **State management**: Walkers carry their own state as they traverse
+    - **Traversal control**: Fine-grained control over movement patterns
+    - **Spawning mechanism**: Activate walkers at specific graph locations
+
+    **Ability System:**
+
+    - **Event-driven execution**: Abilities trigger automatically based on walker location
+    - **Entry/exit patterns**: React to walker arrival and departure events
+    - **Context awareness**: Abilities have access to current node (`here`) and walker state
+    - **Conditional execution**: Abilities can include logic to control when they execute
+
+    **Traversal Patterns:**
+
+    - **Visit statements**: Direct walker movement to connected nodes
+    - **Filtering support**: Visit only nodes that match specific criteria
+    - **Flow control**: Use `disengage` to stop walker execution
+    - **Recursive traversal**: Walkers can spawn other walkers for complex patterns
+
+    **Practical Applications:**
+
+    - **Data processing**: Process distributed data where it lives
+    - **Graph analysis**: Analyze relationships and connections
+    - **Message delivery**: Distribute information through networks
+    - **State propagation**: Update related nodes based on changes
 
 !!! topic "Coming Up"
     In the next chapter, we'll explore advanced object-spatial operations including complex traversal patterns and sophisticated filtering techniques that unlock the full potential of graph-based programming.
+
+---
+
+*Walkers and abilities are now part of your toolkit. Let's master advanced graph operations and sophisticated traversal patterns!*

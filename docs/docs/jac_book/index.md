@@ -302,16 +302,29 @@ Welcome to the comprehensive guide to the Jac programming language. This book wi
 
 ## Learning Paths
 
-!!! tip "Choose Your Path"
-    **Quick Start (Chapters 1-3, 7-11)**: Get productive with Jac quickly
-    **Full Migration**: Complete journey from Python to Jac mastery
-    **Specific Use Cases**: Focus on web services, data processing, or distributed systems
+!!! tip "Choose Your Learning Journey"
+    **Quick Start (Chapters 1-3, 7-11)**: Get productive with Jac quickly for OSP development
+
+    **Full Foundation**: Complete journey through all core concepts and language features
+
+    **AI-Focused**: Emphasize Chapters 4-5 for AI-enhanced programming
+
+    **Enterprise Ready**: Include advanced topics and deployment strategies
 
 ## Getting Help
 
 - **[Documentation](https://www.jac-lang.org/)**: Comprehensive guides and API references
-- **[Community](https://discord.gg/6j3QNdtcN6https://discord.gg/6j3QNdtcN6)**: Join our Discord for discussions and support
+- **[Community](https://discord.gg/6j3QNdtcN6)**: Join our Discord for discussions and support
 - **[Issues](https://github.com/jaseci-labs/jaseci/issues)**: Report bugs and request features on GitHub
+
+## Book Features
+
+!!! summary "What You'll Learn"
+    - **Paradigm Mastery**: Deep understanding of Object-Spatial Programming
+    - **Practical Skills**: Hands-on experience with real-world examples
+    - **AI Integration**: Seamless AI-powered programming techniques
+    - **Scale-Agnostic Design**: Build applications that automatically scale
+    - **Best Practices**: Professional development patterns and techniques
 
 ---
 

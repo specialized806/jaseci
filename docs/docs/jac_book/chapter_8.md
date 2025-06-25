@@ -705,16 +705,49 @@ OSP allows you to model problems the way they naturally exist in the real world:
                 print(info)
         ```
 
+## Best Practices
+
+!!! summary "OSP Design Guidelines"
+    - **Think spatially**: Model your data as connected entities rather than isolated objects
+    - **Design for traversal**: Consider how walkers will move through your graph
+    - **Use meaningful relationships**: Edge types should represent real-world connections
+    - **Start simple**: Begin with basic nodes and edges before adding complex walkers
+    - **Leverage natural structure**: Let your domain guide the graph structure
+
 ## Key Takeaways
 
-!!! summary "OSP Paradigm Fundamentals"
-    - **Computation to Data**: Instead of gathering data centrally, send computation to where data lives
-    - **Spatial Relationships**: Model data with its natural connections and relationships
-    - **Graph Thinking**: Think in terms of nodes, edges, and traversal patterns
-    - **Natural Modeling**: Represent real-world problems in their natural graph structure
-    - **Distributed Processing**: Each piece of data can be processed independently where it lives
+!!! summary "Chapter Summary"
+    **Paradigm Fundamentals:**
 
-The Object-Spatial Programming paradigm opens up new ways of thinking about and solving problems. By modeling the world as connected entities rather than isolated objects, we create more intuitive, efficient, and scalable programs.
+    - **Computation to data**: Move processing to where data naturally lives
+    - **Spatial relationships**: Model connections as first-class graph structures
+    - **Natural representation**: Express real-world relationships directly in code
+    - **Distributed processing**: Each data location can be processed independently
+
+    **Core Concepts:**
+
+    - **Nodes**: Stateful entities that hold data and can react to visitors
+    - **Edges**: First-class relationships with their own properties and behaviors
+    - **Walkers**: Mobile computation that traverses and processes graph structures
+    - **Graph thinking**: Shift from object-oriented to relationship-oriented design
+
+    **Key Advantages:**
+
+    - **Intuitive modeling**: Problems are expressed in their natural graph form
+    - **Efficient processing**: Computation happens exactly where it's needed
+    - **Scalable architecture**: Naturally distributes across multiple nodes
+    - **Maintainable code**: Clear separation of data, relationships, and processing logic
+
+    **Mental Model Shift:**
+
+    - **From isolation to connection**: Objects become spatially-aware nodes
+    - **From centralized to distributed**: Processing happens throughout the graph
+    - **From procedural to reactive**: Data locations respond to visiting computation
+    - **From manual to automatic**: Relationships are maintained by the system
 
 !!! topic "Coming Up"
     In the next chapter, we'll dive deeper into the building blocks of OSP: nodes and edges, and learn how to create rich, connected data structures that form the foundation of your spatial programs.
+
+---
+
+*You've now grasped the fundamental paradigm shift of OSP. Let's build the foundation with nodes and edges!*

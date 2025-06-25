@@ -2,8 +2,8 @@
 
 Now that you understand basic walkers and abilities, let's explore advanced patterns that make Object-Spatial Programming truly powerful. This chapter covers sophisticated filtering, visit control, and traversal patterns using familiar social network examples.
 
-!!! topic "Advanced Graph Operations"
-    Complex graph operations become intuitive when you move computation to data. Instead of loading entire datasets, walkers intelligently navigate only the relevant portions of your graph.
+!!! topic "Advanced Graph Operations Philosophy"
+    Complex graph operations become intuitive when you move computation to data. Instead of loading entire datasets, walkers intelligently navigate only the relevant portions of your graph, making sophisticated queries both efficient and expressive.
 
 ## Advanced Filtering
 
@@ -485,17 +485,42 @@ Visit patterns control how walkers traverse your graph. The most powerful featur
     - **Use early returns**: Skip unnecessary processing with guards
     - **Implement backtracking**: Remove items from paths when backtracking
     - **Optimize filters**: Apply most selective filters first
+    - **Consider performance**: Use indexed visits for better control over traversal order
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Smart visiting patterns** enable conditional and multi-path exploration
-    - **Advanced filtering** combines multiple criteria for sophisticated queries
-    - **Complex traversals** make advanced algorithms like recommendations simple
-    - **Walker state management** enables backtracking and path discovery
-    - **Object-spatial operations** naturally express graph algorithms
+    **Advanced Filtering:**
 
-Advanced object-spatial operations transform complex graph problems into intuitive, maintainable code. By moving computation to data and leveraging spatial relationships, algorithms that would require hundreds of lines in traditional approaches become concise and expressive.
+    - **Multi-criteria queries**: Combine node properties, edge attributes, and relationships
+    - **Complex conditions**: Use logical operators and nested filters
+    - **Property-based selection**: Filter based on node and edge properties
+    - **Relationship filtering**: Navigate specific types of connections
+
+    **Visit Patterns:**
+
+    - **Traversal control**: Direct how walkers move through the graph
+    - **Breadth vs depth**: Choose appropriate traversal strategy
+    - **Priority-based visiting**: Use indexed visits for custom ordering
+    - **Performance optimization**: Control traversal for better efficiency
+
+    **Advanced Techniques:**
+
+    - **Smart visiting patterns**: Enable conditional and multi-path exploration
+    - **Complex traversals**: Make advanced algorithms like recommendations simple
+    - **Walker state management**: Enable backtracking and path discovery
+    - **Performance considerations**: Optimize for large graph structures
+
+    **Practical Applications:**
+
+    - **Social network analysis**: Find friends of friends and connection patterns
+    - **Recommendation systems**: Discover related items through graph traversal
+    - **Path finding**: Navigate through complex relationship networks
+    - **Data analysis**: Extract insights from connected information
 
 !!! topic "Coming Up"
     In the next chapter, we'll explore persistence and the root node - features that make your spatial programs automatically persist state and scale from single-user scripts to multi-user applications.
+
+---
+
+*You've mastered advanced graph operations! Next, let's discover how Jac automatically handles persistence and scaling.*

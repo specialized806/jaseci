@@ -2,6 +2,9 @@
 
 Jac emphasizes type safety and clear variable declarations. Unlike Python's optional typing, Jac requires type annotations for all variables and function parameters, preventing runtime type errors and improving code clarity.
 
+!!! topic "Type Safety Philosophy"
+    Jac requires explicit type annotations for all variables, making your code more reliable and self-documenting while preventing common runtime errors before they occur.
+
 ## Variable Declarations with Mandatory Typing
 
 !!! topic "Type Safety"
@@ -875,18 +878,48 @@ Jac supports traditional `while` loops with clear curly brace syntax for iterati
                 print(f"{student}: {avg:.1f} ({letter})")
         ```
 
+## Best Practices
+
+!!! summary "Coding Best Practices"
+    - **Always declare types**: Use explicit type annotations for clarity and safety
+    - **Use meaningful names**: Choose descriptive variable and function names
+    - **Handle edge cases**: Include proper error handling and validation
+    - **Leverage comprehensions**: Use list/dict comprehensions for efficient data processing
+    - **Structure control flow**: Use clear if/elif/else chains and appropriate loop types
+    - **Comment your code**: Use `#` for single-line and `#* *#` for multi-line comments
+
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **Variable Declarations**: Mandatory explicit type annotations.
-    - **Data Types**: Primitive types (`int`, `float`, `str`, `bool`, and `any`).
-    - **Collections**: Type-safe lists, dictionaries, and sets.
-    - **Comprehensions**: Efficient processing using list comprehensions.
-    - **Control Flow**: Consistent use of curly braces `{}` for blocks.
-    - **Loops**: Traditional `for`, Jac's `for-to-by`, and structured `while` loops.
-    - **Pattern Matching**: Powerful conditional logic.
-    - **Error Handling**: Use try/except blocks to handle errors gracefully
-    - **Comments**: Single-line (`#`) and multi-line (`#**#`) comments for readability.
+    **Type System:**
+
+    - **Mandatory typing**: All variables and functions must have explicit type annotations
+    - **Type inference**: Types can be inferred from values when obvious
+    - **Union types**: Use `|` for optional types (e.g., `str | None`)
+    - **Any type**: Use `any` for maximum flexibility when needed
+
+    **Data Structures:**
+
+    - **Collections**: Type-safe lists, dictionaries, sets, and tuples
+    - **Comprehensions**: Efficient data processing with list/dict comprehensions
+    - **Nested types**: Support for complex nested data structures
+
+    **Control Flow:**
+
+    - **Curly braces**: Use `{ }` for all code blocks instead of indentation
+    - **Loop varieties**: Traditional `for`, unique `for-to-by`, and structured `while` loops
+    - **Pattern matching**: Powerful conditional logic with `match` statements
+    - **Exception handling**: Robust error handling with try/except blocks
+
+    **Syntax Features:**
+
+    - **Semicolons**: Required for statement termination
+    - **Comments**: Single-line `#` and multi-line `#* *#` comment support
+    - **Global variables**: Use `glob` declaration for global scope
 
 !!! topic "Coming Up"
-    Next, we'll explore Jac's function system and decorators to build more modular and reusable code. You'll learn about function definitions with type annotations, parameter handling, decorators in the Jac context, lambda functions, and async programming patterns.
+    Next, we'll explore Jac's enhanced function system with mandatory type annotations, built-in AI capabilities, powerful decorators, and functional programming patterns that make your code more modular and reusable.
+
+---
+
+*Now that you understand Jac's type system and syntax, let's build more sophisticated programs with functions and AI integration!*

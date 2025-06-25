@@ -450,8 +450,6 @@ Let's build a simple calculator to demonstrate Jac's syntax:
                 print(f"  {entry}")
         ```
 
-
-
 ## Common Beginner Mistakes and Solutions
 
 !!! topic "Troubleshooting"
@@ -493,36 +491,47 @@ Let's build a simple calculator to demonstrate Jac's syntax:
         ```
         </div>
 
-## Key Differences from Python
-
-!!! topic "Syntax Comparison"
-    While Jac is inspired by Python, it introduces stricter typing and slightly different syntax conventions for better safety and clarity.
-
-| **Feature** | **Python** | **Jac** |
-|-------------|------------|---------|
-| Entry point | `if __name__ == "__main__":` | `with entry { }` |
-| Code blocks | Indentation | Curly braces `{ }` |
-| Type hints | Optional | Required |
-| Statement termination | Newlines | Semicolons `;` |
-| Global variables | `global` keyword | `glob` declaration |
-
 ##### Jac REPL
 
 !!! warning "Warning"
     Note: Currently, the Jac REPL feature is not available. Please use standard Jac script execution for testing and running your code.
 
+## Best Practices
 
-## What's Next?
+!!! summary "Development Best Practices"
+    - **Use virtual environments**: Keep your Jac projects isolated
+    - **Start with entry blocks**: Always begin executable code with `with entry`
+    - **Type everything**: Take advantage of mandatory type annotations
+    - **Organize your code**: Use proper project structure from the beginning
+    - **Test early and often**: Run your code frequently to catch errors quickly
 
-You now have:
+## Key Takeaways
 
-- Jac installed and working
-- VS Code extension set up
-- Your first programs running
-- Understanding of entry blocks and basic syntax
+!!! summary "Chapter Summary"
+    **Environment Setup:**
 
-In the next chapter, we'll explore Jac's core language features, including variables, types, control flow, and how they differ from Python while remaining familiar.
+    - **Installation**: Simple pip install with Python 3.12+ requirement
+    - **VS Code Extension**: Provides syntax highlighting and error detection
+    - **Virtual Environments**: Recommended for project isolation
+
+    **Jac Fundamentals:**
+
+    - **Entry blocks**: `with entry { }` defines program execution start
+    - **Type safety**: Mandatory type annotations prevent runtime errors
+    - **Project structure**: Clean organization with interface/implementation separation
+    - **CLI commands**: `jac run` for execution, `jac serve` for web applications
+
+    **Key Differences from Python:**
+
+    - Curly braces `{ }` instead of indentation for code blocks
+    - Semicolons `;` required for statement termination
+    - Mandatory type annotations for all variables and functions
+    - `glob` for global variables instead of `global` keyword
 
 !!! topic "Coming Up"
-    Next, we'll dive into Jac's enhanced syntax features, including mandatory type annotations, improved control flow, and collection operations that make your code both safer and more expressive.
+    Next, we'll dive into Jac's core language features, including variables, types, control flow, and collection operations that make your code both safer and more expressive than traditional Python.
+
+---
+
+*Your development environment is ready! Now let's explore Jac's enhanced syntax and type system.*
 

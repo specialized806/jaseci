@@ -2,8 +2,8 @@
 
 Jac takes the familiar concepts of object-oriented programming and enhances them with modern features like **automatic constructors**, **implementation separation**, and **improved access control**. This chapter shows how Jac builds on traditional OOP while making it more powerful and convenient.
 
-!!! topic "Enhanced Object-Oriented Programming"
-    Jac's enhanced OOP features eliminate boilerplate code while providing better type safety and code organization than traditional approaches.
+!!! topic "Enhanced Object-Oriented Programming Philosophy"
+    Jac's enhanced OOP features eliminate boilerplate code while providing better type safety and code organization than traditional approaches, making object-oriented design more intuitive and maintainable.
 
 ## From Python `class` to Jac `obj`
 
@@ -685,23 +685,48 @@ class BankAccount:
 
 ## Best Practices
 
-!!! summary "Best Practices"
-    1. **Use `obj` by Default**: Unless you need Python compatibility, prefer `obj` over `class`
-    2. **Leverage Automatic Constructors**: Don't write manual constructors unless necessary
-    3. **Use Access Control Meaningfully**: Make intentional decisions about public vs private
-    4. **Favor Composition**: When inheritance gets complex, consider composition
-    5. **Type Everything**: Explicit types make code more maintainable
+!!! summary "Object-Oriented Design Guidelines"
+    - **Use `obj` by default**: Unless you need Python compatibility, prefer `obj` over `class`
+    - **Leverage automatic constructors**: Don't write manual constructors unless necessary
+    - **Use access control meaningfully**: Make intentional decisions about public vs private
+    - **Favor composition**: When inheritance gets complex, consider composition
+    - **Type everything**: Explicit types make code more maintainable
+    - **Separate concerns**: Use `.impl.jac` files for complex implementations
 
 ## Key Takeaways
 
 !!! summary "Chapter Summary"
-    - **`obj` archetype** automatically generates constructors from `has` declarations
-    - **Access control** is enforced at compile time, not just convention
-    - **Inheritance** works naturally with automatic constructor chaining
-    - **Type safety** is mandatory, preventing many runtime errors
-    - **Less boilerplate** means more focus on business logic
+    **Enhanced Object System:**
 
-Jac's enhanced OOP features eliminate much of the tedious boilerplate found in traditional object-oriented languages while providing better safety guarantees. This foundation prepares you for the revolutionary Object-Spatial Programming concepts we'll explore next, where these enhanced objects become spatially-aware nodes in a graph.
+    - **Automatic constructors**: Generated from `has` declarations, eliminating boilerplate
+    - **Mandatory typing**: All properties and methods must have explicit types
+    - **Postinit methods**: Run custom initialization logic after automatic construction
+    - **Type inference**: Smart inference while maintaining type safety
+
+    **Access Control:**
+
+    - **Enforced privacy**: `:pub`, `:priv`, `:protect` modifiers are compile-time enforced
+    - **Intentional design**: Access control requires explicit decisions
+    - **Inheritance support**: Protected members accessible in subclasses
+    - **Interface clarity**: Public API is clearly defined and separate from implementation
+
+    **Inheritance and Composition:**
+
+    - **Automatic chaining**: Constructor chaining happens automatically in inheritance
+    - **Method overriding**: Clean syntax for overriding parent methods
+    - **Composition patterns**: Support for building complex objects from simpler ones
+    - **Polymorphism**: Full support for polymorphic behavior
+
+    **Implementation Features:**
+
+    - **Clean syntax**: Less boilerplate compared to traditional OOP languages
+    - **Better safety**: Compile-time type and access checking
+    - **Maintainable code**: Clear separation of concerns and automatic generation
+    - **Python familiarity**: Familiar concepts with modern enhancements
 
 !!! topic "Coming Up"
-    In the next chapter, we'll dive into the core innovation of Jac: Object-Spatial Programming and the paradigm shift from moving data to computation to moving computation to data.
+    In the next chapter, we'll explore the revolutionary Object-Spatial Programming paradigm that transforms how we think about data and computation, moving from traditional object-oriented thinking to spatial relationships.
+
+---
+
+*You now have powerful object-oriented tools at your disposal. Let's discover how OSP takes these concepts to the next level!*
