@@ -340,6 +340,9 @@ class SimpleGraphTest(JacCloudTest):
             res["reports"][0]["context"],
         )
 
+        res = self.post_api(f"update_nested_node_trigger_save/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+
         # ----------- NO UPDATE SHOULD HAPPEN ----------- #
 
         res = self.post_api(f"visit_nested_node/{nested_node['id']}")
