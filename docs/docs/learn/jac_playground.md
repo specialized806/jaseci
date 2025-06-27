@@ -12,6 +12,17 @@ with entry {
 }
 ```
 
+## How to Use
+
+![Description of GIF](../assets/runtime.gif)
+
+1. **Start with Examples**: Click on any example from the right sidebar to load it into the editor
+2. **Modify and Experiment**: Edit the code to see how changes affect the output
+3. **Run Your Code**: Press the "Run" button to execute your program
+4. **Debug When Needed**: Enable Debug Mode for detailed execution analysis
+5. **Reset When Stuck**: Use the Reset button to start with a clean slate
+
+
 ## Interface Overview
 
 ### Main Editor
@@ -49,13 +60,6 @@ The right sidebar contains a collection of sample programs organized by category
 #### Object Spatial Programming
 - **Reference** - Understanding object references and relationships
 
-## How to Use
-
-1. **Start with Examples**: Click on any example from the right sidebar to load it into the editor
-2. **Modify and Experiment**: Edit the code to see how changes affect the output
-3. **Run Your Code**: Press the "Run" button to execute your program
-4. **Debug When Needed**: Enable Debug Mode for detailed execution analysis
-5. **Reset When Stuck**: Use the Reset button to start with a clean slate
 
 ## Debug Mode
 Debug Mode transforms the Jac Playground into a powerful development environment with advanced debugging capabilities. When enabled, the interface splits into two main sections: the code editor on the left and the **Jaclang Graph Visualizer** on the right.
