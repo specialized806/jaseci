@@ -176,7 +176,7 @@ Jac Cloud automatically transforms your walkers into RESTful API endpoints. Let'
 
             can fetch_weather with `root entry {
                 # Check if weather data exists
-                cached_weather = [-->](`?WeatherCache)(?city == self.city);
+                cached_weather = [-->(`?WeatherCache)](?city == self.city);
 
                 if cached_weather {
                     weather_data = {
@@ -313,6 +313,7 @@ The power of Jac Cloud lies in its scale-agnostic nature. Let's see how the same
     ```
 
     The exact same code now serves thousands of users with automatic:
+
     - Load balancing
     - Persistence management
     - API endpoint generation
@@ -338,7 +339,7 @@ Let's add more functionality to demonstrate API scalability:
         has city: str;
 
         can fetch_weather with `root entry {
-            cached = [-->](`?WeatherCache)(?city == self.city);
+            cached = [-->(`?WeatherCache)](?city == self.city);
 
             if cached {
                 report {
@@ -385,7 +386,7 @@ Let's add more functionality to demonstrate API scalability:
 
     walker list_cities {
         can get_all_cities with `root entry {
-            all_weather = [-->](`?WeatherCache);
+            all_weather = [-->(`?WeatherCache)];
             cities = [w.city for w in all_weather];
             report {"cities": cities, "total": len(cities)};
         }
