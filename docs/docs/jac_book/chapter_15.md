@@ -127,7 +127,7 @@ Multi-user applications require careful consideration of data access and user pe
         walker get_my_notes {
             can fetch_user_notes with `root entry {
                 # Automatically filter by current user
-                my_notes = [-->](`?Note)(?owner == __user__);
+                my_notes = [-->(`?Note)](?owner == __user__);
 
                 notes_data = [
                     {"id": n.id, "title": n.title, "created_at": n.created_at}
@@ -157,13 +157,13 @@ Jac Cloud handles authentication automatically when you deploy with user managem
             has title: str;
             has content: str;
             has owner: str;
-            has is_private: bool = true;
+            has is_private: bool = True;
         }
 
         walker create_note {
             has title: str;
             has content: str;
-            has is_private: bool = true;
+            has is_private: bool = True;
 
             can add_note with `root entry {
                 new_note = Note(
@@ -185,7 +185,7 @@ Jac Cloud handles authentication automatically when you deploy with user managem
         walker list_my_notes {
             can get_user_notes with `root entry {
                 # Only get notes owned by current user
-                user_notes = [-->](`?Note)(?owner == __user__);
+                user_notes = [-->(`?Note)](?owner == __user__);
 
                 report {
                     "user": __user__,
@@ -304,8 +304,8 @@ Multi-user applications often need controlled sharing of data between users. Let
         has content: str;
         has owner: str;
         has shared_with: list[str] = [];
-        has is_public: bool = false;
-        has permissions: dict = {"read": true, "write": false};
+        has is_public: bool = False;
+        has permissions: dict = {"read": True, "write": False};
     }
 
     walker share_note {
@@ -314,7 +314,7 @@ Multi-user applications often need controlled sharing of data between users. Let
         has permission_level: str = "read";  # "read" or "write"
 
         can add_sharing_permission with `root entry {
-            target_note = [-->](`?Note)(?id == self.note_id);
+            target_note = [-->(`?Note)](?id == self.note_id);
 
             if not target_note {
                 report {"error": "Note not found"};
@@ -344,7 +344,7 @@ Multi-user applications often need controlled sharing of data between users. Let
 
     walker get_accessible_notes {
         can fetch_all_accessible with `root entry {
-            all_notes = [-->](`?Note);
+            all_notes = [-->(`?Note)];
             accessible_notes = [];
 
             for note in all_notes {
@@ -385,7 +385,7 @@ Multi-user applications often need controlled sharing of data between users. Let
                 title=self.title,
                 content=self.content,
                 owner=__user__,
-                is_public=true
+                is_public=True
             );
             here ++> new_note;
 
@@ -446,7 +446,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
         has note_id: str;
 
         can fetch_note_securely with `root entry {
-            target_note = [-->](`?Note)(?id == self.note_id);
+            target_note = [-->(`?Note)](?id == self.note_id);
 
             if not target_note {
                 report {"error": "Note not found"};
@@ -488,7 +488,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
         has note_id: str;
 
         can remove_note_securely with `root entry {
-            target_note = [-->](`?Note)(?id == self.note_id);
+            target_note = [-->(`?Note)](?id == self.note_id);
 
             if not target_note {
                 report {"error": "Note not found"};
@@ -516,7 +516,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
         has content: str = "";
 
         can modify_note_securely with `root entry {
-            target_note = [-->](`?Note)(?id == self.note_id);
+            target_note = [-->(`?Note)](?id == self.note_id);
 
             if not target_note {
                 report {"error": "Note not found"};
@@ -584,12 +584,12 @@ Different applications require different access control models. Let's implement 
         has content: str;
         has owner: str;
         has required_role: Role = Role.VIEWER;
-        has is_sensitive: bool = false;
+        has is_sensitive: bool = False;
     }
 
     walker check_user_role {
         can get_current_user_role with `root entry {
-            user_profile = [-->](`?UserProfile)(?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == __user__);
 
             if user_profile {
                 current_role = user_profile[0].role;
@@ -608,11 +608,11 @@ Different applications require different access control models. Let's implement 
         has title: str;
         has content: str;
         has required_role: str = "viewer";
-        has is_sensitive: bool = false;
+        has is_sensitive: bool = False;
 
         can create_with_role_check with `root entry {
             # Get user's role
-            user_profile = [-->](`?UserProfile)(?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == __user__);
 
             if not user_profile {
                 report {"error": "User profile not found"};
@@ -647,7 +647,7 @@ Different applications require different access control models. Let's implement 
     walker get_role_filtered_notes {
         can fetch_accessible_by_role with `root entry {
             # Get user's role
-            user_profile = [-->](`?UserProfile)(?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == __user__);
 
             if not user_profile {
                 report {"notes": [], "message": "No user profile found"};
@@ -655,7 +655,7 @@ Different applications require different access control models. Let's implement 
             }
 
             user_role = user_profile[0].role;
-            all_notes = [-->](`?Note);
+            all_notes = [-->(`?Note)];
             accessible_notes = [];
 
             for note in all_notes {
@@ -705,7 +705,7 @@ curl -X POST http://localhost:8000/create_role_based_note \
     "title": "Editor Note",
     "content": "Only editors can see this",
     "required_role": "editor",
-    "is_sensitive": true
+    "is_sensitive": True
   }'
 
 # Get notes filtered by role
