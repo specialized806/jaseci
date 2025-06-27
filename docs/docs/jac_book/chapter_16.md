@@ -135,11 +135,11 @@ Let's start with a simple chat room that uses environment configuration:
 
             can join_chat with `root entry {
                 # Find or create room
-                room = [-->](`?ChatRoom)(?name == self.room_name);
+                room = [-->(`?ChatRoom)](?name == self.room_name);
 
                 if not room {
                     # Check room limit
-                    total_rooms = len([-->](`?ChatRoom));
+                    total_rooms = len([-->(`?ChatRoom)]);
                     if total_rooms >= config["max_rooms"] {
                         report {"error": "Maximum rooms reached"};
                         return;
@@ -287,7 +287,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         }
 
         can get_recent_messages(limit: int = 20) -> list[dict] {
-            messages = [-->](`?ChatMessage);
+            messages = [-->(`?ChatMessage)];
             recent = messages[-limit:] if len(messages) > limit else messages;
             return [
                 {
@@ -308,7 +308,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
 
         can broadcast_message with `root entry {
             # Find the room
-            room = [-->](`?ChatRoom)(?name == self.room_name);
+            room = [-->(`?ChatRoom)](?name == self.room_name);
 
             if not room {
                 report {"error": "Room not found"};
@@ -350,7 +350,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         has limit: int = 20;
 
         can fetch_history with `root entry {
-            room = [-->](`?ChatRoom)(?name == self.room_name);
+            room = [-->(`?ChatRoom)](?name == self.room_name);
 
             if room {
                 messages = room[0].get_recent_messages(self.limit);
@@ -375,7 +375,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
 
         can handle_connection with `root entry {
             # Find or create room
-            room = [-->](`?ChatRoom)(?name == self.room_name);
+            room = [-->(`?ChatRoom)](?name == self.room_name);
 
             if not room {
                 room = ChatRoom(name=self.room_name);
@@ -416,7 +416,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         has username: str;
 
         can handle_disconnection with `root entry {
-            room = [-->](`?ChatRoom)(?name == self.room_name);
+            room = [-->(`?ChatRoom)](?name == self.room_name);
 
             if room {
                 room = room[0];
@@ -557,7 +557,7 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
 
         can send_to_chat(room_name: str, sender: str, message: str) {
             # Find or create room
-            room = [-->](`?ChatRoom)(?name == room_name);
+            room = [-->(`?ChatRoom)](?name == room_name);
             if not room {
                 room = ChatRoom(name=room_name);
                 here ++> room;
@@ -587,7 +587,7 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
         has limit: int = 50;
 
         can fetch_logs with `root entry {
-            all_logs = [-->](`?WebhookLog);
+            all_logs = [-->(`?WebhookLog)];
 
             # Filter by source if specified
             if self.source {
@@ -713,7 +713,7 @@ Production applications require comprehensive logging and monitoring. Jac Cloud 
             ) spawn here;
 
             # Find room
-            room = [-->](`?ChatRoom)(?name == self.room_name);
+            room = [-->(`?ChatRoom)](?name == self.room_name);
 
             if not room {
                 log_activity(
@@ -763,7 +763,7 @@ Production applications require comprehensive logging and monitoring. Jac Cloud 
         has limit: int = 100;
 
         can fetch_logs with `root entry {
-            all_logs = [-->](`?LogEntry);
+            all_logs = [-->(`?LogEntry)];
 
             # Filter by level if specified
             if self.level {
@@ -815,13 +815,13 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
             cleanup_count = 0;
 
             # Find all rooms
-            all_rooms = [-->](`?ChatRoom);
+            all_rooms = [-->(`?ChatRoom)];
 
             for room in all_rooms {
                 # Check if room has been inactive
                 if len(room.users) == 0 {
                     # Get latest message
-                    messages = [-->](`?ChatMessage)(?room_name == room.name);
+                    messages = [-->(`?ChatMessage)](?room_name == room.name);
 
                     if not messages {
                         # No messages, delete empty room
@@ -850,7 +850,7 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
                 message="Cleanup task completed",
                 context={
                     "rooms_cleaned": cleanup_count,
-                    "total_rooms": len([-->](`?ChatRoom))
+                    "total_rooms": len([-->(`?ChatRoom)])
                 }
             ) spawn here;
 
@@ -866,13 +866,13 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
     walker generate_daily_stats {
         can collect_stats with `root entry {
             # Count active rooms and users
-            all_rooms = [-->](`?ChatRoom);
+            all_rooms = [-->(`?ChatRoom)];
             total_rooms = len(all_rooms);
             total_users = sum(len(room.users) for room in all_rooms);
 
             # Count messages sent today
             today = datetime.now().date();
-            all_messages = [-->](`?ChatMessage);
+            all_messages = [-->(`?ChatMessage)];
 
             today_messages = 0;
             for msg in all_messages {
