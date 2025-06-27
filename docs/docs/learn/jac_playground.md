@@ -1,4 +1,51 @@
-(No changes to the file content itself; the file is moved to `docs/learn/jac_playground.md`.)
+# Jac Playground Guide
+
+Welcome to the Jac Playground! This interactive development environment lets you write, run, and debug Jac programs directly in your browser.
+
+## Getting Started
+
+The Jac Playground is designed to help you learn and experiment with the Jac programming language. When you first open the playground, you'll see a simple "Hello World" program:
+
+```jac
+with entry {
+    print("Welcome to Jac!");
+}
+```
+
+## Interface Overview
+
+### Main Editor
+The left side of the screen contains the code editor where you can write your Jac programs. The editor features:
+
+- Syntax highlighting for Jac language
+- Line numbers for easy reference
+- Auto-indentation and bracket matching
+
+### Control Panel
+At the top of the editor, you'll find:
+
+- **Run Button** ▶️ - Execute your Jac program
+- **Reset Button** 🔄 - Clear the editor and start fresh
+- **Debug Mode Toggle** 🐛 - Enable debugging features for step-by-step execution
+
+### Output Panel
+The bottom section displays the output of your program, including:
+
+- Print statements and results
+- Error messages and debugging information
+- Program execution feedback
+
+### Example Library
+The right sidebar contains a collection of sample programs organized by category:
+
+#### Basic Examples
+- **For Loop** - Learn iteration with for loops
+- **While Loop** - Understand conditional looping
+- **Archetypes** - Explore Jac's type system
+- **Code Block Statements** - Work with code organization
+- **Assignments** - Variable declaration and manipulation
+- **Conditional Statements** - If/else logic and branching
+
 #### Object Spatial Programming
 - **Reference** - Understanding object references and relationships
 
@@ -21,11 +68,11 @@ Debug Mode transforms the Jac Playground into a powerful development environment
 
 When Debug Mode is active, you'll notice additional controls in the Run Mode toolbar:
 
-- **Play Button** ▶️ - Start or continue execution
-- **Step Forward** ⏭️ - Execute the next line of code
-- **Step Down** ⬇️ - Move deeper into function calls
-- **Step Up** ⬆️ - Move up from current execution context
-- **Refresh** 🔄 - Reset the debug session
+- **Continue** ▶️ - Start or continue execution
+- **Step Over** ⏭️ - Execute the next line of code
+- **Step Into** ⬇️ - Move deeper into function calls
+- **Step Out** ⬆️ - Move up from current execution context
+- **Restart** 🔄 - Reset the debug session
 - **Stop** ⏹️ - Terminate the current debug session
 
 **Playground Code Debug Demo**
