@@ -22,6 +22,28 @@ with entry {
 4. **Debug When Needed**: Enable Debug Mode for detailed execution analysis
 5. **Reset When Stuck**: Use the Reset button to start with a clean slate
 
+## Debug Mode
+Debug Mode transforms the Jac Playground into a powerful development environment with advanced debugging capabilities. When enabled, the interface splits into two main sections: the code editor on the left and the **Jaclang Graph Visualizer** on the right.
+
+### Jaclang Graph Visualizer
+
+![Debug Mode with Graph Visualizer](../assets/visualizer.jpg)
+
+
+### Jac Playground - Jaclang Graph Visualizer Demo
+
+![Click here to watch the Debug Mode Demo Video](../assets/playground_demo.gif)
+
+### Using Debug Mode Effectively
+
+1. **Set breakpoints** by clicking on line numbers in the editor
+2. **Start debugging** by clicking the Debug button instead of Run
+3. **Navigate execution** using the arrow keys or debug controls
+4. **Observe the graph** to understand how your nodes and edges are connected
+5. **Step through slowly** to see how data flows through your spatial program structure
+
+The Graph Visualizer makes Jac's spatial programming concepts tangible, allowing you to see exactly how your objects, walkers, and edges interact during program execution.
+
 
 ## Interface Overview
 
@@ -38,6 +60,19 @@ At the top of the editor, you'll find:
 - **Run Button** ▶️ - Execute your Jac program
 - **Reset Button** 🔄 - Clear the editor and start fresh
 - **Debug Mode Toggle** 🐛 - Enable debugging features for step-by-step execution
+
+### Debug Controls
+
+When Debug Mode is active, you'll notice additional controls in the Run Mode toolbar:
+
+- **Continue** ▶️ - Start or continue execution
+- **Step Over** ⏭️ - Execute the next line of code
+- **Step Into** ⬇️ - Move deeper into function calls
+- **Step Out** ⬆️ - Move up from current execution context
+- **Restart** 🔄 - Reset the debug session
+- **Stop** ⏹️ - Terminate the current debug session
+
+The Graph Visualizer is one of Jac's most powerful debugging features, providing a real-time visual representation of your program's execution flow. This unique tool shows:
 
 ### Output Panel
 The bottom section displays the output of your program, including:
@@ -59,61 +94,6 @@ The right sidebar contains a collection of sample programs organized by category
 
 #### Object Spatial Programming
 - **Reference** - Understanding object references and relationships
-
-
-## Debug Mode
-Debug Mode transforms the Jac Playground into a powerful development environment with advanced debugging capabilities. When enabled, the interface splits into two main sections: the code editor on the left and the **Jaclang Graph Visualizer** on the right.
-
-### Jaclang Graph Visualizer
-
-![Debug Mode with Graph Visualizer](../assets/visualizer.jpg)
-
-### Debug Controls
-
-When Debug Mode is active, you'll notice additional controls in the Run Mode toolbar:
-
-- **Continue** ▶️ - Start or continue execution
-- **Step Over** ⏭️ - Execute the next line of code
-- **Step Into** ⬇️ - Move deeper into function calls
-- **Step Out** ⬆️ - Move up from current execution context
-- **Restart** 🔄 - Reset the debug session
-- **Stop** ⏹️ - Terminate the current debug session
-
-**Playground Code Debug Demo**
-🎥 [Click here to watch the Debug Mode Demo Video](../assets/playground_demo.mp4)
-
-The Graph Visualizer is one of Jac's most powerful debugging features, providing a real-time visual representation of your program's execution flow. This unique tool shows:
-
-#### Node and Edge Visualization
-- **Nodes**: Represent different stages, objects, or states in your Jac program
-- **Edges**: Show the connections and relationships between nodes
-- **Dynamic Updates**: As you step through code execution, new nodes and edges appear dynamically
-
-#### Real-time Code Tracking
-- The currently executing line is highlighted in yellow in the code editor
-- The visualizer synchronizes with code execution, showing which nodes are active
-- Variable states and object properties are displayed within their respective nodes
-
-### Advanced Debug Features
-
-When Debug Mode is enabled, you get access to:
-
-- **Step-by-step program execution** with full control over execution flow
-- **Variable state inspection** through the node visualizer
-- **Detailed error reporting** with exact line and context information
-- **Execution flow visualization** showing how your Jac program moves through different states
-- **Spatial relationship mapping** unique to Jac's object-spatial programming model
-
-### Using Debug Mode Effectively
-
-1. **Set breakpoints** by clicking on line numbers in the editor
-2. **Start debugging** by clicking the Debug button instead of Run
-3. **Navigate execution** using the arrow keys or debug controls
-4. **Observe the graph** to understand how your nodes and edges are connected
-5. **Step through slowly** to see how data flows through your spatial program structure
-
-The Graph Visualizer makes Jac's spatial programming concepts tangible, allowing you to see exactly how your objects, walkers, and edges interact during program execution.
-
 
 ## Tips for New Users
 
