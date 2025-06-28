@@ -92,7 +92,6 @@ Multi-user applications require careful consideration of data access and user pe
         ```
 
     === "Jac Multi-User"
-        <div class="code-block">
         ```jac
         # shared_notebook.jac - User management built-in
         node Note {
@@ -138,7 +137,6 @@ Multi-user applications require careful consideration of data access and user pe
             }
         }
         ```
-        </div>
 
 ---
 
@@ -150,7 +148,6 @@ Jac Cloud handles authentication automatically when you deploy with user managem
 
 !!! example "User-Isolated Notebook System"
     === "Jac"
-        <div class="code-block">
         ```jac
         # user_notebook.jac
         node Note {
@@ -202,7 +199,6 @@ Jac Cloud handles authentication automatically when you deploy with user managem
             }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -296,7 +292,6 @@ Multi-user applications often need controlled sharing of data between users. Let
 ### Note Sharing Implementation
 
 !!! example "Shared Notebook with Permissions"
-    <div class="code-block">
     ```jac
     # shared_permissions.jac
     node Note {
@@ -397,7 +392,6 @@ Multi-user applications often need controlled sharing of data between users. Let
         }
     }
     ```
-    </div>
 
 ### Testing Note Sharing
 
@@ -439,7 +433,6 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
 ### Secure Data Access Patterns
 
 !!! example "Security-First Note Access"
-    <div class="code-block">
     ```jac
     # secure_notebook.jac
     walker get_note {
@@ -546,7 +539,6 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
         }
     }
     ```
-    </div>
 
 !!! warning "Security Best Practices"
     - **Always Verify Access**: Check user permissions before any data operation
@@ -564,7 +556,6 @@ Different applications require different access control models. Let's implement 
 ### Role-Based Access Control
 
 !!! example "RBAC Notebook System"
-    <div class="code-block">
     ```jac
     # rbac_notebook.jac
     enum Role {
@@ -686,7 +677,6 @@ Different applications require different access control models. Let's implement 
         }
     }
     ```
-    </div>
 
 ### Testing Role-Based Access
 
@@ -729,6 +719,7 @@ curl -X POST http://localhost:8000/get_role_filtered_notes \
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
+
 - **Chapter 16**: Advanced Jac Cloud features like WebSockets and real-time updates
 - **Chapter 17**: Type system deep dive for robust multi-user applications
 - **Chapter 18**: Testing and debugging multi-user scenarios
