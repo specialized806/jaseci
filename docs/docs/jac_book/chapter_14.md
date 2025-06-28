@@ -436,6 +436,7 @@ curl -X POST http://localhost:8000/get_weather \
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
+
 - **Chapter 15**: Multi-user architecture and permissions
 - **Chapter 16**: Advanced Jac Cloud features like WebSockets and task scheduling
 - **Chapter 17**: Type system deep dive for robust cloud applications
