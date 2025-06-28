@@ -56,7 +56,6 @@ Production applications require flexible configuration management. Jac Cloud pro
         ```
 
     === "Jac Configuration"
-        <div class="code-block">
         ```jac
         # chat_room.jac - Built-in configuration support
         import from os { getenv }
@@ -103,7 +102,6 @@ Production applications require flexible configuration management. Jac Cloud pro
             }
         }
         ```
-        </div>
 
 ### Basic Chat Room Setup
 
@@ -111,7 +109,6 @@ Let's start with a simple chat room that uses environment configuration:
 
 !!! example "Configurable Chat Room"
     === "Jac"
-        <div class="code-block">
         ```jac
         # simple_chat.jac
         import from os { getenv }
@@ -170,7 +167,6 @@ Let's start with a simple chat room that uses environment configuration:
             }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -257,7 +253,6 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
 ### Adding Real-Time Messaging
 
 !!! example "WebSocket Chat Implementation"
-    <div class="code-block">
     ```jac
     # realtime_chat.jac
     import from datetime { datetime }
@@ -361,12 +356,10 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         }
     }
     ```
-    </div>
 
 ### WebSocket Connection Management
 
 !!! example "WebSocket Connection Walker"
-    <div class="code-block">
     ```jac
     # websocket_manager.jac
     walker connect_websocket {
@@ -436,7 +429,6 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         }
     }
     ```
-    </div>
 
 ### Testing WebSocket Chat
 
@@ -493,7 +485,6 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
 ### Webhook Receiver Implementation
 
 !!! example "Chat Notification Webhooks"
-    <div class="code-block">
     ```jac
     # webhook_chat.jac
     import from datetime { datetime }
@@ -613,7 +604,6 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
         }
     }
     ```
-    </div>
 
 ### Webhook Registration
 
@@ -651,7 +641,6 @@ Production applications require comprehensive logging and monitoring. Jac Cloud 
 ### Application Logging
 
 !!! example "Structured Logging System"
-    <div class="code-block">
     ```jac
     # logging_chat.jac
     import from datetime { datetime }
@@ -790,7 +779,6 @@ Production applications require comprehensive logging and monitoring. Jac Cloud 
         }
     }
     ```
-    </div>
 
 ---
 
@@ -801,7 +789,6 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
 ### Scheduled Chat Maintenance
 
 !!! example "Chat Room Cleanup Tasks"
-    <div class="code-block">
     ```jac
     # scheduled_chat.jac
     import from datetime { datetime, timedelta }
@@ -902,7 +889,6 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
         }
     }
     ```
-    </div>
 
 ### Scheduling Configuration
 
@@ -945,6 +931,7 @@ tasks:
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
+
 - **Chapter 17**: Advanced type system for robust distributed applications
 - **Chapter 18**: Testing and debugging complex cloud applications
 - **Chapter 19**: Production deployment and scaling strategies
