@@ -1,34 +1,43 @@
 # Chapter 13: Persistence and the Root Node
 
-In this chapter, we'll explore Jac's revolutionary automatic persistence system and the fundamental concept of the root node. We'll build a simple counter application that demonstrates how Jac automatically maintains state between program runs without any database configuration.
+In this chapter, we'll explore Jac's automatic persistence system and the fundamental concept of the root node. We'll build a simple counter application that demonstrates how Jac automatically maintains state when running as a service with a database backend.
 
 !!! info "What You'll Learn"
-    - Understanding Jac's automatic persistence mechanism
+    - Understanding Jac's automatic persistence mechanism with jac serve
     - The root node as the entry point for all persistent data
-    - State consistency across program executions
-    - Building stateful applications without manual database setup
+    - State consistency across API requests and service restarts
+    - Building stateful applications with jac-cloud
 
 ---
 
 ## What is Automatic Persistence?
 
-Traditional programming requires explicit database setup, connection management, and data serialization. Jac eliminates this complexity by making persistence a core language feature. When you create nodes and connect them to your graph, they automatically persist between program runs.
+Traditional programming requires explicit database setup, connection management, and data serialization. Jac eliminates this complexity by making persistence a core language feature when running as a service. When you use `jac serve` with a database backend, nodes and their connections automatically persist across requests and service restarts.
+
+!!! warning "Persistence Requirements"
+    - **Database Backend**: Persistence requires `jac serve` with a configured database
+    - **Service Mode**: `jac run` executions are stateless and don't persist data
+    - **Root Connection**: Nodes must be connected to root to persist
+    - **API Context**: Persistence works within the context of API endpoints
 
 !!! success "Persistence Benefits"
-    - **Zero Configuration**: No database setup or connection strings
+    - **Zero Configuration**: No manual database schema or ORM setup
     - **Automatic State**: Data persists without explicit save/load operations
     - **Graph Integrity**: Relationships between nodes are maintained
     - **Type Safety**: Persistent data maintains type information
-    - **Instant Recovery**: Applications resume exactly where they left off
+    - **Instant Recovery**: Services resume exactly where they left off
 
 ### Traditional vs Jac Persistence
 
 !!! example "Persistence Comparison"
     === "Traditional Approach"
         ```python
-        # counter.py - Manual database setup required
+        # counter_api.py - Manual database setup required
+        from flask import Flask, jsonify
         import sqlite3
         import os
+
+        app = Flask(__name__)
 
         class Counter:
             def __init__(self):
@@ -44,7 +53,6 @@ Traditional programming requires explicit database setup, connection management,
                         value INTEGER
                     )
                 ''')
-                # Initialize counter if not exists
                 cursor.execute('SELECT value FROM counter WHERE id = 1')
                 if not cursor.fetchone():
                     cursor.execute('INSERT INTO counter (id, value) VALUES (1, 0)')
@@ -65,149 +73,227 @@ Traditional programming requires explicit database setup, connection management,
                 cursor.execute('UPDATE counter SET value = value + 1 WHERE id = 1')
                 conn.commit()
                 conn.close()
+                return self.get_value()
+
+        counter = Counter()
+
+        @app.route('/counter')
+        def get_counter():
+            return jsonify({"value": counter.get_value()})
+
+        @app.route('/counter/increment', methods=['POST'])
+        def increment_counter():
+            new_value = counter.increment()
+            return jsonify({"value": new_value})
 
         if __name__ == "__main__":
-            counter = Counter()
-            print(f"Current value: {counter.get_value()}")
-            counter.increment()
-            print(f"After increment: {counter.get_value()}")
+            app.run(debug=True)
         ```
 
     === "Jac Automatic Persistence"
         ```jac
-        # counter.jac - No database setup needed
+        # main.jac - No database setup needed
+        import:py from mtllm.llms, Ollama;
+
         node Counter {
             has value: int = 0;
 
-            def increment() -> int {
+            can increment() -> int {
                 self.value += 1;
                 return self.value;
             }
 
-            def get_value() -> int {
+            can get_value() -> int {
                 return self.value;
             }
         }
 
-        with entry {
-            # Get or create counter from root
-            counter_node = [root -->(`?Counter)];
+        walker get_counter {
+            can get_counter_endpoint with `root entry {
+                counter_nodes = [root --> Counter];
+                if not counter_nodes {
+                    counter = Counter();
+                    root ++> counter;
+                } else {
+                    counter = counter_nodes[0];
+                }
+                report {"value": counter.get_value()};
+            }
+        }
 
-            if not counter_node {
-                # Create new counter if none exists
-                counter_node = Counter();
-                root ++> counter_node;
-            } else {
-                counter_node = counter_node[0];
+        walker increment_counter {
+            can increment_counter_endpoint with `root entry {
+                counter_nodes = [root --> Counter];
+                if not counter_nodes {
+                    counter = Counter();
+                    root ++> counter;
+                } else {
+                    counter = counter_nodes[0];
+                }
+                new_value = counter.increment();
+                report {"value": new_value};
+            }
+        }
+        ```
+
+---
+
+## Setting Up a Jac Cloud Project
+
+To demonstrate persistence, we need to create a proper jac-cloud project structure:
+
+!!! example "Project Structure"
+    ```
+    counter-app/
+    ├── .env                 # Environment configuration
+    ├── main.jac            # Main application logic
+    ├── server.py           # Optional custom server setup
+    └── requirements.txt    # Python dependencies
+    ```
+
+Let's create our counter application:
+
+!!! example "Complete Counter Project"
+    === ".env"
+        ```bash
+        # .env - Database configuration
+        DATABASE_URL=sqlite:///./app.db
+        SECRET_KEY=your-secret-key-here
+        ```
+
+    === "main.jac"
+        ```jac
+        # main.jac
+        node Counter {
+            has value: int = 0;
+            has created_at: str;
+
+            can increment() -> int {
+                self.value += 1;
+                return self.value;
             }
 
-            print(f"Current value: {counter_node.get_value()}");
-            new_value = counter_node.increment();
-            print(f"After increment: {new_value}");
+            can reset() -> int {
+                self.value = 0;
+                return self.value;
+            }
         }
+
+        walker get_counter {
+            can get_counter_endpoint with `root entry {
+                counter_nodes = [root --> Counter];
+                if not counter_nodes {
+                    counter = Counter(created_at="2024-01-15");
+                    root ++> counter;
+                    report {"value": 0, "status": "created"};
+                } else {
+                    counter = counter_nodes[0];
+                    report {"value": counter.value, "status": "existing"};
+                }
+            }
+        }
+
+        walker increment_counter {
+            can increment_counter_endpoint with `root entry {
+                counter_nodes = [root --> Counter];
+                if not counter_nodes {
+                    counter = Counter(created_at="2024-01-15");
+                    root ++> counter;
+                } else {
+                    counter = counter_nodes[0];
+                }
+                new_value = counter.increment();
+                report {"value": new_value, "previous": new_value - 1};
+            }
+        }
+
+        walker reset_counter {
+            can reset_counter_endpoint with `root entry {
+                counter_nodes = [root --> Counter];
+                if counter_nodes {
+                    counter = counter_nodes[0];
+                    counter.reset();
+                    report {"value": 0, "status": "reset"};
+                } else {
+                    report {"value": 0, "status": "no_counter_found"};
+                }
+            }
+        }
+        ```
+
+    === "requirements.txt"
+        ```
+        jaclang
+        fastapi
+        uvicorn
+        python-dotenv
         ```
 
 ---
 
 ## The Root Node Concept
 
-The root node is Jac's fundamental concept for persistent data organization. Every Jac program has access to a special `root` node that serves as the entry point for all persistent graph structures.
+The root node is Jac's fundamental concept for persistent data organization. When running with `jac serve`, every request has access to a special `root` node that serves as the entry point for all persistent graph structures.
 
 ### Understanding Root Node
 
 !!! info "Root Node Properties"
-    - **Global Access**: Available in every Jac program execution
+    - **Request Context**: Available in every API request when using jac serve
     - **Persistence Gateway**: Starting point for all persistent data
     - **Graph Anchor**: All persistent nodes must be reachable from root
-    - **Automatic Creation**: Exists automatically without explicit declaration
+    - **Automatic Creation**: Exists automatically with database backend
+    - **Transaction Boundary**: Changes persist at the end of each request
 
-### Basic Counter Implementation
-
-Let's start with the simplest possible counter that remembers its value:
-
-!!! example "Simple Persistent Counter"
-    === "Jac"
-        ```jac
-        # simple_counter.jac
-        node Counter {
-            has value: int = 0;
-        }
-
-        with entry {
-            # Look for existing counter
-            existing_counter = [root -->(`?Counter)];
-
-            if existing_counter {
-                counter = existing_counter[0];
-                print(f"Found existing counter: {counter.value}");
-            } else {
-                counter = Counter();
-                root ++> counter;
-                print("Created new counter");
-            }
-
-            # Increment and show new value
-            counter.value += 1;
-            print(f"Counter value: {counter.value}");
-        }
-        ```
-
-    === "Python Equivalent"
-        ```python
-        # simple_counter.py - Requires manual file I/O
-        import json
-        import os
-
-        COUNTER_FILE = "counter.json"
-
-        def load_counter():
-            if os.path.exists(COUNTER_FILE):
-                with open(COUNTER_FILE, 'r') as f:
-                    data = json.load(f)
-                    print(f"Found existing counter: {data['value']}")
-                    return data['value']
-            else:
-                print("Created new counter")
-                return 0
-
-        def save_counter(value):
-            with open(COUNTER_FILE, 'w') as f:
-                json.dump({"value": value}, f)
-
-        if __name__ == "__main__":
-            counter_value = load_counter()
-            counter_value += 1
-            save_counter(counter_value)
-            print(f"Counter value: {counter_value}")
-        ```
-
-### Running the Counter
+### Running the Service
 
 ```bash
-# First run
-jac run simple_counter.jac
-# Output: Created new counter
-#         Counter value: 1
+# Navigate to project directory
+cd counter-app
 
-# Second run
-jac run simple_counter.jac
-# Output: Found existing counter: 1
-#         Counter value: 2
+# Install dependencies
+pip install -r requirements.txt
 
-# Third run
-jac run simple_counter.jac
-# Output: Found existing counter: 2
-#         Counter value: 3
+# Start the service with database persistence
+jac serve main.jac
+
+# Service starts on http://localhost:8000
+# API documentation available at http://localhost:8000/docs
 ```
 
-!!! tip "Automatic Persistence in Action"
-    Notice how the counter value persists between runs without any explicit save/load operations!
+### Testing Persistence
+
+```bash
+# First request - Create counter
+curl http://localhost:8000/get_counter_endpoint
+# Response: {"value": 0, "status": "created"}
+
+# Increment the counter
+curl -X POST http://localhost:8000/increment_counter_endpoint
+# Response: {"value": 1, "previous": 0}
+
+# Increment again
+curl -X POST http://localhost:8000/increment_counter_endpoint
+# Response: {"value": 2, "previous": 1}
+
+# Check counter value
+curl http://localhost:8000/get_counter_endpoint
+# Response: {"value": 2, "status": "existing"}
+
+# Restart the service (Ctrl+C, then jac serve main.jac again)
+
+# Counter value persists after restart
+curl http://localhost:8000/get_counter_endpoint
+# Response: {"value": 2, "status": "existing"}
+```
+
+!!! tip "Persistence in Action"
+    Notice how the counter value persists between requests and even service restarts when using `jac serve` with a database!
 
 ---
 
 ## State Consistency
 
-Jac maintains state consistency through its graph-based persistence model. All connected nodes and their relationships are automatically maintained across program executions.
+Jac maintains state consistency through its graph-based persistence model when running as a service. All connected nodes and their relationships are automatically maintained across requests and service restarts.
 
 ### Enhanced Counter with History
 
@@ -215,27 +301,37 @@ Let's enhance our counter to track increment history:
 
 !!! example "Counter with History Tracking"
     ```jac
-    # history_counter.jac
-    node Counter {
-        has created_at: str;
-        has value: int = 0;
+    # main.jac - Enhanced with history
+    import:py from datetime, datetime;
 
-        def increment() -> int {
+    node Counter {
+        has value: int = 0;
+        has created_at: str;
+
+        can increment() -> int {
+            old_value = self.value;
             self.value += 1;
+
             # Create history entry
-            history_entry = HistoryEntry(
-                timestamp=str(len([root -->(`?HistoryEntry)]) + 1),
-                old_value=self.value - 1,
+            history = HistoryEntry(
+                timestamp=str(datetime.now()),
+                old_value=old_value,
                 new_value=self.value
             );
-            self ++> history_entry;
+            self ++> history;
             return self.value;
         }
 
-        def get_history() -> list[str] {
-            history_nodes = [root -->(`?HistoryEntry)];
-            return [f"Step {h.timestamp}: {h.old_value} -> {h.new_value}"
-                   for h in history_nodes];
+        can get_history() -> list[dict] {
+            history_nodes = [self --> HistoryEntry];
+            return [
+                {
+                    "timestamp": h.timestamp,
+                    "old_value": h.old_value,
+                    "new_value": h.new_value
+                }
+                for h in history_nodes
+            ];
         }
     }
 
@@ -245,94 +341,104 @@ Let's enhance our counter to track increment history:
         has new_value: int;
     }
 
-    with entry {
-        # Get or create counter
-        counter_nodes = [root -->(`?Counter)];
-
-        if counter_nodes {
-            counter = counter_nodes[0];
-            print(f"Resuming counter at value: {counter.value}");
-        } else {
-            counter = Counter(created_at="2024-01-15");
-            root ++> counter;
-            print("Created new counter with history tracking");
+    walker get_counter_with_history {
+        can get_counter_with_history_endpoint with `root entry {
+            counter_nodes = [root --> Counter];
+            if not counter_nodes {
+                counter = Counter(created_at=str(datetime.now()));
+                root ++> counter;
+                report {
+                    "value": 0,
+                    "status": "created",
+                    "history": []
+                };
+            } else {
+                counter = counter_nodes[0];
+                report {
+                    "value": counter.value,
+                    "status": "existing",
+                    "history": counter.get_history()
+                };
+            }
         }
+    }
 
-        # Perform increment
-        new_value = counter.increment();
-        print(f"Incremented to: {new_value}");
+    walker increment_with_history {
+        can increment_with_history_endpoint with `root entry {
+            counter_nodes = [root --> Counter];
+            if not counter_nodes {
+                counter = Counter(created_at=str(datetime.now()));
+                root ++> counter;
+            } else {
+                counter = counter_nodes[0];
+            }
 
-        # Show history
-        history = counter.get_history();
-        print("History:");
-        for entry in history {
-            print(f"  {entry}");
+            new_value = counter.increment();
+            report {
+                "value": new_value,
+                "history": counter.get_history()
+            };
         }
     }
     ```
 
-### Multiple Runs Demonstration
+### Testing History Persistence
 
 ```bash
-# First run
-jac run history_counter.jac
-# Output: Created new counter with history tracking
-#         Incremented to: 1
-#         History:
-#           Step 1: 0 -> 1
+# Start fresh service
+jac serve main.jac
 
-# Second run
-jac run history_counter.jac
-# Output: Resuming counter at value: 1
-#         Incremented to: 2
-#         History:
-#           Step 1: 0 -> 1
-#           Step 2: 1 -> 2
+# Multiple increments to build history
+curl -X POST http://localhost:8000/increment_with_history_endpoint
+curl -X POST http://localhost:8000/increment_with_history_endpoint
+curl -X POST http://localhost:8000/increment_with_history_endpoint
 
-# Third run
-jac run history_counter.jac
-# Output: Resuming counter at value: 2
-#         Incremented to: 3
-#         History:
-#           Step 1: 0 -> 1
-#           Step 2: 1 -> 2
-#           Step 3: 2 -> 3
+# Check counter with complete history
+curl http://localhost:8000/get_counter_with_history_endpoint
+# Response includes value and complete history array
+
+# Restart service - history persists
+# jac serve main.jac (after restart)
+curl http://localhost:8000/get_counter_with_history_endpoint
+# All history entries remain intact
 ```
-
-!!! success "State Consistency Demonstrated"
-    Both the counter value and the complete history graph persist perfectly across runs.
 
 ---
 
 ## Building Stateful Applications
 
-The automatic persistence enables building sophisticated stateful applications with minimal code. Let's create a counter management system:
+The automatic persistence enables building sophisticated stateful applications. Let's create a multi-counter management system:
 
 !!! example "Multi-Counter Management System"
     ```jac
-    # counter_manager.jac
+    # main.jac - Multi-counter system
+    import:py from datetime, datetime;
+
     node CounterManager {
         has created_at: str;
 
-        def create_counter(name: str) -> Counter {
+        can create_counter(name: str) -> dict {
             # Check if counter already exists
-            existing = [root -->(`?Counter)](?name == name);
+            existing = [self --> Counter](?name == name);
             if existing {
-                return existing[0];
+                return {"status": "exists", "counter": existing[0].name};
             }
 
             new_counter = Counter(name=name, value=0);
             self ++> new_counter;
-            return new_counter;
+            return {"status": "created", "counter": name};
         }
 
-        def list_counters() -> list[str] {
-            counters = [root -->(`?Counter)];
-            return [f"{c.name}: {c.value}" for c in counters];
+        can list_counters() -> list[dict] {
+            counters = [self --> Counter];
+            return [
+                {"name": c.name, "value": c.value}
+                for c in counters
+            ];
         }
 
-        def get_total() -> int {
-            counters = [root -->(`?Counter)];
+        can get_total() -> int {
+            counters = [self --> Counter];
             return sum([c.value for c in counters]);
         }
     }
@@ -341,69 +447,95 @@ The automatic persistence enables building sophisticated stateful applications w
         has name: str;
         has value: int = 0;
 
-        def increment(amount: int = 1) -> int {
+        can increment(amount: int = 1) -> int {
             self.value += amount;
             return self.value;
         }
     }
 
-    with entry {
-        # Get or create manager
-        manager_nodes = [root -->(`?CounterManager)];
+    walker create_counter {
+        has name: str;
 
-        if manager_nodes {
+        can create_counter_endpoint with `root entry {
+            manager_nodes = [root --> CounterManager];
+            if not manager_nodes {
+                manager = CounterManager(created_at=str(datetime.now()));
+                root ++> manager;
+            } else {
+                manager = manager_nodes[0];
+            }
+
+            result = manager.create_counter(self.name);
+            report result;
+        }
+    }
+
+    walker increment_named_counter {
+        has name: str;
+        has amount: int = 1;
+
+        can increment_named_counter_endpoint with `root entry {
+            manager_nodes = [root --> CounterManager];
+            if not manager_nodes {
+                report {"error": "No counter manager found"};
+                return;
+            }
+
             manager = manager_nodes[0];
-            print("Using existing counter manager");
-        } else {
-            manager = CounterManager(created_at="2024-01-15");
-            root ++> manager;
-            print("Created new counter manager");
+            counters = [manager --> Counter](?name == self.name);
+
+            if not counters {
+                report {"error": f"Counter {self.name} not found"};
+                return;
+            }
+
+            counter = counters[0];
+            new_value = counter.increment(self.amount);
+            report {"name": self.name, "value": new_value};
         }
+    }
 
-        # Create and use counters
-        page_views = manager.create_counter("page_views");
-        user_signups = manager.create_counter("user_signups");
+    walker get_all_counters {
+        can get_all_counters_endpoint with `root entry {
+            manager_nodes = [root --> CounterManager];
+            if not manager_nodes {
+                report {"counters": [], "total": 0};
+                return;
+            }
 
-        # Simulate some activity
-        page_views.increment(5);
-        user_signups.increment(2);
-
-        # Show status
-        print("\nCounter Status:");
-        for counter_info in manager.list_counters() {
-            print(f"  {counter_info}");
+            manager = manager_nodes[0];
+            report {
+                "counters": manager.list_counters(),
+                "total": manager.get_total()
+            };
         }
-
-        print(f"\nTotal activity: {manager.get_total()}");
     }
     ```
 
-### Progressive State Building
+### API Usage Examples
 
 ```bash
-# First run - Initialize system
-jac run counter_manager.jac
-# Output: Created new counter manager
-#         Counter Status:
-#           page_views: 5
-#           user_signups: 2
-#         Total activity: 7
+# Create multiple counters
+curl -X POST "http://localhost:8000/create_counter_endpoint" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "page_views"}'
 
-# Second run - Continue accumulating
-jac run counter_manager.jac
-# Output: Using existing counter manager
-#         Counter Status:
-#           page_views: 10
-#           user_signups: 4
-#         Total activity: 14
+curl -X POST "http://localhost:8000/create_counter_endpoint" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "user_signups"}'
 
-# Third run - Data persists and grows
-jac run counter_manager.jac
-# Output: Using existing counter manager
-#         Counter Status:
-#           page_views: 15
-#           user_signups: 6
-#         Total activity: 21
+# Increment specific counters
+curl -X POST "http://localhost:8000/increment_named_counter_endpoint" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "page_views", "amount": 5}'
+
+curl -X POST "http://localhost:8000/increment_named_counter_endpoint" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "user_signups", "amount": 2}'
+
+# View all counters
+curl http://localhost:8000/get_all_counters_endpoint
+# Response: {"counters": [{"name": "page_views", "value": 5}, {"name": "user_signups", "value": 2}], "total": 7}
 ```
 
 ---
@@ -411,81 +543,66 @@ jac run counter_manager.jac
 ## Persistence Best Practices
 
 !!! tip "Effective Persistence Patterns"
-    - **Root Connection**: Always connect persistent nodes to root or root-connected nodes
-    - **Initialization Checks**: Use filtering to check for existing data before creating new nodes
-    - **Graph Relationships**: Leverage edges to maintain data relationships automatically
-    - **Type Safety**: Rely on Jac's type system for data integrity across runs
+    - **Service Mode**: Always use `jac serve` for persistent applications
+    - **Database Backend**: Configure appropriate database in .env file
+    - **Root Connection**: Connect all persistent nodes to root or root-connected nodes
+    - **Initialization Checks**: Use filtering to check for existing data
+    - **Transaction Awareness**: Changes persist automatically at request completion
 
-### Data Integrity Example
+### Production Deployment
 
-!!! example "Safe Data Access Pattern"
-    ```jac
-    # safe_counter.jac
-    node AppState {
-        has initialized: bool = False;
-        has version: str = "1.0";
-    }
+!!! example "Production Configuration"
+    === ".env"
+        ```bash
+        # Production .env
+        DATABASE_URL=postgresql://user:password@host:5432/dbname
+        SECRET_KEY=your-production-secret-key
+        DEBUG=false
+        ```
 
-    walker initialize_app {
-        can setup with `root entry {
-            # Check for existing app state
-            app_state = [root -->(`?AppState)];
+    === "Docker Setup"
+        ```dockerfile
+        # Dockerfile
+        FROM python:3.11
 
-            if not app_state {
-                # First run initialization
-                state = AppState(initialized=True);
-                counter = Counter(value=0);
+        WORKDIR /app
+        COPY requirements.txt .
+        RUN pip install -r requirements.txt
 
-                root ++> state;
-                state ++> counter;
+        COPY . .
+        EXPOSE 8000
 
-                report {"status": "initialized", "counter": 0};
-            } else {
-                # App already initialized
-                state = app_state[0];
-                counter = [root -->(`?Counter)][0];
-                report {"status": "existing", "counter": counter.value};
-            }
-        }
-    }
-
-    node Counter {
-        has value: int = 0;
-    }
-
-    with entry {
-        result = initialize_app() spawn root;
-        print(f"App status: {result}");
-    }
-    ```
+        CMD ["jac", "serve", "main.jac", "--host", "0.0.0.0"]
+        ```
 
 ---
 
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Automatic Persistence**: Jac handles data persistence without configuration
+    - **Service Requirement**: Persistence only works with `jac serve`, not `jac run`
+    - **Database Backend**: Requires proper database configuration
     - **Root Node**: Central entry point for all persistent graph structures
-    - **State Consistency**: Complete application state maintained across runs
-    - **Zero Overhead**: No database setup, connection management, or serialization code
+    - **Request Lifecycle**: State persists automatically between API requests
+    - **Service Restarts**: Data survives service restarts with proper database setup
     - **Graph Integrity**: Relationships between nodes persist automatically
 
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
 
-- **Chapter 14**: Converting persistent applications to cloud APIs
+- **Chapter 14**: Advanced Jac Cloud features and deployment
 - **Chapter 15**: Multi-user systems with shared persistent state
-- **Chapter 16**: Advanced persistence patterns for complex applications
+- **Chapter 16**: Scaling persistent applications in production
 
 !!! tip "Try It Yourself"
-    Experiment with the counter examples by:
-    - Adding reset functionality to counters
-    - Creating counters with different increment amounts
-    - Building a simple todo list that persists
+    Create your own persistent application by:
+    - Building a todo list API that persists tasks
+    - Adding user authentication with persistent user data
+    - Creating a simple blog with persistent posts and comments
 
-    Remember: Any node connected to root (directly or indirectly) will persist automatically!
+    Remember: Only nodes connected to root (directly or indirectly) will persist when using `jac serve` with a database!
 
 ---
 
-*Ready to learn how persistent applications become cloud APIs? Continue to [Chapter 14: Jac Cloud Introduction](chapter_14.md)!*
+*Ready to explore advanced cloud features? Continue to [Chapter 14: Advanced Jac Cloud](chapter_14.md)!*
