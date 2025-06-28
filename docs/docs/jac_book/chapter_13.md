@@ -74,7 +74,6 @@ Traditional programming requires explicit database setup, connection management,
         ```
 
     === "Jac Automatic Persistence"
-        <div class="code-block">
         ```jac
         # counter.jac - No database setup needed
         node Counter {
@@ -107,7 +106,6 @@ Traditional programming requires explicit database setup, connection management,
             print(f"After increment: {new_value}");
         }
         ```
-        </div>
 
 ---
 
@@ -129,7 +127,6 @@ Let's start with the simplest possible counter that remembers its value:
 
 !!! example "Simple Persistent Counter"
     === "Jac"
-        <div class="code-block">
         ```jac
         # simple_counter.jac
         node Counter {
@@ -154,7 +151,6 @@ Let's start with the simplest possible counter that remembers its value:
             print(f"Counter value: {counter.value}");
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -218,7 +214,6 @@ Jac maintains state consistency through its graph-based persistence model. All c
 Let's enhance our counter to track increment history:
 
 !!! example "Counter with History Tracking"
-    <div class="code-block">
     ```jac
     # history_counter.jac
     node Counter {
@@ -275,7 +270,6 @@ Let's enhance our counter to track increment history:
         }
     }
     ```
-    </div>
 
 ### Multiple Runs Demonstration
 
@@ -315,7 +309,6 @@ jac run history_counter.jac
 The automatic persistence enables building sophisticated stateful applications with minimal code. Let's create a counter management system:
 
 !!! example "Multi-Counter Management System"
-    <div class="code-block">
     ```jac
     # counter_manager.jac
     node CounterManager {
@@ -384,7 +377,6 @@ The automatic persistence enables building sophisticated stateful applications w
         print(f"\nTotal activity: {manager.get_total()}");
     }
     ```
-    </div>
 
 ### Progressive State Building
 
@@ -427,7 +419,6 @@ jac run counter_manager.jac
 ### Data Integrity Example
 
 !!! example "Safe Data Access Pattern"
-    <div class="code-block">
     ```jac
     # safe_counter.jac
     node AppState {
@@ -467,7 +458,6 @@ jac run counter_manager.jac
         print(f"App status: {result}");
     }
     ```
-    </div>
 
 ---
 
@@ -483,6 +473,7 @@ jac run counter_manager.jac
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
+
 - **Chapter 14**: Converting persistent applications to cloud APIs
 - **Chapter 15**: Multi-user systems with shared persistent state
 - **Chapter 16**: Advanced persistence patterns for complex applications
