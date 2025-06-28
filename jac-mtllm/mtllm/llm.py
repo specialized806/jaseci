@@ -4,12 +4,24 @@ This module provides a LLM class that abstracts LiteLLM and offers
 enhanced functionality and interface for language model operations.
 """
 
+# flake8: noqa: E402
+
 import inspect
 import json
+import logging
+import os
 from typing import Callable, get_type_hints
+
+# This will prevent LiteLLM from fetching pricing information from
+# the bellow URL every time we import the litellm and use a cached
+# local json file. Maybe we we should conditionally enable this.
+# https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 import litellm
 from litellm._logging import _disable_debugging
+
+from .schema import wrap_to_schema_type
 
 from .types import (
     CompletionRequest,
@@ -18,12 +30,10 @@ from .types import (
     Message,
     MessageRole,
     MessageType,
+    MockToolCall,
     Tool,
     ToolCall,
 )
-
-_disable_debugging()
-
 
 SYSTEM_PERSONA = """\
 This is a task you must complete by returning only the output.
@@ -38,7 +48,7 @@ output. Only use tools.
 """  # noqa E501
 
 
-class JacLLM:
+class Model:
     """A wrapper class that abstracts LiteLLM functionality.
 
     This class provides a simplified and enhanced interface for interacting
@@ -53,6 +63,11 @@ class JacLLM:
             api_key: API key for the model provider
             **kwargs: Additional configuration options
         """
+        # Every litellm call will be logged to the tty and that pollutes the output.
+        # When there is a by llm() call in the jaclang.
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        _disable_debugging()
+
         self.model_name = model_name
         self.config = kwargs
 
@@ -60,7 +75,7 @@ class JacLLM:
         # This is only applicable for the next call passed from `by llm(**kwargs)`.
         self.call_params: dict[str, object] = {}
 
-    def __call__(self, **kwargs: object) -> "JacLLM":
+    def __call__(self, **kwargs: object) -> "Model":
         """Construct the call parameters and return self (factory pattern).
 
         Example:
@@ -98,6 +113,11 @@ class JacLLM:
                 else:
                     inputs_detail.append(f"arg = {value}")
 
+        if incl_info := self.call_params.get("incl_info"):
+            if isinstance(incl_info, dict):
+                for key, value in incl_info.items():
+                    inputs_detail.append(f"{key} = {value}")
+
         # Prepare the messages for the LLM call.
         messages: list[MessageType] = [
             Message(
@@ -114,11 +134,15 @@ class JacLLM:
             ),
         ]
 
+        # Prepare return type.
+        return_type = get_type_hints(caller).get("return")
+        return_type = wrap_to_schema_type(return_type)
+
         # Prepare the llm call request.
         req = CompletionRequest(
             messages=messages,
             tools=tools,
-            resp_type=get_type_hints(caller).get("return"),
+            resp_type=return_type,
             params={},
         )
 
@@ -138,6 +162,12 @@ class JacLLM:
 
     def completion(self, req: CompletionRequest) -> CompletionResult:
         """Perform a completion request with the LLM."""
+        if self.model_name.lower().strip() == "mockllm":
+            return self._dispatch_mock_llm_call(req)
+        return self._dispatch_llm_call(req)
+
+    def _dispatch_llm_call(self, req: CompletionRequest) -> CompletionResult:
+        """Dispatch the LLM call with the given request."""
         # Prepare the parameters for the LLM call
         params = {
             "model": self.model_name,
@@ -152,6 +182,7 @@ class JacLLM:
         }
 
         # Call the LiteLLM API
+        self._log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
         output = litellm.completion(**params)
 
         # Output format:
@@ -162,6 +193,7 @@ class JacLLM:
         req.add_message(message)
 
         output_content: str = message.content  # type: ignore
+        self._log_info(f"LLM call completed with response:\n{output_content}")
         output_value = req.parse_response(output_content)
 
         tool_calls: list[ToolCall] = []
@@ -181,3 +213,29 @@ class JacLLM:
             output=output_value,
             tool_calls=tool_calls,
         )
+
+    def _dispatch_mock_llm_call(self, req: CompletionRequest) -> CompletionResult:
+        """Dispatch the mock LLM call with the given request."""
+        output = self.config["outputs"].pop(0)  # type: ignore
+
+        if isinstance(output, MockToolCall):
+            self._log_info(
+                f"Mock LLM call completed with tool call:\n{output.to_tool_call()}"
+            )
+            return CompletionResult(
+                output=None,
+                tool_calls=[output.to_tool_call()],
+            )
+
+        self._log_info(f"Mock LLM call completed with response:\n{output}")
+        return CompletionResult(
+            output=output,
+            tool_calls=[],
+        )
+
+    def _log_info(self, message: str) -> None:
+        """Log a message to the console."""
+        # FIXME: The logger.info will not always log so for now I'm printing to stdout
+        # remove and log properly.
+        if bool(self.config.get("verbose", False)):
+            print(message)
