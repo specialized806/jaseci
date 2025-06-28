@@ -13,13 +13,13 @@ In this chapter, we'll explore how to build secure, multi-user applications in J
 
 ## User Isolation and Permission Systems
 
-Multi-user applications require careful consideration of data access and user permissions. Jac Cloud provides built-in user management that integrates seamlessly with your application logic, allowing you to focus on business rules rather than authentication infrastructure.
+Multi-user applications require careful consideration of data access and user permissions. Jac provides built-in patterns for user management that integrate seamlessly with your application logic, allowing you to focus on business rules rather than authentication infrastructure.
 
 !!! success "Multi-User Benefits"
-    - **Built-in Authentication**: Token-based user management included
-    - **Automatic Isolation**: Users can only access their authorized data
+    - **User Context**: Access to user information in walkers
+    - **Data Isolation**: Users can only access their authorized data
     - **Flexible Permissions**: Fine-grained access control patterns
-    - **Secure by Default**: User context automatically injected into walkers
+    - **Secure by Default**: Application-level security patterns
     - **Shared Data Support**: Controlled sharing between users
 
 ### Traditional vs Jac Multi-User Development
@@ -93,7 +93,7 @@ Multi-user applications require careful consideration of data access and user pe
 
     === "Jac Multi-User"
         ```jac
-        # shared_notebook.jac - User management built-in
+        # shared_notebook.jac - User patterns built-in
         node Note {
             has title: str;
             has content: str;
@@ -105,13 +105,14 @@ Multi-user applications require careful consideration of data access and user pe
         walker create_note {
             has title: str;
             has content: str;
+            has owner: str;
 
             can create_user_note with `root entry {
-                # User context automatically available
+                # Create note with specified owner
                 new_note = Note(
                     title=self.title,
                     content=self.content,
-                    owner=__user__  # Auto-injected user context
+                    owner=self.owner
                 );
                 here ++> new_note;
 
@@ -124,9 +125,11 @@ Multi-user applications require careful consideration of data access and user pe
         }
 
         walker get_my_notes {
+            has user_id: str;
+
             can fetch_user_notes with `root entry {
-                # Automatically filter by current user
-                my_notes = [-->(`?Note)](?owner == __user__);
+                # Filter by specified user
+                my_notes = [-->(`?Note)](?owner == self.user_id);
 
                 notes_data = [
                     {"id": n.id, "title": n.title, "created_at": n.created_at}
@@ -142,7 +145,7 @@ Multi-user applications require careful consideration of data access and user pe
 
 ## Basic User Authentication
 
-Jac Cloud handles authentication automatically when you deploy with user management enabled. Let's start with a simple notebook system that supports multiple users.
+For multi-user applications, you need to implement user identification patterns. Let's start with a simple notebook system that supports multiple users.
 
 ### Setting Up User-Aware Notebook
 
@@ -160,13 +163,14 @@ Jac Cloud handles authentication automatically when you deploy with user managem
         walker create_note {
             has title: str;
             has content: str;
+            has owner: str;
             has is_private: bool = True;
 
             can add_note with `root entry {
                 new_note = Note(
                     title=self.title,
                     content=self.content,
-                    owner=__user__,  # Current authenticated user
+                    owner=self.owner,
                     is_private=self.is_private
                 );
                 here ++> new_note;
@@ -180,12 +184,14 @@ Jac Cloud handles authentication automatically when you deploy with user managem
         }
 
         walker list_my_notes {
+            has user_id: str;
+
             can get_user_notes with `root entry {
-                # Only get notes owned by current user
-                user_notes = [-->(`?Note)](?owner == __user__);
+                # Only get notes owned by specified user
+                user_notes = [-->(`?Note)](?owner == self.user_id);
 
                 report {
-                    "user": __user__,
+                    "user": self.user_id,
                     "notes": [
                         {
                             "id": n.id,
@@ -249,38 +255,39 @@ Jac Cloud handles authentication automatically when you deploy with user managem
             })
         ```
 
-### Deploying with User Management
+### Deploying and Testing
 
 Deploy your user-aware application:
 
 ```bash
-jac serve user_notebook.jac --user-management
+jac serve user_notebook.jac
 ```
-
-!!! info "Authentication Endpoints"
-    Jac Cloud automatically provides:
-    - `POST /user/register` - User registration
-    - `POST /user/login` - User authentication
-    - `POST /user/refresh` - Token refresh
 
 ### Testing User Authentication
 
 ```bash
-# Register a new user
-curl -X POST http://localhost:8000/user/register \
+# Create a note for Alice
+curl -X POST http://localhost:8000/walker/create_note \
   -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "secret123"}'
+  -d '{
+    "title": "Alice Private Note",
+    "content": "Secret content",
+    "owner": "alice@example.com"
+  }'
 
-# Login to get access token
-curl -X POST http://localhost:8000/user/login \
+# Create a note for Bob
+curl -X POST http://localhost:8000/walker/create_note \
   -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "secret123"}'
+  -d '{
+    "title": "Bob Note",
+    "content": "Bob content",
+    "owner": "bob@example.com"
+  }'
 
-# Use token to create a note
-curl -X POST http://localhost:8000/create_note \
+# Get Alice's notes only
+curl -X POST http://localhost:8000/walker/list_my_notes \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -d '{"title": "My Private Note", "content": "Secret content"}'
+  -d '{"user_id": "alice@example.com"}'
 ```
 
 ---
@@ -305,6 +312,7 @@ Multi-user applications often need controlled sharing of data between users. Let
 
     walker share_note {
         has note_id: str;
+        has current_user: str;
         has target_user: str;
         has permission_level: str = "read";  # "read" or "write"
 
@@ -319,7 +327,7 @@ Multi-user applications often need controlled sharing of data between users. Let
             note = target_note[0];
 
             # Only owner can share notes
-            if note.owner != __user__ {
+            if note.owner != self.current_user {
                 report {"error": "Only note owner can share"};
                 return;
             }
@@ -338,6 +346,8 @@ Multi-user applications often need controlled sharing of data between users. Let
     }
 
     walker get_accessible_notes {
+        has user_id: str;
+
         can fetch_all_accessible with `root entry {
             all_notes = [-->(`?Note)];
             accessible_notes = [];
@@ -347,24 +357,24 @@ Multi-user applications often need controlled sharing of data between users. Let
                 # 1. They own it
                 # 2. It's shared with them
                 # 3. It's public
-                if (note.owner == __user__ or
-                    __user__ in note.shared_with or
+                if (note.owner == self.user_id or
+                    self.user_id in note.shared_with or
                     note.is_public) {
 
                     accessible_notes.append({
                         "id": note.id,
                         "title": note.title,
                         "owner": note.owner,
-                        "is_mine": note.owner == __user__,
-                        "access_type": "owner" if note.owner == __user__
-                                      else ("shared" if __user__ in note.shared_with
+                        "is_mine": note.owner == self.user_id,
+                        "access_type": "owner" if note.owner == self.user_id
+                                      else ("shared" if self.user_id in note.shared_with
                                            else "public")
                     });
                 }
             }
 
             report {
-                "user": __user__,
+                "user": self.user_id,
                 "accessible_notes": accessible_notes,
                 "total": len(accessible_notes)
             };
@@ -374,12 +384,13 @@ Multi-user applications often need controlled sharing of data between users. Let
     walker create_public_note {
         has title: str;
         has content: str;
+        has owner: str;
 
         can create_shared_note with `root entry {
             new_note = Note(
                 title=self.title,
                 content=self.content,
-                owner=__user__,
+                owner=self.owner,
                 is_public=True
             );
             here ++> new_note;
@@ -396,39 +407,35 @@ Multi-user applications often need controlled sharing of data between users. Let
 ### Testing Note Sharing
 
 ```bash
-# Create two users
-curl -X POST http://localhost:8000/user/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "secret123"}'
-
-curl -X POST http://localhost:8000/user/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "bob@example.com", "password": "secret123"}'
-
 # Alice creates a note
-curl -X POST http://localhost:8000/create_note \
+curl -X POST http://localhost:8000/walker/create_note \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ALICE_TOKEN" \
-  -d '{"title": "Team Project", "content": "Project details"}'
+  -d '{
+    "title": "Team Project",
+    "content": "Project details",
+    "owner": "alice@example.com"
+  }'
 
 # Alice shares note with Bob
-curl -X POST http://localhost:8000/share_note \
+curl -X POST http://localhost:8000/walker/share_note \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ALICE_TOKEN" \
-  -d '{"note_id": "note_123", "target_user": "bob@example.com"}'
+  -d '{
+    "note_id": "note_123",
+    "current_user": "alice@example.com",
+    "target_user": "bob@example.com"
+  }'
 
 # Bob views accessible notes
-curl -X POST http://localhost:8000/get_accessible_notes \
+curl -X POST http://localhost:8000/walker/get_accessible_notes \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer BOB_TOKEN" \
-  -d '{}'
+  -d '{"user_id": "bob@example.com"}'
 ```
 
 ---
 
 ## Security Considerations
 
-When building multi-user systems, security must be a primary concern. Jac Cloud provides several layers of protection, but application-level security patterns are equally important.
+When building multi-user systems, security must be a primary concern. Application-level security patterns are essential for protecting user data.
 
 ### Secure Data Access Patterns
 
@@ -437,6 +444,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
     # secure_notebook.jac
     walker get_note {
         has note_id: str;
+        has user_id: str;
 
         can fetch_note_securely with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);
@@ -450,9 +458,9 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
 
             # Security check: Verify user has access
             has_access = (
-                note.owner == __user__ or           # User owns it
-                __user__ in note.shared_with or     # Shared with user
-                note.is_public                      # Public note
+                note.owner == self.user_id or           # User owns it
+                self.user_id in note.shared_with or     # Shared with user
+                note.is_public                          # Public note
             );
 
             if not has_access {
@@ -465,7 +473,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
                 "id": note.id,
                 "title": note.title,
                 "owner": note.owner,
-                "access_level": "owner" if note.owner == __user__ else "shared"
+                "access_level": "owner" if note.owner == self.user_id else "shared"
             };
 
             # Only include content if user has read access
@@ -479,6 +487,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
 
     walker delete_note {
         has note_id: str;
+        has user_id: str;
 
         can remove_note_securely with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);
@@ -491,7 +500,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
             note = target_note[0];
 
             # Security check: Only owner can delete
-            if note.owner != __user__ {
+            if note.owner != self.user_id {
                 report {"error": "Only note owner can delete"};
                 return;
             }
@@ -505,6 +514,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
 
     walker update_note {
         has note_id: str;
+        has user_id: str;
         has title: str = "";
         has content: str = "";
 
@@ -519,7 +529,7 @@ When building multi-user systems, security must be a primary concern. Jac Cloud 
             note = target_note[0];
 
             # Security check: Only owner can modify
-            if note.owner != __user__ {
+            if note.owner != self.user_id {
                 report {"error": "Only note owner can modify"};
                 return;
             }
@@ -579,31 +589,34 @@ Different applications require different access control models. Let's implement 
     }
 
     walker check_user_role {
+        has user_id: str;
+
         can get_current_user_role with `root entry {
-            user_profile = [-->(`?UserProfile)](?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == self.user_id);
 
             if user_profile {
                 current_role = user_profile[0].role;
             } else {
                 # Create default profile for new user
-                new_profile = UserProfile(email=__user__);
+                new_profile = UserProfile(email=self.user_id);
                 here ++> new_profile;
                 current_role = Role.VIEWER;
             }
 
-            report {"user": __user__, "role": current_role.value};
+            report {"user": self.user_id, "role": current_role.value};
         }
     }
 
     walker create_role_based_note {
         has title: str;
         has content: str;
+        has owner: str;
         has required_role: str = "viewer";
         has is_sensitive: bool = False;
 
         can create_with_role_check with `root entry {
             # Get user's role
-            user_profile = [-->(`?UserProfile)](?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == self.owner);
 
             if not user_profile {
                 report {"error": "User profile not found"};
@@ -621,7 +634,7 @@ Different applications require different access control models. Let's implement 
             new_note = Note(
                 title=self.title,
                 content=self.content,
-                owner=__user__,
+                owner=self.owner,
                 required_role=Role(self.required_role),
                 is_sensitive=self.is_sensitive
             );
@@ -636,9 +649,11 @@ Different applications require different access control models. Let's implement 
     }
 
     walker get_role_filtered_notes {
+        has user_id: str;
+
         can fetch_accessible_by_role with `root entry {
             # Get user's role
-            user_profile = [-->(`?UserProfile)](?email == __user__);
+            user_profile = [-->(`?UserProfile)](?email == self.user_id);
 
             if not user_profile {
                 report {"notes": [], "message": "No user profile found"};
@@ -652,7 +667,7 @@ Different applications require different access control models. Let's implement 
             for note in all_notes {
                 # Check if user meets role requirement
                 can_access = (
-                    note.owner == __user__ or  # Always access own notes
+                    note.owner == self.user_id or  # Always access own notes
                     (user_role == Role.ADMIN) or  # Admins see everything
                     (user_role == Role.EDITOR and note.required_role != Role.ADMIN) or
                     (user_role == Role.VIEWER and note.required_role == Role.VIEWER)
@@ -682,27 +697,25 @@ Different applications require different access control models. Let's implement 
 
 ```bash
 # Check user role
-curl -X POST http://localhost:8000/check_user_role \
+curl -X POST http://localhost:8000/walker/check_user_role \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer USER_TOKEN" \
-  -d '{}'
+  -d '{"user_id": "alice@example.com"}'
 
 # Create a note requiring editor role
-curl -X POST http://localhost:8000/create_role_based_note \
+curl -X POST http://localhost:8000/walker/create_role_based_note \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer USER_TOKEN" \
   -d '{
     "title": "Editor Note",
     "content": "Only editors can see this",
+    "owner": "alice@example.com",
     "required_role": "editor",
-    "is_sensitive": True
+    "is_sensitive": true
   }'
 
 # Get notes filtered by role
-curl -X POST http://localhost:8000/get_role_filtered_notes \
+curl -X POST http://localhost:8000/walker/get_role_filtered_notes \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer USER_TOKEN" \
-  -d '{}'
+  -d '{"user_id": "alice@example.com"}'
 ```
 
 ---
@@ -710,8 +723,8 @@ curl -X POST http://localhost:8000/get_role_filtered_notes \
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Built-in User Management**: Jac Cloud handles authentication automatically
-    - **User Context Injection**: `__user__` provides current user in all walkers
+    - **User Context Patterns**: Implement user identification in walkers
+    - **Data Isolation**: Filter data based on ownership and permissions
     - **Permission Patterns**: Multiple access control strategies for different needs
     - **Security-First Design**: Always verify permissions before data operations
     - **Flexible Sharing**: Fine-grained control over data access between users
@@ -720,7 +733,7 @@ curl -X POST http://localhost:8000/get_role_filtered_notes \
 
 In the upcoming chapters, we'll explore:
 
-- **Chapter 16**: Advanced Jac Cloud features like WebSockets and real-time updates
+- **Chapter 16**: Advanced Jac Cloud features like real-time updates and configuration
 - **Chapter 17**: Type system deep dive for robust multi-user applications
 - **Chapter 18**: Testing and debugging multi-user scenarios
 

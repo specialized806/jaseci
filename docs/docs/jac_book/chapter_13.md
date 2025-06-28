@@ -33,7 +33,7 @@ Traditional programming requires explicit database setup, connection management,
     === "Traditional Approach"
         ```python
         # counter_api.py - Manual database setup required
-        from flask import Flask, jsonify
+        from flask import Flask, jsonify, request
         import sqlite3
         import os
 
@@ -93,8 +93,6 @@ Traditional programming requires explicit database setup, connection management,
     === "Jac Automatic Persistence"
         ```jac
         # main.jac - No database setup needed
-        import:py from mtllm.llms, Ollama;
-
         node Counter {
             has value: int = 0;
 
@@ -264,26 +262,36 @@ jac serve main.jac
 
 ```bash
 # First request - Create counter
-curl http://localhost:8000/get_counter_endpoint
-# Response: {"value": 0, "status": "created"}
+curl -X POST http://localhost:8000/walker/get_counter \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"value": 0, "status": "created"}]}
 
 # Increment the counter
-curl -X POST http://localhost:8000/increment_counter_endpoint
-# Response: {"value": 1, "previous": 0}
+curl -X POST http://localhost:8000/walker/increment_counter \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"value": 1, "previous": 0}]}
 
 # Increment again
-curl -X POST http://localhost:8000/increment_counter_endpoint
-# Response: {"value": 2, "previous": 1}
+curl -X POST http://localhost:8000/walker/increment_counter \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"value": 2, "previous": 1}]}
 
 # Check counter value
-curl http://localhost:8000/get_counter_endpoint
-# Response: {"value": 2, "status": "existing"}
+curl -X POST http://localhost:8000/walker/get_counter \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"value": 2, "status": "existing"}]}
 
 # Restart the service (Ctrl+C, then jac serve main.jac again)
 
 # Counter value persists after restart
-curl http://localhost:8000/get_counter_endpoint
-# Response: {"value": 2, "status": "existing"}
+curl -X POST http://localhost:8000/walker/get_counter \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"value": 2, "status": "existing"}]}
 ```
 
 !!! tip "Persistence in Action"
@@ -302,7 +310,7 @@ Let's enhance our counter to track increment history:
 !!! example "Counter with History Tracking"
     ```jac
     # main.jac - Enhanced with history
-    import:py from datetime, datetime;
+    import from datetime { datetime };
 
     node Counter {
         has value: int = 0;
@@ -389,17 +397,29 @@ Let's enhance our counter to track increment history:
 jac serve main.jac
 
 # Multiple increments to build history
-curl -X POST http://localhost:8000/increment_with_history_endpoint
-curl -X POST http://localhost:8000/increment_with_history_endpoint
-curl -X POST http://localhost:8000/increment_with_history_endpoint
+curl -X POST http://localhost:8000/walker/increment_with_history \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+curl -X POST http://localhost:8000/walker/increment_with_history \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+curl -X POST http://localhost:8000/walker/increment_with_history \
+  -H "Content-Type: application/json" \
+  -d '{}'
 
 # Check counter with complete history
-curl http://localhost:8000/get_counter_with_history_endpoint
+curl -X POST http://localhost:8000/walker/get_counter_with_history \
+  -H "Content-Type: application/json" \
+  -d '{}'
 # Response includes value and complete history array
 
 # Restart service - history persists
 # jac serve main.jac (after restart)
-curl http://localhost:8000/get_counter_with_history_endpoint
+curl -X POST http://localhost:8000/walker/get_counter_with_history \
+  -H "Content-Type: application/json" \
+  -d '{}'
 # All history entries remain intact
 ```
 
@@ -412,7 +432,7 @@ The automatic persistence enables building sophisticated stateful applications. 
 !!! example "Multi-Counter Management System"
     ```jac
     # main.jac - Multi-counter system
-    import:py from datetime, datetime;
+    import from datetime { datetime }
 
     node CounterManager {
         has created_at: str;
@@ -516,26 +536,28 @@ The automatic persistence enables building sophisticated stateful applications. 
 
 ```bash
 # Create multiple counters
-curl -X POST "http://localhost:8000/create_counter_endpoint" \
+curl -X POST "http://localhost:8000/walker/create_counter" \
      -H "Content-Type: application/json" \
      -d '{"name": "page_views"}'
 
-curl -X POST "http://localhost:8000/create_counter_endpoint" \
+curl -X POST "http://localhost:8000/walker/create_counter" \
      -H "Content-Type: application/json" \
      -d '{"name": "user_signups"}'
 
 # Increment specific counters
-curl -X POST "http://localhost:8000/increment_named_counter_endpoint" \
+curl -X POST "http://localhost:8000/walker/increment_named_counter" \
      -H "Content-Type: application/json" \
      -d '{"name": "page_views", "amount": 5}'
 
-curl -X POST "http://localhost:8000/increment_named_counter_endpoint" \
+curl -X POST "http://localhost:8000/walker/increment_named_counter" \
      -H "Content-Type: application/json" \
      -d '{"name": "user_signups", "amount": 2}'
 
 # View all counters
-curl http://localhost:8000/get_all_counters_endpoint
-# Response: {"counters": [{"name": "page_views", "value": 5}, {"name": "user_signups", "value": 2}], "total": 7}
+curl -X POST http://localhost:8000/walker/get_all_counters \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# Response: {"returns": [{"counters": [{"name": "page_views", "value": 5}, {"name": "user_signups", "value": 2}], "total": 7}]}
 ```
 
 ---

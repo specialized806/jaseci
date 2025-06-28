@@ -19,7 +19,7 @@ Jac Cloud is a cloud-native execution environment designed specifically for Jac 
     - **Automatic APIs**: Walkers become REST endpoints automatically
     - **Built-in Persistence**: Data storage handled transparently
     - **Instant Scaling**: Scale by increasing service replicas
-    - **User Management**: Authentication and authorization built-in
+    - **Developer Focus**: No infrastructure management needed
 
 ### Traditional vs Jac Cloud Development
 
@@ -64,14 +64,6 @@ Jac Cloud is a cloud-native execution environment designed specifically for Jac 
 
 Let's start with a minimal weather API example and gradually enhance it throughout this chapter.
 
-### Installation
-
-First, install Jac Cloud:
-
-```bash
-pip install jac-cloud
-```
-
 ### Your First Cloud Application
 
 !!! example "Basic Weather Service"
@@ -97,7 +89,7 @@ pip install jac-cloud
     === "Python Equivalent"
         ```python
         # weather_service.py - Would need Flask/FastAPI setup
-        from flask import Flask, jsonify
+        from flask import Flask, jsonify, request
 
         app = Flask(__name__)
 
@@ -264,10 +256,10 @@ Jac Cloud automatically transforms your walkers into RESTful API endpoints. Let'
 
 ### Testing Your API
 
-Once deployed with `jac serve enhanced_weather.jac`, test your API:
+Once deployed with `jac serve enhanced_weather.jac`, test your API (all walker endpoints are POST):
 
 ```bash
-curl -X POST http://localhost:8000/get_weather \
+curl -X POST http://localhost:8000/walker/get_weather \
   -H "Content-Type: application/json" \
   -d '{"city": "New York"}'
 ```
@@ -275,10 +267,14 @@ curl -X POST http://localhost:8000/get_weather \
 !!! success "API Response"
     ```json
     {
-        "city": "New York",
-        "temperature": "25°C",
-        "condition": "Sunny",
-        "cached": false
+        "returns": [
+            {
+                "city": "New York",
+                "temperature": "25°C",
+                "condition": "Sunny",
+                "cached": false
+            }
+        ]
     }
     ```
 
@@ -391,25 +387,25 @@ Let's add more functionality to demonstrate API scalability:
 When you deploy with `jac serve complete_weather.jac`, you automatically get:
 
 !!! info "Generated API Endpoints"
-    - `POST /get_weather` - Fetch weather for a city
-    - `POST /add_city` - Add weather data for a city
-    - `POST /list_cities` - List all available cities
+    - `POST /walker/get_weather` - Fetch weather for a city
+    - `POST /walker/add_city` - Add weather data for a city
+    - `POST /walker/list_cities` - List all available cities
 
 ### Testing Multiple Endpoints
 
 ```bash
 # Add a city
-curl -X POST http://localhost:8000/add_city \
+curl -X POST http://localhost:8000/walker/add_city \
   -H "Content-Type: application/json" \
   -d '{"city": "London", "temperature": 18, "condition": "Rainy"}'
 
 # List all cities
-curl -X POST http://localhost:8000/list_cities \
+curl -X POST http://localhost:8000/walker/list_cities \
   -H "Content-Type: application/json" \
   -d '{}'
 
 # Get weather for London
-curl -X POST http://localhost:8000/get_weather \
+curl -X POST http://localhost:8000/walker/get_weather \
   -H "Content-Type: application/json" \
   -d '{"city": "London"}'
 ```
@@ -430,7 +426,7 @@ curl -X POST http://localhost:8000/get_weather \
 In the upcoming chapters, we'll explore:
 
 - **Chapter 15**: Multi-user architecture and permissions
-- **Chapter 16**: Advanced Jac Cloud features like WebSockets and task scheduling
+- **Chapter 16**: Advanced Jac Cloud features like configuration and monitoring
 - **Chapter 17**: Type system deep dive for robust cloud applications
 
 !!! tip "Try It Yourself"

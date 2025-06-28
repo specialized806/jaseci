@@ -18,7 +18,7 @@ Traditional web development requires explicit route definitions, request parsing
 !!! success "API Generation Benefits"
     - **Zero Configuration**: No route definitions or HTTP handlers needed
     - **Type Safety**: Parameters automatically validated from walker attributes
-    - **Instant REST**: Every walker becomes a POST endpoint immediately
+    - **Instant REST**: Every walker becomes an endpoint immediately
     - **Request Parsing**: JSON request bodies mapped to walker attributes
     - **Response Formatting**: Walker reports become JSON responses
 
@@ -131,10 +131,6 @@ Let's start with a simple notebook where users can create and view notes:
             has content: str;
             has author: str;
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
-
             can process_creation with `root entry {
                 # Create and connect note to root
                 new_note = Note(
@@ -198,10 +194,6 @@ Let's start with a simple notebook where users can create and view notes:
             app.run()
         ```
 
-!!! tip "Authentication"
-    Jac requires authentication for all walkers by default. You can disable this by setting `static has auth: bool = False;` in the walker spec.
-
-
 ### Deployment and Testing
 
 Deploy your notebook API:
@@ -210,10 +202,10 @@ Deploy your notebook API:
 jac serve simple_notebook.jac
 ```
 
-Test the API endpoint:
+Test the API endpoint (all walker endpoints are POST):
 
 ```bash
-curl -X POST http://localhost:8000/create_note \
+curl -X POST http://localhost:8000/walker/create_note \
   -H "Content-Type: application/json" \
   -d '{
     "title": "My First Note",
@@ -225,8 +217,7 @@ curl -X POST http://localhost:8000/create_note \
 !!! success "API Response"
     ```json
     {
-        "status": 200,
-        "reports": [
+        "returns": [
             {
                 "status": "created",
                 "note": {
@@ -265,10 +256,6 @@ Jac automatically validates request parameters based on walker attribute types. 
         has priority: int = 1;
         has tags: list[str] = [];
 
-        obj __specs__ {
-            static has auth: bool = False;
-        }
-
         can validate_and_create with `root entry {
             # Jac automatically validates types before this runs
 
@@ -302,7 +289,6 @@ Jac automatically validates request parameters based on walker attribute types. 
     }
     ```
 
-
 ### Testing Validation
 
 ```bash
@@ -318,7 +304,7 @@ curl -X POST http://localhost:8000/walker/create_note \
   }'
 
 # Invalid request - priority out of range
-curl -X POST http://localhost:8000/create_note \
+curl -X POST http://localhost:8000/walker/create_note \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Test",
@@ -342,7 +328,7 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
 !!! example "Full CRUD Notebook System"
 
     ```jac
-    import uuid;
+    import from uuid { uuid4 }
 
     # complete_notebook.jac
     node Note {
@@ -351,7 +337,7 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
         has author: str;
         has priority: int = 1;
         has created_at: str = "2024-01-15";
-        has id: str = "note_" + str(uuid.uuid4());
+        has id: str;
     }
 
     # CREATE - Add new note
@@ -361,26 +347,19 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
         has author: str;
         has priority: int = 1;
 
-        obj __specs__ {
-            static has auth: bool = False;
-        }
-
         can add_note with `root entry {
             new_note = Note(
                 title=self.title, content=self.content,
-                author=self.author, priority=self.priority
+                author=self.author, priority=self.priority,
+                id="note_" + str(uuid4())
             );
             here ++> new_note;
-            report {"message": "Note created", "title": new_note.title};
+            report {"message": "Note created", "id": new_note.id};
         }
     }
 
     # READ - Get all notes
     walker list_notes {
-        obj __specs__ {
-            static has auth: bool = False;
-        }
-
         can get_all_notes with `root entry {
             all_notes = [-->(`?Note)];
             report {
@@ -401,10 +380,6 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
     # READ - Get specific note
     walker get_note {
         has note_id: str;
-
-        obj __specs__ {
-            static has auth: bool = False;
-        }
 
         can fetch_note with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);
@@ -432,10 +407,6 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
         has title: str = "";
         has content: str = "";
         has priority: int = 0;
-
-        obj __specs__ {
-            static has auth: bool = False;
-        }
 
         can modify_note with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);
@@ -465,10 +436,6 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
     walker delete_note {
         has note_id: str;
 
-        obj __specs__ {
-            static has auth: bool = False;
-        }
-
         can remove_note with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);
 
@@ -476,7 +443,7 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
                 note = target_note[0];
                 # Delete the node and its connections
                 del note;
-                report {"message": "Note deleted"};
+                report {"message": "Note deleted", "id": self.note_id};
             } else {
                 report {"error": "Note not found"};
             }
@@ -508,7 +475,7 @@ curl -X POST http://localhost:8000/walker/update_note \
   -d '{"note_id": "note_123", "priority": 5}'
 
 # Delete a note
-curl -X POST http://localhost:8000/delete_note \
+curl -X POST http://localhost:8000/walker/delete_note \
   -H "Content-Type: application/json" \
   -d '{"note_id": "note_123"}'
 ```
@@ -521,7 +488,7 @@ Let's add basic permission checking to demonstrate multi-user patterns:
 
 !!! example "Notebook with User Permissions"
     ```jac  linenums="1"
-    import uuid;
+    import from uuid { uuid4 }
 
     # shared_notebook.jac
     node Note {
@@ -530,7 +497,7 @@ Let's add basic permission checking to demonstrate multi-user patterns:
         has author: str;
         has shared_with: list[str] = [];
         has is_public: bool = false;
-        has id: str = "note_" + str(uuid.uuid4());
+        has id: str;
     }
 
     walker create_shared_note {
@@ -540,17 +507,14 @@ Let's add basic permission checking to demonstrate multi-user patterns:
         has shared_with: list[str] = [];
         has is_public: bool = false;
 
-        obj __specs__ {
-            static has auth: bool = False;
-        }
-
         can create_note with `root entry {
             new_note = Note(
                 title=self.title,
                 content=self.content,
                 author=self.author,
                 shared_with=self.shared_with,
-                is_public=self.is_public
+                is_public=self.is_public,
+                id="note_" + str(uuid4())
             );
             here ++> new_note;
 
@@ -565,10 +529,6 @@ Let's add basic permission checking to demonstrate multi-user patterns:
 
     walker get_user_notes {
         has user: str;
-
-        obj __specs__ {
-            static has auth: bool = False;
-        }
 
         can fetch_accessible_notes with `root entry {
             all_notes = [-->(`?Note)];
@@ -601,10 +561,6 @@ Let's add basic permission checking to demonstrate multi-user patterns:
         has note_id: str;
         has user: str;
         has share_with: str;
-
-        obj __specs__ {
-            static has auth: bool = False;
-        }
 
         can add_share_permission with `root entry {
             target_note = [-->(`?Note)](?id == self.note_id);

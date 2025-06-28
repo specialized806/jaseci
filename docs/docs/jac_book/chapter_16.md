@@ -1,13 +1,13 @@
 # Chapter 16: Advanced Jac Cloud Features
 
-In this chapter, we'll explore advanced Jac Cloud capabilities that enable real-time communication, configuration management, and monitoring. We'll build a simple chat room system that demonstrates WebSocket connections, environment configuration, and task scheduling through practical examples.
+In this chapter, we'll explore advanced Jac Cloud capabilities that enable configuration management, monitoring, and external integrations. We'll build a comprehensive chat room system that demonstrates environment configuration, logging, and webhook integration through practical examples.
 
 !!! info "What You'll Learn"
     - Environment variables and application configuration
-    - Real-time communication with WebSocket support
-    - Webhook integration for external services
     - Logging and monitoring capabilities
-    - Task scheduling and automated processes
+    - Webhook integration for external services
+    - Advanced deployment patterns
+    - Performance optimization strategies
 
 ---
 
@@ -237,24 +237,24 @@ DEBUG=true
 Deploy with environment variables:
 
 ```bash
-# Local with environment file
-export MAX_ROOMS=20 && jac serve simple_chat.jac
+# Local with environment variables
+MAX_ROOMS=20 jac serve simple_chat.jac
 
-# Cloud deployment with config
-jac serve simple_chat.jac --env-file .env
+# Or using .env file (if supported by your environment)
+jac serve simple_chat.jac
 ```
 
 ---
 
-## WebSocket Communication
+## Message Management and Storage
 
-Real-time applications require bi-directional communication. Jac Cloud provides first-class WebSocket support that integrates seamlessly with your walker-based architecture.
+Instead of WebSockets, let's focus on RESTful message management that works with jac-cloud's current capabilities:
 
-### Adding Real-Time Messaging
+### Message Storage Implementation
 
-!!! example "WebSocket Chat Implementation"
+!!! example "RESTful Chat Implementation"
     ```jac
-    # realtime_chat.jac
+    # message_chat.jac
     import from datetime { datetime }
 
     node ChatMessage {
@@ -282,7 +282,7 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         }
 
         can get_recent_messages(limit: int = 20) -> list[dict] {
-            messages = [-->(`?ChatMessage)];
+            messages = [self --> ChatMessage];
             recent = messages[-limit:] if len(messages) > limit else messages;
             return [
                 {
@@ -295,13 +295,12 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
         }
     }
 
-    # WebSocket walker for real-time communication
     walker send_message {
         has room_name: str;
         has username: str;
         has message: str;
 
-        can broadcast_message with `root entry {
+        can process_message with `root entry {
             # Find the room
             room = [-->(`?ChatRoom)](?name == self.room_name);
 
@@ -321,22 +320,11 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
             # Add message
             new_message = room.add_message(self.username, self.message);
 
-            # Broadcast to all connected users (WebSocket magic)
-            broadcast_data = {
-                "type": "new_message",
-                "room": self.room_name,
-                "message": {
-                    "content": new_message.content,
-                    "sender": new_message.sender,
-                    "timestamp": new_message.timestamp
-                }
+            report {
+                "status": "message_sent",
+                "message_id": new_message.id,
+                "timestamp": new_message.timestamp
             };
-
-            # This automatically sends to all WebSocket connections
-            # subscribed to this room
-            websocket_broadcast(self.room_name, broadcast_data);
-
-            report {"status": "message_sent", "message_id": new_message.id};
         }
     }
 
@@ -357,123 +345,31 @@ Real-time applications require bi-directional communication. Jac Cloud provides 
     }
     ```
 
-### WebSocket Connection Management
+### Testing Message API
 
-!!! example "WebSocket Connection Walker"
-    ```jac
-    # websocket_manager.jac
-    walker connect_websocket {
-        has room_name: str;
-        has username: str;
-
-        can handle_connection with `root entry {
-            # Find or create room
-            room = [-->(`?ChatRoom)](?name == self.room_name);
-
-            if not room {
-                room = ChatRoom(name=self.room_name);
-                here ++> room;
-            } else {
-                room = room[0];
-            }
-
-            # Add user to room
-            room.users.add(self.username);
-
-            # Subscribe to room's WebSocket channel
-            websocket_subscribe(self.room_name);
-
-            # Send initial room state
-            recent_messages = room.get_recent_messages(10);
-
-            report {
-                "type": "connection_established",
-                "room": self.room_name,
-                "users": list(room.users),
-                "recent_messages": recent_messages
-            };
-
-            # Notify other users
-            broadcast_data = {
-                "type": "user_joined",
-                "room": self.room_name,
-                "username": self.username,
-                "user_count": len(room.users)
-            };
-            websocket_broadcast(self.room_name, broadcast_data);
-        }
-    }
-
-    walker disconnect_websocket {
-        has room_name: str;
-        has username: str;
-
-        can handle_disconnection with `root entry {
-            room = [-->(`?ChatRoom)](?name == self.room_name);
-
-            if room {
-                room = room[0];
-                room.users.discard(self.username);
-
-                # Notify other users
-                broadcast_data = {
-                    "type": "user_left",
-                    "room": self.room_name,
-                    "username": self.username,
-                    "user_count": len(room.users)
-                };
-                websocket_broadcast(self.room_name, broadcast_data);
-
-                report {"status": "disconnected"};
-            }
-        }
-    }
-    ```
-
-### Testing WebSocket Chat
-
-Deploy the WebSocket-enabled chat:
+Deploy the message-enabled chat:
 
 ```bash
-jac serve realtime_chat.jac --websocket
+jac serve message_chat.jac
 ```
 
-Test with a simple JavaScript client:
+Test with curl (all walker endpoints are POST):
 
-```html
-<!-- chat_client.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Jac Chat Room</title>
-</head>
-<body>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Type a message...">
-    <button onclick="sendMessage()">Send</button>
+```bash
+# Join a room first
+curl -X POST http://localhost:8000/walker/join_room \
+  -H "Content-Type: application/json" \
+  -d '{"room_name": "general", "username": "alice"}'
 
-    <script>
-        const ws = new WebSocket('ws://localhost:8000/ws');
+# Send a message
+curl -X POST http://localhost:8000/walker/send_message \
+  -H "Content-Type: application/json" \
+  -d '{"room_name": "general", "username": "alice", "message": "Hello everyone!"}'
 
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            const messages = document.getElementById('messages');
-            messages.innerHTML += `<div>${data.sender}: ${data.message}</div>`;
-        };
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            ws.send(JSON.stringify({
-                walker: 'send_message',
-                room_name: 'general',
-                username: 'user1',
-                message: input.value
-            }));
-            input.value = '';
-        }
-    </script>
-</body>
-</html>
+# Get chat history
+curl -X POST http://localhost:8000/walker/get_chat_history \
+  -H "Content-Type: application/json" \
+  -d '{"room_name": "general", "limit": 10}'
 ```
 
 ---
@@ -558,18 +454,6 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
 
             # Add message
             room.add_message(sender, message);
-
-            # Broadcast via WebSocket
-            broadcast_data = {
-                "type": "webhook_message",
-                "room": room_name,
-                "message": {
-                    "content": message,
-                    "sender": sender,
-                    "timestamp": datetime.now().isoformat()
-                }
-            };
-            websocket_broadcast(room_name, broadcast_data);
         }
     }
 
@@ -605,22 +489,12 @@ Webhooks enable your Jac applications to receive real-time notifications from ex
     }
     ```
 
-### Webhook Registration
-
-Configure webhook endpoints:
-
-```bash
-# Deploy with webhook support
-jac serve webhook_chat.jac --webhooks
-
-# Register webhook URL with external service
-# POST to: http://your-domain.com/webhook/receive_webhook
-```
+### Testing Webhooks
 
 Test webhook locally:
 
 ```bash
-curl -X POST http://localhost:8000/webhook/receive_webhook \
+curl -X POST http://localhost:8000/walker/receive_webhook \
   -H "Content-Type: application/json" \
   -d '{
     "source": "github",
@@ -782,9 +656,9 @@ Production applications require comprehensive logging and monitoring. Jac Cloud 
 
 ---
 
-## Task Scheduling and Cron Jobs
+## Background Tasks and Cleanup
 
-Automated tasks are essential for maintenance, cleanup, and periodic operations. Jac Cloud supports scheduled tasks that integrate with your walker-based architecture.
+Automated tasks are essential for maintenance, cleanup, and periodic operations.
 
 ### Scheduled Chat Maintenance
 
@@ -793,7 +667,7 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
     # scheduled_chat.jac
     import from datetime { datetime, timedelta }
 
-    # Scheduled walker for cleanup tasks
+    # Cleanup walker for maintenance tasks
     walker cleanup_inactive_rooms {
         has max_age_hours: int = 24;
 
@@ -808,7 +682,7 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
                 # Check if room has been inactive
                 if len(room.users) == 0 {
                     # Get latest message
-                    messages = [-->(`?ChatMessage)](?room_name == room.name);
+                    messages = [room --> ChatMessage];
 
                     if not messages {
                         # No messages, delete empty room
@@ -890,31 +764,18 @@ Automated tasks are essential for maintenance, cleanup, and periodic operations.
     }
     ```
 
-### Scheduling Configuration
-
-Configure scheduled tasks:
+### Manual Task Execution
 
 ```bash
-# Deploy with scheduler
-jac serve scheduled_chat.jac --schedule
+# Run cleanup manually
+curl -X POST http://localhost:8000/walker/cleanup_inactive_rooms \
+  -H "Content-Type: application/json" \
+  -d '{"max_age_hours": 48}'
 
-# Add cron jobs via environment or config
-export CRON_CLEANUP_ROOMS="0 2 * * *"  # Daily at 2 AM
-export CRON_DAILY_STATS="0 1 * * *"    # Daily at 1 AM
-```
-
-Or configure in a schedule file:
-
-```yaml
-# schedule.yaml
-tasks:
-  - walker: cleanup_inactive_rooms
-    schedule: "0 2 * * *"  # Every day at 2 AM
-    params:
-      max_age_hours: 48
-
-  - walker: generate_daily_stats
-    schedule: "0 1 * * *"  # Every day at 1 AM
+# Generate daily stats
+curl -X POST http://localhost:8000/walker/generate_daily_stats \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 ---
@@ -923,10 +784,10 @@ tasks:
 
 !!! summary "What We've Learned"
     - **Environment Configuration**: Flexible settings management across environments
-    - **Real-Time Communication**: WebSocket integration for live applications
+    - **RESTful Architecture**: Building scalable APIs with walker endpoints
     - **Webhook Integration**: Seamless external service integration
     - **Structured Logging**: Built-in observability and monitoring
-    - **Task Scheduling**: Automated maintenance and periodic operations
+    - **Background Tasks**: Automated maintenance and data management
 
 ### Next Steps
 
