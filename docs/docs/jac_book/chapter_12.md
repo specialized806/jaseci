@@ -676,12 +676,14 @@ curl -X POST http://localhost:8000/walker/share_note \
 ### Next Steps
 
 In the upcoming chapters, we'll explore:
+
 - **Chapter 13**: Automatic persistence for stateful applications
 - **Chapter 14**: Deploying to Jac Cloud for infinite scale
 - **Chapter 15**: Advanced user management and authentication
 
 !!! tip "Try It Yourself"
     Experiment with the notebook system by adding:
+
     - Note categories or folders
     - Full-text search across notes
     - Note revision history
