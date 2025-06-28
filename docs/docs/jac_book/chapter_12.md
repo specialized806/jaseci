@@ -26,7 +26,6 @@ Traditional web development requires explicit route definitions, request parsing
 
 !!! example "API Development Comparison"
     === "Jac Automatic APIs"
-
         ```jac
         # notebook.jac - No manual API setup needed
         node Note {
@@ -343,146 +342,146 @@ Walkers naturally map to REST operations, creating intuitive API patterns for co
 !!! example "Full CRUD Notebook System"
 
     ```jac
-        import uuid;
+    import uuid;
 
-        # complete_notebook.jac
-        node Note {
-            has title: str;
-            has content: str;
-            has author: str;
-            has priority: int = 1;
-            has created_at: str = "2024-01-15";
-            has id: str = "note_" + str(uuid.uuid4());
+    # complete_notebook.jac
+    node Note {
+        has title: str;
+        has content: str;
+        has author: str;
+        has priority: int = 1;
+        has created_at: str = "2024-01-15";
+        has id: str = "note_" + str(uuid.uuid4());
+    }
+
+    # CREATE - Add new note
+    walker create_note {
+        has title: str;
+        has content: str;
+        has author: str;
+        has priority: int = 1;
+
+        obj __specs__ {
+            static has auth: bool = False;
         }
 
-        # CREATE - Add new note
-        walker create_note {
-            has title: str;
-            has content: str;
-            has author: str;
-            has priority: int = 1;
+        can add_note with `root entry {
+            new_note = Note(
+                title=self.title, content=self.content,
+                author=self.author, priority=self.priority
+            );
+            here ++> new_note;
+            report {"message": "Note created", "title": new_note.title};
+        }
+    }
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
-
-            can add_note with `root entry {
-                new_note = Note(
-                    title=self.title, content=self.content,
-                    author=self.author, priority=self.priority
-                );
-                here ++> new_note;
-                report {"message": "Note created", "title": new_note.title};
-            }
+    # READ - Get all notes
+    walker list_notes {
+        obj __specs__ {
+            static has auth: bool = False;
         }
 
-        # READ - Get all notes
-        walker list_notes {
-            obj __specs__ {
-                static has auth: bool = False;
-            }
+        can get_all_notes with `root entry {
+            all_notes = [-->(`?Note)];
+            report {
+                "notes": [
+                    {
+                        "id": n.id,
+                        "title": n.title,
+                        "author": n.author,
+                        "priority": n.priority
+                    }
+                    for n in all_notes
+                ],
+                "total": len(all_notes)
+            };
+        }
+    }
 
-            can get_all_notes with `root entry {
-                all_notes = [-->(`?Note)];
+    # READ - Get specific note
+    walker get_note {
+        has note_id: str;
+
+        obj __specs__ {
+            static has auth: bool = False;
+        }
+
+        can fetch_note with `root entry {
+            target_note = [-->(`?Note)](?id == self.note_id);
+
+            if target_note {
+                note = target_note[0];
                 report {
-                    "notes": [
-                        {
-                            "id": n.id,
-                            "title": n.title,
-                            "author": n.author,
-                            "priority": n.priority
-                        }
-                        for n in all_notes
-                    ],
-                    "total": len(all_notes)
+                    "note": {
+                        "id": note.id,
+                        "title": note.title,
+                        "content": note.content,
+                        "author": note.author,
+                        "priority": note.priority
+                    }
                 };
+            } else {
+                report {"error": "Note not found"};
             }
         }
+    }
 
-        # READ - Get specific note
-        walker get_note {
-            has note_id: str;
+    # UPDATE - Modify note
+    walker update_note {
+        has note_id: str;
+        has title: str = "";
+        has content: str = "";
+        has priority: int = 0;
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
+        obj __specs__ {
+            static has auth: bool = False;
+        }
 
-            can fetch_note with `root entry {
-                target_note = [-->(`?Note)](?id == self.note_id);
+        can modify_note with `root entry {
+            target_note = [-->(`?Note)](?id == self.note_id);
 
-                if target_note {
-                    note = target_note[0];
-                    report {
-                        "note": {
-                            "id": note.id,
-                            "title": note.title,
-                            "content": note.content,
-                            "author": note.author,
-                            "priority": note.priority
-                        }
-                    };
-                } else {
-                    report {"error": "Note not found"};
+            if target_note {
+                note = target_note[0];
+
+                # Update only provided fields
+                if self.title {
+                    note.title = self.title;
                 }
-            }
-        }
-
-        # UPDATE - Modify note
-        walker update_note {
-            has note_id: str;
-            has title: str = "";
-            has content: str = "";
-            has priority: int = 0;
-
-            obj __specs__ {
-                static has auth: bool = False;
-            }
-
-            can modify_note with `root entry {
-                target_note = [-->(`?Note)](?id == self.note_id);
-
-                if target_note {
-                    note = target_note[0];
-
-                    # Update only provided fields
-                    if self.title {
-                        note.title = self.title;
-                    }
-                    if self.content {
-                        note.content = self.content;
-                    }
-                    if self.priority > 0 {
-                        note.priority = self.priority;
-                    }
-
-                    report {"message": "Note updated", "id": note.id};
-                } else {
-                    report {"error": "Note not found"};
+                if self.content {
+                    note.content = self.content;
                 }
-            }
-        }
-
-        # DELETE - Remove note
-        walker delete_note {
-            has note_id: str;
-
-            obj __specs__ {
-                static has auth: bool = False;
-            }
-
-            can remove_note with `root entry {
-                target_note = [-->(`?Note)](?id == self.note_id);
-
-                if target_note {
-                    note = target_note[0];
-                    # Delete the node and its connections
-                    del note;
-                    report {"message": "Note deleted"};
-                } else {
-                    report {"error": "Note not found"};
+                if self.priority > 0 {
+                    note.priority = self.priority;
                 }
+
+                report {"message": "Note updated", "id": note.id};
+            } else {
+                report {"error": "Note not found"};
             }
         }
+    }
+
+    # DELETE - Remove note
+    walker delete_note {
+        has note_id: str;
+
+        obj __specs__ {
+            static has auth: bool = False;
+        }
+
+        can remove_note with `root entry {
+            target_note = [-->(`?Note)](?id == self.note_id);
+
+            if target_note {
+                note = target_note[0];
+                # Delete the node and its connections
+                del note;
+                report {"message": "Note deleted"};
+            } else {
+                report {"error": "Note not found"};
+            }
+        }
+    }
     ```
 
 ### API Usage Examples
@@ -521,116 +520,116 @@ curl -X POST http://localhost:8000/delete_note \
 Let's add basic permission checking to demonstrate multi-user patterns:
 
 !!! example "Notebook with User Permissions"
-    ```jac
-        import uuid;
+    ```jac  linenums="1"
+    import uuid;
 
-        # shared_notebook.jac
-        node Note {
-            has title: str;
-            has content: str;
-            has author: str;
-            has shared_with: list[str] = [];
-            has is_public: bool = false;
-            has id: str = "note_" + str(uuid.uuid4());
+    # shared_notebook.jac
+    node Note {
+        has title: str;
+        has content: str;
+        has author: str;
+        has shared_with: list[str] = [];
+        has is_public: bool = false;
+        has id: str = "note_" + str(uuid.uuid4());
+    }
+
+    walker create_shared_note {
+        has title: str;
+        has content: str;
+        has author: str;
+        has shared_with: list[str] = [];
+        has is_public: bool = false;
+
+        obj __specs__ {
+            static has auth: bool = False;
         }
 
-        walker create_shared_note {
-            has title: str;
-            has content: str;
-            has author: str;
-            has shared_with: list[str] = [];
-            has is_public: bool = false;
+        can create_note with `root entry {
+            new_note = Note(
+                title=self.title,
+                content=self.content,
+                author=self.author,
+                shared_with=self.shared_with,
+                is_public=self.is_public
+            );
+            here ++> new_note;
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
+            report {
+                "message": "Shared note created",
+                "id": new_note.id,
+                "shared_with": len(self.shared_with),
+                "is_public": self.is_public
+            };
+        }
+    }
 
-            can create_note with `root entry {
-                new_note = Note(
-                    title=self.title,
-                    content=self.content,
-                    author=self.author,
-                    shared_with=self.shared_with,
-                    is_public=self.is_public
-                );
-                here ++> new_note;
+    walker get_user_notes {
+        has user: str;
 
-                report {
-                    "message": "Shared note created",
-                    "id": new_note.id,
-                    "shared_with": len(self.shared_with),
-                    "is_public": self.is_public
-                };
-            }
+        obj __specs__ {
+            static has auth: bool = False;
         }
 
-        walker get_user_notes {
-            has user: str;
+        can fetch_accessible_notes with `root entry {
+            all_notes = [-->(`?Note)];
+            accessible_notes = [];
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
-
-            can fetch_accessible_notes with `root entry {
-                all_notes = [-->(`?Note)];
-                accessible_notes = [];
-
-                for note in all_notes {
-                    # User can access if they're the author, note is public,
-                    # or they're in the shared_with list
-                    if (note.author == self.user or
-                        note.is_public or
-                        self.user in note.shared_with) {
-                        accessible_notes.append({
-                            "id": note.id,
-                            "title": note.title,
-                            "author": note.author,
-                            "is_mine": note.author == self.user
-                        });
-                    }
+            for note in all_notes {
+                # User can access if they're the author, note is public,
+                # or they're in the shared_with list
+                if (note.author == self.user or
+                    note.is_public or
+                    self.user in note.shared_with) {
+                    accessible_notes.append({
+                        "id": note.id,
+                        "title": note.title,
+                        "author": note.author,
+                        "is_mine": note.author == self.user
+                    });
                 }
-
-                report {
-                    "user": self.user,
-                    "notes": accessible_notes,
-                    "count": len(accessible_notes)
-                };
             }
+
+            report {
+                "user": self.user,
+                "notes": accessible_notes,
+                "count": len(accessible_notes)
+            };
+        }
+    }
+
+    walker share_note {
+        has note_id: str;
+        has user: str;
+        has share_with: str;
+
+        obj __specs__ {
+            static has auth: bool = False;
         }
 
-        walker share_note {
-            has note_id: str;
-            has user: str;
-            has share_with: str;
+        can add_share_permission with `root entry {
+            target_note = [-->(`?Note)](?id == self.note_id);
 
-            obj __specs__ {
-                static has auth: bool = False;
-            }
+            if target_note {
+                note = target_note[0];
 
-            can add_share_permission with `root entry {
-                target_note = [-->(`?Note)](?id == self.note_id);
-
-                if target_note {
-                    note = target_note[0];
-
-                    # Only author can share
-                    if note.author == self.user {
-                        if self.share_with not in note.shared_with {
-                            note.shared_with.append(self.share_with);
-                        }
-
-                        report {
-                            "message": f"Note shared with {self.share_with}",
-                            "shared_with": note.shared_with
-                        };
-                    } else {
-                        report {"error": "Only author can share notes"};
+                # Only author can share
+                if note.author == self.user {
+                    if self.share_with not in note.shared_with {
+                        note.shared_with.append(self.share_with);
                     }
+
+                    report {
+                        "message": f"Note shared with {self.share_with}",
+                        "shared_with": note.shared_with
+                    };
                 } else {
-                    report {"error": "Note not found"};
+                    report {"error": "Only author can share notes"};
                 }
+            } else {
+                report {"error": "Note not found"};
             }
         }
+    }
     ```
 
 ### Testing Shared Notebook
