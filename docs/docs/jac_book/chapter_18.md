@@ -1,1093 +1,753 @@
+# Chapter 18: Testing and Debugging
 
-### Chapter 18: Migration Guide
+In this chapter, we'll explore Jac's built-in testing capabilities and debugging techniques. We'll build a comprehensive test suite for a classroom graph system that demonstrates test block syntax, walker behavior testing, and debugging strategies through practical examples.
 
-#### 18.1 Porting Python Applications
+!!! info "What You'll Learn"
+    - Writing tests using Jac's built-in test block syntax
+    - Testing walker behavior and graph interactions
+    - Debugging techniques for Object-Spatial Programming
+    - Test-driven development patterns in Jac
+    - Performance testing and optimization
 
-Migrating Python applications to Jac requires a shift in thinking from object-oriented to object-spatial patterns. This section guides you through identifying opportunities for migration and transforming Python code to leverage Jac's unique capabilities.
+---
 
-### Identifying Graph Structures
+## Test Block Syntax
 
-Most Python applications contain implicit graph structures that become explicit in Jac. Learning to recognize these patterns is the first step in successful migration.
+Jac provides built-in testing capabilities through test blocks that integrate seamlessly with your application code. Unlike traditional testing frameworks, Jac tests are part of the language itself, making them easy to write and maintain.
 
-#### Common Graph Patterns in Python Applications
+!!! success "Testing Benefits"
+    - **Built-in Framework**: No external testing libraries needed
+    - **Type Safety**: Test assertions leverage Jac's type system
+    - **Graph Testing**: Native support for testing nodes, edges, and walkers
+    - **Integrated Debugging**: Tests can be debugged alongside application code
+    - **Automatic Discovery**: Tests are automatically discovered and executed
 
-```python
-# Python: Hidden graph structure in user relationships
-class User:
-    def __init__(self, username):
-        self.username = username
-        self.followers = []
-        self.following = []
-        self.posts = []
-        self.liked_posts = []
-        self.blocked_users = []
+### Traditional vs Jac Testing
 
-    def follow(self, other_user):
-        if other_user not in self.following:
-            self.following.append(other_user)
-            other_user.followers.append(self)
+!!! example "Testing Comparison"
+    === "Traditional Approach"
+        ```python
+        # test_classroom.py - External testing framework required
+        import unittest
+        from classroom import Student, Teacher, Classroom
 
-    def create_post(self, content):
-        post = Post(content, self)
-        self.posts.append(post)
-        return post
-```
+        class TestClassroom(unittest.TestCase):
+            def setUp(self):
+                self.classroom = Classroom("Math 101")
+                self.teacher = Teacher("Ms. Smith", "Mathematics")
+                self.student1 = Student("Alice", 16, "A")
+                self.student2 = Student("Bob", 17, "B")
 
-This Python code hides several graph relationships:
-- User → User (following/followers)
-- User → Post (authored)
-- User → Post (liked)
-- User → User (blocked)
+            def test_add_student(self):
+                self.classroom.add_student(self.student1)
+                self.assertEqual(len(self.classroom.students), 1)
+                self.assertIn(self.student1, self.classroom.students)
 
-```mermaid
-graph TD
-    U1[User 1]
-    U2[User 2]
-    U3[User 3]
-    P1[Post 1]
-    P2[Post 2]
-    P3[Post 3]
+            def test_assign_teacher(self):
+                self.classroom.assign_teacher(self.teacher)
+                self.assertEqual(self.classroom.teacher, self.teacher)
 
-    U1 -->|follows| U2
-    U2 -->|follows| U1
-    U2 -->|follows| U3
-    U1 -->|authored| P1
-    U2 -->|authored| P2
-    U2 -->|authored| P3
-    U1 -->|likes| P2
-    U3 -->|likes| P2
-    U1 -.->|blocked| U3
+            def test_classroom_capacity(self):
+                # Add multiple students
+                for i in range(30):
+                    student = Student(f"Student{i}", 16, "A")
+                    self.classroom.add_student(student)
 
-    style U1 fill:#e3f2fd
-    style U2 fill:#e3f2fd
-    style U3 fill:#e3f2fd
-    style P1 fill:#fff3e0
-    style P2 fill:#fff3e0
-    style P3 fill:#fff3e0
-```
+                with self.assertRaises(ValueError):
+                    overflow_student = Student("Overflow", 16, "A")
+                    self.classroom.add_student(overflow_student)
 
-#### Recognizing Graph Structures
+        if __name__ == '__main__':
+            unittest.main()
+        ```
 
-Look for these indicators in your Python code:
-
-1. **Collections of References**
-   ```python
-   # Python: Collection indicates relationship
-   self.friends = []  # → Friend edge
-   self.items = []    # → Contains edge
-   self.tags = []     # → TaggedWith edge
-   ```
-
-2. **Many-to-Many Relationships**
-   ```python
-   # Python: Join tables or intermediate objects
-   class UserGroup:
-       def __init__(self):
-           self.members = []
-
-   class GroupMembership:
-       def __init__(self, user, group, role):
-           self.user = user
-           self.group = group
-           self.role = role
-   ```
-
-3. **Hierarchical Structures**
-   ```python
-   # Python: Parent-child relationships
-   class Category:
-       def __init__(self, name, parent=None):
-           self.name = name
-           self.parent = parent
-           self.children = []
-   ```
-
-4. **State Machines**
-   ```python
-   # Python: State transitions
-   class Order:
-       STATES = ['pending', 'paid', 'shipped', 'delivered']
-
-       def transition_to(self, new_state):
-           if self.can_transition(new_state):
-               self.state = new_state
-   ```
-
-5. **Event Systems**
-   ```python
-   # Python: Observer patterns
-   class EventEmitter:
-       def __init__(self):
-           self.listeners = defaultdict(list)
-
-       def on(self, event, callback):
-           self.listeners[event].append(callback)
-   ```
-
-### Converting Classes to Archetypes
-
-The transformation from Python classes to Jac archetypes involves identifying which archetype best represents each class's role.
-
-#### Decision Tree for Archetype Selection
-
-```mermaid
-graph TD
-    A[Python Class] --> B{Represents a<br/>data entity?}
-    B -->|Yes| C{Has connections<br/>to others?}
-    B -->|No| D{Represents a<br/>relationship?}
-    C -->|Yes| E[node]
-    C -->|No| F[obj]
-    D -->|Yes| G[edge]
-    D -->|No| H{Represents a<br/>process/algorithm?}
-    H -->|Yes| I[walker]
-    H -->|No| J[obj or can]
-
-    style E fill:#4caf50
-    style G fill:#ff9800
-    style I fill:#2196f3
-    style F fill:#9c27b0
-    style J fill:#9c27b0
-```
-
-#### Example: User Management System
-
-**Python Original:**
-```python
-# models.py
-from datetime import datetime
-from typing import List, Optional
-
-class User:
-    def __init__(self, email: str, username: str):
-        self.id = generate_id()
-        self.email = email
-        self.username = username
-        self.created_at = datetime.now()
-        self.profile = None
-        self.sessions = []
-
-    def create_profile(self, bio: str, avatar_url: str):
-        self.profile = UserProfile(bio, avatar_url)
-        return self.profile
-
-    def get_active_sessions(self) -> List['Session']:
-        return [s for s in self.sessions if s.is_active()]
-
-class UserProfile:
-    def __init__(self, bio: str, avatar_url: str):
-        self.bio = bio
-        self.avatar_url = avatar_url
-        self.updated_at = datetime.now()
-
-class Session:
-    def __init__(self, user: User, ip_address: str):
-        self.id = generate_id()
-        self.user = user
-        self.ip_address = ip_address
-        self.created_at = datetime.now()
-        self.last_activity = datetime.now()
-        self.active = True
-
-    def is_active(self) -> bool:
-        timeout = datetime.now() - self.last_activity
-        return self.active and timeout.seconds < 3600
-
-    def terminate(self):
-        self.active = False
-
-class Friendship:
-    def __init__(self, user1: User, user2: User):
-        self.user1 = user1
-        self.user2 = user2
-        self.created_at = datetime.now()
-        self.status = 'pending'
-
-    def accept(self):
-        self.status = 'accepted'
-
-    def reject(self):
-        self.status = 'rejected'
-```
-
-**Jac Migration:**
-```jac
-# models.jac
-
-# User becomes a node (has connections)
-node User {
-    has email: str;
-    has username: str;
-    has created_at: str;
-
-    # Automatic ID generation via postinit
-    has id: str by postinit;
-
-    can postinit {
-        self.id = generate_id();
-    }
-}
-
-# Profile becomes obj (1-1 with User, no independent connections)
-obj UserProfile {
-    has bio: str;
-    has avatar_url: str;
-    has updated_at: str;
-}
-
-# Session becomes an edge (connects User to temporal context)
-edge Session(User, TimeContext) {
-    has id: str by postinit;
-    has ip_address: str;
-    has created_at: str;
-    has last_activity: str;
-    has active: bool = true;
-
-    can postinit {
-        self.id = generate_id();
-    }
-
-    can is_active -> bool {
-        import:py from datetime { datetime };
-        if not self.active { return false; }
-
-        last = datetime.fromisoformat(self.last_activity);
-        timeout = datetime.now() - last;
-        return timeout.seconds < 3600;
-    }
-
-    can terminate {
-        self.active = false;
-    }
-}
-
-# Friendship becomes an edge with status
-edge Friendship(User, User) {
-    has created_at: str;
-    has status: str = 'pending';
-
-    can accept {
-        self.status = 'accepted';
-    }
-
-    can reject {
-        self.status = 'rejected';
-    }
-}
-
-# Profile creation becomes a walker
-walker CreateProfile {
-    has bio: str;
-    has avatar_url: str;
-
-    can create with User entry {
-        # Check if profile already exists
-        existing = here[-->:HasProfile:];
-        if existing {
-            report {"error": "Profile already exists"};
-            disengage;
+    === "Jac Built-in Testing"
+        <div class="code-block">
+        ```jac
+        # classroom.jac - Built-in test blocks
+        node Student {
+            has name: str;
+            has age: int;
+            has grade: str;
         }
 
-        # Create profile and connect
-        profile = UserProfile(
-            bio=self.bio,
-            avatar_url=self.avatar_url,
-            updated_at=timestamp_now()
-        );
+        node Teacher {
+            has name: str;
+            has subject: str;
+        }
 
-        here ++>:HasProfile:++> profile;
-        report {"success": true, "profile": profile};
-    }
-}
+        node Classroom {
+            has name: str;
+            has capacity: int = 25;
 
-# Active sessions becomes a walker query
-walker GetActiveSessions {
-    has sessions: list = [];
+            can add_student(student: Student) -> bool {
+                current_students = [self --> Student];
+                if len(current_students) >= self.capacity {
+                    return False;
+                }
+                self ++> student;
+                return True;
+            }
 
-    can collect with User entry {
-        for session in [-->:Session:] {
-            if session.is_active() {
-                self.sessions.append({
-                    "id": session.id,
-                    "ip": session.ip_address,
-                    "last_activity": session.last_activity
-                });
+            can get_student_count() -> int {
+                return len([self --> Student]);
             }
         }
-    }
-}
-```
 
-### Refactoring for Object-Spatial Patterns
+        test "can create classroom with students" {
+            classroom = Classroom(name="Math 101");
+            student1 = Student(name="Alice", age=16, grade="A");
+            student2 = Student(name="Bob", age=17, grade="B");
 
-Moving beyond direct translation, we can refactor to truly leverage object-spatial patterns.
+            # Test adding students
+            assert classroom.add_student(student1) == True;
+            assert classroom.add_student(student2) == True;
+            assert classroom.get_student_count() == 2;
 
-##### Pattern 1: Replace Method Calls with Walker Traversal
+            # Test student connections
+            students = [classroom --> Student];
+            assert len(students) == 2;
+            assert student1 in students;
+            assert student2 in students;
+        }
 
-**Python:**
-```python
-class NotificationService:
-    def notify_followers(self, user, message):
-        for follower in user.followers:
-            if self.should_notify(follower, user):
-                self.send_notification(follower, message)
+        test "classroom capacity limits" {
+            classroom = Classroom(name="Small Class", capacity=2);
+            student1 = Student(name="Alice", age=16, grade="A");
+            student2 = Student(name="Bob", age=17, grade="B");
+            student3 = Student(name="Charlie", age=16, grade="C");
 
-    def should_notify(self, recipient, sender):
-        # Check blocks, preferences, etc.
-        return sender not in recipient.blocked_users
-```
+            # Fill to capacity
+            assert classroom.add_student(student1) == True;
+            assert classroom.add_student(student2) == True;
 
-**Jac Refactored:**
-```jac
-walker NotifyFollowers {
-    has message: str;
-    has notifications_sent: int = 0;
+            # Test capacity limit
+            assert classroom.add_student(student3) == False;
+            assert classroom.get_student_count() == 2;
+        }
+        ```
+        </div>
 
-    can notify with User entry {
-        # Natural traversal with filtering
-        for follower in [<--:Follows:] {
-            # Blocked relationships prevent traversal
-            if not follower[-->:Blocks:-->](?.target == here) {
-                visit follower;
+---
+
+## Basic Test Structure
+
+Let's start with a simple classroom system and build comprehensive tests around it:
+
+### Setting Up the Classroom System
+
+!!! example "Basic Classroom Implementation"
+    === "Jac"
+        <div class="code-block">
+        ```jac
+        # classroom_system.jac
+        node Student {
+            has name: str;
+            has age: int;
+            has grade: str;
+            has enrolled_date: str = "2024-01-15";
+
+            can get_info() -> str {
+                return f"{self.name} (Age: {self.age}, Grade: {self.grade})";
             }
         }
-    }
 
-    can deliver with User entry {
-        # Create notification node
-        notif = here ++> Notification(
-            message=self.message,
-            from_user=here,
-            timestamp=timestamp_now(),
-            read=false
-        );
-        self.notifications_sent += 1;
-    }
+        node Teacher {
+            has name: str;
+            has subject: str;
+            has years_experience: int;
 
-    can summarize with `root exit {
-        report {
-            "sent": self.notifications_sent,
-            "message": self.message
-        };
-    }
-}
-```
-
-##### Pattern 2: Replace Queries with Graph Traversal
-
-**Python:**
-```python
-# Finding mutual friends
-def find_mutual_friends(user1, user2):
-    friends1 = set(user1.friends)
-    friends2 = set(user2.friends)
-    return friends1.intersection(friends2)
-
-# Finding friend recommendations
-def recommend_friends(user, limit=10):
-    recommendations = {}
-
-    # Friends of friends
-    for friend in user.friends:
-        for fof in friend.friends:
-            if fof != user and fof not in user.friends:
-                recommendations[fof] = recommendations.get(fof, 0) + 1
-
-    # Sort by mutual friend count
-    sorted_recs = sorted(recommendations.items(),
-                        key=lambda x: x[1], reverse=True)
-    return [user for user, _ in sorted_recs[:limit]]
-```
-
-**Jac Refactored:**
-```jac
-walker FindMutualFriends {
-    has other_user: User;
-    has mutuals: set = {};
-
-    can find with User entry {
-        # Collect my friends
-        my_friends = set([-->:Follows:-->]);
-
-        # Visit other user and find intersection
-        visit self.other_user else {
-            report {"error": "User not found"};
-        };
-    }
-
-    can compare with User entry {
-        their_friends = set([-->:Follows:-->]);
-        self.mutuals = my_friends.intersection(their_friends);
-        report list(self.mutuals);
-    }
-}
-
-walker RecommendFriends {
-    has limit: int = 10;
-    has recommendations: dict = {};
-    has visited: set = {};
-    has original_user: User by postinit;
-
-    can postinit {
-        self.original_user = here;
-    }
-
-    can explore with User entry {
-        if here in self.visited { return; }
-        self.visited.add(here);
-
-        # First level: my friends
-        if here == self.original_user {
-            visit [-->:Follows:-->];
+            can can_teach(subject: str) -> bool {
+                return self.subject.lower() == subject.lower();
+            }
         }
-        # Second level: friends of friends
-        else {
-            for fof in [-->:Follows:-->] {
-                if fof != self.original_user and
-                   not self.original_user[-->:Follows:-->](? == fof) {
-                    self.recommendations[fof] = \
-                        self.recommendations.get(fof, 0) + 1;
+
+        node Classroom {
+            has name: str;
+            has capacity: int = 25;
+            has room_number: str;
+
+            can add_student(student: Student) -> bool {
+                if self.get_student_count() >= self.capacity {
+                    return False;
+                }
+                self ++> student;
+                return True;
+            }
+
+            can assign_teacher(teacher: Teacher) -> bool {
+                existing_teachers = [self --> Teacher];
+                if existing_teachers {
+                    return False;  # Only one teacher per classroom
+                }
+                self ++> teacher;
+                return True;
+            }
+
+            can get_student_count() -> int {
+                return len([self --> Student]);
+            }
+
+            can get_students() -> list[Student] {
+                return [self --> Student];
+            }
+        }
+
+        # Basic functionality test
+        test "basic classroom operations" {
+            # Create entities
+            classroom = Classroom(name="Biology 101", room_number="B204");
+            teacher = Teacher(name="Dr. Wilson", subject="Biology", years_experience=10);
+            student = Student(name="Emma", age=16, grade="A");
+
+            # Test teacher assignment
+            assert classroom.assign_teacher(teacher) == True;
+            teachers = [classroom --> Teacher];
+            assert len(teachers) == 1;
+            assert teachers[0].name == "Dr. Wilson";
+
+            # Test student enrollment
+            assert classroom.add_student(student) == True;
+            assert classroom.get_student_count() == 1;
+
+            # Test student info
+            students = classroom.get_students();
+            assert len(students) == 1;
+            assert students[0].name == "Emma";
+        }
+        ```
+        </div>
+
+    === "Python Equivalent"
+        ```python
+        # classroom_system.py - Requires external testing
+        class Student:
+            def __init__(self, name: str, age: int, grade: str, enrolled_date: str = "2024-01-15"):
+                self.name = name
+                self.age = age
+                self.grade = grade
+                self.enrolled_date = enrolled_date
+
+            def get_info(self) -> str:
+                return f"{self.name} (Age: {self.age}, Grade: {self.grade})"
+
+        class Teacher:
+            def __init__(self, name: str, subject: str, years_experience: int):
+                self.name = name
+                self.subject = subject
+                self.years_experience = years_experience
+
+            def can_teach(self, subject: str) -> bool:
+                return self.subject.lower() == subject.lower()
+
+        class Classroom:
+            def __init__(self, name: str, room_number: str, capacity: int = 25):
+                self.name = name
+                self.capacity = capacity
+                self.room_number = room_number
+                self.students = []
+                self.teachers = []
+
+            def add_student(self, student: Student) -> bool:
+                if len(self.students) >= self.capacity:
+                    return False
+                self.students.append(student)
+                return True
+
+            def assign_teacher(self, teacher: Teacher) -> bool:
+                if self.teachers:
+                    return False
+                self.teachers.append(teacher)
+                return True
+
+            def get_student_count(self) -> int:
+                return len(self.students)
+
+        # Would require separate test file with unittest
+        ```
+
+### Running Tests
+
+```bash
+# Run all tests in the file
+jac test classroom_system.jac
+
+# Run specific test
+jac test classroom_system.jac -k "basic classroom operations"
+```
+
+---
+
+## Walker Behavior Testing
+
+Walkers are central to Jac's Object-Spatial Programming paradigm. Testing walker behavior requires understanding how they interact with graphs and process data.
+
+### Message Delivery Walker
+
+!!! example "Walker Testing System"
+    <div class="code-block">
+    ```jac
+    # message_system.jac
+    node Message {
+        has content: str;
+        has sender: str;
+        has timestamp: str;
+        has is_read: bool = False;
+    }
+
+    walker deliver_message {
+        has message_content: str;
+        has sender_name: str;
+        has target_student_name: str;
+
+        can find_and_deliver with Classroom entry {
+            # Find target student
+            students = [here --> Student];
+            target_student = None;
+
+            for student in students {
+                if student.name == self.target_student_name {
+                    target_student = student;
+                    break;
                 }
             }
+
+            if target_student {
+                # Create and deliver message
+                message = Message(
+                    content=self.message_content,
+                    sender=self.sender_name,
+                    timestamp="2024-01-15 10:30"
+                );
+                target_student ++> message;
+                report {"status": "delivered", "to": target_student.name};
+            } else {
+                report {"status": "failed", "error": "Student not found"};
+            }
         }
     }
 
-    can report_results with `root exit {
-        # Sort and limit recommendations
-        sorted_recs = sorted(
-            self.recommendations.items(),
-            key=lambda x: x[1],
-            reverse=true
-        );
+    walker read_messages {
+        has student_name: str;
 
-        report [user for user, _ in sorted_recs[:self.limit]];
-    }
-}
-```
+        can collect_messages with Classroom entry {
+            students = [here --> Student];
+            target_student = None;
 
-##### Pattern 3: Replace State Machines with Graph Topology
-
-**Python:**
-```python
-class Order:
-    STATES = {
-        'pending': ['cancelled', 'paid'],
-        'paid': ['cancelled', 'processing'],
-        'processing': ['shipped'],
-        'shipped': ['delivered', 'returned'],
-        'delivered': ['returned'],
-        'cancelled': [],
-        'returned': []
-    }
-
-    def __init__(self):
-        self.state = 'pending'
-        self.history = []
-
-    def transition_to(self, new_state):
-        if new_state in self.STATES[self.state]:
-            self.history.append({
-                'from': self.state,
-                'to': new_state,
-                'timestamp': datetime.now()
-            })
-            self.state = new_state
-            self.trigger_state_actions(new_state)
-        else:
-            raise ValueError(f"Invalid transition: {self.state} -> {new_state}")
-```
-
-**Jac Refactored:**
-```jac
-# States as nodes
-node OrderState {
-    has name: str;
-    has entry_actions: list = [];
-    has exit_actions: list = [];
-}
-
-# Transitions as edges
-edge Transition(OrderState, OrderState) {
-    has name: str;
-    has condition: str = "";
-    has timestamp: str by postinit;
-
-    can postinit {
-        self.timestamp = timestamp_now();
-    }
-}
-
-# Order exists in a state
-edge InState(Order, OrderState);
-
-# Walker to transition states
-walker TransitionOrder {
-    has target_state: str;
-    has transition_history: list = [];
-
-    can transition with Order entry {
-        # Find current state
-        current_state = here[-->:InState:-->][0];
-
-        # Find valid transition
-        for trans in current_state[-->:Transition:] {
-            if trans.target.name == self.target_state {
-                # Execute exit actions
-                for action in current_state.exit_actions {
-                    execute_action(action, here);
+            for student in students {
+                if student.name == self.student_name {
+                    target_student = student;
+                    break;
                 }
+            }
 
-                # Move to new state
-                del here -->:InState:--> current_state;
-                here ++>:InState:++> trans.target;
+            if target_student {
+                messages = [target_student --> Message];
+                message_list = [
+                    {
+                        "content": msg.content,
+                        "sender": msg.sender,
+                        "timestamp": msg.timestamp,
+                        "is_read": msg.is_read
+                    }
+                    for msg in messages
+                ];
+                report {"student": self.student_name, "messages": message_list};
+            } else {
+                report {"error": "Student not found"};
+            }
+        }
+    }
 
-                # Record transition
-                self.transition_history.append({
-                    "from": current_state.name,
-                    "to": trans.target.name,
-                    "timestamp": trans.timestamp
-                });
+    # Test walker behavior
+    test "message delivery walker" {
+        # Setup classroom with students
+        classroom = Classroom(name="English 101", room_number="E102");
+        student1 = Student(name="Alice", age=16, grade="A");
+        student2 = Student(name="Bob", age=17, grade="B");
 
-                # Execute entry actions
-                for action in trans.target.entry_actions {
-                    execute_action(action, here);
+        classroom.add_student(student1);
+        classroom.add_student(student2);
+
+        # Test message delivery
+        delivery_walker = deliver_message(
+            message_content="Please submit your homework",
+            sender_name="Teacher",
+            target_student_name="Alice"
+        );
+
+        result = delivery_walker spawn classroom;
+        assert result[0]["status"] == "delivered";
+        assert result[0]["to"] == "Alice";
+
+        # Verify message was created
+        alice_messages = [student1 --> Message];
+        assert len(alice_messages) == 1;
+        assert alice_messages[0].content == "Please submit your homework";
+        assert alice_messages[0].sender == "Teacher";
+    }
+
+    test "message reading walker" {
+        # Setup with existing messages
+        classroom = Classroom(name="History 101", room_number="H201");
+        student = Student(name="Charlie", age=16, grade="B");
+        classroom.add_student(student);
+
+        # Add messages directly
+        msg1 = Message(content="Test message 1", sender="Teacher", timestamp="2024-01-15 09:00");
+        msg2 = Message(content="Test message 2", sender="Principal", timestamp="2024-01-15 11:00");
+        student ++> msg1;
+        student ++> msg2;
+
+        # Test reading messages
+        read_walker = read_messages(student_name="Charlie");
+        result = read_walker spawn classroom;
+
+        assert result[0]["student"] == "Charlie";
+        assert len(result[0]["messages"]) == 2;
+        assert result[0]["messages"][0]["content"] == "Test message 1";
+        assert result[0]["messages"][1]["sender"] == "Principal";
+    }
+
+    test "walker error handling" {
+        classroom = Classroom(name="Math 101", room_number="M301");
+        student = Student(name="David", age=17, grade="A");
+        classroom.add_student(student);
+
+        # Test delivery to non-existent student
+        delivery_walker = deliver_message(
+            message_content="Test message",
+            sender_name="Teacher",
+            target_student_name="NonExistent"
+        );
+
+        result = delivery_walker spawn classroom;
+        assert result[0]["status"] == "failed";
+        assert result[0]["error"] == "Student not found";
+
+        # Test reading from non-existent student
+        read_walker = read_messages(student_name="NonExistent");
+        result = read_walker spawn classroom;
+        assert "error" in result[0];
+        assert result[0]["error"] == "Student not found";
+    }
+    ```
+    </div>
+
+---
+
+## Test Organization and Patterns
+
+Proper test organization helps maintain code quality and makes debugging easier. Let's explore advanced testing patterns.
+
+### Test Fixtures and Setup
+
+!!! example "Advanced Test Patterns"
+    <div class="code-block">
+    ```jac
+    # advanced_classroom_tests.jac
+
+    # Test helper function
+    def create_test_classroom() -> Classroom {
+        classroom = Classroom(name="Test Class", room_number="T100", capacity=3);
+        teacher = Teacher(name="Test Teacher", subject="Testing", years_experience=5);
+        classroom.assign_teacher(teacher);
+        return classroom;
+    }
+
+    def create_test_students() -> list[Student] {
+        return [
+            Student(name="Alice", age=16, grade="A"),
+            Student(name="Bob", age=17, grade="B"),
+            Student(name="Charlie", age=16, grade="C")
+        ];
+    }
+
+    # Comprehensive classroom capacity test
+    test "classroom capacity management" {
+        classroom = create_test_classroom();
+        students = create_test_students();
+
+        # Test adding students within capacity
+        for i in range(3) {
+            assert classroom.add_student(students[i]) == True;
+            assert classroom.get_student_count() == i + 1;
+        }
+
+        # Test capacity exceeded
+        overflow_student = Student(name="David", age=18, grade="D");
+        assert classroom.add_student(overflow_student) == False;
+        assert classroom.get_student_count() == 3;
+
+        # Verify existing students unaffected
+        classroom_students = classroom.get_students();
+        assert len(classroom_students) == 3;
+        student_names = [s.name for s in classroom_students];
+        assert "Alice" in student_names;
+        assert "Bob" in student_names;
+        assert "Charlie" in student_names;
+        assert "David" not in student_names;
+    }
+
+    # Test graph relationships
+    test "graph relationship integrity" {
+        classroom = create_test_classroom();
+        students = create_test_students();
+
+        # Add students and verify connections
+        for student in students {
+            classroom.add_student(student);
+        }
+
+        # Test bidirectional relationships
+        classroom_students = [classroom --> Student];
+        assert len(classroom_students) == 3;
+
+        # Test each student is properly connected
+        for student in students {
+            connected_classrooms = [student <-- Classroom];
+            assert len(connected_classrooms) == 1;
+            assert connected_classrooms[0].name == "Test Class";
+        }
+
+        # Test teacher relationship
+        classroom_teacher = [classroom --> Teacher];
+        assert len(classroom_teacher) == 1;
+        assert classroom_teacher[0].subject == "Testing";
+    }
+
+    # Performance test
+    test "classroom performance with many students" {
+        large_classroom = Classroom(name="Large Class", room_number="L500", capacity=100);
+
+        # Add many students
+        for i in range(50) {
+            student = Student(name=f"Student{i}", age=16, grade="A");
+            assert large_classroom.add_student(student) == True;
+        }
+
+        # Test performance of student operations
+        assert large_classroom.get_student_count() == 50;
+        all_students = large_classroom.get_students();
+        assert len(all_students) == 50;
+
+        # Verify specific student lookup
+        target_student = None;
+        for student in all_students {
+            if student.name == "Student25" {
+                target_student = student;
+                break;
+            }
+        }
+        assert target_student is not None;
+        assert target_student.name == "Student25";
+    }
+    ```
+    </div>
+
+---
+
+## Debugging Techniques
+
+Jac provides several debugging techniques specifically designed for Object-Spatial Programming patterns.
+
+### Debug Output and Assertions
+
+!!! example "Debugging Walker Behavior"
+    <div class="code-block">
+    ```jac
+    # debug_example.jac
+    walker debug_classroom_walker {
+        has debug_mode: bool = True;
+
+        can analyze_classroom with Classroom entry {
+            if self.debug_mode {
+                print(f"Analyzing classroom: {here.name}");
+            }
+
+            # Collect data with debug output
+            students = [here --> Student];
+            teachers = [here --> Teacher];
+
+            if self.debug_mode {
+                print(f"Found {len(students)} students and {len(teachers)} teachers");
+                for student in students {
+                    print(f"  Student: {student.name}, Grade: {student.grade}");
                 }
-
-                report {"success": true, "new_state": trans.target.name};
-                disengage;
             }
-        }
 
-        report {"error": f"Invalid transition to {self.target_state}"};
-    }
-}
+            # Debug assertion
+            assert len(teachers) <= 1, f"Too many teachers: {len(teachers)}";
 
-# Initialize state machine
-with entry {
-    # Create states
-    pending = OrderState(name="pending");
-    paid = OrderState(name="paid");
-    processing = OrderState(name="processing");
-    shipped = OrderState(name="shipped");
-    delivered = OrderState(name="delivered");
-    cancelled = OrderState(name="cancelled");
-    returned = OrderState(name="returned");
-
-    # Create transitions
-    pending ++>:Transition(name="pay"):++> paid;
-    pending ++>:Transition(name="cancel"):++> cancelled;
-    paid ++>:Transition(name="process"):++> processing;
-    paid ++>:Transition(name="cancel"):++> cancelled;
-    processing ++>:Transition(name="ship"):++> shipped;
-    shipped ++>:Transition(name="deliver"):++> delivered;
-    shipped ++>:Transition(name="return"):++> returned;
-    delivered ++>:Transition(name="return"):++> returned;
-}
-```
-
-#### 18.2 Incremental Adoption
-
-Jac is designed to work alongside Python, enabling gradual migration strategies that minimize risk and disruption.
-
-### Using Python from Jac
-
-Jac provides seamless Python interoperability through multiple mechanisms:
-
-#### Direct Python Imports
-
-```jac
-# Import Python modules directly
-import:py numpy as np;
-import:py from pandas { DataFrame, Series };
-import:py from sklearn.cluster { KMeans };
-
-# Use Python libraries naturally
-walker DataAnalyzer {
-    has data: list;
-    has clusters: int = 3;
-
-    can analyze with entry {
-        # Use pandas for data manipulation
-        df = DataFrame(self.data);
-
-        # Statistical analysis
-        summary = df.describe();
-
-        # Machine learning with sklearn
-        features = df[['feature1', 'feature2']].values;
-        kmeans = KMeans(n_clusters=self.clusters);
-        labels = kmeans.fit_predict(features);
-
-        # Store results in graph
-        here ++> AnalysisResult(
-            summary=summary.to_dict(),
-            cluster_labels=labels.tolist(),
-            centroids=kmeans.cluster_centers_.tolist()
-        );
-    }
-}
-```
-
-#### Inline Python Code
-
-```jac
-# Complex Python logic inline
-walker PythonIntegration {
-    can process with entry {
-        ::py::
-        # Any Python code here
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-
-        # Create visualization
-        data = here.get_metric_data()
-        plt.figure(figsize=(10, 6))
-        sns.lineplot(data=data, x='timestamp', y='value')
-        plt.title(f'Metrics for {here.name}')
-        plt.savefig(f'metrics_{here.id}.png')
-        plt.close()
-
-        # Complex computation
-        result = perform_complex_calculation(data)
-        ::py::
-
-        # Back to Jac
-        here.visualization_path = f'metrics_{here.id}.png';
-        here.computed_result = result;
-    }
-}
-```
-
-#### Python Function Wrapping
-
-```jac
-# Wrap Python functions for Jac use
-import:py from legacy_system {
-    process_payment,
-    validate_credit_card,
-    send_email
-};
-
-# Create Jac-friendly wrappers
-can process_payment_safe(amount: float, card: dict) -> dict {
-    try {
-        # Call Python function
-        result = process_payment(amount, card);
-        return {"success": true, "transaction_id": result.id};
-    } except Exception as e {
-        return {"success": false, "error": str(e)};
-    }
-}
-
-# Use in walkers
-walker ProcessOrder {
-    has order_total: float;
-    has payment_info: dict;
-
-    can process with Order entry {
-        # Validate card using Python
-        if not validate_credit_card(self.payment_info) {
-            report {"error": "Invalid card"};
-            disengage;
-        }
-
-        # Process payment
-        result = process_payment_safe(self.order_total, self.payment_info);
-
-        if result["success"] {
-            here ++> Payment(
-                transaction_id=result["transaction_id"],
-                amount=self.order_total,
-                timestamp=timestamp_now()
-            );
-
-            # Send confirmation email
-            send_email(
-                to=here.customer_email,
-                subject="Order Confirmed",
-                body=f"Your order {here.id} has been confirmed."
-            );
-        }
-
-        report result;
-    }
-}
-```
-
-### Hybrid Applications
-
-Building applications that leverage both Python and Jac strengths:
-
-#### Architecture Pattern: Python Backend, Jac Graph Layer
-
-```python
-# python_api.py
-from flask import Flask, request, jsonify
-from jac_runtime import JacRuntime
-
-app = Flask(__name__)
-jrt = JacRuntime('graph_layer.jac')
-
-@app.route('/api/users/<user_id>/friends', methods=['GET'])
-def get_friends(user_id):
-    # Use Jac for graph operations
-    result = jrt.run_walker('GetFriends', {
-        'user_id': user_id,
-        'include_pending': request.args.get('pending', False)
-    })
-    return jsonify(result)
-
-@app.route('/api/recommendations/<user_id>', methods=['GET'])
-def get_recommendations(user_id):
-    # Complex graph algorithm in Jac
-    result = jrt.run_walker('RecommendContent', {
-        'user_id': user_id,
-        'limit': int(request.args.get('limit', 10))
-    })
-    return jsonify(result)
-
-# Traditional Python for non-graph operations
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    # Handle file upload with Python
-    file = request.files['file']
-    # Process with Python libraries
-    processed = process_file(file)
-
-    # Store metadata in Jac graph
-    jrt.run_walker('StoreFileMetadata', {
-        'filename': file.filename,
-        'size': file.size,
-        'processed_data': processed
-    })
-
-    return jsonify({'status': 'success'})
-```
-
-```jac
-# graph_layer.jac
-
-walker GetFriends {
-    has user_id: str;
-    has include_pending: bool = false;
-    has friends: list = [];
-
-    can find with entry {
-        user = find_user_by_id(self.user_id);
-        if not user {
-            report {"error": "User not found"};
-            disengage;
-        }
-        visit user;
-    }
-
-    can collect with User entry {
-        for friend_edge in [-->:Friendship:] {
-            if friend_edge.status == "accepted" or
-               (self.include_pending and friend_edge.status == "pending") {
-                self.friends.append({
-                    "user": friend_edge.target.to_dict(),
-                    "friendship_status": friend_edge.status,
-                    "since": friend_edge.created_at
-                });
+            # Analyze student performance
+            grade_counts = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0};
+            for student in students {
+                if student.grade in grade_counts {
+                    grade_counts[student.grade] += 1;
+                }
             }
-        }
-        report {"friends": self.friends};
-    }
-}
-```
 
-#### Pattern: Jac for Business Logic, Python for Infrastructure
-
-```jac
-# business_logic.jac
-
-# Define business rules in Jac
-walker ApplyDiscounts {
-    has order: dict;
-    has discounts_applied: list = [];
-
-    can apply with Customer entry {
-        # Customer loyalty discount
-        if here.loyalty_points > 1000 {
-            self.add_discount("LOYALTY10", 0.10);
-        }
-
-        # Visit purchase history
-        visit [-->:PurchaseHistory:];
-    }
-
-    can check_history with PurchaseHistory entry {
-        # Frequent buyer discount
-        recent_purchases = here.get_recent_purchases(days=30);
-        if len(recent_purchases) >= 5 {
-            self.add_discount("FREQUENT5", 0.05);
-        }
-    }
-
-    can add_discount(code: str, percentage: float) {
-        self.discounts_applied.append({
-            "code": code,
-            "percentage": percentage
-        });
-    }
-}
-
-# Wrapper for Python integration
-can calculate_order_total(order: dict) -> dict {
-    # Create temporary graph structure
-    customer = Customer(id=order["customer_id"]);
-
-    # Run business logic
-    walker = ApplyDiscounts(order=order);
-    spawn walker on customer;
-
-    # Apply discounts using Python for calculation
-    ::py::
-    total = order["subtotal"]
-    for discount in walker.discounts_applied:
-        total *= (1 - discount["percentage"])
-
-    # Add tax calculation (complex Python logic)
-    tax = calculate_tax(total, order["shipping_address"])
-    final_total = total + tax
-    ::py::
-
-    return {
-        "subtotal": order["subtotal"],
-        "discounts": walker.discounts_applied,
-        "tax": tax,
-        "total": final_total
-    };
-}
-```
-
-### Migration Strategies
-
-##### Strategy 1: Strangler Fig Pattern
-
-Gradually replace Python components with Jac equivalents:
-
-```mermaid
-graph LR
-    subgraph "Phase 1: Python Monolith"
-        P1[Python App]
-    end
-
-    subgraph "Phase 2: Extract Graph Layer"
-        P2A[Python App]
-        P2B[Jac Graph Layer]
-        P2A <--> P2B
-    end
-
-    subgraph "Phase 3: Migrate Business Logic"
-        P3A[Python API]
-        P3B[Jac Business Logic]
-        P3C[Jac Graph Layer]
-        P3A --> P3B
-        P3B <--> P3C
-    end
-
-    subgraph "Phase 4: Full Jac"
-        P4[Jac Application]
-    end
-
-    P1 ==> P2A
-    P2A ==> P3A
-    P3A ==> P4
-```
-
-**Phase 1 to 2 Example:**
-```python
-# Original Python
-class UserService:
-    def get_user_network(self, user_id):
-        user = User.query.get(user_id)
-        friends = [f.to_dict() for f in user.friends]
-        followers = [f.to_dict() for f in user.followers]
-        return {
-            'friends': friends,
-            'followers': followers
-        }
-```
-
-```jac
-# Extract to Jac
-walker GetUserNetwork {
-    has user_id: str;
-
-    can get with entry {
-        # Still use Python for data access initially
-        ::py::
-        from models import User
-        user = User.query.get(self.user_id)
-        ::py::
-
-        # Build graph structure
-        user_node = User(
-            id=user.id,
-            username=user.username
-        );
-
-        # Migrate relationships to graph
-        visit user_node;
-    }
-
-    can collect with User entry {
-        report {
-            "friends": [-->:Friend:-->].to_dict(),
-            "followers": [<--:Follows:].to_dict()
-        };
-    }
-}
-```
-
-##### Strategy 2: Feature Branch Migration
-
-Implement new features in Jac while maintaining existing Python:
-
-```python
-# config.py
-FEATURE_FLAGS = {
-    'use_jac_recommendations': True,
-    'use_jac_notifications': False,
-    'use_jac_auth': False
-}
-
-# app.py
-def get_recommendations(user_id):
-    if FEATURE_FLAGS['use_jac_recommendations']:
-        # New Jac implementation
-        return jac_runtime.get_recommendations(user_id)
-    else:
-        # Legacy Python implementation
-        return python_recommendation_engine.get_recommendations(user_id)
-```
-
-##### Strategy 3: Microservice Extraction
-
-Build new microservices in Jac:
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  legacy-api:
-    build: ./python-api
-    ports:
-      - "5000:5000"
-
-  recommendation-service:
-    build: ./jac-recommendations
-    environment:
-      - JAC_PERSIST_PATH=/data/recommendations
-    volumes:
-      - jac-data:/data
-
-  notification-service:
-    build: ./jac-notifications
-    environment:
-      - JAC_PERSIST_PATH=/data/notifications
-    volumes:
-      - jac-data:/data
-
-volumes:
-  jac-data:
-```
-
-##### Strategy 4: Database Migration Pattern
-
-```jac
-# Migrate data from Python ORM to Jac graph
-walker MigrateUsers {
-    has batch_size: int = 100;
-    has offset: int = 0;
-
-    can migrate with entry {
-        ::py::
-        from sqlalchemy import create_engine
-        from sqlalchemy.orm import sessionmaker
-        from legacy_models import User, Friendship
-
-        engine = create_engine('postgresql://...')
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
-        # Fetch batch of users
-        users = session.query(User)\
-            .offset(self.offset)\
-            .limit(self.batch_size)\
-            .all()
-        ::py::
-
-        # Convert to Jac nodes
-        for py_user in users {
-            jac_user = root ++> User(
-                id=py_user.id,
-                username=py_user.username,
-                email=py_user.email,
-                created_at=py_user.created_at.isoformat()
-            );
-
-            # Migrate relationships
-            ::py::
-            friendships = session.query(Friendship)\
-                .filter_by(user_id=py_user.id)\
-                .all()
-            ::py::
-
-            for friendship in friendships {
-                target = find_or_create_user(friendship.friend_id);
-                jac_user ++>:Friend(
-                    since=friendship.created_at.isoformat(),
-                    status=friendship.status
-                ):++> target;
+            if self.debug_mode {
+                print(f"Grade distribution: {grade_counts}");
             }
-        }
 
-        # Continue with next batch
-        if len(users) == self.batch_size {
-            self.offset += self.batch_size;
-            visit root;  # Process next batch
-        } else {
-            report {"migrated": self.offset + len(users)};
+            report {
+                "classroom": here.name,
+                "student_count": len(students),
+                "teacher_count": len(teachers),
+                "grade_distribution": grade_counts
+            };
         }
     }
-}
-```
 
-### Best Practices for Migration
+    # Test with debugging
+    test "debug walker analysis" {
+        classroom = Classroom(name="Debug Class", room_number="D100");
+        teacher = Teacher(name="Debug Teacher", subject="Computer Science", years_experience=3);
+        classroom.assign_teacher(teacher);
 
-1. **Start with the Graph**
-   - Identify core entities and relationships
-   - Model in Jac first, implement incrementally
+        # Add students with various grades
+        students = [
+            Student(name="Alice", age=16, grade="A"),
+            Student(name="Bob", age=17, grade="B"),
+            Student(name="Charlie", age=16, grade="A"),
+            Student(name="David", age=18, grade="C")
+        ];
 
-2. **Maintain Compatibility**
-   - Keep APIs stable during migration
-   - Use adapter patterns for gradual transition
+        for student in students {
+            classroom.add_student(student);
+        }
 
-3. **Test Extensively**
-   - Maintain parallel test suites
-   - Verify behavior equivalence
+        # Run debug walker
+        debug_walker = debug_classroom_walker(debug_mode=True);
+        result = debug_walker spawn classroom;
 
-4. **Monitor Performance**
-   - Compare Python vs Jac implementations
-   - Optimize graph traversal patterns
+        # Verify results
+        assert result[0]["classroom"] == "Debug Class";
+        assert result[0]["student_count"] == 4;
+        assert result[0]["teacher_count"] == 1;
+        assert result[0]["grade_distribution"]["A"] == 2;
+        assert result[0]["grade_distribution"]["B"] == 1;
+        assert result[0]["grade_distribution"]["C"] == 1;
+    }
 
-5. **Document Differences**
-   - Note semantic changes
-   - Create migration guides for team
+    # Error handling test
+    test "debug error conditions" {
+        # Test with malformed classroom
+        empty_classroom = Classroom(name="Empty Class", room_number="E000");
 
-### Migration Checklist
+        debug_walker = debug_classroom_walker(debug_mode=True);
+        result = debug_walker spawn empty_classroom;
 
-- [ ] Identify graph structures in Python code
-- [ ] Map Python classes to Jac archetypes
-- [ ] Create Jac equivalents for core models
-- [ ] Implement Python-Jac interop layer
-- [ ] Migrate business logic incrementally
-- [ ] Convert data access patterns
-- [ ] Update deployment infrastructure
-- [ ] Train team on Jac concepts
-- [ ] Monitor and optimize performance
-- [ ] Deprecate Python components gradually
+        # Should handle empty classroom gracefully
+        assert result[0]["student_count"] == 0;
+        assert result[0]["teacher_count"] == 0;
 
-The key to successful migration is recognizing that Jac isn't just Python with different syntax—it's a fundamentally different way of thinking about program structure. Embrace the graph, let computation flow to data, and watch your applications become more intuitive, scalable, and maintainable.
+        # All grade counts should be zero
+        grade_dist = result[0]["grade_distribution"];
+        assert all(count == 0 for count in grade_dist.values());
+    }
+    ```
+    </div>
+
+### Testing Edge Cases
+
+!!! example "Edge Case Testing"
+    <div class="code-block">
+    ```jac
+    # edge_case_tests.jac
+
+    test "boundary conditions" {
+        # Test minimum capacity classroom
+        min_classroom = Classroom(name="Tiny Class", room_number="T001", capacity=1);
+        student1 = Student(name="Alice", age=16, grade="A");
+        student2 = Student(name="Bob", age=17, grade="B");
+
+        # First student should succeed
+        assert min_classroom.add_student(student1) == True;
+        assert min_classroom.get_student_count() == 1;
+
+        # Second student should fail
+        assert min_classroom.add_student(student2) == False;
+        assert min_classroom.get_student_count() == 1;
+
+        # Test zero capacity (edge case)
+        zero_classroom = Classroom(name="No Space", room_number="N000", capacity=0);
+        assert zero_classroom.add_student(student1) == False;
+        assert zero_classroom.get_student_count() == 0;
+    }
+
+    test "duplicate operations" {
+        classroom = Classroom(name="Duplicate Test", room_number="DT01");
+        student = Student(name="Alice", age=16, grade="A");
+        teacher1 = Teacher(name="Teacher One", subject="Math", years_experience=5);
+        teacher2 = Teacher(name="Teacher Two", subject="Science", years_experience=3);
+
+        # Add student twice (should both succeed as different instances)
+        assert classroom.add_student(student) == True;
+        # Note: In this implementation, same instance can't be added twice
+        # But creating a new instance with same data would be allowed
+
+        # Add second teacher should fail
+        assert classroom.assign_teacher(teacher1) == True;
+        assert classroom.assign_teacher(teacher2) == False;
+
+        # Verify state
+        teachers = [classroom --> Teacher];
+        assert len(teachers) == 1;
+        assert teachers[0].name == "Teacher One";
+    }
+
+    test "data validation edge cases" {
+        # Test with extreme values
+        old_student = Student(name="Old Student", age=99, grade="A");
+        young_student = Student(name="Young Student", age=5, grade="F");
+
+        classroom = Classroom(name="Age Test", room_number="AT01");
+
+        # Both should be accepted (no age validation in current implementation)
+        assert classroom.add_student(old_student) == True;
+        assert classroom.add_student(young_student) == True;
+
+        # Test empty/unusual names
+        empty_name_student = Student(name="", age=16, grade="A");
+        long_name_student = Student(name="Very Long Student Name That Goes On Forever", age=16, grade="A");
+
+        assert classroom.add_student(empty_name_student) == True;
+        assert classroom.add_student(long_name_student) == True;
+
+        assert classroom.get_student_count() == 4;
+    }
+    ```
+    </div>
+
+---
+
+## Key Takeaways
+
+!!! summary "What We've Learned"
+    - **Built-in Testing**: Jac's test blocks provide integrated testing without external frameworks
+    - **Walker Testing**: Specialized patterns for testing graph traversal and walker behavior
+    - **Debug Integration**: Built-in debugging features work seamlessly with tests
+    - **Edge Case Coverage**: Comprehensive testing includes boundary conditions and error cases
+    - **Graph Verification**: Testing relationships and connections in Object-Spatial Programming
+
+### Next Steps
+
+In the upcoming chapters, we'll explore:
+- **Chapter 19**: Deployment strategies for tested applications
+- **Chapter 20**: Performance optimization based on test insights
+- **Chapter 21**: Building complete applications with comprehensive test suites
+
+!!! tip "Try It Yourself"
+    Enhance the classroom system with:
+    - Tests for grade calculation and student progression
+    - Performance tests for large-scale classroom management
+    - Integration tests for multiple interacting walkers
+    - Stress tests for concurrent walker operations
+
+    Remember: Good tests make debugging easier and code more reliable!
+
+---
+
+*Ready to learn about deployment strategies? Continue to [Chapter 19: Deployment Strategies](chapter_19.md)!*
