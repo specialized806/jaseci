@@ -45,7 +45,6 @@ Jac Cloud is a cloud-native execution environment designed specifically for Jac 
         ```
 
     === "Jac Cloud"
-        <div class="code-block">
         ```jac
         # weather.jac - No manual API setup needed
         walker get_weather {
@@ -58,7 +57,6 @@ Jac Cloud is a cloud-native execution environment designed specifically for Jac 
             }
         }
         ```
-        </div>
 
 ---
 
@@ -78,7 +76,6 @@ pip install jac-cloud
 
 !!! example "Basic Weather Service"
     === "Jac"
-        <div class="code-block">
         ```jac
         # weather_service.jac
         walker get_weather {
@@ -96,7 +93,6 @@ pip install jac-cloud
             }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -161,7 +157,6 @@ Jac Cloud automatically transforms your walkers into RESTful API endpoints. Let'
 
 !!! example "Weather API with Persistence"
     === "Jac"
-        <div class="code-block">
         ```jac
         # enhanced_weather.jac
         node WeatherCache {
@@ -207,7 +202,6 @@ Jac Cloud automatically transforms your walkers into RESTful API endpoints. Let'
             }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -324,7 +318,6 @@ The power of Jac Cloud lies in its scale-agnostic nature. Let's see how the same
 Let's add more functionality to demonstrate API scalability:
 
 !!! example "Multi-Operation Weather Service"
-    <div class="code-block">
     ```jac
     # complete_weather.jac
     node WeatherCache {
@@ -392,7 +385,6 @@ Let's add more functionality to demonstrate API scalability:
         }
     }
     ```
-    </div>
 
 ### API Endpoints Generated
 
