@@ -148,6 +148,33 @@ def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo:
     lines.append("\n")
     return "\n".join(lines)
 
+def generate_html_table(contributors: List[Dict[str, Any]], days: int, repo: str) -> str:
+    """Generate an HTML table from contributor data and return as string."""
+    if not contributors:
+        return f"<p>No contributions found in the last {days} days for {repo}.</p>"
+
+    end_date = datetime.now(timezone.utc).date()
+    start_date = end_date - timedelta(days=days)
+
+    lines = []
+    lines.append(
+        f'<h3>Top contributors in the last {days} days '
+        f'({start_date.strftime("%Y-%m-%d")} to {end_date.strftime("%Y-%m-%d")})</h3>'
+    )
+    lines.append('<table>')
+    lines.append('<thead><tr><th>Contributor</th><th>Commits</th><th>Active Days</th></tr></thead>')
+    lines.append('<tbody>')
+    for contributor in contributors:
+        login = contributor["login"]
+        commits = contributor["commits"]
+        active_days = contributor["active_days"]
+        lines.append(
+            f'<tr><td><a href="https://github.com/{login}">@{login}</a></td>'
+            f'<td>{commits}</td><td>{active_days}</td></tr>'
+        )
+    lines.append('</tbody></table>')
+    return "\n".join(lines)
+
 def get_tabs_css() -> str:
     """Return CSS for the tab and table design (dark tab bar, clear selection, aligned tabs, responsive)."""
     return """
@@ -278,24 +305,30 @@ def get_tabs_html(repo_tables: list) -> str:
         tabs.append(f'<li class="{active}" onclick="showTab({idx})" id="tab{idx}">{repo}</li>')
     return '<ul id="tabs">\n' + "\n".join(tabs) + '\n</ul>'
 
-def get_tab_contents_html(repo_tables: List[Tuple[str, str]]) -> str:
-    """Return HTML for the tab contents."""
+def get_tab_contents_html(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]) -> str:
+    """Return HTML for the tab contents, using HTML tables."""
     contents = []
-    for idx, (repo, table) in enumerate(repo_tables):
+    for idx, (repo, contributors_by_period) in enumerate(repo_tables):
         display = "block" if idx == 0 else "none"
+        tab_html = []
+        for period_idx, contributors in enumerate(contributors_by_period):
+            days = periods[period_idx]
+            tab_html.append(generate_html_table(contributors, days, repo))
         contents.append(
-            f'<div id="tabcontent{idx}" class="tabcontent" style="display:{display};">\n{table}\n</div>'
+            f'<div id="tabcontent{idx}" class="tabcontent" style="display:{display};">\n' +
+            "\n".join(tab_html) +
+            '\n</div>'
         )
     return "\n".join(contents)
 
-def print_tabbed_tables(repo_tables: List[Tuple[str, str]]) -> None:
-    """Prints HTML tabbed view for multiple repo tables with separated HTML/CSS/JS."""
+def print_tabbed_tables(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]) -> None:
+    """Prints HTML tabbed view for multiple repo tables with separated HTML/CSS/JS and HTML tables."""
     html = []
     html.append(get_tabs_css())
     html.append('<div style="margin-bottom: 1em;">')
     html.append(get_tabs_html(repo_tables))
     html.append('</div>')
-    html.append(get_tab_contents_html(repo_tables))
+    html.append(get_tab_contents_html(repo_tables, periods))
     html.append(get_tabs_js(len(repo_tables)))
     print("\n".join(html))
 
@@ -358,17 +391,16 @@ def main() -> None:
         max_days = max(periods)
         all_commits = fetch_commits(owner or "", repo or "", max_days, token)
         if all_commits is None:
-            table = f"Could not fetch data for {repo_full}."
-            repo_tables.append((repo_full, table))
+            contributors_by_period = [[] for _ in periods]
+            repo_tables.append((repo_full, contributors_by_period))
             continue
-        table = ""
+        contributors_by_period = []
         for days in periods:
             contributors = process_contributors(all_commits, days)
-            if contributors:
-                table += generate_markdown_table(contributors, days, repo_full)
-        repo_tables.append((repo_full, table if table else f"No contributions found for {repo_full}."))
+            contributors_by_period.append(contributors)
+        repo_tables.append((repo_full, contributors_by_period))
 
-    print_tabbed_tables(repo_tables)
+    print_tabbed_tables(repo_tables, periods)
 
 if __name__ == "__main__":
     main()
