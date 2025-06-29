@@ -42,7 +42,7 @@ signature, making the object definition concise.
     --8<-- "jac/examples/guess_game/guess_game2.jac"
     ```
 
-## Step&nbsp;4 – Separating implementation with `impl`
+## Step&nbsp;3 – Separating implementation with `impl`
 
 The fourth version splits object declarations from their implementations using
 `impl`.  The object lists method signatures (`def init;`, `override def play;`),
@@ -58,7 +58,7 @@ separation keeps the interface clean and helps organise larger codebases.
     --8<-- "jac/examples/guess_game/guess_game3.impl.jac"
     ```
 
-## Step&nbsp;5 – Walking the graph
+## Step&nbsp;4 – Walking the graph
 
 Finally `guess_game5.jac` re‑imagines the game using Jac's object‑spatial
 architecture.  A `walker` visits a chain of `turn` nodes created with `++>`
