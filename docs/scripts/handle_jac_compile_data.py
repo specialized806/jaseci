@@ -49,11 +49,15 @@ def pre_build_hook(**kwargs: dict) -> None:
     if is_file_older_than_minutes(TOP_CONTRIBUTORS_DOC, 5):
         with open(TOP_CONTRIBUTORS_DOC, "w") as f:
             # Add extra repos for tabbed view
-            f.write(get_top_contributors([
-                "jaseci-labs/jaseci",
-                "jaseci-labs/jac_playground",
-                "TrueSelph/jivas"
-            ]))
+            f.write(
+                get_top_contributors(
+                    [
+                        "jaseci-labs/jaseci",
+                        "jaseci-labs/jac_playground",
+                        "TrueSelph/jivas",
+                    ]
+                )
+            )
     else:
         print(f"File is recent: {TOP_CONTRIBUTORS_DOC}. Skipping creation.")
 
@@ -92,7 +96,7 @@ def create_playground_zip() -> None:
     print("Zip saved to:", PLAYGROUND_ZIP_PATH)
 
 
-def get_top_contributors(repos=None) -> str:
+def get_top_contributors(repos: list[str] | None = None) -> str:
     """Get the top contributors for the jaclang repository and extra repos as HTML tabs."""
     # Get the current directory (docs/scripts)
     current_dir = os.path.dirname(os.path.abspath(__file__))
