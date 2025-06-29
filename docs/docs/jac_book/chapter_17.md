@@ -3,45 +3,49 @@
 In this chapter, we'll explore Jac's advanced type system that provides powerful generic programming capabilities, type constraints, and graph-aware type checking. We'll build a generic data processing system that demonstrates type safety, constraints, and runtime validation through practical examples.
 
 !!! info "What You'll Learn"
-    - Advanced generic programming with type parameters
-    - Type constraints and bounded generics
+    - Advanced generic programming with the `any` type
+    - Type constraints and validation patterns
     - Graph-aware type checking for nodes and edges
-    - Runtime type validation and error handling
     - Building type-safe, reusable components
+    - Runtime type validation and guards
 
 ---
 
-## Advanced Generics
+## Advanced Type System Features
 
-Jac's type system goes beyond basic generics to provide powerful type parameterization that works seamlessly with Object-Spatial Programming. This enables building highly reusable and type-safe components.
+Jac's type system goes beyond basic types to provide powerful features that work seamlessly with Object-Spatial Programming. The `any` type enables flexible programming while maintaining type safety through runtime validation.
 
-!!! success "Generic Programming Benefits"
-    - **Type Safety**: Catch type errors at compile time
-    - **Code Reuse**: Write once, use with multiple types
-    - **Performance**: No runtime type boxing/unboxing overhead
-    - **Documentation**: Types serve as self-documenting contracts
-    - **Graph Integration**: Generics work with nodes, edges, and walkers
+!!! success "Type System Benefits"
+    - **Flexible Typing**: Use `any` for maximum flexibility when needed
+    - **Runtime Safety**: Validate types at runtime with built-in guards
+    - **Graph Integration**: Type safety extends to nodes, edges, and walkers
+    - **Constraint Validation**: Enforce business rules through type checking
 
-### Traditional vs Jac Generics
+### Traditional vs Jac Type System
 
-!!! example "Generic Programming Comparison"
+!!! example "Type System Comparison"
     === "Traditional Approach"
         ```python
-        # data_processor.py - Limited generic support
-        from typing import TypeVar, Generic, List, Optional, Protocol
+        # python_generics.py - Complex generic setup
+        from typing import TypeVar, Generic, List, Any, Union, Optional
+        from abc import ABC, abstractmethod
 
         T = TypeVar('T')
         U = TypeVar('U')
 
-        class Processor(Generic[T]):
+        class Processable(ABC):
+            @abstractmethod
+            def process(self) -> str:
+                pass
+
+        class DataProcessor(Generic[T]):
             def __init__(self):
                 self.items: List[T] = []
 
             def add(self, item: T) -> None:
                 self.items.append(item)
 
-            def process_all(self, func) -> List[T]:
-                # Limited type checking for func parameter
+            def process_all(self, func) -> List[Any]:
                 return [func(item) for item in self.items]
 
             def find(self, predicate) -> Optional[T]:
@@ -50,28 +54,28 @@ Jac's type system goes beyond basic generics to provide powerful type parameteri
                         return item
                 return None
 
-        # Usage requires explicit type annotations
-        processor: Processor[int] = Processor()
+        # Usage requires explicit type parameters
+        processor: DataProcessor[int] = DataProcessor()
         processor.add(42)
-        processor.add("string")  # Runtime error, not caught at type check
+        processor.add(24)
         ```
 
-    === "Jac Advanced Generics"
+    === "Jac Type System"
         <div class="code-block">
         ```jac
-        # data_processor.jac - Advanced type-safe generics
-        obj DataProcessor[T] {
-            has items: list[T] = [];
+        # data_processor.jac - Simple and flexible
+        obj DataProcessor {
+            has items: list[any] = [];
 
-            can add(item: T) -> None {
+            def add(item: any) -> None {
                 self.items.append(item);
             }
 
-            can process_all[U](func: (T) -> U) -> list[U] {
+            def process_all(func: any) -> list[any] {
                 return [func(item) for item in self.items];
             }
 
-            can find(predicate: (T) -> bool) -> T | None {
+            def find(predicate: any) -> any | None {
                 for item in self.items {
                     if predicate(item) {
                         return item;
@@ -80,284 +84,337 @@ Jac's type system goes beyond basic generics to provide powerful type parameteri
                 return None;
             }
 
-            can filter_by_type[U](target_type: type[U]) -> list[U] {
+            def filter_by_type(target_type: any) -> list[any] {
                 return [item for item in self.items if isinstance(item, target_type)];
             }
         }
 
         with entry {
-            # Type inference works automatically
-            processor = DataProcessor[int]();
+            # Simple usage with type inference
+            processor = DataProcessor();
             processor.add(42);
-            processor.add(24);
+            processor.add("hello");
+            processor.add(3.14);
 
-            # Type-safe operations
-            doubled = processor.process_all((x: int) -> int => x * 2);
-            print(f"Doubled: {doubled}");
+            # Type-safe operations with runtime validation
+            numbers = processor.filter_by_type(int);
+            print(f"Numbers: {numbers}");
         }
         ```
         </div>
 
 ---
 
-## Type Constraints
+## Runtime Type Validation
 
-Type constraints allow you to specify requirements that generic type parameters must satisfy, enabling more precise and safe generic programming.
+Jac provides powerful runtime type checking capabilities that complement the flexible `any` type, enabling robust error handling and dynamic type validation.
 
-### Basic Type Constraints
+### Type Guards and Validation
 
-!!! example "Constrained Generic Processor"
-    === "Jac"
-        <div class="code-block">
-        ```jac
-        # constrained_processor.jac
-        # Define a protocol for comparable types
-        trait Comparable {
-            can compare_to(other: Self) -> int;
-        }
-
-        # Constrained generic that only accepts comparable types
-        obj SortedProcessor[T: Comparable] {
-            has items: list[T] = [];
-
-            can add(item: T) -> None {
-                self.items.append(item);
-                self.sort_items();
-            }
-
-            can sort_items() -> None {
-                # Can use compare_to because T implements Comparable
-                self.items.sort(key=lambda x: x);
-            }
-
-            can get_min() -> T | None {
-                return self.items[0] if self.items else None;
-            }
-
-            can get_max() -> T | None {
-                return self.items[-1] if self.items else None;
-            }
-        }
-
-        # Implement Comparable for custom types
-        obj Score {
-            has value: int;
-            has player: str;
-
-            can compare_to(other: Score) -> int {
-                return self.value - other.value;
-            }
-        }
-
-        with entry {
-            # Type constraint ensures only comparable types can be used
-            score_processor = SortedProcessor[Score]();
-
-            score_processor.add(Score(value=85, player="Alice"));
-            score_processor.add(Score(value=92, player="Bob"));
-            score_processor.add(Score(value=78, player="Charlie"));
-
-            min_score = score_processor.get_min();
-            max_score = score_processor.get_max();
-
-            print(f"Lowest score: {min_score.player} - {min_score.value}");
-            print(f"Highest score: {max_score.player} - {max_score.value}");
-        }
-        ```
-        </div>
-
-    === "Python Equivalent"
-        ```python
-        # constrained_processor.py - Complex protocol setup
-        from typing import TypeVar, Generic, List, Optional, Protocol
-        from abc import abstractmethod
-
-        class Comparable(Protocol):
-            @abstractmethod
-            def compare_to(self, other: 'Comparable') -> int:
-                pass
-
-        T = TypeVar('T', bound=Comparable)
-
-        class SortedProcessor(Generic[T]):
-            def __init__(self):
-                self.items: List[T] = []
-
-            def add(self, item: T) -> None:
-                self.items.append(item)
-                self.sort_items()
-
-            def sort_items(self) -> None:
-                self.items.sort(key=lambda x: x.compare_to)
-
-            def get_min(self) -> Optional[T]:
-                return self.items[0] if self.items else None
-
-            def get_max(self) -> Optional[T]:
-                return self.items[-1] if self.items else None
-
-        class Score:
-            def __init__(self, value: int, player: str):
-                self.value = value
-                self.player = player
-
-            def compare_to(self, other: 'Score') -> int:
-                return self.value - other.value
-
-        # Usage
-        processor = SortedProcessor[Score]()
-        processor.add(Score(85, "Alice"))
-        # ... rest of implementation
-        ```
-
-### Multiple Type Constraints
-
-!!! example "Multi-Constraint Generic"
+!!! example "Runtime Type Validation System"
     <div class="code-block">
     ```jac
-    # multi_constraint.jac
-    trait Serializable {
-        can to_json() -> dict;
-    }
+    # type_validator.jac
+    obj TypeValidator {
+        has strict_mode: bool = False;
 
-    trait Cacheable {
-        can get_cache_key() -> str;
-    }
+        """Check if value matches expected type."""
+        def validate_type(value: any, expected_type: any) -> bool {
+            if expected_type == int {
+                return isinstance(value, int);
+            } elif expected_type == str {
+                return isinstance(value, str);
+            } elif expected_type == float {
+                return isinstance(value, float);
+            } elif expected_type == list {
+                return isinstance(value, list);
+            } elif expected_type == dict {
+                return isinstance(value, dict);
+            }
+            return True;  # Allow any for unknown types
+        }
 
-    # Multiple constraints using intersection types
-    obj CachedProcessor[T: Comparable & Serializable & Cacheable] {
-        has items: list[T] = [];
-        has cache: dict[str, T] = {};
-
-        can add_with_cache(item: T) -> None {
-            cache_key = item.get_cache_key();
-
-            if cache_key not in self.cache {
-                self.items.append(item);
-                self.cache[cache_key] = item;
+        """Safely cast value to target type."""
+        def safe_cast(value: any, target_type: any) -> any | None {
+            try {
+                if target_type == int {
+                    return int(value);
+                } elif target_type == str {
+                    return str(value);
+                } elif target_type == float {
+                    return float(value);
+                } elif target_type == bool {
+                    return bool(value);
+                }
+                return value;
+            } except ValueError {
+                if self.strict_mode {
+                    raise ValueError(f"Cannot cast {value} to {target_type}");
+                }
+                return None;
             }
         }
 
-        can export_to_json() -> list[dict] {
-            return [item.to_json() for item in self.items];
-        }
-
-        can get_sorted_cache_keys() -> list[str] {
-            sorted_items = sorted(self.items, key=lambda x: x);
-            return [item.get_cache_key() for item in sorted_items];
-        }
-    }
-
-    obj Product {
-        has name: str;
-        has price: float;
-        has id: str;
-
-        can compare_to(other: Product) -> int {
-            return int((self.price - other.price) * 100);
-        }
-
-        can to_json() -> dict {
-            return {"name": self.name, "price": self.price, "id": self.id};
-        }
-
-        can get_cache_key() -> str {
-            return f"product_{self.id}";
+        """Validate value is within specified range."""
+        def validate_range(value: any, min_val: any = None, max_val: any = None) -> bool {
+            if min_val is not None and value < min_val {
+                return False;
+            }
+            if max_val is not None and value > max_val {
+                return False;
+            }
+            return True;
         }
     }
 
     with entry {
-        processor = CachedProcessor[Product]();
+        validator = TypeValidator(strict_mode=True);
 
-        processor.add_with_cache(Product(name="Laptop", price=999.99, id="1"));
-        processor.add_with_cache(Product(name="Mouse", price=29.99, id="2"));
+        # Test type validation
+        test_values = [42, "hello", 3.14, True, [1, 2, 3]];
+        expected_types = [int, str, float, bool, list];
 
-        json_data = processor.export_to_json();
-        cache_keys = processor.get_sorted_cache_keys();
+        for i in range(len(test_values)) {
+            value = test_values[i];
+            expected = expected_types[i];
+            is_valid = validator.validate_type(value, expected);
+            print(f"{value} is {expected}: {is_valid}");
+        }
 
-        print(f"Exported products: {len(json_data)}");
-        print(f"Cache keys: {cache_keys}");
+        # Test safe casting
+        cast_result = validator.safe_cast("123", int);
+        print(f"Cast '123' to int: {cast_result}");
+
+        # Test range validation
+        in_range = validator.validate_range(50, 0, 100);
+        print(f"50 in range [0, 100]: {in_range}");
+    }
+    ```
+    </div>
+
+### Advanced Type Guards
+
+!!! example "Complex Type Validation Patterns"
+    <div class="code-block">
+    ```jac
+    # advanced_validator.jac
+    obj SchemaValidator {
+        has schema: dict[str, any] = {};
+
+        """Define expected type for a field."""
+        def set_field_type(field_name: str, field_type: any) -> None {
+            self.schema[field_name] = field_type;
+        }
+
+        """Validate object against schema."""
+        def validate_object(obj: any) -> dict[str, any] {
+            results = {
+                "valid": True,
+                "errors": [],
+                "field_results": {}
+            };
+
+            if not isinstance(obj, dict) {
+                results["valid"] = False;
+                results["errors"].append("Object must be a dictionary");
+                return results;
+            }
+
+            for (field_name, expected_type) in self.schema.items() {
+                if field_name not in obj {
+                    results["valid"] = False;
+                    results["errors"].append(f"Missing required field: {field_name}");
+                    results["field_results"][field_name] = False;
+                } else {
+                    field_value = obj[field_name];
+                    is_valid = self.validate_field(field_value, expected_type);
+                    results["field_results"][field_name] = is_valid;
+                    if not is_valid {
+                        results["valid"] = False;
+                        results["errors"].append(f"Invalid type for {field_name}: expected {expected_type}, got {type(field_value)}");
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        """Validate individual field value."""
+        def validate_field(value: any, expected_type: any) -> bool {
+            if expected_type == "string" {
+                return isinstance(value, str);
+            } elif expected_type == "number" {
+                return isinstance(value, (int, float));
+            } elif expected_type == "boolean" {
+                return isinstance(value, bool);
+            } elif expected_type == "list" {
+                return isinstance(value, list);
+            } elif expected_type == "dict" {
+                return isinstance(value, dict);
+            }
+            return True;
+        }
+    }
+
+    with entry {
+        # Create schema for user data
+        user_validator = SchemaValidator();
+        user_validator.set_field_type("name", "string");
+        user_validator.set_field_type("age", "number");
+        user_validator.set_field_type("email", "string");
+        user_validator.set_field_type("active", "boolean");
+
+        # Test valid user
+        valid_user = {
+            "name": "Alice",
+            "age": 30,
+            "email": "alice@example.com",
+            "active": True
+        };
+
+        result = user_validator.validate_object(valid_user);
+        print(f"Valid user validation: {result}");
+
+        # Test invalid user
+        invalid_user = {
+            "name": "Bob",
+            "age": "thirty",  # Wrong type
+            "email": "bob@example.com"
+            # Missing 'active' field
+        };
+
+        result = user_validator.validate_object(invalid_user);
+        print(f"Invalid user validation: {result}");
     }
     ```
     </div>
 
 ---
 
-## Graph Type Checking
+## Graph-Aware Type Checking
 
-Jac's type system extends to Object-Spatial Programming constructs, providing compile-time guarantees about graph structure and walker behavior.
+Jac's type system extends to Object-Spatial Programming constructs, providing compile-time and runtime guarantees about graph structure and walker behavior.
 
 ### Node and Edge Type Safety
 
 !!! example "Type-Safe Graph Operations"
     <div class="code-block">
     ```jac
-    # graph_types.jac
-    # Define specific node types with constraints
+    # typed_graph.jac
     node Person {
         has name: str;
         has age: int;
+
+        def validate_person() -> bool {
+            return len(self.name) > 0 and self.age >= 0;
+        }
     }
 
     node Company {
-        has name: str;
+        has company_name: str;
         has industry: str;
+
+        def validate_company() -> bool {
+            return len(self.company_name) > 0 and len(self.industry) > 0;
+        }
     }
 
-    # Type-safe edge definitions
     edge WorksAt {
         has position: str;
+        has salary: float;
         has start_date: str;
+
+        def validate_employment() -> bool {
+            return len(self.position) > 0 and self.salary > 0;
+        }
     }
 
     edge FriendsWith {
         has since: str;
+        has closeness: int;  # 1-10 scale
+
+        def validate_friendship() -> bool {
+            return self.closeness >= 1 and self.closeness <= 10;
+        }
     }
 
-    # Generic walker with type constraints
-    walker FindConnections[NodeType, EdgeType] {
-        has target_node: NodeType;
-        has max_depth: int = 2;
-        has found_connections: list[NodeType] = [];
+    obj GraphValidator {
+        has validation_errors: list[str] = [];
 
-        can traverse_graph with NodeType entry {
-            if self.max_depth > 0 {
-                # Type-safe edge traversal
-                connected_nodes = [here --EdgeType--> NodeType];
+        """Validate any node type."""
+        def validate_node(node: any) -> bool {
+            self.validation_errors = [];
 
-                for node in connected_nodes {
-                    if node not in self.found_connections {
-                        self.found_connections.append(node);
-
-                        # Recursive traversal with decremented depth
-                        sub_walker = FindConnections[NodeType, EdgeType](
-                            target_node=node,
-                            max_depth=self.max_depth - 1
-                        );
-                        sub_walker spawn node;
-                    }
+            if isinstance(node, Person) {
+                if not node.validate_person() {
+                    self.validation_errors.append(f"Invalid person: {node.name}");
+                    return False;
                 }
+            } elif isinstance(node, Company) {
+                if not node.validate_company() {
+                    self.validation_errors.append(f"Invalid company: {node.company_name}");
+                    return False;
+                }
+            } else {
+                self.validation_errors.append(f"Unknown node type: {type(node)}");
+                return False;
             }
 
-            report self.found_connections;
+            return True;
+        }
+
+        """Validate edge connection between nodes."""
+        def validate_edge_connection(from_node: any, edge: any, to_node: any) -> bool {
+            # Check if edge type is appropriate for node types
+            if isinstance(edge, WorksAt) {
+                # Person should work at Company
+                if not (isinstance(from_node, Person) and isinstance(to_node, Company)) {
+                    self.validation_errors.append("WorksAt edge must connect Person to Company");
+                    return False;
+                }
+                return edge.validate_employment();
+            } elif isinstance(edge, FriendsWith) {
+                # Both nodes should be Person
+                if not (isinstance(from_node, Person) and isinstance(to_node, Person)) {
+                    self.validation_errors.append("FriendsWith edge must connect Person to Person");
+                    return False;
+                }
+                return edge.validate_friendship();
+            }
+
+            self.validation_errors.append(f"Unknown edge type: {type(edge)}");
+            return False;
         }
     }
 
     with entry {
-        # Create typed graph structure
+        # Create graph elements
         alice = Person(name="Alice", age=30);
         bob = Person(name="Bob", age=25);
-        tech_corp = Company(name="TechCorp", industry="Technology");
+        tech_corp = Company(company_name="TechCorp", industry="Technology");
 
-        # Type-safe connections
-        alice +:WorksAt:position="Engineer",start_date="2023-01":+> tech_corp;
-        alice +:FriendsWith:since="2020":+> bob;
+        # Create relationships
+        works_edge = WorksAt(position="Developer", salary=75000.0, start_date="2023-01-15");
+        friend_edge = FriendsWith(since="2020-01-01", closeness=8);
 
-        # Type-safe walker spawning
-        person_finder = FindConnections[Person, FriendsWith](target_node=alice);
-        friends = person_finder spawn alice;
+        # Validate graph elements
+        validator = GraphValidator();
 
-        print(f"Found {len(friends)} friends");
+        # Validate nodes
+        alice_valid = validator.validate_node(alice);
+        print(f"Alice valid: {alice_valid}");
+
+        # Validate edge connections
+        work_connection_valid = validator.validate_edge_connection(alice, works_edge, tech_corp);
+        print(f"Work connection valid: {work_connection_valid}");
+
+        friend_connection_valid = validator.validate_edge_connection(alice, friend_edge, bob);
+        print(f"Friend connection valid: {friend_connection_valid}");
+
+        # Test invalid connection
+        invalid_connection = validator.validate_edge_connection(alice, works_edge, bob);  # Wrong types
+        print(f"Invalid connection valid: {invalid_connection}");
+        print(f"Validation errors: {validator.validation_errors}");
     }
     ```
     </div>
@@ -367,265 +424,253 @@ Jac's type system extends to Object-Spatial Programming constructs, providing co
 !!! example "Type-Safe Walker Patterns"
     <div class="code-block">
     ```jac
-    # walker_validation.jac
-    # Generic validator walker
-    walker DataValidator[T] {
-        has validation_rules: list[(T) -> bool] = [];
-        has validated_items: list[T] = [];
-        has failed_items: list[T] = [];
+    # typed_walkers.jac
 
-        can add_rule(rule: (T) -> bool) -> None {
-            self.validation_rules.append(rule);
-        }
+    node Person {
+        has name: str;
+        has age: int;
 
-        can validate_item(item: T) -> bool {
-            for rule in self.validation_rules {
-                if not rule(item) {
-                    self.failed_items.append(item);
-                    return False;
-                }
-            }
-            self.validated_items.append(item);
-            return True;
-        }
-
-        can get_validation_report() -> dict {
-            return {
-                "total_validated": len(self.validated_items),
-                "total_failed": len(self.failed_items),
-                "success_rate": len(self.validated_items) /
-                               (len(self.validated_items) + len(self.failed_items))
-                               if (len(self.validated_items) + len(self.failed_items)) > 0 else 0
-            };
+        def validate_person() -> bool {
+            return len(self.name) > 0 and self.age >= 0;
         }
     }
 
-    obj User {
-        has email: str;
-        has age: int;
-        has username: str;
+    node Company {
+        has company_name: str;
+        has industry: str;
+
+        def validate_company() -> bool {
+            return len(self.company_name) > 0 and len(self.industry) > 0;
+        }
+    }
+
+    edge WorksAt {
+        has position: str;
+        has salary: float;
+        has start_date: str;
+
+        def validate_employment() -> bool {
+            return len(self.position) > 0 and self.salary > 0;
+        }
+    }
+
+    edge FriendsWith {
+        has since: str;
+        has closeness: int;  # 1-10 scale
+
+        def validate_friendship() -> bool {
+            return self.closeness >= 1 and self.closeness <= 10;
+        }
+    }
+
+    walker PersonVisitor {
+        has visited_count: int = 0;
+        has person_names: list[str] = [];
+        has validation_errors: list[str] = [];
+
+        can visit_person with Person entry {
+            # Type-safe person processing
+            if self.validate_person_node(here) {
+                self.visited_count += 1;
+                self.person_names.append(here.name);
+                print(f"Visited person: {here.name} (age {here.age})");
+
+                # Continue to connected persons
+                friends = [->:FriendsWith:->(`?Person)];
+                if friends {
+                    visit friends;
+                }
+            } else {
+                print(f"Invalid person node encountered: {here.name}");
+            }
+        }
+
+        can visit_company with Company entry {
+            # Companies are not processed by PersonVisitor
+            print(f"Skipping company: {here.company_name}");
+        }
+
+        """Validate person node before processing."""
+        def validate_person_node(person: any) -> bool {
+            if not isinstance(person, Person) {
+                self.validation_errors.append(f"Expected Person, got {type(person)}");
+                return False;
+            }
+
+            if not person.validate_person() {
+                self.validation_errors.append(f"Invalid person data: {person.name}");
+                return False;
+            }
+
+            return True;
+        }
+    }
+
+    walker CompanyAnalyzer {
+        has companies_visited: list[str] = [];
+        has total_employees: int = 0;
+
+        can analyze_company with Company entry {
+            if self.validate_company_node(here) {
+                self.companies_visited.append(here.company_name);
+                print(f"Analyzing company: {here.company_name} in {here.industry}");
+
+                # Count employees (people working at this company)
+                employees = [<-:WorksAt:<-(`?Person)];
+                employee_count = len(employees);
+                self.total_employees += employee_count;
+
+                print(f"  Employees: {employee_count}");
+                for employee in employees {
+                    print(f"    - {employee.name}");
+                }
+            }
+        }
+
+        """Validate company node before processing."""
+        def validate_company_node(company: any) -> bool {
+            if not isinstance(company, Company) {
+                return False;
+            }
+            return company.validate_company();
+        }
     }
 
     with entry {
-        # Create type-specific validator
-        user_validator = DataValidator[User]();
+        # Create network
+        alice = root ++> Person(name="Alice", age=30);
+        bob = root ++> Person(name="Bob", age=25);
+        tech_corp = root ++> Company(company_name="TechCorp", industry="Technology");
 
-        # Add type-safe validation rules
-        user_validator.add_rule(lambda user: "@" in user.email);
-        user_validator.add_rule(lambda user: user.age >= 18);
-        user_validator.add_rule(lambda user: len(user.username) >= 3);
+        # Create connections
+        alice[0] +>:WorksAt(position="Developer", salary=75000.0, start_date="2023-01-15"):+> tech_corp[0];
+        bob[0] +>:WorksAt(position="Designer", salary=65000.0, start_date="2023-02-01"):+> tech_corp[0];
+        alice[0] +>:FriendsWith(since="2020-01-01", closeness=8):+> bob[0];
 
-        # Test data
-        users = [
-            User(email="alice@test.com", age=25, username="alice"),
-            User(email="invalid-email", age=17, username="b"),
-            User(email="bob@test.com", age=30, username="bob123")
-        ];
+        # Test type-safe walkers
+        person_visitor = PersonVisitor();
+        alice[0] spawn person_visitor;
 
-        # Validate all users
-        for user in users {
-            is_valid = user_validator.validate_item(user);
-            print(f"User {user.username}: {'Valid' if is_valid else 'Invalid'}");
-        }
+        print(f"Person visitor results:");
+        print(f"  Visited: {person_visitor.visited_count} people");
+        print(f"  Names: {person_visitor.person_names}");
 
-        # Get validation report
-        report = user_validator.get_validation_report();
-        print(f"Validation complete: {report}");
+        company_analyzer = CompanyAnalyzer();
+        tech_corp[0] spawn company_analyzer;
+
+        print(f"Company analyzer results:");
+        print(f"  Companies: {company_analyzer.companies_visited}");
+        print(f"  Total employees: {company_analyzer.total_employees}");
     }
     ```
     </div>
 
 ---
 
-## Runtime Type Validation
+## Building Type-Safe Components
 
-Jac provides powerful runtime type checking capabilities that complement compile-time type safety, enabling robust error handling and dynamic type validation.
+Using Jac's flexible type system, we can build reusable components that are both type-safe and adaptable.
 
-### Dynamic Type Checking
+### Generic Data Structures
 
-!!! example "Runtime Type Validation System"
+!!! example "Type-Safe Generic Collections"
     <div class="code-block">
     ```jac
-    # runtime_validation.jac
-    import from typing { Any }
+    # generic_collections.jac
+    obj SafeList {
+        has items: list[any] = [];
+        has item_type: any = None;
+        has allow_mixed_types: bool = False;
 
-    obj TypeChecker[T] {
-        has expected_type: type[T];
-        has strict_mode: bool = True;
-
-        can validate(value: Any) -> T | None {
-            try {
-                if isinstance(value, self.expected_type) {
-                    return value;
-                } elif not self.strict_mode {
-                    # Attempt type conversion
-                    return self.try_convert(value);
-                } else {
-                    return None;
-                }
-            } except Exception as e {
-                print(f"Type validation error: {e}");
-                return None;
-            }
+        """Set type constraint for list items."""
+        def set_type_constraint(expected_type: any) -> None {
+            self.item_type = expected_type;
         }
 
-        can try_convert(value: Any) -> T | None {
-            try {
-                if self.expected_type == int {
-                    return int(value);
-                } elif self.expected_type == float {
-                    return float(value);
-                } elif self.expected_type == str {
-                    return str(value);
-                } else {
-                    return None;
-                }
-            } except (ValueError, TypeError) {
-                return None;
-            }
-        }
-
-        can validate_collection(values: list[Any]) -> list[T] {
-            validated = [];
-            for value in values {
-                validated_value = self.validate(value);
-                if validated_value is not None {
-                    validated.append(validated_value);
-                }
-            }
-            return validated;
-        }
-    }
-
-    # Type-safe data processor with runtime validation
-    obj SafeDataProcessor[T] {
-        has type_checker: TypeChecker[T];
-        has validated_data: list[T] = [];
-        has rejected_data: list[Any] = [];
-
-        can process_input(raw_data: list[Any]) -> dict {
-            for item in raw_data {
-                validated = self.type_checker.validate(item);
-                if validated is not None {
-                    self.validated_data.append(validated);
-                } else {
-                    self.rejected_data.append(item);
+        """Add item with type checking."""
+        def add(item: any) -> bool {
+            if self.item_type is not None and not self.allow_mixed_types {
+                if not self.check_type(item, self.item_type) {
+                    print(f"Type error: expected {self.item_type}, got {type(item)}");
+                    return False;
                 }
             }
 
-            return {
-                "processed": len(self.validated_data),
-                "rejected": len(self.rejected_data),
-                "success_rate": len(self.validated_data) / len(raw_data) if raw_data else 0
-            };
+            self.items.append(item);
+            return True;
         }
 
-        can get_typed_data() -> list[T] {
-            return self.validated_data;
+        """Safely get item by index."""
+        def get(index: int) -> any | None {
+            if 0 <= index < len(self.items) {
+                return self.items[index];
+            }
+            return None;
+        }
+
+        """Get all items of specific type."""
+        def filter_by_type(target_type: any) -> list[any] {
+            return [item for item in self.items if self.check_type(item, target_type)];
+        }
+
+        """Check if value matches expected type."""
+        def check_type(value: any, expected_type: any) -> bool {
+            if expected_type == int {
+                return isinstance(value, int);
+            } elif expected_type == str {
+                return isinstance(value, str);
+            } elif expected_type == float {
+                return isinstance(value, float);
+            } elif expected_type == bool {
+                return isinstance(value, bool);
+            } elif expected_type == list {
+                return isinstance(value, list);
+            } elif expected_type == dict {
+                return isinstance(value, dict);
+            }
+            return True;
+        }
+
+        """Get summary of types in the list."""
+        def get_type_summary() -> dict[str, int] {
+            type_counts = {};
+            for item in self.items {
+                type_name = type(item).__name__;
+                type_counts[type_name] = type_counts.get(type_name, 0) + 1;
+            }
+            return type_counts;
         }
     }
 
     with entry {
-        # Create processors for different types
-        int_processor = SafeDataProcessor[int](
-            type_checker=TypeChecker[int](expected_type=int, strict_mode=False)
-        );
+        # Create type-constrained list
+        number_list = SafeList();
+        number_list.set_type_constraint(int);
 
-        string_processor = SafeDataProcessor[str](
-            type_checker=TypeChecker[str](expected_type=str, strict_mode=True)
-        );
+        # Add valid items
+        success1 = number_list.add(42);
+        success2 = number_list.add(24);
+        success3 = number_list.add("hello");  # Should fail
 
-        # Mixed input data
-        mixed_data = [42, "hello", 3.14, "world", True, None, "123"];
+        print(f"Added 42: {success1}");
+        print(f"Added 24: {success2}");
+        print(f"Added 'hello': {success3}");
 
-        # Process with type validation
-        int_result = int_processor.process_input(mixed_data);
-        str_result = string_processor.process_input(mixed_data);
+        # Create mixed-type list
+        mixed_list = SafeList(allow_mixed_types=True);
+        mixed_list.add(42);
+        mixed_list.add("hello");
+        mixed_list.add(3.14);
+        mixed_list.add(True);
 
-        print(f"Integer processing: {int_result}");
-        print(f"String processing: {str_result}");
-        print(f"Valid integers: {int_processor.get_typed_data()}");
-        print(f"Valid strings: {string_processor.get_typed_data()}");
-    }
-    ```
-    </div>
+        print(f"Mixed list type summary: {mixed_list.get_type_summary()}");
 
-### Type Guards and Assertions
+        # Filter by type
+        numbers = mixed_list.filter_by_type(int);
+        strings = mixed_list.filter_by_type(str);
 
-!!! example "Advanced Type Guards"
-    <div class="code-block">
-    ```jac
-    # type_guards.jac
-    # Type guard functions for complex validation
-    def is_valid_email(value: Any) -> bool {
-        return isinstance(value, str) and "@" in value and "." in value;
-    }
-
-    def is_positive_number(value: Any) -> bool {
-        return isinstance(value, (int, float)) and value > 0;
-    }
-
-    def is_non_empty_string(value: Any) -> bool {
-        return isinstance(value, str) and len(value.strip()) > 0;
-    }
-
-    # Generic validator with type guards
-    obj GuardedValidator[T] {
-        has type_guards: list[(Any) -> bool] = [];
-        has error_messages: list[str] = [];
-
-        can add_guard(guard: (Any) -> bool, message: str = "Validation failed") -> None {
-            self.type_guards.append(guard);
-            self.error_messages.append(message);
-        }
-
-        can validate_with_guards(value: Any) -> tuple[bool, list[str]] {
-            errors = [];
-
-            for i, guard in enumerate(self.type_guards) {
-                if not guard(value) {
-                    errors.append(self.error_messages[i]);
-                }
-            }
-
-            return (len(errors) == 0, errors);
-        }
-
-        can assert_valid(value: Any) -> T {
-            is_valid, errors = self.validate_with_guards(value);
-
-            if not is_valid {
-                error_msg = f"Validation failed: {', '.join(errors)}";
-                raise ValueError(error_msg);
-            }
-
-            return value;
-        }
-    }
-
-    with entry {
-        # Create email validator with multiple guards
-        email_validator = GuardedValidator[str]();
-        email_validator.add_guard(is_valid_email, "Invalid email format");
-        email_validator.add_guard(is_non_empty_string, "Email cannot be empty");
-
-        # Create number validator
-        number_validator = GuardedValidator[float]();
-        number_validator.add_guard(is_positive_number, "Number must be positive");
-
-        # Test validation
-        test_emails = ["user@example.com", "invalid-email", "", None];
-        test_numbers = [42.5, -10, 0, "not-a-number"];
-
-        for email in test_emails {
-            is_valid, errors = email_validator.validate_with_guards(email);
-            print(f"Email '{email}': {'Valid' if is_valid else f'Invalid - {errors}'}");
-        }
-
-        for number in test_numbers {
-            is_valid, errors = number_validator.validate_with_guards(number);
-            print(f"Number '{number}': {'Valid' if is_valid else f'Invalid - {errors}'}");
-        }
+        print(f"Numbers: {numbers}");
+        print(f"Strings: {strings}");
     }
     ```
     </div>
@@ -635,52 +680,53 @@ Jac provides powerful runtime type checking capabilities that complement compile
 ## Best Practices
 
 !!! summary "Type System Guidelines"
-    - **Use constraints wisely**: Apply type constraints to ensure safety without over-restricting
-    - **Leverage inference**: Let Jac infer types where possible while maintaining clarity
-    - **Design for reuse**: Create generic components that work across multiple types
-    - **Validate at boundaries**: Use runtime validation for external data inputs
-    - **Document type relationships**: Make type constraints and relationships clear
-    - **Test with multiple types**: Verify generic code works with different type parameters
+    - **Use `any` strategically**: Apply `any` type for maximum flexibility while implementing runtime validation
+    - **Validate at boundaries**: Check types when data enters your system from external sources
+    - **Leverage runtime checks**: Use isinstance() and custom validation functions for type safety
+    - **Design for flexibility**: Build components that can handle multiple types when appropriate
+    - **Document type expectations**: Make type requirements clear in function and method documentation
+    - **Test with multiple types**: Verify your code works correctly with different type combinations
 
 ## Key Takeaways
 
 !!! summary "What We've Learned"
     **Advanced Type Features:**
 
-    - **Generic programming**: Type-safe parameterization for reusable components
-    - **Type constraints**: Bounded generics ensure type requirements are met
-    - **Graph-aware types**: Compile-time safety for spatial programming constructs
+    - **Flexible typing**: Use `any` type for maximum flexibility when needed
     - **Runtime validation**: Dynamic type checking complements static analysis
+    - **Graph-aware types**: Compile-time safety for spatial programming constructs
+    - **Type guards**: Runtime validation patterns for dynamic typing
 
     **Practical Applications:**
 
     - **Reusable components**: Build libraries that work with multiple data types
     - **Safe graph operations**: Prevent type errors in node and edge relationships
     - **Data validation**: Robust input validation with clear error messages
-    - **Performance optimization**: Type information enables compiler optimizations
+    - **Performance optimization**: Type information enables better optimization
 
     **Development Benefits:**
 
-    - **Early error detection**: Catch type mismatches at compile time
-    - **Better documentation**: Types serve as executable documentation
-    - **IDE support**: Enhanced autocomplete and error highlighting
-    - **Refactoring safety**: Type system prevents breaking changes
+    - **Early error detection**: Catch type mismatches through validation
+    - **Better documentation**: Types and validation serve as executable documentation
+    - **IDE support**: Enhanced development experience with type information
+    - **Refactoring safety**: Type system helps prevent breaking changes
 
     **Advanced Features:**
 
-    - **Multiple constraints**: Intersection types for complex requirements
-    - **Type guards**: Runtime validation patterns for dynamic typing
-    - **Generic walkers**: Type-safe graph traversal patterns
-    - **Protocol support**: Interface-based programming with traits
+    - **Schema validation**: Complex object validation with custom rules
+    - **Type constraints**: Enforce business rules through type checking
+    - **Generic patterns**: Type-safe graph traversal and processing
+    - **Protocol support**: Interface-based programming with validation
 
 !!! tip "Try It Yourself"
     Master the type system by building:
-    - A generic data processing pipeline with multiple constraints
-    - Type-safe graph algorithms with proper node/edge typing
+
+    - A generic data processing pipeline with runtime validation
+    - Type-safe graph algorithms with proper node/edge validation
     - Runtime validation systems for API endpoints
     - Generic walker patterns for different graph structures
 
-    Remember: Jac's type system catches errors early while enabling powerful generic programming!
+    Remember: Jac's type system provides flexibility through `any` while enabling powerful runtime validation!
 
 ---
 
