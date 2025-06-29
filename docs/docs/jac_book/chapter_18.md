@@ -1,725 +1,1130 @@
 # Chapter 18: Testing and Debugging
 
-In this chapter, we'll explore Jac's built-in testing capabilities and debugging techniques. We'll build a comprehensive test suite for a classroom graph system that demonstrates test block syntax, walker behavior testing, and debugging strategies through practical examples.
+In this chapter, we'll explore Jac's built-in testing framework and debugging strategies for spatial applications. We'll build a comprehensive test suite for a social media system that demonstrates testing nodes, edges, walkers, and complex graph operations.
 
 !!! info "What You'll Learn"
-    - Writing tests using Jac's built-in test block syntax
-    - Testing walker behavior and graph interactions
-    - Debugging techniques for Object-Spatial Programming
-    - Test-driven development patterns in Jac
-    - Performance testing and optimization
+    - Jac's built-in testing framework with `.test.jac` files
+    - Testing spatial applications with nodes, edges, and walkers
+    - Debugging techniques for graph traversal and walker behavior
+    - Performance testing and optimization strategies
+    - Test-driven development patterns for OSP
 
 ---
 
-## Test Block Syntax
+## Jac's Built-in Testing Framework
 
-Jac provides built-in testing capabilities through test blocks that integrate seamlessly with your application code. Unlike traditional testing frameworks, Jac tests are part of the language itself, making them easy to write and maintain.
+Jac provides a powerful testing framework that automatically discovers and runs tests. When you run `jac test myfile.jac`, it automatically looks for `myfile.test.jac` and executes all test blocks within it.
 
-!!! success "Testing Benefits"
-    - **Built-in Framework**: No external testing libraries needed
-    - **Type Safety**: Test assertions leverage Jac's type system
-    - **Graph Testing**: Native support for testing nodes, edges, and walkers
-    - **Integrated Debugging**: Tests can be debugged alongside application code
-    - **Automatic Discovery**: Tests are automatically discovered and executed
+!!! success "Testing Framework Benefits"
+    - **Automatic Discovery**: `.test.jac` files are automatically found and executed
+    - **Graph-Aware Testing**: Native support for testing spatial relationships
+    - **Walker Testing**: Test mobile computation patterns naturally
+    - **Type-Safe Assertions**: Leverage Jac's type system in test validation
+    - **Zero Configuration**: No external testing frameworks required
 
 ### Traditional vs Jac Testing
 
 !!! example "Testing Comparison"
     === "Traditional Approach"
         ```python
-        # test_classroom.py - External testing framework required
+        # test_social_media.py - External framework required
         import unittest
-        from classroom import Student, Teacher, Classroom
+        from social_media import Profile, Tweet, Comment
 
-        class TestClassroom(unittest.TestCase):
+        class TestSocialMedia(unittest.TestCase):
             def setUp(self):
-                self.classroom = Classroom("Math 101")
-                self.teacher = Teacher("Ms. Smith", "Mathematics")
-                self.student1 = Student("Alice", 16, "A")
-                self.student2 = Student("Bob", 17, "B")
+                self.profile = Profile("test_user")
+                self.tweet = Tweet("Hello world!")
 
-            def test_add_student(self):
-                self.classroom.add_student(self.student1)
-                self.assertEqual(len(self.classroom.students), 1)
-                self.assertIn(self.student1, self.classroom.students)
+            def test_create_profile(self):
+                self.assertEqual(self.profile.username, "test_user")
+                self.assertIsInstance(self.profile, Profile)
 
-            def test_assign_teacher(self):
-                self.classroom.assign_teacher(self.teacher)
-                self.assertEqual(self.classroom.teacher, self.teacher)
+            def test_create_tweet(self):
+                self.profile.add_tweet(self.tweet)
+                self.assertEqual(len(self.profile.tweets), 1)
+                self.assertEqual(self.profile.tweets[0].content, "Hello world!")
 
-            def test_classroom_capacity(self):
-                # Add multiple students
-                for i in range(30):
-                    student = Student(f"Student{i}", 16, "A")
-                    self.classroom.add_student(student)
-
-                with self.assertRaises(ValueError):
-                    overflow_student = Student("Overflow", 16, "A")
-                    self.classroom.add_student(overflow_student)
+            def test_follow_user(self):
+                other_user = Profile("other_user")
+                self.profile.follow(other_user)
+                self.assertIn(other_user, self.profile.following)
 
         if __name__ == '__main__':
             unittest.main()
         ```
 
-    === "Jac Built-in Testing"
-        <div class="code-block">
+    === "Jac Testing"
         ```jac
-        # classroom.jac - Built-in test blocks
-        node Student {
-            has name: str;
-            has age: int;
-            has grade: str;
+        # social_media.test.jac - Built-in testing
+
+        test create_profile {
+            root spawn visit_profile();
+            profile = [root --> Profile][0];
+            check isinstance(profile, Profile);
+            check profile.username == "";  # Default value
         }
 
-        node Teacher {
-            has name: str;
-            has subject: str;
+        test update_profile {
+            root spawn update_profile(new_username="test_user");
+            profile = [root --> Profile][0];
+            check profile.username == "test_user";
         }
 
-        node Classroom {
-            has name: str;
-            has capacity: int = 25;
-
-            can add_student(student: Student) -> bool {
-                current_students = [self --> Student];
-                if len(current_students) >= self.capacity {
-                    return False;
-                }
-                self ++> student;
-                return True;
-            }
-
-            can get_student_count() -> int {
-                return len([self --> Student]);
-            }
+        test create_tweet {
+            root spawn create_tweet(content="Hello world!");
+            tweet = [root --> Profile --> Tweet][0];
+            check tweet.content == "Hello world!";
+            check isinstance(tweet, Tweet);
         }
 
-        test "can create classroom with students" {
-            classroom = Classroom(name="Math 101");
-            student1 = Student(name="Alice", age=16, grade="A");
-            student2 = Student(name="Bob", age=17, grade="B");
+        test follow_user {
+            # Create another profile to follow
+            other_profile = Profile(username="other_user");
+            other_profile spawn follow_request();
 
-            # Test adding students
-            assert classroom.add_student(student1) == True;
-            assert classroom.add_student(student2) == True;
-            assert classroom.get_student_count() == 2;
-
-            # Test student connections
-            students = [classroom --> Student];
-            assert len(students) == 2;
-            assert student1 in students;
-            assert student2 in students;
-        }
-
-        test "classroom capacity limits" {
-            classroom = Classroom(name="Small Class", capacity=2);
-            student1 = Student(name="Alice", age=16, grade="A");
-            student2 = Student(name="Bob", age=17, grade="B");
-            student3 = Student(name="Charlie", age=16, grade="C");
-
-            # Fill to capacity
-            assert classroom.add_student(student1) == True;
-            assert classroom.add_student(student2) == True;
-
-            # Test capacity limit
-            assert classroom.add_student(student3) == False;
-            assert classroom.get_student_count() == 2;
+            # Check follow relationship exists
+            followed = [root --> Profile ->:Follow:-> Profile][0];
+            check followed.username == "other_user";
         }
         ```
-        </div>
 
 ---
 
-## Basic Test Structure
+## Testing Graph Structures
 
-Let's start with a simple classroom system and build comprehensive tests around it:
+Testing spatial applications requires verifying both node properties and relationship integrity. Let's build a comprehensive social media system and test it thoroughly.
 
-### Setting Up the Classroom System
+### Basic Social Media System
 
-!!! example "Basic Classroom Implementation"
-    === "Jac"
-        <div class="code-block">
+!!! example "Social Media Implementation"
+    === "social_media.jac"
         ```jac
-        # classroom_system.jac
-        node Student {
-            has name: str;
-            has age: int;
-            has grade: str;
-            has enrolled_date: str = "2024-01-15";
+        # social_media.jac
+        import from datetime { datetime }
 
-            can get_info() -> str {
-                return f"{self.name} (Age: {self.age}, Grade: {self.grade})";
-            }
+        node Profile {
+            has username: str = "";
+            has bio: str = "";
+            has follower_count: int = 0;
+
+            can update with update_profile entry;
+            can follow with follow_request entry;
+            can unfollow with unfollow_request entry;
         }
 
-        node Teacher {
-            has name: str;
-            has subject: str;
-            has years_experience: int;
+        node Tweet {
+            has content: str;
+            has created_at: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+            has like_count: int = 0;
 
-            can can_teach(subject: str) -> bool {
-                return self.subject.lower() == subject.lower();
-            }
+            can update with update_tweet exit;
+            can delete with remove_tweet exit;
+            can like with like_tweet entry;
+            can unlike with unlike_tweet entry;
         }
 
-        node Classroom {
-            has name: str;
-            has capacity: int = 25;
-            has room_number: str;
+        node Comment {
+            has content: str;
+            has created_at: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S");
 
-            can add_student(student: Student) -> bool {
-                if self.get_student_count() >= self.capacity {
-                    return False;
+            can update with update_comment entry;
+            can delete with remove_comment entry;
+        }
+
+        edge Follow {
+            has followed_at: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+        }
+
+        edge Post {
+            has posted_at: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+        }
+
+        edge Like {
+            has liked_at: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+        }
+
+        edge CommentOn {}
+
+        walker visit_profile {
+            can visit_profile with `root entry {
+                visit [-->Profile] else {
+                    new_profile = here ++> Profile();
+                    visit new_profile;
                 }
-                self ++> student;
-                return True;
-            }
-
-            can assign_teacher(teacher: Teacher) -> bool {
-                existing_teachers = [self --> Teacher];
-                if existing_teachers {
-                    return False;  # Only one teacher per classroom
-                }
-                self ++> teacher;
-                return True;
-            }
-
-            can get_student_count() -> int {
-                return len([self --> Student]);
-            }
-
-            can get_students() -> list[Student] {
-                return [self --> Student];
             }
         }
 
-        # Basic functionality test
-        test "basic classroom operations" {
-            # Create entities
-            classroom = Classroom(name="Biology 101", room_number="B204");
-            teacher = Teacher(name="Dr. Wilson", subject="Biology", years_experience=10);
-            student = Student(name="Emma", age=16, grade="A");
+        walker update_profile(visit_profile) {
+            has new_username: str;
+            has new_bio: str = "";
+        }
 
-            # Test teacher assignment
-            assert classroom.assign_teacher(teacher) == True;
-            teachers = [classroom --> Teacher];
-            assert len(teachers) == 1;
-            assert teachers[0].name == "Dr. Wilson";
+        walker follow_request {
+            can follow_user with Profile entry {
+                current_profile = [root --> Profile][0];
+                if current_profile != here {
+                    current_profile +>:Follow:+> here;
+                    here.follower_count += 1;
+                    report {"message": f"Now following {here.username}"};
+                } else {
+                    report {"error": "Cannot follow yourself"};
+                }
+            }
+        }
 
-            # Test student enrollment
-            assert classroom.add_student(student) == True;
-            assert classroom.get_student_count() == 1;
+        walker unfollow_request {
+            can unfollow_user with Profile entry {
+                current_profile = [root --> Profile][0];
+                follow_edges = [edge current_profile ->:Follow:-> here];
+                if follow_edges {
+                    del follow_edges[0];
+                    here.follower_count -= 1;
+                    report {"message": f"Unfollowed {here.username}"};
+                } else {
+                    report {"error": "Not following this user"};
+                }
+            }
+        }
 
-            # Test student info
-            students = classroom.get_students();
-            assert len(students) == 1;
-            assert students[0].name == "Emma";
+        walker create_tweet(visit_profile) {
+            has content: str;
+
+            can post_tweet with Profile entry {
+                tweet = here +>:Post:+> Tweet(content=self.content);
+                report {"message": "Tweet created", "tweet_id": tweet[0].id};
+            }
+        }
+
+        walker update_tweet {
+            has updated_content: str;
+        }
+
+        walker remove_tweet {}
+
+        walker like_tweet {
+            can like_post with Tweet entry {
+                current_profile = [root --> Profile][0];
+                existing_likes = [edge current_profile ->:Like:-> here];
+
+                if not existing_likes {
+                    current_profile +>:Like:+> here;
+                    here.like_count += 1;
+                    report {"message": "Tweet liked"};
+                } else {
+                    report {"error": "Already liked this tweet"};
+                }
+            }
+        }
+
+        walker unlike_tweet {
+            can unlike_post with Tweet entry {
+                current_profile = [root --> Profile][0];
+                like_edges = [edge current_profile ->:Like:-> here];
+
+                if like_edges {
+                    del like_edges[0];
+                    here.like_count -= 1;
+                    report {"message": "Tweet unliked"};
+                } else {
+                    report {"error": "Haven't liked this tweet"};
+                }
+            }
+        }
+
+        walker comment_on_tweet {
+            has content: str;
+
+            can add_comment with Tweet entry {
+                current_profile = [root --> Profile][0];
+                comment = current_profile ++> Comment(content=self.content);
+                here +>:CommentOn:+> comment[0];
+                report {"message": "Comment added", "comment_id": comment[0].id};
+            }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
-        # classroom_system.py - Requires external testing
-        class Student:
-            def __init__(self, name: str, age: int, grade: str, enrolled_date: str = "2024-01-15"):
-                self.name = name
-                self.age = age
-                self.grade = grade
-                self.enrolled_date = enrolled_date
+        # social_media.py - Manual implementation
+        from datetime import datetime
+        from typing import List, Optional
 
-            def get_info(self) -> str:
-                return f"{self.name} (Age: {self.age}, Grade: {self.grade})"
+        class Profile:
+            def __init__(self, username: str = "", bio: str = ""):
+                self.username = username
+                self.bio = bio
+                self.follower_count = 0
+                self.following = []
+                self.followers = []
+                self.tweets = []
 
-        class Teacher:
-            def __init__(self, name: str, subject: str, years_experience: int):
-                self.name = name
-                self.subject = subject
-                self.years_experience = years_experience
+            def follow(self, other_profile):
+                if other_profile not in self.following and other_profile != self:
+                    self.following.append(other_profile)
+                    other_profile.followers.append(self)
+                    other_profile.follower_count += 1
+                    return True
+                return False
 
-            def can_teach(self, subject: str) -> bool:
-                return self.subject.lower() == subject.lower()
+            def unfollow(self, other_profile):
+                if other_profile in self.following:
+                    self.following.remove(other_profile)
+                    other_profile.followers.remove(self)
+                    other_profile.follower_count -= 1
+                    return True
+                return False
 
-        class Classroom:
-            def __init__(self, name: str, room_number: str, capacity: int = 25):
-                self.name = name
-                self.capacity = capacity
-                self.room_number = room_number
-                self.students = []
-                self.teachers = []
+        class Tweet:
+            def __init__(self, content: str, author: Profile):
+                self.content = content
+                self.author = author
+                self.created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                self.like_count = 0
+                self.liked_by = []
+                self.comments = []
 
-            def add_student(self, student: Student) -> bool:
-                if len(self.students) >= self.capacity:
-                    return False
-                self.students.append(student)
-                return True
+            def like(self, user: Profile):
+                if user not in self.liked_by:
+                    self.liked_by.append(user)
+                    self.like_count += 1
+                    return True
+                return False
 
-            def assign_teacher(self, teacher: Teacher) -> bool:
-                if self.teachers:
-                    return False
-                self.teachers.append(teacher)
-                return True
+            def unlike(self, user: Profile):
+                if user in self.liked_by:
+                    self.liked_by.remove(user)
+                    self.like_count -= 1
+                    return True
+                return False
 
-            def get_student_count(self) -> int:
-                return len(self.students)
-
-        # Would require separate test file with unittest
+        class Comment:
+            def __init__(self, content: str, author: Profile, tweet: Tweet):
+                self.content = content
+                self.author = author
+                self.tweet = tweet
+                self.created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ```
 
-### Running Tests
+### Comprehensive Test Suite
 
-```bash
-# Run all tests in the file
-jac test classroom_system.jac
+!!! example "Complete Test Coverage"
+    === "social_media.test.jac"
+        ```jac
+        # social_media.test.jac
 
-# Run specific test
-jac test classroom_system.jac -k "basic classroom operations"
-```
+        # Test basic profile creation and updates
+        test create_and_update_profile {
+            # Test profile creation
+            root spawn visit_profile();
+            profile = [root --> Profile][0];
+            check isinstance(profile, Profile);
+            check profile.username == "";
+            check profile.follower_count == 0;
+
+            # Test profile update
+            root spawn update_profile(
+                new_username="alice",
+                new_bio="Software developer"
+            );
+            updated_profile = [root --> Profile][0];
+            check updated_profile.username == "alice";
+            check updated_profile.bio == "Software developer";
+        }
+
+        # Test following functionality
+        test follow_and_unfollow_users {
+            # Create main user profile
+            root spawn visit_profile();
+            root spawn update_profile(new_username="alice");
+
+            # Create another user to follow
+            bob_profile = Profile(username="bob");
+
+            # Test following
+            bob_profile spawn follow_request();
+            follow_edge = [root --> Profile ->:Follow:-> Profile][0];
+            check follow_edge.username == "bob";
+            check bob_profile.follower_count == 1;
+
+            # Test follow edge properties
+            follow_edges = [edge [root --> Profile] ->:Follow:-> bob_profile];
+            check len(follow_edges) == 1;
+            check hasattr(follow_edges[0], "followed_at");
+
+            # Test unfollowing
+            bob_profile spawn unfollow_request();
+            remaining_follows = [root --> Profile ->:Follow:-> Profile];
+            check len(remaining_follows) == 0;
+            check bob_profile.follower_count == 0;
+        }
+
+        # Test tweet creation and management
+        test tweet_lifecycle {
+            # Ensure we have a profile
+            root spawn visit_profile();
+            root spawn update_profile(new_username="alice");
+
+            # Test tweet creation
+            root spawn create_tweet(content="Hello world!");
+            tweet = [root --> Profile ->:Post:-> Tweet][0];
+            check tweet.content == "Hello world!";
+            check isinstance(tweet, Tweet);
+            check hasattr(tweet, "created_at");
+
+            # Test tweet update
+            tweet spawn update_tweet(updated_content="Hello updated world!");
+            check tweet.content == "Hello updated world!";
+
+            # Test multiple tweets
+            root spawn create_tweet(content="Second tweet");
+            all_tweets = [root --> Profile ->:Post:-> Tweet];
+            check len(all_tweets) == 2;
+
+            # Test tweet deletion
+            tweet spawn remove_tweet();
+            remaining_tweets = [root --> Profile ->:Post:-> Tweet];
+            check len(remaining_tweets) == 1;
+            check remaining_tweets[0].content == "Second tweet";
+        }
+
+        # Test liking functionality
+        test like_and_unlike_tweets {
+            # Setup: Create profile and tweet
+            root spawn visit_profile();
+            root spawn update_profile(new_username="alice");
+            root spawn create_tweet(content="Likeable tweet");
+
+            tweet = [root --> Profile ->:Post:-> Tweet][0];
+            check tweet.like_count == 0;
+
+            # Test liking
+            tweet spawn like_tweet();
+            check tweet.like_count == 1;
+
+            # Verify like relationship exists
+            like_edges = [edge [root --> Profile] ->:Like:-> tweet];
+            check len(like_edges) == 1;
+
+            # Test double-liking (should fail)
+            result = tweet spawn like_tweet();
+            check tweet.like_count == 1;  # Should remain 1
+
+            # Test unliking
+            tweet spawn unlike_tweet();
+            check tweet.like_count == 0;
+
+            # Verify like relationship removed
+            remaining_likes = [edge [root --> Profile] ->:Like:-> tweet];
+            check len(remaining_likes) == 0;
+        }
+
+        # Test commenting functionality
+        test comment_system {
+            # Setup: Create profile and tweet
+            root spawn visit_profile();
+            root spawn update_profile(new_username="alice");
+            root spawn create_tweet(content="Tweet for comments");
+
+            tweet = [root --> Profile ->:Post:-> Tweet][0];
+
+            # Test commenting
+            tweet spawn comment_on_tweet(content="Great tweet!");
+            comments = [tweet ->:CommentOn:-> Comment];
+            check len(comments) == 1;
+            check comments[0].content == "Great tweet!";
+
+            # Test multiple comments
+            tweet spawn comment_on_tweet(content="I agree!");
+            all_comments = [tweet ->:CommentOn:-> Comment];
+            check len(all_comments) == 2;
+
+            # Test comment update
+            first_comment = all_comments[0];
+            first_comment spawn update_comment(updated_content="Updated comment");
+            check first_comment.content == "Updated comment";
+
+            # Test comment deletion
+            first_comment spawn remove_comment();
+            remaining_comments = [tweet ->:CommentOn:-> Comment];
+            check len(remaining_comments) == 1;
+        }
+
+        # Test complex graph relationships
+        test complex_social_graph {
+            # Create multiple users
+            root spawn visit_profile();
+            root spawn update_profile(new_username="alice");
+
+            bob = Profile(username="bob");
+            charlie = Profile(username="charlie");
+
+            # Create follow relationships: alice -> bob -> charlie
+            bob spawn follow_request();
+            charlie spawn follow_request();  # alice follows charlie too
+
+            # Alice creates a tweet
+            root spawn create_tweet(content="Alice's tweet");
+            alice_tweet = [root --> Profile ->:Post:-> Tweet][0];
+
+            # Bob likes Alice's tweet
+            # (Note: In a real system, you'd switch user context)
+            alice_tweet spawn like_tweet();
+
+            # Verify complex relationships
+            alice_profile = [root --> Profile][0];
+            alice_following = [alice_profile ->:Follow:-> Profile];
+            check len(alice_following) == 2;  # follows bob and charlie
+
+            alice_tweets = [alice_profile ->:Post:-> Tweet];
+            check len(alice_tweets) == 1;
+
+            tweet_likes = [alice_tweets[0] <-:Like:<- Profile];
+            check len(tweet_likes) == 1;  # liked by alice (herself)
+        }
+
+        # Test error conditions and edge cases
+        test error_conditions {
+            # Test operations without profile
+            try {
+                root spawn create_tweet(content="No profile tweet");
+                check False;  # Should not reach here
+            } except Exception {
+                check True;  # Expected behavior
+            }
+
+            # Create profile for other tests
+            root spawn visit_profile();
+            root spawn update_profile(new_username="test_user");
+
+            # Test self-follow prevention
+            alice_profile = [root --> Profile][0];
+            result = alice_profile spawn follow_request();
+
+            # Should not create self-follow
+            self_follows = [alice_profile ->:Follow:-> alice_profile];
+            check len(self_follows) == 0;
+        }
+
+        # Performance and stress testing
+        test performance_operations {
+            # Setup
+            root spawn visit_profile();
+            root spawn update_profile(new_username="performance_user");
+
+            # Create multiple tweets quickly
+            for i in range(10) {
+                root spawn create_tweet(content=f"Tweet number {i}");
+            }
+
+            all_tweets = [root --> Profile ->:Post:-> Tweet];
+            check len(all_tweets) == 10;
+
+            # Like all tweets
+            for tweet in all_tweets {
+                tweet spawn like_tweet();
+            }
+
+            # Verify all likes
+            for tweet in all_tweets {
+                check tweet.like_count == 1;
+            }
+
+            # Test batch operations work correctly
+            total_likes = sum([tweet.like_count for tweet in all_tweets]);
+            check total_likes == 10;
+        }
+        ```
+
+    === "Python Test Equivalent"
+        ```python
+        # test_social_media.py
+        import unittest
+        from social_media import Profile, Tweet, Comment
+
+        class TestSocialMedia(unittest.TestCase):
+            def setUp(self):
+                self.alice = Profile("alice", "Software developer")
+                self.bob = Profile("bob", "Designer")
+
+            def test_create_and_update_profile(self):
+                profile = Profile()
+                self.assertEqual(profile.username, "")
+                self.assertEqual(profile.follower_count, 0)
+
+                profile.username = "alice"
+                profile.bio = "Software developer"
+                self.assertEqual(profile.username, "alice")
+
+            def test_follow_and_unfollow_users(self):
+                # Test following
+                success = self.alice.follow(self.bob)
+                self.assertTrue(success)
+                self.assertIn(self.bob, self.alice.following)
+                self.assertEqual(self.bob.follower_count, 1)
+
+                # Test unfollowing
+                success = self.alice.unfollow(self.bob)
+                self.assertTrue(success)
+                self.assertNotIn(self.bob, self.alice.following)
+                self.assertEqual(self.bob.follower_count, 0)
+
+            def test_tweet_lifecycle(self):
+                tweet = Tweet("Hello world!", self.alice)
+                self.alice.tweets.append(tweet)
+
+                self.assertEqual(tweet.content, "Hello world!")
+                self.assertEqual(len(self.alice.tweets), 1)
+
+                # Update tweet
+                tweet.content = "Hello updated world!"
+                self.assertEqual(tweet.content, "Hello updated world!")
+
+            def test_like_and_unlike_tweets(self):
+                tweet = Tweet("Likeable tweet", self.alice)
+
+                # Test liking
+                success = tweet.like(self.bob)
+                self.assertTrue(success)
+                self.assertEqual(tweet.like_count, 1)
+
+                # Test double-liking
+                success = tweet.like(self.bob)
+                self.assertFalse(success)
+                self.assertEqual(tweet.like_count, 1)
+
+                # Test unliking
+                success = tweet.unlike(self.bob)
+                self.assertTrue(success)
+                self.assertEqual(tweet.like_count, 0)
+
+        if __name__ == '__main__':
+            unittest.main()
+        ```
 
 ---
 
-## Walker Behavior Testing
+## Debugging Spatial Applications
 
-Walkers are central to Jac's Object-Spatial Programming paradigm. Testing walker behavior requires understanding how they interact with graphs and process data.
+Debugging spatial applications requires understanding graph state and walker movement patterns.
 
-### Message Delivery Walker
+### Debug Output and Tracing
 
-!!! example "Walker Testing System"
-    <div class="code-block">
+!!! example "Debug Walker for Graph Inspection"
     ```jac
-    # message_system.jac
-    node Message {
-        has content: str;
-        has sender: str;
-        has timestamp: str;
-        has is_read: bool = False;
-    }
+    # debug_walker.jac
+    walker debug_graph {
+        has visited_nodes: list[str] = [];
+        has visited_edges: list[str] = [];
+        has max_depth: int = 3;
+        has current_depth: int = 0;
 
-    walker deliver_message {
-        has message_content: str;
-        has sender_name: str;
-        has target_student_name: str;
-
-        can find_and_deliver with Classroom entry {
-            # Find target student
-            students = [here --> Student];
-            target_student = None;
-
-            for student in students {
-                if student.name == self.target_student_name {
-                    target_student = student;
-                    break;
-                }
+        can debug_node with Profile entry {
+            if self.current_depth >= self.max_depth {
+                print(f"Max depth {self.max_depth} reached at {here.username}");
+                return;
             }
 
-            if target_student {
-                # Create and deliver message
-                message = Message(
-                    content=self.message_content,
-                    sender=self.sender_name,
-                    timestamp="2024-01-15 10:30"
+            node_info = f"Profile: {here.username} (followers: {here.follower_count})";
+            self.visited_nodes.append(node_info);
+            print(f"Depth {self.current_depth}: {node_info}");
+
+            # Debug outgoing relationships
+            following = [->:Follow:->];
+            tweets = [->:Post:->];
+
+            print(f"  Following: {len(following)} users");
+            print(f"  Posted: {len(tweets)} tweets");
+
+            # Visit connected nodes
+            self.current_depth += 1;
+            visit following;
+            visit tweets;
+            self.current_depth -= 1;
+        }
+
+        can debug_tweet with Tweet entry {
+            tweet_info = f"Tweet: '{here.content[:30]}...' (likes: {here.like_count})";
+            self.visited_nodes.append(tweet_info);
+            print(f"Depth {self.current_depth}: {tweet_info}");
+
+            # Debug tweet relationships
+            likes = [<-:Like:<-];
+            comments = [->:CommentOn:->];
+
+            print(f"  Liked by: {len(likes)} users");
+            print(f"  Comments: {len(comments)}");
+        }
+
+        can debug_comment with Comment entry {
+            comment_info = f"Comment: '{here.content[:20]}...'";
+            self.visited_nodes.append(comment_info);
+            print(f"Depth {self.current_depth}: {comment_info}");
+        }
+    }
+
+    # Usage in tests
+    test debug_graph_structure {
+        # Setup complex graph
+        root spawn visit_profile();
+        root spawn update_profile(new_username="alice");
+        root spawn create_tweet(content="Alice's first tweet");
+
+        bob = Profile(username="bob");
+        bob spawn follow_request();
+
+        # Debug the graph
+        debugger = debug_graph(max_depth=2);
+        root spawn debugger;
+
+        print("=== Debug Summary ===");
+        print(f"Visited {len(debugger.visited_nodes)} nodes");
+        for node in debugger.visited_nodes {
+            print(f"  {node}");
+        }
+    }
+    ```
+
+### Walker State Inspection
+
+!!! example "Walker State Testing"
+    ```jac
+    # walker_testing.jac
+    walker feed_loader {
+        has user_id: str;
+        has loaded_tweets: list[dict] = [];
+        has users_visited: set[str] = set();
+        has errors: list[str] = [];
+
+        can load_user_feed with Profile entry {
+            if here.username in self.users_visited {
+                self.errors.append(f"Duplicate visit to {here.username}");
+                return;
+            }
+
+            self.users_visited.add(here.username);
+
+            # Load user's tweets
+            user_tweets = [->:Post:-> Tweet];
+            for tweet in user_tweets {
+                tweet_data = {
+                    "author": here.username,
+                    "content": tweet.content,
+                    "likes": tweet.like_count,
+                    "created_at": tweet.created_at
+                };
+                self.loaded_tweets.append(tweet_data);
+            }
+
+            # Visit followed users
+            following = [->:Follow:-> Profile];
+            visit following;
+        }
+    }
+
+    test walker_state_management {
+        # Setup test data
+        root spawn visit_profile();
+        root spawn update_profile(new_username="alice");
+        root spawn create_tweet(content="Alice tweet 1");
+        root spawn create_tweet(content="Alice tweet 2");
+
+        bob = Profile(username="bob");
+        bob spawn follow_request();
+        bob spawn create_tweet(content="Bob's tweet");
+
+        # Test walker state
+        loader = feed_loader(user_id="alice");
+        root spawn loader;
+
+        # Verify walker state
+        check len(loader.loaded_tweets) >= 2;  # At least Alice's tweets
+        check "alice" in loader.users_visited;
+        check "bob" in loader.users_visited;
+        check len(loader.errors) == 0;
+
+        # Verify tweet data structure
+        alice_tweets = [t for t in loader.loaded_tweets if t["author"] == "alice"];
+        check len(alice_tweets) == 2;
+
+        for tweet in alice_tweets {
+            check "content" in tweet;
+            check "likes" in tweet;
+            check "created_at" in tweet;
+        }
+    }
+    ```
+
+---
+
+## Performance Testing and Optimization
+
+Performance testing ensures your spatial applications scale effectively.
+
+### Benchmark Testing
+
+!!! example "Performance Benchmarks"
+    ```jac
+    # performance_tests.jac
+    import time;
+
+    test large_graph_performance {
+        start_time = time.time();
+
+        # Create large social network
+        root spawn visit_profile();
+        root spawn update_profile(new_username="central_user");
+
+        # Create many users and connections
+        num_users = 100;
+        users = [];
+
+        for i in range(num_users) {
+            user = Profile(username=f"user_{i}");
+            users.append(user);
+
+            # Every 10th user follows central user
+            if i % 10 == 0 {
+                user spawn follow_request();
+            }
+        }
+
+        creation_time = time.time() - start_time;
+        print(f"Created {num_users} users in {creation_time:.2f} seconds");
+
+        # Test graph traversal performance
+        start_time = time.time();
+
+        # Count all followers
+        central_user = [root --> Profile][0];
+        followers = [central_user <-:Follow:<- Profile];
+
+        traversal_time = time.time() - start_time;
+        print(f"Traversed {len(followers)} followers in {traversal_time:.4f} seconds");
+
+        # Performance assertions
+        check creation_time < 5.0;  # Should create 100 users in under 5 seconds
+        check traversal_time < 0.1;  # Should traverse quickly
+        check len(followers) == 10;  # Every 10th user = 10 followers
+    }
+
+    test memory_efficiency {
+        # Test memory usage with large datasets
+        initial_profiles = len([root --> Profile]);
+
+        # Create and delete many objects
+        for batch in range(5) {
+            # Create batch of tweets
+            for i in range(20) {
+                root spawn create_tweet(content=f"Batch {batch} tweet {i}");
+            }
+
+            # Delete half of them
+            tweets = [root --> Profile ->:Post:-> Tweet];
+            for i in range(10) {
+                if len(tweets) > i {
+                    tweets[i] spawn remove_tweet();
+                }
+            }
+        }
+
+        # Check memory cleanup
+        final_tweets = [root --> Profile ->:Post:-> Tweet];
+        check len(final_tweets) <= 50;  # Should not accumulate indefinitely
+
+        final_profiles = len([root --> Profile]);
+        check final_profiles == initial_profiles + 1;  # Only the test profile added
+    }
+
+    test concurrent_operations {
+        # Simulate concurrent-like operations
+        root spawn visit_profile();
+        root spawn update_profile(new_username="concurrent_user");
+
+        # Create multiple walkers that operate simultaneously
+        walkers = [];
+        for i in range(10) {
+            walker = create_tweet(content=f"Concurrent tweet {i}");
+            walkers.append(walker);
+        }
+
+        # Execute all walkers
+        start_time = time.time();
+        for walker in walkers {
+            root spawn walker;
+        }
+        execution_time = time.time() - start_time;
+
+        # Verify all operations completed
+        all_tweets = [root --> Profile ->:Post:-> Tweet];
+        check len(all_tweets) == 10;
+
+        # Performance check
+        check execution_time < 1.0;  # Should complete quickly
+
+        print(f"Executed {len(walkers)} operations in {execution_time:.4f} seconds");
+    }
+    ```
+
+### Memory and Resource Testing
+
+!!! example "Resource Usage Tests"
+    ```jac
+    # resource_tests.jac
+    import gc;
+    import psutil;
+    import os;
+
+    test memory_usage_monitoring {
+        # Get initial memory usage
+        process = psutil.Process(os.getpid());
+        initial_memory = process.memory_info().rss;
+
+        # Create large graph structure
+        root spawn visit_profile();
+        root spawn update_profile(new_username="memory_test_user");
+
+        # Create many interconnected objects
+        for i in range(1000) {
+            root spawn create_tweet(content=f"Memory test tweet {i}");
+        }
+
+        # Force garbage collection
+        gc.collect();
+
+        # Check memory after creation
+        after_creation_memory = process.memory_info().rss;
+        memory_increase = after_creation_memory - initial_memory;
+
+        print(f"Memory increase: {memory_increase / 1024 / 1024:.2f} MB");
+
+        # Clean up
+        tweets = [root --> Profile ->:Post:-> Tweet];
+        for tweet in tweets {
+            tweet spawn remove_tweet();
+        }
+
+        # Force garbage collection again
+        gc.collect();
+
+        # Check memory after cleanup
+        final_memory = process.memory_info().rss;
+        memory_recovered = after_creation_memory - final_memory;
+
+        print(f"Memory recovered: {memory_recovered / 1024 / 1024:.2f} MB");
+
+        # Memory should not grow indefinitely
+        check memory_increase < 100 * 1024 * 1024;  # Less than 100MB increase
+        check memory_recovered > memory_increase * 0.5;  # At least 50% recovered
+    }
+    ```
+
+---
+
+## Test-Driven Development with OSP
+
+TDD works naturally with Jac's spatial programming model.
+
+### TDD Example: Building a Recommendation System
+
+!!! example "TDD Recommendation System"
+    ```jac
+    # recommendation_system.test.jac
+
+    # Test 1: Basic recommendation structure
+    test recommendation_system_structure {
+        # Red: This will fail initially
+        root spawn visit_profile();
+        root spawn update_profile(new_username="test_user");
+
+        # Should be able to get recommendations
+        recommendations = root spawn get_recommendations(limit=5);
+        check isinstance(recommendations, list);
+        check len(recommendations) <= 5;
+    }
+
+    # Test 2: Friend-based recommendations
+    test friend_based_recommendations {
+        # Setup: Create network
+        root spawn visit_profile();
+        root spawn update_profile(new_username="alice");
+
+        bob = Profile(username="bob");
+        charlie = Profile(username="charlie");
+
+        # Alice follows Bob, Bob follows Charlie
+        bob spawn follow_request();
+        # Switch context to Bob and follow Charlie
+        # (In real system, would handle user context switching)
+
+        # Alice should get Charlie recommended (friend of friend)
+        recommendations = root spawn get_recommendations(limit=5);
+        recommended_usernames = [rec["username"] for rec in recommendations];
+
+        # Charlie should be recommended as friend of friend
+        check "charlie" in recommended_usernames;
+    }
+
+    # Test 3: Interest-based recommendations
+    test interest_based_recommendations {
+        # Setup users with similar interests (tweets)
+        root spawn visit_profile();
+        root spawn update_profile(new_username="alice");
+        root spawn create_tweet(content="I love programming");
+
+        bob = Profile(username="bob");
+        bob spawn create_tweet(content="Programming is awesome");
+
+        charlie = Profile(username="charlie");
+        charlie spawn create_tweet(content="I hate programming");
+
+        # Get recommendations
+        recommendations = root spawn get_recommendations(
+            limit=5,
+            algorithm="interest_based"
+        );
+
+        # Bob should rank higher than Charlie due to similar interests
+        bob_score = 0;
+        charlie_score = 0;
+
+        for rec in recommendations {
+            if rec["username"] == "bob" {
+                bob_score = rec["score"];
+            }
+            if rec["username"] == "charlie" {
+                charlie_score = rec["score"];
+            }
+        }
+
+        check bob_score > charlie_score;
+    }
+
+    # Test 4: Recommendation filtering
+    test recommendation_filtering {
+        # Setup
+        root spawn visit_profile();
+        root spawn update_profile(new_username="alice");
+
+        # Create users alice already follows
+        bob = Profile(username="bob");
+        bob spawn follow_request();
+
+        # Create users alice doesn't follow
+        charlie = Profile(username="charlie");
+        diana = Profile(username="diana");
+
+        # Get recommendations
+        recommendations = root spawn get_recommendations(limit=10);
+        recommended_usernames = [rec["username"] for rec in recommendations];
+
+        # Should not recommend users already followed
+        check "bob" not in recommended_usernames;
+
+        # Should recommend unfollowed users
+        check "charlie" in recommended_usernames or "diana" in recommended_usernames;
+    }
+    ```
+
+    Now implement the actual recommendation system to make tests pass:
+
+    ```jac
+    # recommendation_system.jac
+    walker get_recommendations(visit_profile) {
+        has limit: int = 5;
+        has algorithm: str = "hybrid";
+        has recommendations: list[dict] = [];
+
+        can generate_recommendations with Profile entry {
+            current_user = here;
+            followed_users = [->:Follow:-> Profile];
+            followed_usernames = set([user.username for user in followed_users]);
+
+            # Get all users except current and already followed
+            all_users = [root --> Profile](?username != current_user.username);
+            candidate_users = [user for user in all_users
+                             if user.username not in followed_usernames];
+
+            # Score each candidate
+            for candidate in candidate_users {
+                score = self.calculate_recommendation_score(
+                    current_user, candidate, followed_users
                 );
-                target_student ++> message;
-                report {"status": "delivered", "to": target_student.name};
-            } else {
-                report {"status": "failed", "error": "Student not found"};
-            }
-        }
-    }
 
-    walker read_messages {
-        has student_name: str;
-
-        can collect_messages with Classroom entry {
-            students = [here --> Student];
-            target_student = None;
-
-            for student in students {
-                if student.name == self.student_name {
-                    target_student = student;
-                    break;
+                if score > 0 {
+                    self.recommendations.append({
+                        "username": candidate.username,
+                        "score": score,
+                        "reason": self.get_recommendation_reason(
+                            current_user, candidate, followed_users
+                        )
+                    });
                 }
             }
 
-            if target_student {
-                messages = [target_student --> Message];
-                message_list = [
-                    {
-                        "content": msg.content,
-                        "sender": msg.sender,
-                        "timestamp": msg.timestamp,
-                        "is_read": msg.is_read
-                    }
-                    for msg in messages
-                ];
-                report {"student": self.student_name, "messages": message_list};
-            } else {
-                report {"error": "Student not found"};
-            }
-        }
-    }
+            # Sort by score and limit results
+            self.recommendations.sort(key=lambda x: x["score"], reverse=True);
+            self.recommendations = self.recommendations[:self.limit];
 
-    # Test walker behavior
-    test "message delivery walker" {
-        # Setup classroom with students
-        classroom = Classroom(name="English 101", room_number="E102");
-        student1 = Student(name="Alice", age=16, grade="A");
-        student2 = Student(name="Bob", age=17, grade="B");
-
-        classroom.add_student(student1);
-        classroom.add_student(student2);
-
-        # Test message delivery
-        delivery_walker = deliver_message(
-            message_content="Please submit your homework",
-            sender_name="Teacher",
-            target_student_name="Alice"
-        );
-
-        result = delivery_walker spawn classroom;
-        assert result[0]["status"] == "delivered";
-        assert result[0]["to"] == "Alice";
-
-        # Verify message was created
-        alice_messages = [student1 --> Message];
-        assert len(alice_messages) == 1;
-        assert alice_messages[0].content == "Please submit your homework";
-        assert alice_messages[0].sender == "Teacher";
-    }
-
-    test "message reading walker" {
-        # Setup with existing messages
-        classroom = Classroom(name="History 101", room_number="H201");
-        student = Student(name="Charlie", age=16, grade="B");
-        classroom.add_student(student);
-
-        # Add messages directly
-        msg1 = Message(content="Test message 1", sender="Teacher", timestamp="2024-01-15 09:00");
-        msg2 = Message(content="Test message 2", sender="Principal", timestamp="2024-01-15 11:00");
-        student ++> msg1;
-        student ++> msg2;
-
-        # Test reading messages
-        read_walker = read_messages(student_name="Charlie");
-        result = read_walker spawn classroom;
-
-        assert result[0]["student"] == "Charlie";
-        assert len(result[0]["messages"]) == 2;
-        assert result[0]["messages"][0]["content"] == "Test message 1";
-        assert result[0]["messages"][1]["sender"] == "Principal";
-    }
-
-    test "walker error handling" {
-        classroom = Classroom(name="Math 101", room_number="M301");
-        student = Student(name="David", age=17, grade="A");
-        classroom.add_student(student);
-
-        # Test delivery to non-existent student
-        delivery_walker = deliver_message(
-            message_content="Test message",
-            sender_name="Teacher",
-            target_student_name="NonExistent"
-        );
-
-        result = delivery_walker spawn classroom;
-        assert result[0]["status"] == "failed";
-        assert result[0]["error"] == "Student not found";
-
-        # Test reading from non-existent student
-        read_walker = read_messages(student_name="NonExistent");
-        result = read_walker spawn classroom;
-        assert "error" in result[0];
-        assert result[0]["error"] == "Student not found";
-    }
-    ```
-    </div>
-
----
-
-## Test Organization and Patterns
-
-Proper test organization helps maintain code quality and makes debugging easier. Let's explore advanced testing patterns.
-
-### Test Fixtures and Setup
-
-!!! example "Advanced Test Patterns"
-    <div class="code-block">
-    ```jac
-    # advanced_classroom_tests.jac
-
-    # Test helper function
-    def create_test_classroom() -> Classroom {
-        classroom = Classroom(name="Test Class", room_number="T100", capacity=3);
-        teacher = Teacher(name="Test Teacher", subject="Testing", years_experience=5);
-        classroom.assign_teacher(teacher);
-        return classroom;
-    }
-
-    def create_test_students() -> list[Student] {
-        return [
-            Student(name="Alice", age=16, grade="A"),
-            Student(name="Bob", age=17, grade="B"),
-            Student(name="Charlie", age=16, grade="C")
-        ];
-    }
-
-    # Comprehensive classroom capacity test
-    test "classroom capacity management" {
-        classroom = create_test_classroom();
-        students = create_test_students();
-
-        # Test adding students within capacity
-        for i in range(3) {
-            assert classroom.add_student(students[i]) == True;
-            assert classroom.get_student_count() == i + 1;
+            report self.recommendations;
         }
 
-        # Test capacity exceeded
-        overflow_student = Student(name="David", age=18, grade="D");
-        assert classroom.add_student(overflow_student) == False;
-        assert classroom.get_student_count() == 3;
+        def calculate_recommendation_score(
+            current_user: Profile,
+            candidate: Profile,
+            followed_users: list[Profile]
+        ) -> float {
+            score = 0.0;
 
-        # Verify existing students unaffected
-        classroom_students = classroom.get_students();
-        assert len(classroom_students) == 3;
-        student_names = [s.name for s in classroom_students];
-        assert "Alice" in student_names;
-        assert "Bob" in student_names;
-        assert "Charlie" in student_names;
-        assert "David" not in student_names;
-    }
-
-    # Test graph relationships
-    test "graph relationship integrity" {
-        classroom = create_test_classroom();
-        students = create_test_students();
-
-        # Add students and verify connections
-        for student in students {
-            classroom.add_student(student);
-        }
-
-        # Test bidirectional relationships
-        classroom_students = [classroom --> Student];
-        assert len(classroom_students) == 3;
-
-        # Test each student is properly connected
-        for student in students {
-            connected_classrooms = [student <-- Classroom];
-            assert len(connected_classrooms) == 1;
-            assert connected_classrooms[0].name == "Test Class";
-        }
-
-        # Test teacher relationship
-        classroom_teacher = [classroom --> Teacher];
-        assert len(classroom_teacher) == 1;
-        assert classroom_teacher[0].subject == "Testing";
-    }
-
-    # Performance test
-    test "classroom performance with many students" {
-        large_classroom = Classroom(name="Large Class", room_number="L500", capacity=100);
-
-        # Add many students
-        for i in range(50) {
-            student = Student(name=f"Student{i}", age=16, grade="A");
-            assert large_classroom.add_student(student) == True;
-        }
-
-        # Test performance of student operations
-        assert large_classroom.get_student_count() == 50;
-        all_students = large_classroom.get_students();
-        assert len(all_students) == 50;
-
-        # Verify specific student lookup
-        target_student = None;
-        for student in all_students {
-            if student.name == "Student25" {
-                target_student = student;
-                break;
-            }
-        }
-        assert target_student is not None;
-        assert target_student.name == "Student25";
-    }
-    ```
-    </div>
-
----
-
-## Debugging Techniques
-
-Jac provides several debugging techniques specifically designed for Object-Spatial Programming patterns.
-
-### Debug Output and Assertions
-
-!!! example "Debugging Walker Behavior"
-    <div class="code-block">
-    ```jac
-    # debug_example.jac
-    walker debug_classroom_walker {
-        has debug_mode: bool = True;
-
-        can analyze_classroom with Classroom entry {
-            if self.debug_mode {
-                print(f"Analyzing classroom: {here.name}");
+            if self.algorithm in ["friend_based", "hybrid"] {
+                # Friend of friend scoring
+                candidate_followers = [candidate <-:Follow:<- Profile];
+                mutual_connections = set([u.username for u in followed_users]) &
+                                   set([u.username for u in candidate_followers]);
+                score += len(mutual_connections) * 2.0;
             }
 
-            # Collect data with debug output
-            students = [here --> Student];
-            teachers = [here --> Teacher];
+            if self.algorithm in ["interest_based", "hybrid"] {
+                # Interest-based scoring using tweet content
+                current_tweets = [current_user ->:Post:-> Tweet];
+                candidate_tweets = [candidate ->:Post:-> Tweet];
 
-            if self.debug_mode {
-                print(f"Found {len(students)} students and {len(teachers)} teachers");
-                for student in students {
-                    print(f"  Student: {student.name}, Grade: {student.grade}");
+                # Simple keyword matching (in real system, use embeddings)
+                current_words = set();
+                for tweet in current_tweets {
+                    current_words.update(tweet.content.lower().split());
                 }
-            }
 
-            # Debug assertion
-            assert len(teachers) <= 1, f"Too many teachers: {len(teachers)}";
-
-            # Analyze student performance
-            grade_counts = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0};
-            for student in students {
-                if student.grade in grade_counts {
-                    grade_counts[student.grade] += 1;
+                candidate_words = set();
+                for tweet in candidate_tweets {
+                    candidate_words.update(tweet.content.lower().split());
                 }
+
+                common_words = current_words & candidate_words;
+                score += len(common_words) * 0.5;
             }
 
-            if self.debug_mode {
-                print(f"Grade distribution: {grade_counts}");
+            return score;
+        }
+
+        def get_recommendation_reason(
+            current_user: Profile,
+            candidate: Profile,
+            followed_users: list[Profile]
+        ) -> str {
+            # Determine primary reason for recommendation
+            candidate_followers = [candidate <-:Follow:<- Profile];
+            mutual_connections = set([u.username for u in followed_users]) &
+                               set([u.username for u in candidate_followers]);
+
+            if mutual_connections {
+                return f"Friends with {list(mutual_connections)[0]}";
             }
 
-            report {
-                "classroom": here.name,
-                "student_count": len(students),
-                "teacher_count": len(teachers),
-                "grade_distribution": grade_counts
-            };
+            return "Similar interests";
         }
     }
-
-    # Test with debugging
-    test "debug walker analysis" {
-        classroom = Classroom(name="Debug Class", room_number="D100");
-        teacher = Teacher(name="Debug Teacher", subject="Computer Science", years_experience=3);
-        classroom.assign_teacher(teacher);
-
-        # Add students with various grades
-        students = [
-            Student(name="Alice", age=16, grade="A"),
-            Student(name="Bob", age=17, grade="B"),
-            Student(name="Charlie", age=16, grade="A"),
-            Student(name="David", age=18, grade="C")
-        ];
-
-        for student in students {
-            classroom.add_student(student);
-        }
-
-        # Run debug walker
-        debug_walker = debug_classroom_walker(debug_mode=True);
-        result = debug_walker spawn classroom;
-
-        # Verify results
-        assert result[0]["classroom"] == "Debug Class";
-        assert result[0]["student_count"] == 4;
-        assert result[0]["teacher_count"] == 1;
-        assert result[0]["grade_distribution"]["A"] == 2;
-        assert result[0]["grade_distribution"]["B"] == 1;
-        assert result[0]["grade_distribution"]["C"] == 1;
-    }
-
-    # Error handling test
-    test "debug error conditions" {
-        # Test with malformed classroom
-        empty_classroom = Classroom(name="Empty Class", room_number="E000");
-
-        debug_walker = debug_classroom_walker(debug_mode=True);
-        result = debug_walker spawn empty_classroom;
-
-        # Should handle empty classroom gracefully
-        assert result[0]["student_count"] == 0;
-        assert result[0]["teacher_count"] == 0;
-
-        # All grade counts should be zero
-        grade_dist = result[0]["grade_distribution"];
-        assert all(count == 0 for count in grade_dist.values());
-    }
     ```
-    </div>
-
-### Testing Edge Cases
-
-!!! example "Edge Case Testing"
-    <div class="code-block">
-    ```jac
-    # edge_case_tests.jac
-
-    test "boundary conditions" {
-        # Test minimum capacity classroom
-        min_classroom = Classroom(name="Tiny Class", room_number="T001", capacity=1);
-        student1 = Student(name="Alice", age=16, grade="A");
-        student2 = Student(name="Bob", age=17, grade="B");
-
-        # First student should succeed
-        assert min_classroom.add_student(student1) == True;
-        assert min_classroom.get_student_count() == 1;
-
-        # Second student should fail
-        assert min_classroom.add_student(student2) == False;
-        assert min_classroom.get_student_count() == 1;
-
-        # Test zero capacity (edge case)
-        zero_classroom = Classroom(name="No Space", room_number="N000", capacity=0);
-        assert zero_classroom.add_student(student1) == False;
-        assert zero_classroom.get_student_count() == 0;
-    }
-
-    test "duplicate operations" {
-        classroom = Classroom(name="Duplicate Test", room_number="DT01");
-        student = Student(name="Alice", age=16, grade="A");
-        teacher1 = Teacher(name="Teacher One", subject="Math", years_experience=5);
-        teacher2 = Teacher(name="Teacher Two", subject="Science", years_experience=3);
-
-        # Add student twice (should both succeed as different instances)
-        assert classroom.add_student(student) == True;
-        # Note: In this implementation, same instance can't be added twice
-        # But creating a new instance with same data would be allowed
-
-        # Add second teacher should fail
-        assert classroom.assign_teacher(teacher1) == True;
-        assert classroom.assign_teacher(teacher2) == False;
-
-        # Verify state
-        teachers = [classroom --> Teacher];
-        assert len(teachers) == 1;
-        assert teachers[0].name == "Teacher One";
-    }
-
-    test "data validation edge cases" {
-        # Test with extreme values
-        old_student = Student(name="Old Student", age=99, grade="A");
-        young_student = Student(name="Young Student", age=5, grade="F");
-
-        classroom = Classroom(name="Age Test", room_number="AT01");
-
-        # Both should be accepted (no age validation in current implementation)
-        assert classroom.add_student(old_student) == True;
-        assert classroom.add_student(young_student) == True;
-
-        # Test empty/unusual names
-        empty_name_student = Student(name="", age=16, grade="A");
-        long_name_student = Student(name="Very Long Student Name That Goes On Forever", age=16, grade="A");
-
-        assert classroom.add_student(empty_name_student) == True;
-        assert classroom.add_student(long_name_student) == True;
-
-        assert classroom.get_student_count() == 4;
-    }
-    ```
-    </div>
 
 ---
 
@@ -763,6 +1168,13 @@ Jac provides several debugging techniques specifically designed for Object-Spati
     - **Regression prevention**: Automated tests prevent breaking changes
     - **Documentation value**: Tests serve as executable specifications
     - **Continuous validation**: Automated testing in CI/CD pipelines
+
+### Next Steps
+
+In the upcoming chapters, we'll explore:
+- **Chapter 19**: Deployment strategies for tested applications
+- **Chapter 20**: Performance optimization based on test insights
+- **Chapter 21**: Building complete applications with comprehensive test coverage
 
 !!! tip "Try It Yourself"
     Enhance your testing skills by:
