@@ -13,6 +13,77 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+tabel_css = """
+<style>
+#tabs {
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+    margin: 0 0 1em 0;
+    border-bottom: 2px solid #222;
+    background: #23272e;
+    list-style: none;
+    width: 100%;
+}
+#tabs li {
+    flex: 1 1 0;
+    padding: 0.7em 1.5em;
+    margin: 0;
+    cursor: pointer;
+    border: 1px solid #222;
+    border-bottom: none;
+    background: #23272e;
+    color: #bfc7d5;
+    border-radius: 8px 8px 0 0;
+    transition: background 0.2s, color 0.2s;
+    font-weight: 500;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#tabs li.active, #tabs li:hover {
+    background: #181b20;
+    color: #fff;
+    font-weight: bold;
+    border-bottom: 2px solid #181b20;
+    box-shadow: 0 -2px 8px #181b20;
+    z-index: 2;
+}
+.tabcontent {
+    border: 1px solid #222;
+    border-radius: 0 0 8px 8px;
+    padding: 1.5em;
+    margin-bottom: 2em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    color: #e0e6ed;
+}
+.tabcontent table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 1em;
+    background: #23272e;
+    color: #e0e6ed;
+}
+.tabcontent th, .tabcontent td {
+    border: 1px solid #222;
+    padding: 0.7em 1em;
+    text-align: left;
+}
+.tabcontent th {
+    background: #181b20;
+    color: #7ecfff;
+    font-weight: 600;
+}
+.tabcontent tr:nth-child(even) {
+    background: #23272e;
+}
+.tabcontent tr:hover {
+    background: #2a313a;
+}
+</style>
+"""
 
 def get_repo_from_remote() -> Tuple[Optional[str], Optional[str]]:
     """Get repository owner and name from git remote URL."""
@@ -124,7 +195,7 @@ def process_contributors(
         reverse=True,
     )
 
-
+# not using now since HTML tables have been used
 def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo: str) -> str:
     """Generate a markdown table from contributor data and return as string."""
     if not contributors:
@@ -177,106 +248,7 @@ def generate_html_table(contributors: List[Dict[str, Any]], days: int, repo: str
 
 def get_tabs_css() -> str:
     """Return CSS for the tab and table design (dark tab bar, clear selection, aligned tabs, responsive)."""
-    return """
-<style>
-#tabs {
-    display: flex;
-    justify-content: space-between;
-    padding: 0;
-    margin: 0 0 1em 0;
-    border-bottom: 2px solid #222;
-    background: #23272e;
-    list-style: none;
-    width: 100%;
-}
-#tabs li {
-    flex: 1 1 0;
-    text-align: center;
-    padding: 0.7em 1.5em;
-    margin: 0;
-    cursor: pointer;
-    border: 1px solid #222;
-    border-bottom: none;
-    background: #23272e;
-    color: #bfc7d5;
-    border-radius: 8px 8px 0 0;
-    transition: background 0.2s, color 0.2s;
-    font-weight: 500;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-#tabs li.active, #tabs li:hover {
-    background: #181b20;
-    color: #fff;
-    font-weight: bold;
-    border-bottom: 2px solid #181b20;
-    box-shadow: 0 -2px 8px #181b20;
-    z-index: 2;
-}
-#tabs li:first-child {
-    text-align: left;
-    justify-content: flex-start;
-}
-#tabs li:nth-child(2) {
-    text-align: center;
-    justify-content: center;
-}
-#tabs li:last-child {
-    text-align: right;
-    justify-content: flex-end;
-}
-@media (max-width: 700px) {
-    #tabs {
-        flex-direction: column;
-        border-bottom: none;
-    }
-    #tabs li {
-        border-radius: 8px 8px 0 0;
-        border-bottom: 1px solid #222;
-        border-right: none;
-        text-align: left;
-    }
-    #tabs li.active, #tabs li:hover {
-        border-bottom: 2px solid #181b20;
-    }
-}
-.tabcontent {
-    background: #181b20;
-    border: 1px solid #222;
-    border-radius: 0 0 8px 8px;
-    padding: 1.5em;
-    margin-bottom: 2em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    color: #e0e6ed;
-}
-.tabcontent table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1em 0;
-    font-size: 1em;
-    background: #23272e;
-    color: #e0e6ed;
-}
-.tabcontent th, .tabcontent td {
-    border: 1px solid #222;
-    padding: 0.7em 1em;
-    text-align: left;
-}
-.tabcontent th {
-    background: #181b20;
-    color: #7ecfff;
-    font-weight: 600;
-}
-.tabcontent tr:nth-child(even) {
-    background: #23272e;
-}
-.tabcontent tr:hover {
-    background: #2a313a;
-}
-</style>
-"""
+    return tabel_css
 
 def get_tabs_js(num_tabs: int) -> str:
     """Return JS for tab switching."""
@@ -297,12 +269,23 @@ function showTab(idx) {{
 </script>
 """
 
+def format_repo_name(repo: str) -> str:
+    """Convert a GitHub repo string to a title-cased display name.
+
+    Examples:
+        'jaclang/jac_playground' -> 'Jac Playground'
+    """
+    name = repo.split("/")[-1]
+    name = name.replace("_", " ").replace("-", " ")
+    return name.title()
+
+
 def get_tabs_html(repo_tables: list) -> str:
     """Return HTML for the tab headers, aligned across the page."""
     tabs = []
     for idx, (repo, _) in enumerate(repo_tables):
         active = "active" if idx == 0 else ""
-        tabs.append(f'<li class="{active}" onclick="showTab({idx})" id="tab{idx}">{repo}</li>')
+        tabs.append(f'<li class="{active}" onclick="showTab({idx})" id="tab{idx}">{format_repo_name(repo)}</li>')
     return '<ul id="tabs">\n' + "\n".join(tabs) + '\n</ul>'
 
 def get_tab_contents_html(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]) -> str:
@@ -332,11 +315,10 @@ def print_tabbed_tables(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]
     html.append(get_tabs_js(len(repo_tables)))
     print("\n".join(html))
 
-# You can define your default repos here if you want to hardcode them
 DEFAULT_MAIN_REPO = "jaclang/jaclang"
 DEFAULT_EXTRA_REPOS = [
-    "jaclang/pyjac",
-    "jaclang/jaseci"
+    "TrueSelph/jivas",
+    "jaseci-labs/jac_playground"
 ]
 
 def main() -> None:

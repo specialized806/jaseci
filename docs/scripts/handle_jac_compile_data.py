@@ -53,8 +53,8 @@ def pre_build_hook(**kwargs: dict) -> None:
                 get_top_contributors(
                     [
                         "jaseci-labs/jaseci",
-                        "jaseci-labs/jac_playground",
                         "TrueSelph/jivas",
+                        "jaseci-labs/jac_playground",
                     ]
                 )
             )
