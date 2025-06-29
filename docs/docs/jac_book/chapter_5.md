@@ -1,6 +1,6 @@
 # Chapter 5: Advanced AI Operations
 
-In this chapter, we'll explore Jac's advanced AI capabilities through MTLLM (Multi-Tool Language Learning Models). We'll build a simple image captioning tool that demonstrates model configuration, semantic strings, and multimodal AI integration in Jac applications.
+In this chapter, we'll explore Jac's advanced AI capabilities through MTLLM (Meaning Typed LLM). We'll build a simple image captioning tool that demonstrates model configuration, semantic strings, and multimodal AI integration in Jac applications.
 
 !!! info "What You'll Learn"
     - MTLLM variations and model selection
@@ -13,7 +13,7 @@ In this chapter, we'll explore Jac's advanced AI capabilities through MTLLM (Mul
 
 ## MTLLM Overview
 
-MTLLM (Multi-Tool Language Learning Models) is Jac's AI integration framework that makes working with Large Language Models as simple as calling a function. Unlike traditional AI programming that requires complex prompt engineering and API management, MTLLM enables natural AI integration through Jac's type system.
+MTLLM (Meaning Typed LLM) is Jac's AI integration framework that makes working with Large Language Models as simple as calling a function. Unlike traditional AI programming that requires complex prompt engineering and API management, MTLLM enables natural AI integration through Jac's type system.
 
 !!! success "MTLLM Benefits"
     - **Zero Prompt Engineering**: Define function signatures, let AI handle implementation
@@ -211,13 +211,13 @@ Let's progressively build an image captioning tool that demonstrates MTLLM's cap
             has name: str;
 
             """Generate a brief, descriptive caption for the image."""
-            can generate_caption(image_path: str) -> str by vision_llm();
+            def generate_caption(image_path: str) -> str by vision_llm();
 
             """Extract specific objects visible in the image."""
-            can identify_objects(image_path: str) -> list[str] by vision_llm();
+            def identify_objects(image_path: str) -> list[str] by vision_llm();
 
             """Determine the mood or atmosphere of the image."""
-            can analyze_mood(image_path: str) -> str by vision_llm();
+            def analyze_mood(image_path: str) -> str by vision_llm();
         }
 
         with entry {
@@ -308,13 +308,13 @@ Semantic strings (`sem`) provide additional context to AI functions without clut
 
     obj PhotoAnalyzer {
         """Generate caption considering photographer's style preference."""
-        can generate_styled_caption(image_path: str) -> str by vision_llm(incl_info=(self.style_preference));
+        def generate_styled_caption(image_path: str) -> str by vision_llm(incl_info=(self.style_preference));
 
         """Provide technical photography feedback."""
-        can analyze_composition(image_path: str) -> dict by vision_llm();
+        def analyze_composition(image_path: str) -> dict by vision_llm();
 
         """Suggest improvements for the photo."""
-        can suggest_improvements(image_path: str) -> list[str] by vision_llm(incl_info=(self.photographer_name, self.style_preference));
+        def suggest_improvements(image_path: str) -> list[str] by vision_llm(incl_info=(self.photographer_name, self.style_preference));
     }
 
     with entry {
@@ -358,16 +358,16 @@ MTLLM excels at handling multiple types of media. Let's extend our tool to handl
         has analysis_mode: str = "detailed";
 
         """Generate caption for image with contextual understanding."""
-        can caption_image(image_path: str, context: str = "") -> str by multimodal_llm();
+        def caption_image(image_path: str, context: str = "") -> str by multimodal_llm();
 
         """Transcribe and summarize audio content."""
-        can process_audio(audio_path: str) -> dict by multimodal_llm();
+        def process_audio(audio_path: str) -> dict by multimodal_llm();
 
         """Generate alt text for accessibility."""
-        can generate_alt_text(image_path: str) -> str by multimodal_llm();
+        def generate_alt_text(image_path: str) -> str by multimodal_llm();
 
         """Create social media description."""
-        can create_social_post(image_path: str, platform: str) -> str by multimodal_llm(incl_info=(self.analysis_mode));
+        def create_social_post(image_path: str, platform: str) -> str by multimodal_llm(incl_info=(self.analysis_mode));
     }
 
     with entry {
@@ -414,15 +414,15 @@ MTLLM excels at handling multiple types of media. Let's extend our tool to handl
         has target_audience: str;
 
         """Analyze image and generate marketing copy."""
-        can create_marketing_copy(image_path: str, product_name: str) -> dict by content_llm(
+        def create_marketing_copy(image_path: str, product_name: str) -> dict by content_llm(
             incl_info=(self.brand_voice, self.target_audience)
         );
 
         """Generate multiple caption variations."""
-        can generate_variations(image_path: str, count: int = 3) -> list[str] by content_llm();
+        def generate_variations(image_path: str, count: int = 3) -> list[str] by content_llm();
 
         """Create SEO-optimized description."""
-        can optimize_for_seo(image_path: str, keywords: list[str]) -> str by content_llm();
+        def optimize_for_seo(image_path: str, keywords: list[str]) -> str by content_llm();
     }
 
     with entry {
@@ -440,7 +440,7 @@ MTLLM excels at handling multiple types of media. Let's extend our tool to handl
 
         # Generate multiple variations
         variations = creator.generate_variations("product_photo.jpg", count=5);
-        for i, variation in enumerate(variations) {
+        for (i, variation) in enumerate(variations) {
             print(f"Variation {i+1}: {variation}");
         }
 
@@ -474,7 +474,7 @@ AI applications require robust error handling and testing strategies.
         has fallback_enabled: bool = True;
 
         """Generate caption with error handling."""
-        can safe_caption(image_path: str) -> dict {
+        def safe_caption(image_path: str) -> dict {
             try {
                 caption = self.generate_caption_ai(image_path);
                 return {
@@ -498,10 +498,10 @@ AI applications require robust error handling and testing strategies.
         }
 
         """AI-powered caption generation."""
-        can generate_caption_ai(image_path: str) -> str by reliable_llm();
+        def generate_caption_ai(image_path: str) -> str by reliable_llm();
 
         """Validate generated content."""
-        can validate_caption(caption: str) -> bool {
+        def validate_caption(caption: str) -> bool {
             # Basic validation rules
             if len(caption) < 10 {
                 return False;
