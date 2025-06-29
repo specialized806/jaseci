@@ -4,7 +4,7 @@ This page documents significant breaking changes in Jac and Jaseci that may affe
 
 ## Latest Breaking Changes
 
-### Version 0.8.1 (Main branch since 5/26/2025) (Unreleased)
+### Version 0.8.1
 
 #### 1. `dotgen` builtin function is now name `printgraph`
 
@@ -39,6 +39,56 @@ with entry {
     }
     data = printgraph(node=root);
     print(data);
+}
+```
+
+#### 2. `ignore` feature is removed
+
+This removal aims to avoid being over specifc with data spatial features.
+
+**Before**
+
+```jac
+node MyNode {
+    has val:int;
+}
+
+walker MyWalker {
+    can func1 with MyNode entry {
+        ignore [here];
+        visit [-->]; # before
+        print(here);
+    }
+}
+
+with entry {
+    n1 = MyNode(5);
+    n1 ++> MyNode(10) ++> MyNode(15) ++> n1; # will result circular
+    n1 spawn MyWalker();
+}
+```
+
+**After**
+
+```jac
+node MyNode {
+    has val:int;
+}
+
+walker MyWalker {
+    has Ignore: list = [];
+
+    can func1 with MyNode entry {
+        self.Ignore.append(here); # comment here to check the circular graph
+        visit [i for i in [-->] if i not in self.Ignore]; # now
+        print(here);
+    }
+}
+
+with entry {
+    n1 = MyNode(5);
+    n1 ++> MyNode(10) ++> MyNode(15) ++> n1; # will result circular
+    n1 spawn MyWalker();
 }
 ```
 
@@ -126,7 +176,7 @@ This change makes the inheritance syntax more intuitive and consistent with lang
 
 #### 3. `def` keyword introduced
 
-Instead of using `can` keyword for all functions and abilities, `can` statements are only used for data spatial abilities and `def` keyword must be used for traditional python like functions and methods.
+Instead of using `can` keyword for all functions and abilities, `can` statements are only used for object-spatial abilities and `def` keyword must be used for traditional python like functions and methods.
 
 **Before (v0.7.x and earlier):**
 ```jac
@@ -273,7 +323,7 @@ friends = [->:Friendship:->];
 alice <+:Friendship:strength=0.9:<+ bob;
 ```
 
-This change was made to eliminate syntax conflicts with Python-style list slicing operations (e.g., `my_list[:-1]` was forced to be written `my_list[: -1]`). The new arrow notation provides clearer directional indication while ensuring that data spatial operations don't conflict with the token parsing for common list operations.
+This change was made to eliminate syntax conflicts with Python-style list slicing operations (e.g., `my_list[:-1]` was forced to be written `my_list[: -1]`). The new arrow notation provides clearer directional indication while ensuring that object-spatial operations don't conflict with the token parsing for common list operations.
 
 #### 7. Import `from` syntax updated for clarity
 

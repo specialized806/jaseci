@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast as ast3
-import asyncio
 import fnmatch
 import html
 import inspect
@@ -14,12 +13,13 @@ import types
 from collections import OrderedDict
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
-from functools import partial, wraps
+from functools import wraps
 from inspect import getfile
 from logging import getLogger
 from typing import (
     Any,
     Callable,
+    Coroutine,
     Mapping,
     Optional,
     ParamSpec,
@@ -504,8 +504,8 @@ class JacWalker:
                     if (
                         i.trigger
                         and (
-                            all_issubclass(i.trigger, JacMachine.Node)
-                            or all_issubclass(i.trigger, JacMachine.Edge)
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
@@ -524,7 +524,7 @@ class JacWalker:
                 for i in current_loc._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, JacMachine.Walker)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_loc, warch)
@@ -535,7 +535,7 @@ class JacWalker:
                 for i in current_loc._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, JacMachine.Walker)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_loc, warch)
@@ -554,8 +554,8 @@ class JacWalker:
                     if (
                         i.trigger
                         and (
-                            all_issubclass(i.trigger, JacMachine.Node)
-                            or all_issubclass(i.trigger, JacMachine.Edge)
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
                         )
                         and isinstance(current_loc, i.trigger)
                     ):
@@ -573,47 +573,164 @@ class JacWalker:
         return warch
 
     @staticmethod
-    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | asyncio.Future:
+    async def async_spawn_call(
+        walker: WalkerAnchor,
+        node: NodeAnchor | EdgeAnchor,
+    ) -> WalkerArchetype:
         """Jac's spawn operator feature."""
-        edge: EdgeAnchor | None = None
+        warch = walker.archetype
+        walker.path = []
+        current_loc = node.archetype
+
+        # walker ability on any entry
+        for i in warch._jac_entry_funcs_:
+            if not i.trigger:
+                result = i.func(warch, current_loc)
+                if isinstance(result, Coroutine):
+                    await result
+            if walker.disengaged:
+                return warch
+
+        while len(walker.next):
+            if current_loc := walker.next.pop(0).archetype:
+                # walker ability with loc entry
+                for i in warch._jac_entry_funcs_:
+                    if (
+                        i.trigger
+                        and (
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
+                        )
+                        and isinstance(current_loc, i.trigger)
+                    ):
+                        result = i.func(warch, current_loc)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with any entry
+                for i in current_loc._jac_entry_funcs_:
+                    if not i.trigger:
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with walker entry
+                for i in current_loc._jac_entry_funcs_:
+                    if (
+                        i.trigger
+                        and all_issubclass(i.trigger, WalkerArchetype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with walker exit
+                for i in current_loc._jac_exit_funcs_:
+                    if (
+                        i.trigger
+                        and all_issubclass(i.trigger, WalkerArchetype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+
+                # loc ability with any exit
+                for i in current_loc._jac_exit_funcs_:
+                    if not i.trigger:
+                        result = i.func(current_loc, warch)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+
+                # walker ability with loc exit
+                for i in warch._jac_exit_funcs_:
+                    if (
+                        i.trigger
+                        and (
+                            all_issubclass(i.trigger, NodeArchetype)
+                            or all_issubclass(i.trigger, EdgeArchetype)
+                        )
+                        and isinstance(current_loc, i.trigger)
+                    ):
+                        result = i.func(warch, current_loc)
+                        if isinstance(result, Coroutine):
+                            await result
+                    if walker.disengaged:
+                        return warch
+        # walker ability with any exit
+        for i in warch._jac_exit_funcs_:
+            if not i.trigger:
+                result = i.func(warch, current_loc)
+                if isinstance(result, Coroutine):
+                    await result
+            if walker.disengaged:
+                return warch
+
+        walker.ignores = []
+        return warch
+
+    @staticmethod
+    def spawn(
+        op1: Archetype | list[Archetype], op2: Archetype | list[Archetype]
+    ) -> Union[WalkerArchetype, Coroutine]:
+        """Jac's spawn operator feature."""
+
+        def collect_targets(
+            walker: WalkerAnchor, items: list[Archetype]
+        ) -> NodeAnchor | EdgeAnchor:
+            for i in items:
+                a = i.__jac__
+                (
+                    walker.next.append(a)
+                    if isinstance(a, (NodeAnchor, EdgeAnchor))
+                    else None
+                )
+                if isinstance(a, EdgeAnchor) and a.target:
+                    walker.next.append(a.target)
+            return walker.next[0]
+
+        def assign(
+            walker: WalkerAnchor, t: Archetype | list[Archetype]
+        ) -> NodeAnchor | EdgeAnchor:
+            if isinstance(t, NodeArchetype):
+                node = t.__jac__
+                walker.next = [node]
+                return node
+            elif isinstance(t, EdgeArchetype):
+                edge = t.__jac__
+                walker.next = [edge, edge.target]
+                return edge
+            elif isinstance(t, list) and all(
+                isinstance(i, (NodeArchetype, EdgeArchetype)) for i in t
+            ):
+                return collect_targets(walker, t)
+            else:
+                raise TypeError("Invalid target object")
+
         if isinstance(op1, WalkerArchetype):
-            warch = op1
-            walker = op1.__jac__
-            if isinstance(op2, NodeArchetype):
-                node = op2.__jac__
-            elif isinstance(op2, EdgeArchetype):
-                edge = op2.__jac__
-                node = op2.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
+            warch, targ = op1, op2
         elif isinstance(op2, WalkerArchetype):
-            warch = op2
-            walker = op2.__jac__
-            if isinstance(op1, NodeArchetype):
-                node = op1.__jac__
-            elif isinstance(op1, EdgeArchetype):
-                edge = op1.__jac__
-                node = op1.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
+            warch, targ = op2, op1
         else:
             raise TypeError("Invalid walker object")
 
-        if edge is not None:
-            loc: EdgeAnchor | NodeAnchor = edge
-            walker.next = [edge, node]
-        else:
-            loc = node
-            walker.next = [node]
+        walker: WalkerAnchor = warch.__jac__
+        loc: NodeAnchor | EdgeAnchor = assign(walker, targ)
 
         if warch.__jac_async__:
-            _event_loop = JacMachine._event_loop
-            func = partial(JacMachineInterface.spawn_call, *(walker, loc))
-            return asyncio.ensure_future(
-                _event_loop.run_in_executor(None, func), loop=_event_loop
-            )
-        else:
-            return JacMachineInterface.spawn_call(walker=walker, node=loc)
+            return JacMachineInterface.async_spawn_call(walker=walker, node=loc)
+        return JacMachineInterface.spawn_call(walker=walker, node=loc)
 
     @staticmethod
     def disengage(walker: WalkerArchetype) -> bool:
@@ -716,10 +833,16 @@ class JacBuiltin:
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
                 f' [label="{edge_label if "GenericEdge" not in edge_label else ""}"];\n'
             )
-            mermaid_content += (
-                f"{visited_nodes.index(source)} -->"
-                f"|{edge_label if 'GenericEdge' not in edge_label else ''}| {visited_nodes.index(target)}\n"
-            )
+            if "GenericEdge" in edge_label or not edge_label.strip():
+                mermaid_content += (
+                    f"{visited_nodes.index(source)} -->"
+                    f"{visited_nodes.index(target)}\n"
+                )
+            else:
+                mermaid_content += (
+                    f"{visited_nodes.index(source)} -->"
+                    f'|"{edge_label}"| {visited_nodes.index(target)}\n'
+                )
         for node_ in visited_nodes:
             color = (
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
@@ -1237,6 +1360,40 @@ class JacBasics:
         )
 
     @staticmethod
+    def gen_llm_call_override(
+        _pass: PyastGenPass, node: ast.FuncCall
+    ) -> list[ast3.AST]:
+        """Generate python ast nodes for llm function body override syntax.
+
+        example:
+            foo() by llm();
+        """
+        _pass.log_warning(
+            "MT-LLM is not installed. Please install it with `pip install mtllm`."
+        )
+        return [
+            _pass.sync(
+                ast3.Raise(
+                    _pass.sync(
+                        ast3.Call(
+                            func=_pass.sync(
+                                ast3.Name(id="ImportError", ctx=ast3.Load())
+                            ),
+                            args=[
+                                _pass.sync(
+                                    ast3.Constant(
+                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
+                                    )
+                                )
+                            ],
+                            keywords=[],
+                        )
+                    )
+                )
+            )
+        ]
+
+    @staticmethod
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         _pass.log_warning(
@@ -1372,6 +1529,22 @@ class JacBasics:
             "include_info": [],
             "exclude_info": [],
         }
+
+    @staticmethod
+    def get_semstr_type(
+        file_loc: str, scope: str, attr: str, return_semstr: bool
+    ) -> Optional[str]:
+        """Jac's get_semstr_type feature."""
+
+    @staticmethod
+    def obj_scope(file_loc: str, attr: str) -> str:
+        """Jac's gather_scope feature."""
+        return ""
+
+    @staticmethod
+    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+        """Jac's get_semstr_type implementation."""
+        return None, None
 
 
 class JacUtils:
@@ -1569,12 +1742,6 @@ class JacUtils:
         return None
 
     @staticmethod
-    def await_obj(obj: Any) -> Any:  # noqa: ANN401
-        """Await an object if it is a coroutine or async or future function."""
-        _event_loop = JacMachine._event_loop
-        return _event_loop.run_until_complete(obj)
-
-    @staticmethod
     def thread_run(func: Callable, *args: object) -> Future:  # noqa: ANN401
         """Run a function in a thread."""
         _executor = JacMachine.pool
@@ -1607,7 +1774,6 @@ class JacMachine(JacMachineInterface):
     base_path_dir: str = os.getcwd()
     program: JacProgram = JacProgram()
     pool: ThreadPoolExecutor = ThreadPoolExecutor()
-    _event_loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
     exec_ctx: ExecutionContext = ExecutionContext()
 
     @staticmethod
@@ -1632,7 +1798,6 @@ class JacMachine(JacMachineInterface):
         JacMachine.base_path_dir = os.getcwd()
         JacMachine.program = JacProgram()
         JacMachine.pool = ThreadPoolExecutor()
-        JacMachine._event_loop = asyncio.new_event_loop()
         JacMachine.exec_ctx = ExecutionContext()
 
 

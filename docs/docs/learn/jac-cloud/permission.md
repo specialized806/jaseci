@@ -16,23 +16,39 @@ Jac Cloud's permission system lets you control who can access different parts of
 
 In Jac Cloud, your data exists in two forms:
 
-| Type | Database (Anchor) | In-Memory (Archetype) | Description |
-|------|-------------------|----------------------|-------------|
-| Node | NodeAnchor | NodeArchetype | Represents graph nodes |
-| Edge | EdgeAnchor | EdgeArchetype | Connections between nodes |
-| Walker | WalkerAnchor | WalkerArchetype | Code that traverses the graph |
-| Root | NodeAnchor | Root(NodeArchetype) | Special node representing a user |
+- Anchor
+  - EdgeAnchor
+  - NodeAnchor
+  - ObjectAnchor
+  - WalkerAnchor
+- Archetype
+  - EdgeArchetype
+  - NodeArchetype
+  - ObjectArchetype
+  - WalkerArchetype
+
+#### **Anchors** are database-side class representations that contain:
+
+| Name      | Description                                                       |
+| --------- | ----------------------------------------------------------------- |
+| id        | The database identifier.                                          |
+| name      | The name of the associated archetype.                             |
+| root      | The owning root anchor.                                           |
+| access    | Permissions defining which nodes or roots can access this anchor. |
+| archetype | The JSON representation of the actual archetype.                  |
+
+#### **Archetypes** are the runtime class representations, directly reflecting fields declared in Jac source code. Dev can access their respective anchors via the `__jac__` attribute
 
 ### Permission Levels Explained
 
 Jac Cloud has four permission levels that control what users can do:
 
-| Level | Description | Example Use Case |
-|-------|-------------|-----------------|
-| `NO_ACCESS` | Cannot see or interact with the item | Private user data |
-| `READ` | Can view but not modify the item | Public profile information |
-| `CONNECT` | Can link nodes to this node | Friend requests, comments |
-| `WRITE` | Full access to modify the item | User's own content |
+| Level       | Description                          | Example Use Case           |
+| ----------- | ------------------------------------ | -------------------------- |
+| `NO_ACCESS` | Cannot see or interact with the item | Private user data          |
+| `READ`      | Can view but not modify the item     | Public profile information |
+| `CONNECT`   | Can link nodes to this node          | Friend requests, comments  |
+| `WRITE`     | Full access to modify the item       | User's own content         |
 
 ## How Permissions Work (Simple Example)
 
@@ -52,62 +68,108 @@ By default, User2 cannot see Post1 (created by User1). To allow this:
 
 ## Managing Permissions in Code
 
-### Option 1: Grant Access Using Helper Functions
+### Grant Access Using Helper Functions
 
 ```jac
-// Allow User2 to read a post
+# Allow User2 to read a post
 walker grant_access {
-    has target_root_id: str;  // ID of User2's root
-    has access_level: str;    // "READ", "CONNECT", or "WRITE"
+    has target_root_id: str;  # ID of User2's root
+    has access_level: str;    # "READ", "CONNECT", or "WRITE"
 
     can grant_access with post entry {
-        // Grant access to the current post
+        # Grant access to the current post
         _.allow_root(here, NodeAnchor.ref(self.target_root_id), self.access_level);
         report "Access granted!";
     }
 }
 ```
 
-### Option 2: Revoke Access Using Helper Functions
+The code snippet `_.allow_root(here, NodeAnchor.ref(self.target_root_id), self.access_level)` facilitates granting a specified level of access to a target root node from the current node.
+
+Here's a breakdown of the components:
+
+- `here`
+
+  - Represents the current node, which in this context is the post node.
+
+- `NodeAnchor.ref(self.target_root_id)`
+
+  - This converts the target_root_id (a string identifier) into a NodeAnchor representation. This NodeAnchor then points to the specific target root node that will be granted access.
+
+- `self.access_level`
+  - This parameter specifies the level of access that the target root node will have to the current node's data (i.e., the post node's data).
+
+In essence, this line of code enables the post node to grant the designated target root node permission to access its data, with the access permissions defined by self.access_level.
+
+### Revoke Access Using Helper Functions
 
 ```jac
-// Remove User2's access to a post
+# Remove User2's access to a post
 walker revoke_access {
-    has target_root_id: str;  // ID of User2's root
+    has target_root_id: str;  # ID of User2's root
 
     can revoke_access with post entry {
-        // Revoke access to the current post
+        # Revoke access to the current post
         _.disallow_root(here, NodeAnchor.ref(self.target_root_id));
         report "Access revoked!";
     }
 }
 ```
 
-### Option 3: Make Content Public
+The code snippet `_.disallow_root(here, NodeAnchor.ref(self.target_root_id))` performs the inverse operation of `_.allow_root`; it removes existing access permissions that a target root node had to the current node's data.
+
+Here's how it works:
+
+- `here`
+  - This refers to the current node, which, as before, is the post node. This is the node from which the permission is being revoked.
+- `NodeAnchor.ref(self.target_root_id)`
+  - This converts the target_root_id (a string identifier) into a NodeAnchor representation. This NodeAnchor pinpoints the specific target root node whose access privileges are being revoked.
+
+In essence, this line of code instructs the post node to remove the previously granted access for the designated target root node to its data.
+
+### Make Content Public
 
 ```jac
-// Make a post readable by everyone
+# Make a post readable by everyone
 walker make_public {
     can make_public with post entry {
-        // Grant READ access to all users
+        # Grant READ access to all users
         _.perm_grant(here, "READ");
         report "Post is now public!";
     }
 }
 ```
 
-### Option 4: Make Content Private
+The code snippet `_.perm_grant(here, "READ")` provides a mechanism to grant read access to all other root nodes concerning the data within the current node.
+
+Here's a breakdown of the elements:
+
+- `here`
+  - This represents the current node, which in this case is the post node. This is the node whose data will be accessible.
+- `"READ"`
+  - This literal string specifies the type of permission being granted. In this instance, it grants "READ" access, allowing other root nodes to view the data on the post node. They can choose one from permission levels.
+
+### Make Content Private
 
 ```jac
-// Make a post private (owner-only)
+# Make a post private (owner-only)
 walker make_private {
     can make_private with post entry {
-        // Remove all access
+        # Remove all access
         _.perm_revoke(here);
         report "Post is now private!";
     }
 }
 ```
+
+The code snippet `_.perm_revoke(here)` is used to remove all previously granted access permissions from all other root nodes to the current node's data. It's the inverse operation of `_.perm_grant`.
+
+Here's a breakdown:
+
+- `here`
+  - This represents the current node (in this context, the post node) from which all access will be revoked.
+
+Essentially, this line of code completely withdraws any permissions that were previously granted to other root nodes, making the post node's data inaccessible to them.
 
 ## Common Permission Patterns
 
@@ -116,16 +178,16 @@ walker make_private {
 Perfect for social media posts or articles:
 
 ```jac
-// Create a public post
+# Create a public post
 walker create_public_post {
     has content: str;
 
     can enter with `root entry {
-        // Create the post
+        # Create the post
         post = Post({content: self.content});
         here ++> post;
 
-        // Make it readable by everyone, but only writable by owner
+        # Make it readable by everyone, but only writable by owner
         _.perm_grant(post, "READ");
 
         report "Public post created!";
@@ -138,13 +200,13 @@ walker create_public_post {
 Ideal for team collaboration:
 
 ```jac
-// Grant access to a team
+# Grant access to a team
 walker grant_team_access {
-    has team_members: list[str];  // List of root IDs
-    has access_level: str;        // "READ", "CONNECT", or "WRITE"
+    has team_members: list[str];  # List of root IDs
+    has access_level: str;        # "READ", "CONNECT", or "WRITE"
 
     can grant_access with document entry {
-        // Grant access to each team member
+        # Grant access to each team member
         for member_id in self.team_members {
             _.allow_root(here, NodeAnchor.ref(member_id), self.access_level);
         }
@@ -159,24 +221,24 @@ walker grant_team_access {
 For friend systems or social networks:
 
 ```jac
-// Only friends can see posts
+# Only friends can see posts
 walker check_access {
     has viewer_id: str;
 
     can check with post entry {
-        owner = [<--];
+        owner = [post<--][0];
 
-        // Check if viewer is friends with owner
-        is_friend = false;
-        for friend in owner[-->] {
+        # Check if viewer is friends with owner
+        is_friend = False;
+        for friend in [owner -->] {
             if friend.id == self.viewer_id {
-                is_friend = true;
+                is_friend = True;
                 break;
             }
         }
 
         if is_friend {
-            // Grant access if they're friends
+            # Grant access if they're friends
             _.allow_root(here, NodeAnchor.ref(self.viewer_id), "READ");
             report "Access granted to friend!";
         } else {
