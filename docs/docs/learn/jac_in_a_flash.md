@@ -49,28 +49,28 @@ The fourth version splits object declarations from their implementations using
 and the actual bodies are provided later in `impl Class.method` blocks.  This
 separation keeps the interface clean and helps organise larger codebases.
 
-=== "guess_game4.jac"
+=== "guess_game3.jac"
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game3.jac"
     ```
-=== "guess_game4.impl.jac"
+=== "guess_game3.impl.jac"
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game3.impl.jac"
     ```
 
 ## Step&nbsp;4 – Walking the graph
 
-Finally `guess_game5.jac` re‑imagines the game using Jac's object‑spatial
+Finally `guess_game4.jac` re‑imagines the game using Jac's object‑spatial
 architecture.  A `walker` visits a chain of `turn` nodes created with `++>`
 edges.  The walker moves with `visit [-->]` and stops via `disengage` when the
 guess is correct.  The game is launched by `spawn`ing the walker at `root`.
 This example shows how conventional logic can become graph traversal.
 
-=== "guess_game5.jac"
+=== "guess_game4.jac"
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game4.jac"
     ```
-=== "guess_game5.impl.jac"
+=== "guess_game4.impl.jac"
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game4.impl.jac"
     ```
