@@ -1,88 +1,47 @@
 # Chapter 19: Deployment Strategies
 
-In this chapter, we'll explore how to deploy Jac applications to production environments. We'll take our weather API from development to production using various deployment strategies including Docker, Kubernetes, and cloud platforms.
+In this chapter, we'll explore how to deploy Jac applications to production environments. We'll take our weather API from development to production using various deployment strategies including Docker, Kubernetes, and Jac Cloud.
 
 !!! info "What You'll Learn"
-    - Local vs cloud deployment strategies
-    - Containerizing Jac applications with Docker
-    - Kubernetes deployment patterns
-    - Configuration management for production
-    - Monitoring and observability setup
-    - CI/CD pipeline implementation
+    - Local vs cloud deployment comparison
+    - Docker containerization for Jac applications
+    - Kubernetes orchestration and scaling
+    - Jac Cloud deployment with real examples
+    - Production monitoring and maintenance
 
 ---
 
-## Local vs Cloud Deployment
+## Local to Cloud Deployment
 
-Understanding the deployment landscape is crucial for taking your Jac applications from development to production. Each environment has different requirements and considerations.
+One of Jac's most powerful features is its scale-agnostic nature - the same code that runs locally can be deployed to production without changes.
 
 !!! success "Deployment Benefits"
-    - **Environment Consistency**: Same application behavior across all environments
-    - **Scalability**: Handle increased load automatically
-    - **Reliability**: High availability and fault tolerance
-    - **Security**: Production-grade security configurations
-    - **Monitoring**: Comprehensive observability and alerting
+    - **Zero Code Changes**: Same application runs locally and in production
+    - **Automatic Scaling**: Built-in support for horizontal scaling
+    - **Container Ready**: Applications naturally containerize
+    - **Kubernetes Native**: Seamless Kubernetes integration
+    - **Production Features**: Built-in monitoring, logging, and health checks
 
-### Traditional vs Jac Deployment
+### Development to Production Pipeline
 
-!!! example "Deployment Comparison"
-    === "Traditional Approach"
-        ```python
-        # app.py - Complex deployment setup
-        from flask import Flask, jsonify, request
-        import os
-        import logging
-        from prometheus_client import Counter, generate_latest
+Let's start with our weather API and show how it progresses from development to production:
 
-        app = Flask(__name__)
-
-        # Manual configuration management
-        DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///weather.db')
-        PORT = int(os.getenv('PORT', 5000))
-        DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
-
-        # Manual logging setup
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
-
-        # Manual metrics
-        weather_requests = Counter('weather_requests_total', 'Total weather requests')
-
-        @app.route('/weather/<city>')
-        def get_weather(city):
-            weather_requests.inc()
-            logger.info(f"Weather request for city: {city}")
-
-            # Weather logic
-            return jsonify({
-                "city": city,
-                "temperature": "25°C",
-                "condition": "Sunny"
-            })
-
-        @app.route('/health')
-        def health_check():
-            return jsonify({"status": "healthy"})
-
-        @app.route('/metrics')
-        def metrics():
-            return generate_latest()
-
-        if __name__ == '__main__':
-            app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
-        ```
-
-    === "Jac Production Ready"
-        <div class="code-block">
+!!! example "Weather API Deployment Journey"
+    === "Development (Local)"
         ```jac
-        # weather_api.jac - Production ready out of the box
+        # weather_api.jac - Same code at every stage
         import from os { getenv }
-        import from datetime { datetime }
+
+        glob config = {
+            "api_key": getenv("WEATHER_API_KEY", "dev-key"),
+            "cache_timeout": int(getenv("CACHE_TIMEOUT", "300")),
+            "debug": getenv("DEBUG", "true").lower() == "true"
+        };
 
         node WeatherData {
             has city: str;
             has temperature: float;
-            has condition: str;
+            has description: str;
             has last_updated: str;
         }
 
@@ -91,33 +50,31 @@ Understanding the deployment landscape is crucial for taking your Jac applicatio
 
             can fetch_weather with `root entry {
                 # Check cache first
-                cached = [-->](`?WeatherData)(?city == self.city);
+                cached = [-->(`?WeatherData)](?city == self.city);
 
                 if cached {
                     weather = cached[0];
                     report {
                         "city": weather.city,
-                        "temperature": f"{weather.temperature}°C",
-                        "condition": weather.condition,
-                        "cached": true,
-                        "last_updated": weather.last_updated
+                        "temperature": weather.temperature,
+                        "description": weather.description,
+                        "cached": True
                     };
                 } else {
-                    # Simulate weather API call
+                    # Simulate API call
                     new_weather = WeatherData(
                         city=self.city,
-                        temperature=25.0,
-                        condition="Sunny",
-                        last_updated=datetime.now().isoformat()
+                        temperature=22.5,
+                        description="Sunny",
+                        last_updated="2024-01-15T10:00:00Z"
                     );
                     here ++> new_weather;
 
                     report {
                         "city": self.city,
-                        "temperature": "25.0°C",
-                        "condition": "Sunny",
-                        "cached": false,
-                        "last_updated": new_weather.last_updated
+                        "temperature": 22.5,
+                        "description": "Sunny",
+                        "cached": False
                     };
                 }
             }
@@ -125,25 +82,43 @@ Understanding the deployment landscape is crucial for taking your Jac applicatio
 
         walker health_check {
             can check_health with `root entry {
+                weather_count = len([-->(`?WeatherData)]);
                 report {
                     "status": "healthy",
-                    "timestamp": datetime.now().isoformat(),
-                    "service": "weather-api"
+                    "cached_cities": weather_count,
+                    "debug_mode": config["debug"]
                 };
             }
         }
         ```
-        </div>
+
+    === "Local Development"
+        ```bash
+        # Development workflow
+        export DEBUG=true
+        export WEATHER_API_KEY=dev-key
+
+        # Run locally for development
+        jac run weather_api.jac
+
+        # Test as service locally
+        jac serve weather_api.jac --port 8000
+
+        # Test the endpoints
+        curl -X POST http://localhost:8000/walker/get_weather \
+          -H "Content-Type: application/json" \
+          -d '{"city": "New York"}'
+        ```
 
 ---
 
-## Containerizing with Docker
+## Docker Containerization
 
-Docker provides a consistent environment for running your Jac applications across different platforms and deployment environments.
+Docker packaging makes your Jac applications portable and consistent across environments.
 
-### Basic Docker Setup
+### Basic Dockerfile for Jac Applications
 
-!!! example "Docker Configuration"
+!!! example "Jac Application Dockerfile"
     === "Dockerfile"
         ```dockerfile
         # Dockerfile
@@ -154,43 +129,46 @@ Docker provides a consistent environment for running your Jac applications acros
 
         # Install system dependencies
         RUN apt-get update && apt-get install -y \
-            gcc \
+            curl \
             && rm -rf /var/lib/apt/lists/*
 
-        # Copy requirements first for better caching
+        # Install Jac
+        RUN pip install jaclang
+
+        # Copy application files
+        COPY weather_api.jac .
         COPY requirements.txt .
-        RUN pip install --no-cache-dir -r requirements.txt
 
-        # Copy application code
-        COPY . .
-
-        # Create non-root user
-        RUN useradd -m -u 1000 jacuser && chown -R jacuser:jacuser /app
-        USER jacuser
+        # Install Python dependencies if any
+        RUN pip install -r requirements.txt
 
         # Expose port
         EXPOSE 8000
 
+        # Set environment variables
+        ENV JAC_FILE=weather_api.jac
+        ENV PORT=8000
+        ENV DEBUG=false
+
         # Health check
-        HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-            CMD curl -f http://localhost:8000/walker/health_check || exit 1
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+            CMD curl -f http://localhost:$PORT/walker/health_check -X POST -H "Content-Type: application/json" -d '{}' || exit 1
 
         # Run the application
-        CMD ["jac", "serve", "weather_api.jac", "--host", "0.0.0.0", "--port", "8000"]
+        CMD jac serve $JAC_FILE --port $PORT
         ```
 
     === "requirements.txt"
         ```txt
-        jaclang>=0.7.15
-        fastapi>=0.104.1
-        uvicorn[standard]>=0.24.0
-        python-dotenv>=1.0.0
-        psycopg2-binary>=2.9.7
-        redis>=5.0.0
+        # requirements.txt
+        jaclang
+        requests
+        python-dotenv
         ```
 
     === "docker-compose.yml"
         ```yaml
+        # docker-compose.yml
         version: '3.8'
 
         services:
@@ -199,48 +177,45 @@ Docker provides a consistent environment for running your Jac applications acros
             ports:
               - "8000:8000"
             environment:
-              - DATABASE_URL=postgresql://user:password@db:5432/weather
-              - REDIS_URL=redis://redis:6379
               - DEBUG=false
-            depends_on:
-              - db
-              - redis
+              - WEATHER_API_KEY=${WEATHER_API_KEY}
+              - CACHE_TIMEOUT=600
             volumes:
-              - ./logs:/app/logs
-
-          db:
-            image: postgres:15
-            environment:
-              POSTGRES_USER: user
-              POSTGRES_PASSWORD: password
-              POSTGRES_DB: weather
-            volumes:
-              - postgres_data:/var/lib/postgresql/data
-            ports:
-              - "5432:5432"
-
-          redis:
-            image: redis:7-alpine
-            ports:
-              - "6379:6379"
+              - weather_data:/app/data
+            restart: unless-stopped
+            healthcheck:
+              test: ["CMD", "curl", "-f", "http://localhost:8000/walker/health_check", "-X", "POST", "-H", "Content-Type: application/json", "-d", "{}"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
 
         volumes:
-          postgres_data:
+          weather_data:
         ```
 
-### Building and Running
+### Building and Testing Docker Images
 
 ```bash
-# Build the Docker image
+# Build the image
 docker build -t weather-api:latest .
 
-# Run with docker-compose
+# Test locally
+docker run -p 8000:8000 \
+  -e WEATHER_API_KEY=your-key \
+  -e DEBUG=true \
+  weather-api:latest
+
+# Test with docker-compose
+echo "WEATHER_API_KEY=your-key" > .env
 docker-compose up -d
 
-# Test the deployment
+# View logs
+docker-compose logs -f weather-api
+
+# Test the containerized API
 curl -X POST http://localhost:8000/walker/get_weather \
   -H "Content-Type: application/json" \
-  -d '{"city": "New York"}'
+  -d '{"city": "London"}'
 
 # Check health
 curl -X POST http://localhost:8000/walker/health_check \
@@ -252,18 +227,57 @@ curl -X POST http://localhost:8000/walker/health_check \
 
 ## Kubernetes Deployment
 
-Kubernetes provides orchestration, scaling, and management capabilities for containerized applications in production.
+Kubernetes provides orchestration, scaling, and reliability for production deployments.
 
 ### Kubernetes Manifests
 
-!!! example "Kubernetes Configuration"
+!!! example "Complete Kubernetes Deployment"
+    === "namespace.yaml"
+        ```yaml
+        # k8s/namespace.yaml
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: weather-app
+          labels:
+            app: weather-api
+        ```
+
+    === "configmap.yaml"
+        ```yaml
+        # k8s/configmap.yaml
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: weather-config
+          namespace: weather-app
+        data:
+          DEBUG: "false"
+          CACHE_TIMEOUT: "600"
+          PORT: "8000"
+        ```
+
+    === "secret.yaml"
+        ```yaml
+        # k8s/secret.yaml
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: weather-secrets
+          namespace: weather-app
+        type: Opaque
+        data:
+          weather-api-key: eW91ci1iYXNlNjQtZW5jb2RlZC1hcGkta2V5  # Base64 encoded
+        ```
+
     === "deployment.yaml"
         ```yaml
-        # deployment.yaml
+        # k8s/deployment.yaml
         apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: weather-api
+          namespace: weather-app
           labels:
             app: weather-api
         spec:
@@ -282,481 +296,647 @@ Kubernetes provides orchestration, scaling, and management capabilities for cont
                 ports:
                 - containerPort: 8000
                 env:
-                - name: DATABASE_URL
+                - name: WEATHER_API_KEY
                   valueFrom:
                     secretKeyRef:
                       name: weather-secrets
-                      key: database-url
-                - name: DEBUG
-                  value: "false"
+                      key: weather-api-key
+                envFrom:
+                - configMapRef:
+                    name: weather-config
                 resources:
-                  requests:
-                    memory: "256Mi"
-                    cpu: "250m"
                   limits:
-                    memory: "512Mi"
+                    cpu: "1"
+                    memory: "1Gi"
+                  requests:
                     cpu: "500m"
+                    memory: "512Mi"
                 livenessProbe:
-                  httpGet:
+                  httpPost:
                     path: /walker/health_check
                     port: 8000
+                    httpHeaders:
+                    - name: Content-Type
+                      value: application/json
                   initialDelaySeconds: 30
-                  periodSeconds: 10
+                  periodSeconds: 30
                 readinessProbe:
-                  httpGet:
+                  httpPost:
                     path: /walker/health_check
                     port: 8000
+                    httpHeaders:
+                    - name: Content-Type
+                      value: application/json
                   initialDelaySeconds: 5
-                  periodSeconds: 5
+                  periodSeconds: 10
         ```
 
     === "service.yaml"
         ```yaml
-        # service.yaml
+        # k8s/service.yaml
         apiVersion: v1
         kind: Service
         metadata:
           name: weather-api-service
+          namespace: weather-app
         spec:
           selector:
             app: weather-api
           ports:
-            - protocol: TCP
-              port: 80
-              targetPort: 8000
-          type: LoadBalancer
+          - protocol: TCP
+            port: 80
+            targetPort: 8000
+          type: ClusterIP
         ```
 
-    === "secrets.yaml"
+    === "ingress.yaml"
         ```yaml
-        # secrets.yaml
-        apiVersion: v1
-        kind: Secret
+        # k8s/ingress.yaml
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
         metadata:
-          name: weather-secrets
-        type: Opaque
-        data:
-          database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc3dvcmRAZGI6NTQzMi93ZWF0aGVy
+          name: weather-api-ingress
+          namespace: weather-app
+          annotations:
+            kubernetes.io/ingress.class: "nginx"
+            nginx.ingress.kubernetes.io/rewrite-target: /
+        spec:
+          rules:
+          - host: weather-api.yourdomain.com
+            http:
+              paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: weather-api-service
+                    port:
+                      number: 80
         ```
 
-### Deployment Commands
+### Deploying to Kubernetes
 
 ```bash
-# Create namespace
-kubectl create namespace weather-app
+# Deploy everything in order
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
 
-# Apply configurations
-kubectl apply -f secrets.yaml -n weather-app
-kubectl apply -f deployment.yaml -n weather-app
-kubectl apply -f service.yaml -n weather-app
+# Create secret with your actual API key
+echo -n "your-actual-api-key" | base64
+# Update secret.yaml with the base64 value
+kubectl apply -f k8s/secret.yaml
+
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
 
 # Check deployment status
-kubectl get pods -n weather-app
-kubectl get services -n weather-app
+kubectl get all -n weather-app
 
-# Scale the deployment
-kubectl scale deployment weather-api --replicas=5 -n weather-app
+# Watch pods come online
+kubectl get pods -n weather-app -w
 
-# View logs
+# Check logs
 kubectl logs -f deployment/weather-api -n weather-app
+
+# Test the service
+kubectl port-forward service/weather-api-service 8080:80 -n weather-app
+
+# Test from another terminal
+curl -X POST http://localhost:8080/walker/get_weather \
+  -H "Content-Type: application/json" \
+  -d '{"city": "Tokyo"}'
 ```
 
 ---
 
-## Configuration Management
+## Jac Cloud Deployment
 
-Production applications require sophisticated configuration management to handle different environments and sensitive data.
+Jac Cloud provides a Kubernetes-based deployment system using the `jac-splice-orc` plugin for running JAC applications with built-in scaling and module management.
 
-### Environment Configuration
+### Jac Cloud Setup
 
-!!! example "Production Configuration"
-    === "Jac Configuration"
-        <div class="code-block">
-        ```jac
-        # config.jac
-        import from os { getenv }
-
-        enum Environment {
-            DEVELOPMENT = "development",
-            STAGING = "staging",
-            PRODUCTION = "production"
-        }
-
-        obj Config {
-            has environment: Environment;
-            has database_url: str;
-            has redis_url: str;
-            has debug: bool;
-            has log_level: str;
-            has max_connections: int;
-
-            can __init__() {
-                env_str = getenv("ENVIRONMENT", "development");
-                self.environment = Environment(env_str);
-
-                self.database_url = getenv(
-                    "DATABASE_URL",
-                    "sqlite:///./weather.db"
-                );
-
-                self.redis_url = getenv(
-                    "REDIS_URL",
-                    "redis://localhost:6379"
-                );
-
-                self.debug = getenv("DEBUG", "false").lower() == "true";
-                self.log_level = getenv("LOG_LEVEL", "INFO");
-                self.max_connections = int(getenv("MAX_CONNECTIONS", "100"));
-            }
-
-            can is_production() -> bool {
-                return self.environment == Environment.PRODUCTION;
-            }
-        }
-
-        # Global config instance
-        glob app_config = Config();
+!!! example "Jac Cloud Deployment"
+    === "Directory Structure"
         ```
-        </div>
-
-    === "Python Equivalent"
-        ```python
-        # config.py
-        import os
-        from enum import Enum
-
-        class Environment(Enum):
-            DEVELOPMENT = "development"
-            STAGING = "staging"
-            PRODUCTION = "production"
-
-        class Config:
-            def __init__(self):
-                env_str = os.getenv("ENVIRONMENT", "development")
-                self.environment = Environment(env_str)
-
-                self.database_url = os.getenv(
-                    "DATABASE_URL",
-                    "sqlite:///./weather.db"
-                )
-
-                self.redis_url = os.getenv(
-                    "REDIS_URL",
-                    "redis://localhost:6379"
-                )
-
-                self.debug = os.getenv("DEBUG", "false").lower() == "true"
-                self.log_level = os.getenv("LOG_LEVEL", "INFO")
-                self.max_connections = int(os.getenv("MAX_CONNECTIONS", "100"))
-
-            def is_production(self):
-                return self.environment == Environment.PRODUCTION
-
-        # Global config instance
-        app_config = Config()
+        jac-cloud/
+        ├── scripts/
+        │   ├── Dockerfile
+        │   ├── init_jac_cloud.sh
+        │   ├── jac-cloud.yml
+        │   └── module-config.yml
+        └── weather_api.jac
         ```
 
-### Environment Files
-
-!!! example "Environment Configuration Files"
-    === ".env.development"
+    === "Prerequisites"
         ```bash
-        # .env.development
-        ENVIRONMENT=development
-        DATABASE_URL=sqlite:///./weather_dev.db
-        REDIS_URL=redis://localhost:6379
-        DEBUG=true
-        LOG_LEVEL=DEBUG
-        MAX_CONNECTIONS=10
+        # Prerequisites for Jac Cloud deployment
+        # 1. Kubernetes cluster access
+        kubectl cluster-info
+
+        # 2. Docker for building images
+        docker --version
+
+        # 3. kubectl configured
+        kubectl config current-context
+
+        # 4. Target namespace should be created before deployment
+        kubectl create namespace littlex
+
+        # 5. Optional: OpenAI API key
+        echo "OPENAI_API_KEY=your-key-here" > .env
         ```
 
-    === ".env.production"
+    === "Build and Deploy"
         ```bash
-        # .env.production
-        ENVIRONMENT=production
-        DATABASE_URL=postgresql://user:pass@prod-db:5432/weather
-        REDIS_URL=redis://prod-redis:6379
-        DEBUG=false
-        LOG_LEVEL=INFO
-        MAX_CONNECTIONS=100
-        SECRET_KEY=your-production-secret-key
+        # 1. Build and push Docker image
+        docker build -t your-dockerhub-username/jac-cloud:latest -f jac-cloud/scripts/Dockerfile .
+        docker push your-dockerhub-username/jac-cloud:latest
+
+        # 2. Update image reference in jac-cloud.yml
+        sed -i 's|image: .*|image: your-dockerhub-username/jac-cloud:latest|' jac-cloud/scripts/jac-cloud.yml
+
+        # 3. Apply module configuration first
+        kubectl apply -f jac-cloud/scripts/module-config.yml
+
+        # 4. Deploy Jac Cloud application
+        kubectl apply -f jac-cloud/scripts/jac-cloud.yml
+
+        # 5. Verify deployment
+        kubectl get all -n littlex
         ```
+
+### Jac Cloud Configuration Files
+
+!!! example "Complete Jac Cloud Configuration"
+    === "jac-cloud.yml"
+        ```yaml
+        # jac-cloud/scripts/jac-cloud.yml
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: littlex
+        ---
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: jac-cloud-sa
+          namespace: littlex
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: jac-cloud-role
+        rules:
+        - apiGroups: [""]
+          resources: ["pods", "services", "configmaps"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        - apiGroups: ["apps"]
+          resources: ["deployments"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: jac-cloud-binding
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: jac-cloud-role
+        subjects:
+        - kind: ServiceAccount
+          name: jac-cloud-sa
+          namespace: littlex
+        ---
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: openai-secret
+          namespace: littlex
+        type: Opaque
+        data:
+          openai-key: eW91ci1iYXNlNjQtZW5jb2RlZC1rZXk=  # Replace with your base64 encoded key
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: jac-cloud
+          namespace: littlex
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: jac-cloud
+          template:
+            metadata:
+              labels:
+                app: jac-cloud
+            spec:
+              serviceAccountName: jac-cloud-sa
+              containers:
+              - name: jac-cloud
+                image: your-dockerhub-username/jac-cloud:latest
+                ports:
+                - containerPort: 8000
+                env:
+                - name: NAMESPACE
+                  value: "littlex"
+                - name: CONFIGMAP_NAME
+                  value: "module-config"
+                - name: FILE_NAME
+                  value: "weather_api.jac"
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: openai-secret
+                      key: openai-key
+                volumeMounts:
+                - name: config-volume
+                  mountPath: /app/config
+                resources:
+                  limits:
+                    cpu: "1"
+                    memory: "2Gi"
+                  requests:
+                    cpu: "500m"
+                    memory: "1Gi"
+              volumes:
+              - name: config-volume
+                configMap:
+                  name: module-config
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: jac-cloud-service
+          namespace: littlex
+        spec:
+          selector:
+            app: jac-cloud
+          ports:
+          - protocol: TCP
+            port: 80
+            targetPort: 8000
+          type: LoadBalancer
+        ```
+
+    === "module-config.yml"
+        ```yaml
+        # jac-cloud/scripts/module-config.yml
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: littlex
+        ---
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: module-config
+          namespace: littlex
+        data:
+          config.json: |
+            {
+              "numpy": {
+                "lib_mem_size_req": "100Mi",
+                "dependency": [],
+                "lib_cpu_req": "500m",
+                "load_type": "remote"
+              },
+              "transformers": {
+                "lib_mem_size_req": "2000Mi",
+                "dependency": ["torch", "transformers"],
+                "lib_cpu_req": "1.0",
+                "load_type": "remote"
+              },
+              "sentence_transformers": {
+                "lib_mem_size_req": "2000Mi",
+                "dependency": ["sentence-transformers"],
+                "lib_cpu_req": "1.0",
+                "load_type": "remote"
+              },
+              "requests": {
+                "lib_mem_size_req": "50Mi",
+                "dependency": ["requests"],
+                "lib_cpu_req": "100m",
+                "load_type": "remote"
+              }
+            }
+        ```
+
+    === "Dockerfile"
+        ```dockerfile
+        # jac-cloud/scripts/Dockerfile
+        FROM python:3.11-slim
+
+        # Set working directory
+        WORKDIR /app
+
+        # Install system dependencies
+        RUN apt-get update && apt-get install -y \
+            curl \
+            git \
+            && rm -rf /var/lib/apt/lists/*
+
+        # Install Jac and required packages
+        RUN pip install jaclang jac-splice-orc
+
+        # Copy application files
+        COPY weather_api.jac .
+        COPY jac-cloud/scripts/init_jac_cloud.sh .
+
+        # Make scripts executable
+        RUN chmod +x init_jac_cloud.sh
+
+        # Expose port
+        EXPOSE 8000
+
+        # Set environment variables
+        ENV JAC_FILE=weather_api.jac
+        ENV PORT=8000
+        ENV NAMESPACE=littlex
+        ENV CONFIGMAP_NAME=module-config
+
+        # Health check
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+            CMD curl -f http://localhost:$PORT/walker/health_check -X POST -H "Content-Type: application/json" -d '{}' || exit 1
+
+        # Run the application
+        CMD ["./init_jac_cloud.sh"]
+        ```
+
+### Environment Variables and Configuration
+
+The Jac Cloud deployment supports the following environment variables:
+
+| Variable          | Description                              | Default Value |
+|--------------------|------------------------------------------|---------------|
+| `NAMESPACE`        | Target namespace for the deployment     | `default`     |
+| `CONFIGMAP_NAME`   | Name of the ConfigMap to mount          | `module-config` |
+| `FILE_NAME`        | JAC file to execute in the pod          | `example.jac` |
+| `OPENAI_API_KEY`   | OpenAI API key (from secret)            | None          |
+
+### Step-by-Step Deployment Guide
+
+Follow these steps to deploy your Jac application to Kubernetes:
+
+```bash
+# 1. Build and push Docker image
+docker build -t your-dockerhub-username/jac-cloud:latest -f jac-cloud/scripts/Dockerfile .
+docker push your-dockerhub-username/jac-cloud:latest
+
+# 2. Update image reference in jac-cloud.yml
+sed -i 's|image: .*|image: your-dockerhub-username/jac-cloud:latest|' jac-cloud/scripts/jac-cloud.yml
+
+# 3. Apply module configuration first
+kubectl apply -f jac-cloud/scripts/module-config.yml
+
+# 4. Deploy Jac Cloud application
+kubectl apply -f jac-cloud/scripts/jac-cloud.yml
+
+# 5. Verify deployment
+kubectl get all -n littlex
+```
+
+### Monitoring and Updating
+
+```bash
+# Monitor logs in real-time
+kubectl logs -f deployment/jac-cloud -n littlex
+
+# Update configurations
+# 1. Modify the YAML files as needed
+# 2. Apply the changes:
+kubectl apply -f jac-cloud/scripts/module-config.yml
+kubectl apply -f jac-cloud/scripts/jac-cloud.yml
+
+# Scale for handling more traffic
+kubectl scale deployment jac-cloud --replicas=3 -n littlex
+
+# Configure resource limits (edit jac-cloud.yml first)
+# Then apply:
+kubectl apply -f jac-cloud/scripts/jac-cloud.yml
+```
+
+### Troubleshooting and Validation
+
+```bash
+# Verify namespace exists
+kubectl get namespaces
+
+# Verify ConfigMap is properly applied
+kubectl get configmap -n littlex
+
+# Verify deployment status
+kubectl get pods -n littlex
+
+# View logs for troubleshooting
+kubectl logs -f deployment/jac-cloud -n littlex
+
+# Check all resources in the namespace
+kubectl get all -n littlex
+```
+
+### Advanced Configuration Management
+
+```bash
+# Update module configurations dynamically
+kubectl patch configmap module-config -n littlex --patch '{"data":{"config.json":"{\"numpy\":{\"lib_mem_size_req\":\"200Mi\",\"dependency\":[],\"lib_cpu_req\":\"1.0\",\"load_type\":\"remote\"}}"}}'
+
+# Restart deployment to pick up config changes
+kubectl rollout restart deployment/jac-cloud -n littlex
+
+# Scale the deployment for increased capacity
+kubectl scale deployment jac-cloud --replicas=3 -n littlex
+
+# Check rollout status
+kubectl rollout status deployment/jac-cloud -n littlex
+
+# Adjust CPU and memory limits in jac-cloud.yml
+# Then apply the changes:
+kubectl apply -f jac-cloud/scripts/jac-cloud.yml
+```
 
 ---
 
-## Monitoring and Observability
+### Cleanup
 
-Production systems require comprehensive monitoring to ensure reliability and performance.
+To remove all deployed resources when you're done:
 
-### Built-in Monitoring
+```bash
+# Remove the entire namespace and all resources
+kubectl delete namespace littlex
 
-!!! example "Monitoring Walker"
-    <div class="code-block">
+# This will delete all resources associated with your Jac Cloud deployment
+```
+
+---
+
+## Production Monitoring and Maintenance
+
+### Enhanced Health Checks and Metrics
+
+!!! example "Production-Ready Weather API"
     ```jac
-    # monitoring.jac
+    # production_weather.jac
     import from datetime { datetime }
     import from time { time }
 
-    node MetricEntry {
-        has name: str;
-        has value: float;
-        has timestamp: str;
-        has labels: dict = {};
+    glob metrics = {
+        "requests_total": 0,
+        "requests_per_city": {},
+        "cache_hits": 0,
+        "cache_misses": 0,
+        "start_time": time()
+    };
+
+    node WeatherData {
+        has city: str;
+        has temperature: float;
+        has description: str;
+        has last_updated: str;
     }
 
-    walker record_metric {
-        has metric_name: str;
-        has value: float;
-        has labels: dict = {};
-
-        can record_metric_entry with `root entry {
-            metric = MetricEntry(
-                name=self.metric_name,
-                value=self.value,
-                timestamp=datetime.now().isoformat(),
-                labels=self.labels
-            );
-            here ++> metric;
-
-            report {
-                "metric": self.metric_name,
-                "value": self.value,
-                "recorded_at": metric.timestamp
-            };
-        }
-    }
-
-    walker get_metrics {
-        has metric_name: str = "";
-        has limit: int = 100;
-
-        can fetch_metrics with `root entry {
-            all_metrics = [-->](`?MetricEntry);
-
-            if self.metric_name {
-                filtered_metrics = [
-                    m for m in all_metrics
-                    if m.name == self.metric_name
-                ];
-            } else {
-                filtered_metrics = all_metrics;
-            }
-
-            recent_metrics = filtered_metrics[-self.limit:];
-
-            report {
-                "metrics": [
-                    {
-                        "name": m.name,
-                        "value": m.value,
-                        "timestamp": m.timestamp,
-                        "labels": m.labels
-                    }
-                    for m in recent_metrics
-                ],
-                "total": len(filtered_metrics)
-            };
-        }
-    }
-
-    # Enhanced weather walker with metrics
-    walker get_weather_with_metrics {
+    walker get_weather {
         has city: str;
 
-        can fetch_weather_with_monitoring with `root entry {
-            start_time = time();
+        can fetch_weather with `root entry {
+            # Update metrics
+            metrics["requests_total"] += 1;
+            metrics["requests_per_city"][self.city] = metrics["requests_per_city"].get(self.city, 0) + 1;
 
-            # Record request metric
-            record_metric(
-                metric_name="weather_requests_total",
-                value=1.0,
-                labels={"city": self.city}
-            ) spawn here;
-
-            # Get weather data
-            cached = [-->](`?WeatherData)(?city == self.city);
+            # Check cache first
+            cached = [-->(`?WeatherData)](?city == self.city);
 
             if cached {
+                metrics["cache_hits"] += 1;
                 weather = cached[0];
-                cache_hit = true;
+                report {
+                    "city": weather.city,
+                    "temperature": weather.temperature,
+                    "description": weather.description,
+                    "cached": True
+                };
             } else {
-                weather = WeatherData(
+                metrics["cache_misses"] += 1;
+                # Simulate external API call
+                new_weather = WeatherData(
                     city=self.city,
-                    temperature=25.0,
-                    condition="Sunny",
+                    temperature=22.5,
+                    description="Sunny",
                     last_updated=datetime.now().isoformat()
                 );
-                here ++> weather;
-                cache_hit = false;
+                here ++> new_weather;
+
+                report {
+                    "city": self.city,
+                    "temperature": 22.5,
+                    "description": "Sunny",
+                    "cached": False
+                };
             }
+        }
+    }
 
-            # Record response time
-            response_time = time() - start_time;
-            record_metric(
-                metric_name="weather_response_time_seconds",
-                value=response_time,
-                labels={"city": self.city, "cache_hit": str(cache_hit)}
-            ) spawn here;
-
-            # Record cache hit/miss
-            record_metric(
-                metric_name="weather_cache_hit_total" if cache_hit else "weather_cache_miss_total",
-                value=1.0,
-                labels={"city": self.city}
-            ) spawn here;
+    walker health_check {
+        can check_health with `root entry {
+            uptime = time() - metrics["start_time"];
+            cache_hit_rate = metrics["cache_hits"] / max(metrics["requests_total"], 1) * 100;
 
             report {
-                "city": weather.city,
-                "temperature": f"{weather.temperature}°C",
-                "condition": weather.condition,
-                "cached": cache_hit,
-                "response_time_ms": round(response_time * 1000, 2)
+                "status": "healthy",
+                "uptime_seconds": uptime,
+                "total_requests": metrics["requests_total"],
+                "cache_hit_rate_percent": round(cache_hit_rate, 2),
+                "cached_cities": len([-->(`?WeatherData)]),
+                "timestamp": datetime.now().isoformat()
+            };
+        }
+    }
+
+    walker metrics_endpoint {
+        can get_metrics with `root entry {
+            uptime = time() - metrics["start_time"];
+            cache_hit_rate = metrics["cache_hits"] / max(metrics["requests_total"], 1) * 100;
+
+            report {
+                "uptime_seconds": uptime,
+                "total_requests": metrics["requests_total"],
+                "cache_hit_rate_percent": round(cache_hit_rate, 2),
+                "requests_by_city": metrics["requests_per_city"],
+                "timestamp": datetime.now().isoformat()
+            };
+        }
+    }
+
+    walker detailed_health_check {
+        can comprehensive_health with `root entry {
+            cached_cities = len([-->(`?WeatherData)]);
+            memory_usage = "healthy";  # Simplified for demo
+
+            # Check if service is responding normally
+            status = "healthy";
+            if metrics["requests_total"] == 0 and time() - metrics["start_time"] > 300 {
+                status = "warning";  # No requests in 5 minutes
+            }
+
+            report {
+                "status": status,
+                "cached_cities": cached_cities,
+                "total_requests": metrics["requests_total"],
+                "memory_status": memory_usage,
+                "uptime_seconds": time() - metrics["start_time"],
+                "version": "1.0.0"
             };
         }
     }
     ```
-    </div>
 
----
-
-## CI/CD Patterns
-
-Continuous Integration and Deployment automate the process of testing and deploying your applications.
-
-### GitHub Actions Pipeline
-
-!!! example "CI/CD Configuration"
-    === ".github/workflows/deploy.yml"
-        ```yaml
-        # .github/workflows/deploy.yml
-        name: Deploy Weather API
-
-        on:
-          push:
-            branches: [main]
-          pull_request:
-            branches: [main]
-
-        jobs:
-          test:
-            runs-on: ubuntu-latest
-
-            steps:
-            - uses: actions/checkout@v3
-
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                python-version: '3.11'
-
-            - name: Install dependencies
-              run: |
-                pip install -r requirements.txt
-                pip install pytest
-
-            - name: Run tests
-              run: |
-                jac test weather_api.jac
-                pytest tests/
-
-            - name: Lint code
-              run: |
-                jac check weather_api.jac
-
-          build:
-            needs: test
-            runs-on: ubuntu-latest
-            if: github.ref == 'refs/heads/main'
-
-            steps:
-            - uses: actions/checkout@v3
-
-            - name: Build Docker image
-              run: |
-                docker build -t weather-api:${{ github.sha }} .
-                docker tag weather-api:${{ github.sha }} weather-api:latest
-
-            - name: Push to registry
-              run: |
-                echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-                docker push weather-api:${{ github.sha }}
-                docker push weather-api:latest
-
-          deploy:
-            needs: build
-            runs-on: ubuntu-latest
-            if: github.ref == 'refs/heads/main'
-
-            steps:
-            - uses: actions/checkout@v3
-
-            - name: Deploy to Kubernetes
-              run: |
-                echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
-                export KUBECONFIG=kubeconfig
-
-                # Update image in deployment
-                kubectl set image deployment/weather-api \
-                  weather-api=weather-api:${{ github.sha }} \
-                  -n weather-app
-
-                # Wait for rollout
-                kubectl rollout status deployment/weather-api -n weather-app
-        ```
-
-    === "tests/test_weather.py"
-        ```python
-        # tests/test_weather.py
-        import pytest
-        import subprocess
-        import json
-
-        def test_health_check():
-            """Test the health check endpoint"""
-            result = subprocess.run([
-                'jac', 'run', 'weather_api.jac',
-                '--walker', 'health_check'
-            ], capture_output=True, text=True)
-
-            assert result.returncode == 0
-            response = json.loads(result.stdout)
-            assert response['status'] == 'healthy'
-
-        def test_weather_endpoint():
-            """Test weather data retrieval"""
-            result = subprocess.run([
-                'jac', 'run', 'weather_api.jac',
-                '--walker', 'get_weather',
-                '--ctx', '{"city": "London"}'
-            ], capture_output=True, text=True)
-
-            assert result.returncode == 0
-            response = json.loads(result.stdout)
-            assert response['city'] == 'London'
-            assert 'temperature' in response
-            assert 'condition' in response
-        ```
-
-### Deployment Commands
+### Scaling and Performance
 
 ```bash
-# Local testing
-jac test weather_api.jac
-pytest tests/
+# Manual scaling
+kubectl scale deployment jac-cloud --replicas=3 -n littlex
 
-# Build and test locally
-docker build -t weather-api:test .
-docker run -d -p 8000:8000 weather-api:test
+# Horizontal Pod Autoscaler
+kubectl apply -f - <<EOF
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: jac-cloud-hpa
+  namespace: littlex
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jac-cloud
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+EOF
 
-# Test the deployed container
-curl -X POST http://localhost:8000/walker/health_check \
+# Monitor scaling
+kubectl get hpa -n littlex -w
+
+# Load testing (using hey or similar)
+hey -n 1000 -c 10 -m POST \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -d '{"city":"London"}' \
+  http://your-service-url/walker/get_weather
 
-# Production deployment (automated via CI/CD)
-git add .
-git commit -m "Deploy weather API v1.2.0"
-git push origin main
+# Check resource usage during load test
+kubectl top pods -n littlex
 ```
 
 ---
@@ -764,53 +944,61 @@ git push origin main
 ## Best Practices
 
 !!! summary "Deployment Guidelines"
-    - **Environment parity**: Keep development, staging, and production as similar as possible
-    - **Configuration externalization**: Use environment variables for all configuration
-    - **Health checks**: Implement comprehensive health and readiness probes
-    - **Graceful shutdown**: Handle termination signals properly
-    - **Resource limits**: Set appropriate memory and CPU limits
-    - **Security hardening**: Run containers as non-root users and scan for vulnerabilities
+    - **Create namespaces beforehand**: Ensure target namespaces exist before deployment
+    - **Use the Jac Cloud system**: Leverage the built-in `jac-splice-orc` plugin for dynamic module management
+    - **Configure modules properly**: Define resource requirements for each module in the ConfigMap
+    - **Monitor resource usage**: Track CPU and memory consumption for optimal scaling
+    - **Secure API keys**: Use Kubernetes secrets for sensitive configuration
+    - **Plan for module dependencies**: Configure dependencies correctly in the module configuration
+    - **Test locally first**: Verify your JAC application works before deploying to the cloud
+    - **Version your deployments**: Tag Docker images with specific versions for reproducible deployments
+    - **Clean up resources**: Always clean up test deployments to avoid unnecessary costs
 
 ## Key Takeaways
 
 !!! summary "What We've Learned"
     **Deployment Strategies:**
 
-    - **Environment consistency**: Docker ensures identical behavior across environments
-    - **Orchestration**: Kubernetes provides scaling, load balancing, and service discovery
-    - **Configuration management**: Environment variables and secrets for flexible deployments
-    - **Zero-downtime deployments**: Rolling updates maintain service availability
+    - **Local development**: Same code runs everywhere without modifications
+    - **Docker containerization**: Package applications for consistent deployment
+    - **Kubernetes orchestration**: Production-grade scaling and reliability
+    - **Jac Cloud integration**: Kubernetes-based deployment with built-in module management
 
-    **Production Readiness:**
+    **Production Features:**
 
-    - **Health monitoring**: Built-in health checks and metrics collection
-    - **Resource management**: Proper CPU and memory allocation for optimal performance
-    - **Security practices**: Container hardening and secret management
-    - **Observability**: Comprehensive logging and monitoring for troubleshooting
+    - **Module management**: Dynamic loading of Python modules with resource control
+    - **RBAC security**: Proper service accounts and role-based access control
+    - **Health checks**: Monitor application health and readiness
+    - **Resource management**: Control CPU and memory usage effectively
+    - **Scaling strategies**: Manual and automatic scaling based on demand
+    - **Configuration management**: Secure and flexible environment configuration
 
-    **Automation Benefits:**
+    **Monitoring and Maintenance:**
 
-    - **CI/CD pipelines**: Automated testing and deployment reduce manual errors
-    - **Infrastructure as code**: Version-controlled deployment configurations
-    - **Rollback capabilities**: Quick recovery from failed deployments
-    - **Environment promotion**: Consistent promotion from development to production
+    - **Metrics collection**: Track application performance and usage
+    - **Log aggregation**: Centralized logging for debugging and analysis
+    - **Resource monitoring**: Track module resource usage and optimization
+    - **Performance optimization**: Identify and resolve bottlenecks
+    - **Troubleshooting tools**: Use kubectl commands for debugging deployments
 
-    **Scalability Features:**
+    **Best Practices:**
 
-    - **Horizontal scaling**: Automatic scaling based on load and metrics
-    - **Load balancing**: Traffic distribution across multiple instances
-    - **Service mesh**: Advanced traffic management and security
-    - **Database scaling**: Strategies for scaling persistent data
+    - **Infrastructure as Code**: Version control your deployment configurations
+    - **Module optimization**: Configure appropriate resource limits for each module
+    - **Security hardening**: Implement security best practices at every layer
+    - **Namespace isolation**: Use dedicated namespaces for different environments
+    - **Progressive deployment**: Test in staging before production rollout
 
 !!! tip "Try It Yourself"
     Practice deployment by:
-    - Setting up a local Kubernetes cluster with minikube
-    - Creating Docker images for your Jac applications
-    - Implementing CI/CD pipelines with GitHub Actions
-    - Setting up monitoring with Prometheus and Grafana
+    - Setting up the Jac Cloud deployment with your own Docker registry
+    - Experimenting with different module configurations and resource limits
+    - Implementing comprehensive monitoring and alerting systems
+    - Testing scaling behavior under different load conditions
+    - Creating CI/CD pipelines for automated deployment workflows
 
-    Remember: Start with simple deployments and add complexity as your application grows!
+    Remember: Jac Cloud provides a production-ready platform with built-in best practices for JAC applications!
 
 ---
 
-*Ready to optimize for performance? Continue to [Chapter 20: Performance Optimization](chapter_20.md)!*
+*Ready to optimize performance? Continue to [Chapter 20: Performance Optimization](chapter_20.md)!*
