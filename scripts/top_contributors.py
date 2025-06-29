@@ -149,18 +149,22 @@ def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo:
     return "\n".join(lines)
 
 def get_tabs_css() -> str:
-    """Return CSS for the tab and table design (dark tab bar, clear selection)."""
+    """Return CSS for the tab and table design (dark tab bar, clear selection, aligned tabs, responsive)."""
     return """
 <style>
 #tabs {
-    list-style: none;
     display: flex;
+    justify-content: space-between;
     padding: 0;
     margin: 0 0 1em 0;
     border-bottom: 2px solid #222;
     background: #23272e;
+    list-style: none;
+    width: 100%;
 }
 #tabs li {
+    flex: 1 1 0;
+    text-align: center;
     padding: 0.7em 1.5em;
     margin: 0;
     cursor: pointer;
@@ -169,9 +173,12 @@ def get_tabs_css() -> str:
     background: #23272e;
     color: #bfc7d5;
     border-radius: 8px 8px 0 0;
-    margin-right: 0.5em;
     transition: background 0.2s, color 0.2s;
     font-weight: 500;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 #tabs li.active, #tabs li:hover {
     background: #181b20;
@@ -180,6 +187,33 @@ def get_tabs_css() -> str:
     border-bottom: 2px solid #181b20;
     box-shadow: 0 -2px 8px #181b20;
     z-index: 2;
+}
+#tabs li:first-child {
+    text-align: left;
+    justify-content: flex-start;
+}
+#tabs li:nth-child(2) {
+    text-align: center;
+    justify-content: center;
+}
+#tabs li:last-child {
+    text-align: right;
+    justify-content: flex-end;
+}
+@media (max-width: 700px) {
+    #tabs {
+        flex-direction: column;
+        border-bottom: none;
+    }
+    #tabs li {
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid #222;
+        border-right: none;
+        text-align: left;
+    }
+    #tabs li.active, #tabs li:hover {
+        border-bottom: 2px solid #181b20;
+    }
 }
 .tabcontent {
     background: #181b20;
@@ -236,8 +270,8 @@ function showTab(idx) {{
 </script>
 """
 
-def get_tabs_html(repo_tables: List[Tuple[str, str]]) -> str:
-    """Return HTML for the tab headers."""
+def get_tabs_html(repo_tables: list) -> str:
+    """Return HTML for the tab headers, aligned across the page."""
     tabs = []
     for idx, (repo, _) in enumerate(repo_tables):
         active = "active" if idx == 0 else ""
