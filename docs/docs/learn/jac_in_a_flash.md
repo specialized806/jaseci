@@ -42,19 +42,6 @@ signature, making the object definition concise.
     --8<-- "jac/examples/guess_game/guess_game2.jac"
     ```
 
-## Step&nbsp;3 – Introducing the pipe operator
-
-`guess_game3.jac` demonstrates Jac's pipe forward operator (`|>`).  It pipes the
-result of the expression on the left as arguments to the function on the right.
-Calls like `print("hi")` become `"hi" |> print` and expressions can be chained
-(`guess |> int |> self.process_guess`).  The pipe is also used for object
-construction and method invocation (`|> GuessTheNumberGame`).
-
-=== "guess_game3.jac"
-    ```jac linenums="1"
-    --8<-- "jac/examples/guess_game/guess_game3.jac"
-    ```
-
 ## Step&nbsp;4 – Separating implementation with `impl`
 
 The fourth version splits object declarations from their implementations using
@@ -64,11 +51,11 @@ separation keeps the interface clean and helps organise larger codebases.
 
 === "guess_game4.jac"
     ```jac linenums="1"
-    --8<-- "jac/examples/guess_game/guess_game4.jac"
+    --8<-- "jac/examples/guess_game/guess_game3.jac"
     ```
 === "guess_game4.impl.jac"
     ```jac linenums="1"
-    --8<-- "jac/examples/guess_game/guess_game4.impl.jac"
+    --8<-- "jac/examples/guess_game/guess_game3.impl.jac"
     ```
 
 ## Step&nbsp;5 – Walking the graph
@@ -81,11 +68,11 @@ This example shows how conventional logic can become graph traversal.
 
 === "guess_game5.jac"
     ```jac linenums="1"
-    --8<-- "jac/examples/guess_game/guess_game5.jac"
+    --8<-- "jac/examples/guess_game/guess_game4.jac"
     ```
 === "guess_game5.impl.jac"
     ```jac linenums="1"
-    --8<-- "jac/examples/guess_game/guess_game5.impl.jac"
+    --8<-- "jac/examples/guess_game/guess_game4.impl.jac"
     ```
 
 Happy code deconstructing!
