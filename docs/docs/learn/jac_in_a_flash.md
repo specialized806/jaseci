@@ -2,7 +2,7 @@
 
 This mini tutorial uses a single toy program to highlight the major pieces of
 the Jac language.  We start with a small Python game and gradually evolve it
-into a fully data‑spatial Jac implementation.  Each iteration introduces a new
+into a fully object‑spatial Jac implementation.  Each iteration introduces a new
 Jac feature while keeping the overall behaviour identical.
 
 ## Step&nbsp;0 – The Python version
@@ -73,7 +73,7 @@ separation keeps the interface clean and helps organise larger codebases.
 
 ## Step&nbsp;5 – Walking the graph
 
-Finally `guess_game5.jac` re‑imagines the game using Jac's data‑spatial
+Finally `guess_game5.jac` re‑imagines the game using Jac's object‑spatial
 architecture.  A `walker` visits a chain of `turn` nodes created with `++>`
 edges.  The walker moves with `visit [-->]` and stops via `disengage` when the
 guess is correct.  The game is launched by `spawn`ing the walker at `root`.

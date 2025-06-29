@@ -3,7 +3,7 @@
 import random;
 
 walker GuessGame {
-    has correct_number: int = (1, 100) |> random.randint;
+    has correct_number: int = (1, 10) |> random.randint;
     
     can start_game with `root entry;
     def process_guess(guess: int);
