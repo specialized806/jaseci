@@ -85,6 +85,16 @@ tabel_css = """
 </style>
 """
 
+def format_repo_name(repo: str) -> str:
+    """Convert a GitHub repo string to a title-cased display name.
+
+    Examples:
+        'jaclang/jac_playground' -> 'Jac Playground'
+    """
+    name = repo.split("/")[-1]
+    name = name.replace("_", " ").replace("-", " ")
+    return name.title()
+
 def get_repo_from_remote() -> Tuple[Optional[str], Optional[str]]:
     """Get repository owner and name from git remote URL."""
     try:
@@ -222,7 +232,7 @@ def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo:
 def generate_html_table(contributors: List[Dict[str, Any]], days: int, repo: str) -> str:
     """Generate an HTML table from contributor data and return as string."""
     if not contributors:
-        return f"<p>No contributions found in the last {days} days for {repo}.</p>"
+        return f"<p>No contributions found in the last {days} days for {format_repo_name(repo)}.</p>"
 
     end_date = datetime.now(timezone.utc).date()
     start_date = end_date - timedelta(days=days)
@@ -268,17 +278,6 @@ function showTab(idx) {{
 }}
 </script>
 """
-
-def format_repo_name(repo: str) -> str:
-    """Convert a GitHub repo string to a title-cased display name.
-
-    Examples:
-        'jaclang/jac_playground' -> 'Jac Playground'
-    """
-    name = repo.split("/")[-1]
-    name = name.replace("_", " ").replace("-", " ")
-    return name.title()
-
 
 def get_tabs_html(repo_tables: list) -> str:
     """Return HTML for the tab headers, aligned across the page."""
