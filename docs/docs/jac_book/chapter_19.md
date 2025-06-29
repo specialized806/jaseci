@@ -761,31 +761,55 @@ git push origin main
 
 ---
 
+## Best Practices
+
+!!! summary "Deployment Guidelines"
+    - **Environment parity**: Keep development, staging, and production as similar as possible
+    - **Configuration externalization**: Use environment variables for all configuration
+    - **Health checks**: Implement comprehensive health and readiness probes
+    - **Graceful shutdown**: Handle termination signals properly
+    - **Resource limits**: Set appropriate memory and CPU limits
+    - **Security hardening**: Run containers as non-root users and scan for vulnerabilities
+
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Environment Strategy**: Different configurations for development, staging, and production
-    - **Containerization**: Docker provides consistent deployment environments
-    - **Orchestration**: Kubernetes handles scaling and management
-    - **Configuration Management**: Environment variables and secrets for flexibility
-    - **Monitoring**: Built-in metrics and observability patterns
-    - **Automation**: CI/CD pipelines for reliable deployments
+    **Deployment Strategies:**
 
-### Next Steps
+    - **Environment consistency**: Docker ensures identical behavior across environments
+    - **Orchestration**: Kubernetes provides scaling, load balancing, and service discovery
+    - **Configuration management**: Environment variables and secrets for flexible deployments
+    - **Zero-downtime deployments**: Rolling updates maintain service availability
 
-In the upcoming chapters, we'll explore:
-- **Chapter 20**: Performance optimization for production workloads
-- **Chapter 21**: Building complete real-world applications
-- **Chapter 22**: Advanced monitoring and troubleshooting
+    **Production Readiness:**
+
+    - **Health monitoring**: Built-in health checks and metrics collection
+    - **Resource management**: Proper CPU and memory allocation for optimal performance
+    - **Security practices**: Container hardening and secret management
+    - **Observability**: Comprehensive logging and monitoring for troubleshooting
+
+    **Automation Benefits:**
+
+    - **CI/CD pipelines**: Automated testing and deployment reduce manual errors
+    - **Infrastructure as code**: Version-controlled deployment configurations
+    - **Rollback capabilities**: Quick recovery from failed deployments
+    - **Environment promotion**: Consistent promotion from development to production
+
+    **Scalability Features:**
+
+    - **Horizontal scaling**: Automatic scaling based on load and metrics
+    - **Load balancing**: Traffic distribution across multiple instances
+    - **Service mesh**: Advanced traffic management and security
+    - **Database scaling**: Strategies for scaling persistent data
 
 !!! tip "Try It Yourself"
-    Deploy your own weather API by:
-    - Setting up a local Docker environment
-    - Creating a simple Kubernetes cluster
-    - Implementing basic monitoring
-    - Setting up a CI/CD pipeline
+    Practice deployment by:
+    - Setting up a local Kubernetes cluster with minikube
+    - Creating Docker images for your Jac applications
+    - Implementing CI/CD pipelines with GitHub Actions
+    - Setting up monitoring with Prometheus and Grafana
 
-    Remember: Start simple and add complexity gradually as your application grows!
+    Remember: Start with simple deployments and add complexity as your application grows!
 
 ---
 

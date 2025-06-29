@@ -535,16 +535,7 @@ AI applications require robust error handling and testing strategies.
 
 ---
 
-## Key Takeaways
-
-!!! summary "What We've Learned"
-    - **MTLLM Integration**: Simple AI function definitions with `by llm()`
-    - **Model Configuration**: Flexible model selection and parameter tuning
-    - **Semantic Context**: Enhanced AI understanding through semantic strings
-    - **Multimodal Support**: Seamless handling of images, text, and audio
-    - **Error Handling**: Robust patterns for production AI applications
-
-### Best Practices
+## Best Practices
 
 !!! tip "AI Development Guidelines"
     - **Start Simple**: Begin with basic AI functions, add complexity gradually
@@ -553,13 +544,29 @@ AI applications require robust error handling and testing strategies.
     - **Test Thoroughly**: AI outputs can be unpredictable, test with various inputs
     - **Optimize Models**: Choose appropriate models and parameters for your use case
 
-### Next Steps
+## Key Takeaways
 
-In the upcoming chapters, we'll explore:
+!!! summary "What We've Learned"
+    **MTLLM Integration:**
 
-- **Chapter 6**: Import systems and modular AI applications
-- **Chapter 7**: Object-oriented patterns with AI integration
-- **Chapter 8**: Building complete AI-powered spatial applications
+    - **Simple AI Functions**: Define AI capabilities with `by llm()` syntax
+    - **Model Configuration**: Flexible model selection and parameter tuning
+    - **Type Safety**: AI functions integrate seamlessly with Jac's type system
+    - **Zero Prompt Engineering**: Function signatures become prompts automatically
+
+    **Advanced Features:**
+
+    - **Semantic Context**: Enhanced AI understanding through semantic strings
+    - **Multimodal Support**: Seamless handling of images, text, and audio
+    - **Error Handling**: Robust patterns for production AI applications
+    - **Model Selection**: Easy switching between different AI providers and models
+
+    **Practical Applications:**
+
+    - **Content Generation**: Automated text and media analysis
+    - **Data Processing**: Intelligent data transformation and extraction
+    - **API Integration**: Direct AI integration without complex setup
+    - **Scalable Architecture**: AI functions work in both local and cloud deployments
 
 !!! tip "Try It Yourself"
     Enhance the image captioning tool by adding:
@@ -567,6 +574,8 @@ In the upcoming chapters, we'll explore:
     - Integration with cloud storage services
     - Custom model fine-tuning capabilities
     - Real-time image analysis from camera feeds
+
+    Remember: AI functions in Jac are as easy to use as regular functions, but with the power of Large Language Models!
 
 ---
 

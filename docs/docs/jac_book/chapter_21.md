@@ -629,29 +629,56 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
 
 ---
 
+## Best Practices
+
+!!! summary "Migration Best Practices"
+    - **Start small**: Begin with isolated components rather than entire applications
+    - **Maintain compatibility**: Keep existing Python code running during migration
+    - **Test thoroughly**: Validate each migration step with comprehensive tests
+    - **Document changes**: Track migration decisions and patterns for team consistency
+    - **Train the team**: Ensure all developers understand Object-Spatial Programming concepts
+    - **Plan rollback**: Have strategies for reverting changes if issues arise
+
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Gradual Migration**: Move from Python to Jac incrementally
-    - **Object Conversion**: Transform classes to objects with automatic constructors
-    - **Spatial Relationships**: Replace collections with nodes and edges
-    - **Type Safety**: Leverage Jac's type system for better code quality
-    - **Hybrid Integration**: Run Python and Jac code together during transition
-    - **Avoid Pitfalls**: Think spatially rather than directly translating syntax
+    **Migration Strategies:**
 
-### Next Steps
+    - **Incremental approach**: Gradual migration reduces risk and allows learning
+    - **Syntax translation**: Converting Python classes to Jac objects with automatic constructors
+    - **Spatial transformation**: Moving from collections to graph-based relationships
+    - **Hybrid integration**: Running Python and Jac code together during transition
 
-In the upcoming chapters, we'll explore:
-- **Chapter 25**: Best practices for Jac development
-- **Chapter 26**: Advanced features and future roadmap
+    **Technical Benefits:**
 
-!!! tip "Migration Success Tips"
-    - Start with small, isolated components
-    - Embrace Jac's spatial programming paradigm
-    - Use strong typing throughout your migration
-    - Test each migration step thoroughly
-    - Document your migration patterns for team consistency
+    - **Automatic constructors**: Eliminate boilerplate code with `has` declarations
+    - **Type safety**: Mandatory typing catches errors earlier in development
+    - **Graph relationships**: Natural representation of connected data
+    - **Performance gains**: Optimized execution for both local and distributed environments
+
+    **Common Challenges:**
+
+    - **Paradigm shift**: Moving from object-oriented to spatial thinking
+    - **Team adoption**: Training developers on new concepts and patterns
+    - **Integration complexity**: Managing hybrid Python-Jac applications
+    - **Testing changes**: Ensuring equivalent behavior after migration
+
+    **Success Factors:**
+
+    - **Clear planning**: Structured approach to migration with defined milestones
+    - **Comprehensive testing**: Validation at every step of the migration process
+    - **Team alignment**: Consistent understanding of goals and benefits
+    - **Iterative improvement**: Continuous refinement of migration patterns
+
+!!! tip "Try It Yourself"
+    Practice migration by:
+    - Converting a simple Python class to a Jac object
+    - Transforming list-based relationships into graph structures
+    - Creating hybrid applications that use both Python libraries and Jac features
+    - Building comprehensive test suites to validate migration correctness
+
+    Remember: Successful migration is about embracing spatial thinking, not just syntax conversion!
 
 ---
 
-*Ready to learn about best practices? Continue to [Chapter 25: Best Practices and Patterns](chapter_25.md)!*
+*Ready to master Jac best practices? Continue to [Chapter 25: Best Practices and Patterns](chapter_25.md)!*

@@ -723,30 +723,55 @@ Jac provides several debugging techniques specifically designed for Object-Spati
 
 ---
 
+## Best Practices
+
+!!! summary "Testing Best Practices"
+    - **Write tests first**: Use test-driven development for complex walker logic
+    - **Test graph structures**: Verify node and edge relationships are correct
+    - **Use descriptive names**: Make test intentions clear from the test name
+    - **Test edge cases**: Include boundary conditions and error scenarios
+    - **Isolate test data**: Ensure tests don't interfere with each other
+    - **Mock external dependencies**: Test walker logic independently of external services
+
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Built-in Testing**: Jac's test blocks provide integrated testing without external frameworks
-    - **Walker Testing**: Specialized patterns for testing graph traversal and walker behavior
-    - **Debug Integration**: Built-in debugging features work seamlessly with tests
-    - **Edge Case Coverage**: Comprehensive testing includes boundary conditions and error cases
-    - **Graph Verification**: Testing relationships and connections in Object-Spatial Programming
+    **Testing Framework:**
 
-### Next Steps
+    - **Built-in testing**: Native test blocks eliminate external framework dependencies
+    - **Graph testing**: Specialized patterns for testing spatial relationships
+    - **Walker testing**: Comprehensive testing of mobile computation patterns
+    - **Type-safe assertions**: Leverage Jac's type system in test validation
 
-In the upcoming chapters, we'll explore:
-- **Chapter 19**: Deployment strategies for tested applications
-- **Chapter 20**: Performance optimization based on test insights
-- **Chapter 21**: Building complete applications with comprehensive test suites
+    **Debugging Techniques:**
+
+    - **Debug output**: Strategic print statements and debug flags
+    - **Walker tracing**: Track walker movement through graph structures
+    - **State inspection**: Examine node and edge states during execution
+    - **Error handling**: Graceful handling of edge cases and failures
+
+    **Test Organization:**
+
+    - **Modular testing**: Organize tests by functionality and complexity
+    - **Helper functions**: Reusable setup code for consistent test environments
+    - **Performance testing**: Monitor execution time and resource usage
+    - **Integration testing**: Test interactions between multiple walkers
+
+    **Quality Assurance:**
+
+    - **Comprehensive coverage**: Test all code paths and error conditions
+    - **Regression prevention**: Automated tests prevent breaking changes
+    - **Documentation value**: Tests serve as executable specifications
+    - **Continuous validation**: Automated testing in CI/CD pipelines
 
 !!! tip "Try It Yourself"
-    Enhance the classroom system with:
-    - Tests for grade calculation and student progression
-    - Performance tests for large-scale classroom management
-    - Integration tests for multiple interacting walkers
-    - Stress tests for concurrent walker operations
+    Enhance your testing skills by:
+    - Writing comprehensive test suites for existing walker logic
+    - Implementing performance benchmarks for graph operations
+    - Creating integration tests for multi-walker scenarios
+    - Adding debug instrumentation to complex graph traversals
 
-    Remember: Good tests make debugging easier and code more reliable!
+    Remember: Good tests make development faster and more reliable!
 
 ---
 

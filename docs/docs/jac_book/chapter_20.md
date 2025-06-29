@@ -746,40 +746,56 @@ curl -X POST http://localhost:8000/walker/performance_health_check \
 
 ---
 
+## Best Practices
+
+!!! summary "Performance Optimization Guidelines"
+    - **Measure before optimizing**: Always profile before making performance changes
+    - **Optimize hot paths**: Focus on frequently executed code sections
+    - **Use appropriate data structures**: Choose the right graph patterns for your use case
+    - **Cache intelligently**: Cache expensive computations but avoid memory leaks
+    - **Batch operations**: Process multiple items together when possible
+    - **Monitor continuously**: Track performance metrics in production
+
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Graph Structure**: Efficient node and edge design improves traversal performance
-    - **Algorithm Choice**: BFS vs DFS and caching strategies affect performance significantly
-    - **Memory Management**: Batch processing and cleanup reduce memory footprint
-    - **Distributed Patterns**: Cloud-optimized chunking improves scalability
-    - **Performance Monitoring**: Built-in benchmarking helps identify bottlenecks
+    **Graph Structure Optimization:**
 
-### Performance Guidelines
+    - **Efficient relationships**: Well-designed edges and nodes improve traversal speed
+    - **Index strategy**: Cache frequently accessed data for faster retrieval
+    - **Memory management**: Batch processing and cleanup reduce memory footprint
+    - **Connection patterns**: Optimize graph topology for common access patterns
 
-!!! tip "Optimization Best Practices"
-    - **Index Frequently Accessed Data**: Use cached counts and summaries
-    - **Batch Operations**: Process large datasets in manageable chunks
-    - **Limit Traversal Depth**: Set reasonable bounds on graph exploration
-    - **Monitor Memory Usage**: Track and cleanup temporary objects
-    - **Test with Real Data**: Benchmark with production-scale datasets
+    **Algorithm Optimization:**
 
-### Next Steps
+    - **Traversal strategies**: Choose BFS vs DFS based on your specific requirements
+    - **Caching patterns**: Strategic caching reduces redundant computations
+    - **Batch processing**: Handle large datasets efficiently with chunking
+    - **Early termination**: Stop processing when results are sufficient
 
-In the upcoming chapters, we'll explore:
-- **Chapter 21**: Building complete real-world applications
-- **Chapter 22**: Advanced deployment and scaling strategies
-- **Chapter 23**: Integration patterns with existing systems
+    **Performance Monitoring:**
+
+    - **Built-in metrics**: Track execution time, memory usage, and throughput
+    - **Benchmarking**: Compare different implementation strategies objectively
+    - **Real-world testing**: Test with production-scale data and load patterns
+    - **Continuous profiling**: Monitor performance trends over time
+
+    **Distributed Performance:**
+
+    - **Cloud optimization**: Design for distributed execution and data locality
+    - **Scaling patterns**: Horizontal scaling through partitioning and parallelization
+    - **Resource efficiency**: Optimize for cloud computing cost and performance
+    - **Load balancing**: Distribute work evenly across available resources
 
 !!! tip "Try It Yourself"
-    Experiment with the friend-finding algorithms by:
-    - Increasing the test network size to 10,000+ people
-    - Implementing different caching strategies
-    - Adding weighted relationships for more complex algorithms
-    - Testing with different graph topologies (sparse vs dense networks)
+    Apply performance optimization by:
+    - Profiling your graph applications to identify bottlenecks
+    - Implementing different caching strategies and measuring their impact
+    - Testing with larger datasets to understand scaling characteristics
+    - Optimizing walker traversal patterns for your specific use cases
 
-    Remember: Always measure before optimizing, and optimize for your specific use case!
+    Remember: Performance optimization is an iterative process - measure, optimize, and verify!
 
 ---
 
-*Ready to build complete applications? Continue to [Chapter 21: Complete Application Development](chapter_21.md)!*
+*Ready to learn about migration strategies? Continue to [Chapter 21: Python to Jac Migration](chapter_21.md)!*
