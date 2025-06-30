@@ -27,12 +27,15 @@ Traditional web development requires explicit route definitions, request parsing
 !!! example "API Development Comparison"
     === "Jac Automatic APIs"
         ```jac
+        import uuid;
+
         # notebook.jac - No manual API setup needed
         node Note {
             has title: str;
             has content: str;
             has author: str;
             has created_at: str = "2024-01-15";
+            has id: str = "note_" + str(uuid.uuid4());
         }
 
         walker create_note {
@@ -255,6 +258,10 @@ Jac automatically validates request parameters based on walker attribute types. 
         has author: str;
         has priority: int = 1;
         has tags: list[str] = [];
+
+        obj __specs__ {
+            static has auth: bool = False;
+        }
 
         can validate_and_create with `root entry {
             # Jac automatically validates types before this runs
@@ -487,7 +494,7 @@ curl -X POST http://localhost:8000/walker/delete_note \
 Let's add basic permission checking to demonstrate multi-user patterns:
 
 !!! example "Notebook with User Permissions"
-    ```jac  linenums="1"
+    ```jac
     import from uuid { uuid4 }
 
     # shared_notebook.jac
