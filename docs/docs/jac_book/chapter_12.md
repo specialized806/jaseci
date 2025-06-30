@@ -98,7 +98,7 @@ curl -X POST http://localhost:8000/walker/get_weather \
   -d '{"city": "New York"}'
 ```
 
-In this example the endpoint is defined as `/walker/get_weather`, however, the endpoint also expects a JSON request body with a `city` field. 
+In this example the endpoint is defined as `/walker/get_weather`, however, the endpoint also expects a JSON request body with a `city` field.
 
 The response will be a JSON object containing the weather information.
 
