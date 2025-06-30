@@ -60,7 +60,6 @@ class Debugger(bdb.Bdb):
         self.breakpoint_buff.clear()
         self.run(self.code)
         time.sleep(0.2)
-        self._send_graph()
 
     def do_continue(self) -> None:
         self.set_continue()
