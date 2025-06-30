@@ -85,6 +85,7 @@ tabel_css = """
 </style>
 """
 
+
 def format_repo_name(repo: str) -> str:
     """Convert a GitHub repo string to a title-cased display name.
 
@@ -94,6 +95,7 @@ def format_repo_name(repo: str) -> str:
     name = repo.split("/")[-1]
     name = name.replace("_", " ").replace("-", " ")
     return name.title()
+
 
 def get_repo_from_remote() -> Tuple[Optional[str], Optional[str]]:
     """Get repository owner and name from git remote URL."""
@@ -205,8 +207,11 @@ def process_contributors(
         reverse=True,
     )
 
+
 # not using now since HTML tables have been used
-def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo: str) -> str:
+def generate_markdown_table(
+    contributors: List[Dict[str, Any]], days: int, repo: str
+) -> str:
     """Generate a markdown table from contributor data and return as string."""
     if not contributors:
         return f"No contributions found in the last {days} days for {repo}.\n"
@@ -225,11 +230,16 @@ def generate_markdown_table(contributors: List[Dict[str, Any]], days: int, repo:
         login = contributor["login"]
         commits = contributor["commits"]
         active_days = contributor["active_days"]
-        lines.append(f"| [@{login}](https://github.com/{login}) | {commits} | {active_days} |")
+        lines.append(
+            f"| [@{login}](https://github.com/{login}) | {commits} | {active_days} |"
+        )
     lines.append("\n")
     return "\n".join(lines)
 
-def generate_html_table(contributors: List[Dict[str, Any]], days: int, repo: str) -> str:
+
+def generate_html_table(
+    contributors: List[Dict[str, Any]], days: int, repo: str
+) -> str:
     """Generate an HTML table from contributor data and return as string."""
     if not contributors:
         return f"<p>No contributions found in the last {days} days for {format_repo_name(repo)}.</p>"
@@ -239,26 +249,30 @@ def generate_html_table(contributors: List[Dict[str, Any]], days: int, repo: str
 
     lines = []
     lines.append(
-        f'<h3>Top contributors in the last {days} days '
+        f"<h3>Top contributors in the last {days} days "
         f'({start_date.strftime("%Y-%m-%d")} to {end_date.strftime("%Y-%m-%d")})</h3>'
     )
-    lines.append('<table>')
-    lines.append('<thead><tr><th>Contributor</th><th>Commits</th><th>Active Days</th></tr></thead>')
-    lines.append('<tbody>')
+    lines.append("<table>")
+    lines.append(
+        "<thead><tr><th>Contributor</th><th>Commits</th><th>Active Days</th></tr></thead>"
+    )
+    lines.append("<tbody>")
     for contributor in contributors:
         login = contributor["login"]
         commits = contributor["commits"]
         active_days = contributor["active_days"]
         lines.append(
             f'<tr><td><a href="https://github.com/{login}">@{login}</a></td>'
-            f'<td>{commits}</td><td>{active_days}</td></tr>'
+            f"<td>{commits}</td><td>{active_days}</td></tr>"
         )
-    lines.append('</tbody></table>')
+    lines.append("</tbody></table>")
     return "\n".join(lines)
+
 
 def get_tabs_css() -> str:
     """Return CSS for the tab and table design (dark tab bar, clear selection, aligned tabs, responsive)."""
     return tabel_css
+
 
 def get_tabs_js(num_tabs: int) -> str:
     """Return JS for tab switching."""
@@ -279,15 +293,21 @@ function showTab(idx) {{
 </script>
 """
 
+
 def get_tabs_html(repo_tables: list) -> str:
     """Return HTML for the tab headers, aligned across the page."""
     tabs = []
     for idx, (repo, _) in enumerate(repo_tables):
         active = "active" if idx == 0 else ""
-        tabs.append(f'<li class="{active}" onclick="showTab({idx})" id="tab{idx}">{format_repo_name(repo)}</li>')
-    return '<ul id="tabs">\n' + "\n".join(tabs) + '\n</ul>'
+        tabs.append(
+            f'<li class="{active}" onclick="showTab({idx})" id="tab{idx}">{format_repo_name(repo)}</li>'
+        )
+    return '<ul id="tabs">\n' + "\n".join(tabs) + "\n</ul>"
 
-def get_tab_contents_html(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]) -> str:
+
+def get_tab_contents_html(
+    repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]
+) -> str:
     """Return HTML for the tab contents, using HTML tables."""
     contents = []
     for idx, (repo, contributors_by_period) in enumerate(repo_tables):
@@ -297,28 +317,30 @@ def get_tab_contents_html(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]
             days = periods[period_idx]
             tab_html.append(generate_html_table(contributors, days, repo))
         contents.append(
-            f'<div id="tabcontent{idx}" class="tabcontent" style="display:{display};">\n' +
-            "\n".join(tab_html) +
-            '\n</div>'
+            f'<div id="tabcontent{idx}" class="tabcontent" style="display:{display};">\n'
+            + "\n".join(tab_html)
+            + "\n</div>"
         )
     return "\n".join(contents)
 
-def print_tabbed_tables(repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]) -> None:
-    """Prints HTML tabbed view for multiple repo tables with separated HTML/CSS/JS and HTML tables."""
+
+def print_tabbed_tables(
+    repo_tables: List[Tuple[str, List[List[Dict[str, Any]]]]], periods: List[int]
+) -> None:
+    """Print HTML tabbed view for multiple repo tables with separated HTML/CSS/JS and HTML tables."""
     html = []
     html.append(get_tabs_css())
     html.append('<div style="margin-bottom: 1em;">')
     html.append(get_tabs_html(repo_tables))
-    html.append('</div>')
+    html.append("</div>")
     html.append(get_tab_contents_html(repo_tables, periods))
     html.append(get_tabs_js(len(repo_tables)))
     print("\n".join(html))
 
+
 DEFAULT_MAIN_REPO = "jaclang/jaclang"
-DEFAULT_EXTRA_REPOS = [
-    "TrueSelph/jivas",
-    "jaseci-labs/jac_playground"
-]
+DEFAULT_EXTRA_REPOS = ["TrueSelph/jivas", "jaseci-labs/jac_playground"]
+
 
 def main() -> None:
     """Run the script."""
@@ -372,7 +394,7 @@ def main() -> None:
         max_days = max(periods)
         all_commits = fetch_commits(owner or "", repo or "", max_days, token)
         if all_commits is None:
-            contributors_by_period = [[] for _ in periods]
+            contributors_by_period: list = [[] for _ in periods]
             repo_tables.append((repo_full, contributors_by_period))
             continue
         contributors_by_period = []
@@ -382,6 +404,7 @@ def main() -> None:
         repo_tables.append((repo_full, contributors_by_period))
 
     print_tabbed_tables(repo_tables, periods)
+
 
 if __name__ == "__main__":
     main()
