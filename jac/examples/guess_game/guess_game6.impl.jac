@@ -12,10 +12,10 @@ impl GuessGame.process_guess {
         visit [-->];
     } else {
         if self.guess < here.correct_number {
-            give_hint(self.guess, here.correct_number);
+            print(give_hint(self.guess, here.correct_number));
             here ++> turn(here.correct_number);
         } elif self.guess > here.correct_number {
-            give_hint(self.guess, here.correct_number);
+            print(give_hint(self.guess, here.correct_number));
             here ++> turn(here.correct_number);
         } else {
             print("Congratulations! You guessed correctly.");
