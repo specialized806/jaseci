@@ -119,7 +119,6 @@ Let's begin with a traditional Python library management system that we'll progr
         ```
 
     === "Jac Modern Equivalent"
-        <div class="code-block">
         ```jac
         # library.jac - Modern Jac implementation preview
         import from datetime { datetime }
@@ -131,7 +130,7 @@ Let's begin with a traditional Python library management system that we'll progr
             has is_borrowed: bool = False;
             has borrowed_date: str = "";
 
-            can borrow(member_id: str) -> bool {
+            def borrow(member_id: str) -> bool {
                 if not self.is_borrowed {
                     self.is_borrowed = True;
                     self.borrowed_date = datetime.now().isoformat();
@@ -140,7 +139,7 @@ Let's begin with a traditional Python library management system that we'll progr
                 return False;
             }
 
-            can return_book() -> bool {
+            def return_book() -> bool {
                 if self.is_borrowed {
                     self.is_borrowed = False;
                     self.borrowed_date = "";
@@ -162,15 +161,15 @@ Let's begin with a traditional Python library management system that we'll progr
         node Library {
             has name: str;
 
-            can add_book(book: Book) -> None {
+            def add_book(book: Book) -> None {
                 self ++> book;
             }
 
-            can add_member(member: Member) -> None {
+            def add_member(member: Member) -> None {
                 self ++> member;
             }
 
-            can borrow_book(isbn: str, member_id: str) -> bool {
+            def borrow_book(isbn: str, member_id: str) -> bool {
                 book = [self --> Book](?isbn == isbn);
                 member = [self --> Member](?member_id == member_id);
 
@@ -182,7 +181,6 @@ Let's begin with a traditional Python library management system that we'll progr
             }
         }
         ```
-        </div>
 
 ---
 
@@ -215,7 +213,6 @@ The first migration step involves converting Python classes to Jac objects while
         ```
 
     === "Jac Object"
-        <div class="code-block">
         ```jac
         # book.jac - Jac object
         obj Book {
@@ -224,12 +221,12 @@ The first migration step involves converting Python classes to Jac objects while
             has isbn: str;
             has is_borrowed: bool = False;
 
-            can get_info() -> str {
+            def get_info() -> str {
                 status = "Available" if not self.is_borrowed else "Borrowed";
                 return f"{self.title} by {self.author} - {status}";
             }
 
-            can borrow() -> bool {
+            def borrow() -> bool {
                 if not self.is_borrowed {
                     self.is_borrowed = True;
                     return True;
@@ -238,12 +235,10 @@ The first migration step involves converting Python classes to Jac objects while
             }
         }
         ```
-        </div>
 
 !!! tip "Key Migration Changes"
     - `class` → `obj`
     - `__init__` → automatic constructor with `has`
-    - `def` → `can` for methods
     - `:` → `;` for statement termination
     - `{}` for code blocks instead of indentation
 
@@ -262,7 +257,6 @@ The first migration step involves converting Python classes to Jac objects while
         ```
 
     === "Jac Usage"
-        <div class="code-block">
         ```jac
         # test_book.jac
         with entry {
@@ -274,7 +268,6 @@ The first migration step involves converting Python classes to Jac objects while
             print(book.get_info());  # The Great Gatsby by F. Scott Fitzgerald - Borrowed
         }
         ```
-        </div>
 
 ---
 
@@ -310,7 +303,6 @@ The next step leverages Jac's Object-Spatial Programming by converting relations
         ```
 
     === "Jac Spatial Relationships"
-        <div class="code-block">
         ```jac
         # library_spatial.jac - Graph-based relationships
         node Book {
@@ -332,22 +324,22 @@ The next step leverages Jac's Object-Spatial Programming by converting relations
         node Library {
             has name: str;
 
-            can add_book(book: Book) -> None {
+            def add_book(book: Book) -> None {
                 self +:Contains:+> book;
             }
 
-            can add_member(member: Member) -> None {
+            def add_member(member: Member) -> None {
                 self +:Contains:+> member;
             }
 
-            can find_available_books() -> list[Book] {
+            def find_available_books() -> list[Book] {
                 all_books = [self --Contains--> Book];
                 borrowed_books = [self --Contains--> Book --BorrowedBy--> Member];
                 # Return books not in borrowed list
                 return [book for book in all_books if book not in borrowed_books];
             }
 
-            can find_member_books(member_id: str) -> list[Book] {
+            def find_member_books(member_id: str) -> list[Book] {
                 target_member = [self --Contains--> Member](?member_id == member_id);
                 if target_member {
                     return [target_member[0] <--BorrowedBy-- Book];
@@ -356,8 +348,6 @@ The next step leverages Jac's Object-Spatial Programming by converting relations
             }
         }
         ```
-        </div>
-
 ---
 
 ## Incremental Adoption Patterns
@@ -411,7 +401,6 @@ Real-world migration often requires running Python and Jac code together. Let's 
         ```
 
     === "Jac Side"
-        <div class="code-block">
         ```jac
         # library.jac - Jac implementation
         node Book {
@@ -458,7 +447,6 @@ Real-world migration often requires running Python and Jac code together. Let's 
             }
         }
         ```
-        </div>
 
 ---
 
@@ -479,11 +467,11 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
             has books: list[dict] = [];  # Still thinking in lists
             has members: list[dict] = [];
 
-            can add_book(book_data: dict) -> None {
+            def add_book(book_data: dict) -> None {
                 self.books.append(book_data);  # Missing spatial benefits
             }
 
-            can find_book(isbn: str) -> dict | None {
+            def find_book(isbn: str) -> dict | None {
                 for book in self.books {  # Manual iteration
                     if book["isbn"] == isbn {
                         return book;
@@ -495,7 +483,6 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
         ```
 
     === "Good Migration (Spatial Thinking)"
-        <div class="code-block">
         ```jac
         # good_migration.jac - Embracing spatial programming
         node Book {
@@ -507,13 +494,13 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
         node Library {
             has name: str;
 
-            can add_book(title: str, author: str, isbn: str) -> Book {
+            def add_book(title: str, author: str, isbn: str) -> Book {
                 new_book = Book(title=title, author=author, isbn=isbn);
                 self ++> new_book;  # Spatial relationship
                 return new_book;
             }
 
-            can find_book(isbn: str) -> Book | None {
+            def find_book(isbn: str) -> Book | None {
                 # Spatial filtering - much cleaner
                 found_books = [self --> Book](?isbn == isbn);
                 return found_books[0] if found_books else None;
@@ -544,7 +531,6 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
         ```
 
     === "Strong Typing (Jac Style)"
-        <div class="code-block">
         ```jac
         # strong_typing.jac - Leveraging Jac's type system
         obj BookData {
@@ -604,7 +590,6 @@ Understanding common pitfalls helps ensure smooth migration from Python to Jac.
         ```
 
     === "After (Jac)"
-        <div class="code-block">
         ```jac
         # Modern Jac implementation
         with entry {

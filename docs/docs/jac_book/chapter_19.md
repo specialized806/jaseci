@@ -68,7 +68,6 @@ The foundation of Jac performance lies in how you structure your graph data. Eff
         ```
 
     === "Jac Optimized Structure"
-        <div class="code-block">
         ```jac
         # optimized_friends.jac - Efficient graph-native design
         node Person {
@@ -127,8 +126,6 @@ The foundation of Jac performance lies in how you structure your graph data. Eff
             }
         }
         ```
-        </div>
-
 ---
 
 ## Traversal Efficiency
@@ -139,7 +136,6 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
 
 !!! example "Simple Friend Discovery"
     === "Jac"
-        <div class="code-block">
         ```jac
         # basic_friend_finder.jac
         walker find_friends_of_friends {
@@ -185,7 +181,6 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
             }
         }
         ```
-        </div>
 
     === "Python Equivalent"
         ```python
@@ -220,7 +215,6 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
 ### Optimized Breadth-First Traversal
 
 !!! example "Performance-Optimized Friend Finding"
-    <div class="code-block">
     ```jac
     # optimized_friend_finder.jac
     import from collections { deque }
@@ -344,7 +338,6 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
         has computed_at: str;
     }
     ```
-    </div>
 
 ---
 
@@ -355,7 +348,6 @@ Efficient memory usage is critical for large-scale graph applications. Let's exp
 ### Memory-Efficient Data Structures
 
 !!! example "Optimized Memory Usage"
-    <div class="code-block">
     ```jac
     # memory_optimized.jac
     # Use lightweight nodes for large-scale networks
@@ -441,12 +433,10 @@ Efficient memory usage is critical for large-scale graph applications. Let's exp
         }
     }
     ```
-    </div>
 
 ### Performance Monitoring
 
 !!! example "Performance Tracking Walker"
-    <div class="code-block">
     ```jac
     # performance_monitor.jac
     import from time { time }
@@ -537,7 +527,6 @@ Efficient memory usage is critical for large-scale graph applications. Let's exp
         }
     }
     ```
-    </div>
 
 ---
 
@@ -548,7 +537,6 @@ When deploying to Jac Cloud, consider performance implications of distributed ex
 ### Cloud-Optimized Friend Finding
 
 !!! example "Distributed Performance Patterns"
-    <div class="code-block">
     ```jac
     # distributed_friends.jac
     walker find_friends_distributed {
@@ -653,7 +641,6 @@ When deploying to Jac Cloud, consider performance implications of distributed ex
         }
     }
     ```
-    </div>
 
 ---
 
@@ -662,7 +649,6 @@ When deploying to Jac Cloud, consider performance implications of distributed ex
 ### Creating Test Data
 
 !!! example "Performance Test Setup"
-    <div class="code-block">
     ```jac
     # test_data_generator.jac
     import from random { randint, choice }
@@ -721,7 +707,6 @@ When deploying to Jac Cloud, consider performance implications of distributed ex
         }
     }
     ```
-    </div>
 
 ### Testing Performance
 
