@@ -1,4 +1,4 @@
-# Chapter 15: Multi-User Architecture and Permissions
+# Chapter 14: Multi-User Architecture and Permissions
 
 In this chapter, we'll explore how to build secure, multi-user applications in Jac Cloud. We'll develop a shared notebook system that demonstrates user isolation, permission systems, and access control strategies through practical examples that evolve throughout the chapter.
 
@@ -153,11 +153,14 @@ For multi-user applications, you need to implement user identification patterns.
     === "Jac"
         ```jac
         # user_notebook.jac
+        import uuid;
+
         node Note {
             has title: str;
             has content: str;
             has owner: str;
             has is_private: bool = True;
+            has id: str = "note_" + str(uuid.uuid4());
         }
 
         walker create_note {
@@ -165,6 +168,10 @@ For multi-user applications, you need to implement user identification patterns.
             has content: str;
             has owner: str;
             has is_private: bool = True;
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
 
             can add_note with `root entry {
                 new_note = Note(
@@ -185,6 +192,10 @@ For multi-user applications, you need to implement user identification patterns.
 
         walker list_my_notes {
             has user_id: str;
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
 
             can get_user_notes with `root entry {
                 # Only get notes owned by specified user
@@ -300,108 +311,124 @@ Multi-user applications often need controlled sharing of data between users. Let
 
 !!! example "Shared Notebook with Permissions"
     ```jac
-    # shared_permissions.jac
-    node Note {
-        has title: str;
-        has content: str;
-        has owner: str;
-        has shared_with: list[str] = [];
-        has is_public: bool = False;
-        has permissions: dict = {"read": True, "write": False};
-    }
+        # shared_permissions.jac
+        import uuid;
 
-    walker share_note {
-        has note_id: str;
-        has current_user: str;
-        has target_user: str;
-        has permission_level: str = "read";  # "read" or "write"
-
-        can add_sharing_permission with `root entry {
-            target_note = [-->(`?Note)](?id == self.note_id);
-
-            if not target_note {
-                report {"error": "Note not found"};
-                return;
-            }
-
-            note = target_note[0];
-
-            # Only owner can share notes
-            if note.owner != self.current_user {
-                report {"error": "Only note owner can share"};
-                return;
-            }
-
-            # Add user to shared list if not already there
-            if self.target_user not in note.shared_with {
-                note.shared_with.append(self.target_user);
-            }
-
-            report {
-                "message": f"Note shared with {self.target_user}",
-                "permission": self.permission_level,
-                "shared_count": len(note.shared_with)
-            };
+        node Note {
+            has title: str;
+            has content: str;
+            has owner: str;
+            has shared_with: list[str] = [];
+            has is_public: bool = False;
+            has permissions: dict = {"read": True, "write": False};
+            has id: str = "note_" + str(uuid.uuid4());
         }
-    }
 
-    walker get_accessible_notes {
-        has user_id: str;
+        walker create_note {
+            has title: str;
+            has content: str;
+            has owner: str;
+            has is_public: bool = False;
 
-        can fetch_all_accessible with `root entry {
-            all_notes = [-->(`?Note)];
-            accessible_notes = [];
+            obj __specs__ {
+                static has auth: bool = False;
+            }
 
-            for note in all_notes {
-                # User can access if:
-                # 1. They own it
-                # 2. It's shared with them
-                # 3. It's public
-                if (note.owner == self.user_id or
-                    self.user_id in note.shared_with or
-                    note.is_public) {
+            can add_note with `root entry {
+                new_note = Note(
+                    title=self.title,
+                    content=self.content,
+                    owner=self.owner,
+                    is_public=self.is_public
+                );
+                here ++> new_note;
 
-                    accessible_notes.append({
-                        "id": note.id,
-                        "title": note.title,
-                        "owner": note.owner,
-                        "is_mine": note.owner == self.user_id,
-                        "access_type": "owner" if note.owner == self.user_id
-                                      else ("shared" if self.user_id in note.shared_with
-                                           else "public")
-                    });
+                report {
+                    "status": "created",
+                    "note_id": new_note.id,
+                    "public": new_note.is_public
+                };
+            }
+        }
+
+        walker share_note {
+            has note_id: str;
+            has current_user: str;
+            has target_user: str;
+            has permission_level: str = "read";  # "read" or "write"
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
+            can add_sharing_permission with `root entry {
+                target_note = [-->(`?Note)](?id == self.note_id);
+
+                if not target_note {
+                    report {"error": "Note not found"};
+                    return;
                 }
+
+                note = target_note[0];
+
+                # Only owner can share notes
+                if note.owner != self.current_user {
+                    report {"error": "Only note owner can share"};
+                    return;
+                }
+
+                # Add user to shared list if not already there
+                if self.target_user not in note.shared_with {
+                    note.shared_with.append(self.target_user);
+                }
+
+                report {
+                    "message": f"Note shared with {self.target_user}",
+                    "permission": self.permission_level,
+                    "shared_count": len(note.shared_with)
+                };
+            }
+        }
+
+        walker get_accessible_notes {
+            has user_id: str;
+
+            obj __specs__ {
+                static has auth: bool = False;
             }
 
-            report {
-                "user": self.user_id,
-                "accessible_notes": accessible_notes,
-                "total": len(accessible_notes)
-            };
+            can fetch_all_accessible with `root entry {
+                all_notes = [-->(`?Note)];
+                accessible_notes = [];
+
+                for note in all_notes {
+                    # User can access if:
+                    # 1. They own it
+                    # 2. It's shared with them
+                    # 3. It's public
+                    if (note.owner == self.user_id or
+                        self.user_id in note.shared_with or
+                        note.is_public) {
+
+                        accessible_notes.append({
+                            "id": note.id,
+                            "title": note.title,
+                            "owner": note.owner,
+                            "is_mine": note.owner == self.user_id,
+                            "access_type": "owner" if note.owner == self.user_id
+                                        else ("shared" if self.user_id in note.shared_with
+                                            else "public")
+                        });
+                    }
+                }
+
+                report {
+                    "user": self.user_id,
+                    "accessible_notes": accessible_notes,
+                    "total": len(accessible_notes)
+                };
+            }
         }
-    }
-
-    walker create_public_note {
-        has title: str;
-        has content: str;
-        has owner: str;
-
-        can create_shared_note with `root entry {
-            new_note = Note(
-                title=self.title,
-                content=self.content,
-                owner=self.owner,
-                is_public=True
-            );
-            here ++> new_note;
-
-            report {
-                "message": "Public note created",
-                "id": new_note.id,
-                "visible_to": "everyone"
-            };
-        }
-    }
     ```
 
 ### Testing Note Sharing
@@ -441,113 +468,142 @@ When building multi-user systems, security must be a primary concern. Applicatio
 
 !!! example "Security-First Note Access"
     ```jac
-    # secure_notebook.jac
-    walker get_note {
-        has note_id: str;
-        has user_id: str;
-
-        can fetch_note_securely with `root entry {
-            target_note = [-->(`?Note)](?id == self.note_id);
-
-            if not target_note {
-                report {"error": "Note not found"};
-                return;
-            }
-
-            note = target_note[0];
-
-            # Security check: Verify user has access
-            has_access = (
-                note.owner == self.user_id or           # User owns it
-                self.user_id in note.shared_with or     # Shared with user
-                note.is_public                          # Public note
-            );
-
-            if not has_access {
-                report {"error": "Access denied"};
-                return;
-            }
-
-            # Return note data based on access level
-            note_data = {
-                "id": note.id,
-                "title": note.title,
-                "owner": note.owner,
-                "access_level": "owner" if note.owner == self.user_id else "shared"
-            };
-
-            # Only include content if user has read access
-            if has_access {
-                note_data["content"] = note.content;
-            }
-
-            report note_data;
+        # rbac_notebook.jac
+        enum Role {
+            VIEWER = "viewer",
+            EDITOR = "editor",
+            ADMIN = "admin"
         }
-    }
 
-    walker delete_note {
-        has note_id: str;
-        has user_id: str;
-
-        can remove_note_securely with `root entry {
-            target_note = [-->(`?Note)](?id == self.note_id);
-
-            if not target_note {
-                report {"error": "Note not found"};
-                return;
-            }
-
-            note = target_note[0];
-
-            # Security check: Only owner can delete
-            if note.owner != self.user_id {
-                report {"error": "Only note owner can delete"};
-                return;
-            }
-
-            # Safe deletion
-            del note;
-
-            report {"message": "Note deleted successfully"};
+        node UserProfile {
+            has email: str;
+            has role: Role = Role.VIEWER;
+            has created_at: str = "2024-01-15";
         }
-    }
 
-    walker update_note {
-        has note_id: str;
-        has user_id: str;
-        has title: str = "";
-        has content: str = "";
-
-        can modify_note_securely with `root entry {
-            target_note = [-->(`?Note)](?id == self.note_id);
-
-            if not target_note {
-                report {"error": "Note not found"};
-                return;
-            }
-
-            note = target_note[0];
-
-            # Security check: Only owner can modify
-            if note.owner != self.user_id {
-                report {"error": "Only note owner can modify"};
-                return;
-            }
-
-            # Update only provided fields
-            if self.title {
-                note.title = self.title;
-            }
-            if self.content {
-                note.content = self.content;
-            }
-
-            report {
-                "message": "Note updated successfully",
-                "id": note.id
-            };
+        node Note {
+            has title: str;
+            has content: str;
+            has owner: str;
+            has required_role: Role = Role.VIEWER;
+            has is_sensitive: bool = False;
         }
-    }
+
+        walker check_user_role {
+            has user_id: str;
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
+            can get_current_user_role with `root entry {
+                user_profile = [-->(`?UserProfile)](?email == self.user_id);
+
+                if user_profile {
+                    current_role = user_profile[0].role;
+                } else {
+                    # Create default profile for new user
+                    new_profile = UserProfile(email=self.user_id);
+                    here ++> new_profile;
+                    current_role = Role.VIEWER;
+                }
+
+                report {"user": self.user_id, "role": current_role.value};
+            }
+        }
+
+        walker create_role_based_note {
+            has title: str;
+            has content: str;
+            has owner: str;
+            has required_role: str = "viewer";
+            has is_sensitive: bool = False;
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
+            can create_with_role_check with `root entry {
+                # Get user's role
+                user_profile = [-->(`?UserProfile)](?email == self.owner);
+
+                if not user_profile {
+                    report {"error": "User profile not found"};
+                    return;
+                }
+
+                user_role = user_profile[0].role;
+
+                # Check if user can create sensitive notes
+                if self.is_sensitive and user_role == Role.VIEWER {
+                    report {"error": "Insufficient permissions for sensitive content"};
+                    return;
+                }
+
+                new_note = Note(
+                    title=self.title,
+                    content=self.content,
+                    owner=self.owner,
+                    required_role=Role(self.required_role),
+                    is_sensitive=self.is_sensitive
+                );
+                here ++> new_note;
+
+                report {
+                    "message": "Note created with role requirements",
+                    "id": new_note.id,
+                    "required_role": self.required_role
+                };
+            }
+        }
+
+        walker get_role_filtered_notes {
+            has user_id: str;
+
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
+            can fetch_accessible_by_role with `root entry {
+                # Get user's role
+                user_profile = [-->(`?UserProfile)](?email == self.user_id);
+
+                if not user_profile {
+                    report {"notes": [], "message": "No user profile found"};
+                    return;
+                }
+
+                user_role = user_profile[0].role;
+                all_notes = [-->(`?Note)];
+                accessible_notes = [];
+
+                for note in all_notes {
+                    # Check if user meets role requirement
+                    can_access = (
+                        note.owner == self.user_id or  # Always access own notes
+                        (user_role == Role.ADMIN) or  # Admins see everything
+                        (user_role == Role.EDITOR and note.required_role != Role.ADMIN) or
+                        (user_role == Role.VIEWER and note.required_role == Role.VIEWER)
+                    );
+
+                    if can_access {
+                        accessible_notes.append({
+                            "id": note.id,
+                            "title": note.title,
+                            "owner": note.owner,
+                            "required_role": note.required_role.value,
+                            "is_sensitive": note.is_sensitive
+                        });
+                    }
+                }
+
+                report {
+                    "user_role": user_role.value,
+                    "notes": accessible_notes,
+                    "total": len(accessible_notes)
+                };
+            }
+        }
     ```
 
 !!! warning "Security Best Practices"
