@@ -1169,13 +1169,6 @@ TDD works naturally with Jac's spatial programming model.
     - **Documentation value**: Tests serve as executable specifications
     - **Continuous validation**: Automated testing in CI/CD pipelines
 
-### Next Steps
-
-In the upcoming chapters, we'll explore:
-- **Chapter 19**: Deployment strategies for tested applications
-- **Chapter 20**: Performance optimization based on test insights
-- **Chapter 21**: Building complete applications with comprehensive test coverage
-
 !!! tip "Try It Yourself"
     Enhance your testing skills by:
     - Writing comprehensive test suites for existing walker logic

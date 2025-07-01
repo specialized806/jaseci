@@ -76,7 +76,7 @@ The foundation of Jac performance lies in how you structure your graph data. Eff
             has age: int;
             has friend_count: int = 0;  # Cached for quick access
 
-            can add_friend(friend: Person) -> bool {
+            def add_friend(friend: Person) -> bool {
                 # Check if already connected to avoid duplicates
                 existing = [self --> Friend --> Person](?name == friend.name);
                 if existing {
@@ -105,8 +105,8 @@ The foundation of Jac performance lies in how you structure your graph data. Eff
 
             can find_efficiently with `root entry {
                 # Direct graph traversal - no nested loops
-                person1 = [-->](`?Person)(?name == self.person1_name);
-                person2 = [-->](`?Person)(?name == self.person2_name);
+                person1 = [-->(`?Person)](?name == self.person1_name);
+                person2 = [-->(`?Person)](?name == self.person2_name);
 
                 if not person1 or not person2 {
                     report {"error": "Person not found"};
@@ -149,7 +149,7 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
             has results: set[str] = set();
 
             can traverse_network with `root entry {
-                start_person = [-->](`?Person)(?name == self.person_name);
+                start_person = [-->(`?Person)](?name == self.person_name);
 
                 if not start_person {
                     report {"error": "Person not found"};
@@ -169,7 +169,7 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
                 };
             }
 
-            can traverse_from_person(person: Person, remaining_depth: int) {
+            def traverse_from_person(person: Person, remaining_depth: int) {
                 if remaining_depth <= 0 or person.name in self.visited {
                     return;
                 }
@@ -230,7 +230,7 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
         has max_depth: int = 2;
 
         can breadth_first_search with `root entry {
-            start_person = [-->](`?Person)(?name == self.person_name);
+            start_person = [-->(`?Person)](?name == self.person_name);
 
             if not start_person {
                 report {"error": "Person not found"};
@@ -276,7 +276,7 @@ Efficient graph traversal is crucial for performance in Object-Spatial Programmi
         has max_depth: int = 2;
 
         can cached_search with `root entry {
-            start_person = [-->](`?Person)(?name == self.person_name);
+            start_person = [-->(`?Person)](?name == self.person_name);
 
             if not start_person {
                 report {"error": "Person not found"};
@@ -364,13 +364,13 @@ Efficient memory usage is critical for large-scale graph applications. Let's exp
         has age: int;
         # Remove unnecessary cached data to save memory
 
-        can get_friend_count() -> int {
+        def get_friend_count() -> int {
             # Calculate on-demand instead of caching
-            return len([self --> Friend --> LightPerson]);
+            return len([self --> (`?Friend) --> (`?LightPerson)]);
         }
 
-        can get_connections_summary() -> dict {
-            friends = [self --> Friend --> LightPerson];
+        def get_connections_summary() -> dict {
+            friends = [self --> (`?Friend) --> (`?LightPerson)];
 
             return {
                 "friend_count": len(friends),
@@ -422,6 +422,7 @@ Efficient memory usage is critical for large-scale graph applications. Let's exp
                         if depth + 1 < self.max_depth {
                             queue.append((friend, depth + 1));
                         }
+                    }
                 }
 
                 # Periodic cleanup of references
