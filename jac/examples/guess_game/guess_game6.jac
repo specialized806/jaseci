@@ -5,7 +5,7 @@ import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name="gpt-4o",verbose=True );
 
-"""Analyze the player's guess and provide a helpful, encouraging hint about whether they should guess higher or lower. The hint should be creative and fun, without revealing the exact number. Consider how close or far the guess is from the target number and tailor the hint accordingly."""
+"""Provide a fun hint if the guess is higher or lower, considering its closeness to the target."""
 def give_hint(guess: int, correct_number: int) -> str by llm();
 
 walker GuessGame {
