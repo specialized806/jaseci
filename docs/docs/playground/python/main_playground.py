@@ -32,12 +32,12 @@ class JsIO(io.StringIO):
 with open(JAC_PATH, "w") as f:
     SAFE_CODE += "\n" + \
         """
-        # <START PRINT GRAPH>
         with entry {
+            print("<==START PRINT GRAPH==>");
             final_graph = printgraph(format="json");
             print(final_graph);
+            print("<==END PRINT GRAPH==>");
         }
-        # <END PRINT GRAPH>
         """
     f.write(SAFE_CODE)
 
@@ -80,13 +80,12 @@ with contextlib.redirect_stdout(stdout_buf := JsIO(CB_STDOUT)), \
         debugger.do_run()
         full_output = stdout_buf.getvalue()
         matches = re.findall(
-            r'(\{[^{}]*"version"\s*:\s*"[^"]+",.*?"nodes"\s*:\s*\[.*?\],.*?"edges"\s*:\s*\[.*?\].*?\})',
+            r'<==START PRINT GRAPH==>(.*?)<==END PRINT GRAPH==>',
             full_output,
             re.DOTALL,
         )
         graph_json = matches[-1] if matches else "{}"
         debugger.cb_graph(deduplicate_graph_json(graph_json))
-        stdout_buf = re.sub(matches, full_output)
 
     except Exception:
         import traceback

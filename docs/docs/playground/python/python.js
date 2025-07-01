@@ -9,6 +9,8 @@ var dbg = null;  // The debugger instance.
 
 var sharedInts = null;
 
+const PLAYGROUND_PATH = "/playground";
+// const PLAYGROUND_PATH = "";
 
 const JAC_PATH = "/tmp/main.jac";
 const LOG_PATH = "/tmp/logs.log";
@@ -68,13 +70,15 @@ function logMessage(message) {
 
 
 async function readFileAsString(fileName) {
-  const response = await fetch("/playground" + fileName);
+  const response = await fetch(PLAYGROUND_PATH + fileName);
+  // const response = await fetch(fileName);
   return await response.text();
 };
 
 
 async function readFileAsBytes(fileName) {
-  const response = await fetch("/playground" + fileName);
+  const response = await fetch(PLAYGROUND_PATH + fileName);
+  // const response = await fetch(fileName);
   const buffer = await response.arrayBuffer();
   return new Uint8Array(buffer);
 }
@@ -192,10 +196,7 @@ function callbackBreak(dbg, line) {
         continueExecution = true;
         break;
     }
-
   }
-
-
   logMessage("after ui");
 }
 
@@ -240,5 +241,4 @@ async function startExecution(safeCode) {
   );
   logMessage("Execution finished.");
   dbg = null;
-
 }
