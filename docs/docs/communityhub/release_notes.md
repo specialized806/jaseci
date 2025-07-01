@@ -7,6 +7,8 @@ This document provides a summary of new features, improvements, and bug fixes in
 - **Support Spawning a Walker with List of Nodes and Edges**: Introduced the ability to spawn a walker on a list of nodes and edges. This feature enables initiating traversal across multiple graph elements simultaneously, providing greater flexibility and efficiency in handling complex graph structures.
 - **\_.save(...) should not override root in runtime**: The previous version bypassed access validation because the target archetype root was overridden by the current root, simulating ownership of the archetype.
 
+- **`jac create_system_admin` cli now support local db**: `DATABASE_HOST` are now not required when creating system admin.
+
 ## jaclang 0.8.3 / jac-cloud 0.2.3 / mtllm 0.3.8
 
 - **Semantic Strings**: Introduced `sem` strings to attach natural language descriptions to code elements like functions, classes, and parameters. These semantic annotations can be used by Large Language Models (LLMs) to enable intelligent, AI-powered code generation and execution. (mtllm)
