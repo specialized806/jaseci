@@ -1,7 +1,6 @@
 """Module for registering CLI plugins for jaseci."""
 
 from getpass import getpass
-from os import getenv
 from os.path import split
 from pickle import load
 from typing import Any
@@ -55,11 +54,6 @@ class JacCmd:
             filename: str, email: str = "", password: str = ""
         ) -> str:
             from jaclang import JacMachineInterface as Jac
-
-            if not getenv("DATABASE_HOST"):
-                raise NotImplementedError(
-                    "DATABASE_HOST env-var is required for this API!"
-                )
 
             base, mod = split(filename)
             base = base if base else "./"

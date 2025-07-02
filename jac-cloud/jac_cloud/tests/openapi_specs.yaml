@@ -3907,6 +3907,51 @@ paths:
       summary: Api Entry
       tags:
         - Walker APIs
+  /walker/update_nested_node_trigger_save:
+    post:
+      operationId: api_root_walker_update_nested_node_trigger_save_post
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse_Any_"
+          description: Successful Response
+      security:
+        - HTTPBearer: []
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/update_nested_node_trigger_save/{node}:
+    post:
+      operationId: api_entry_walker_update_nested_node_trigger_save__node__post
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse_Any_"
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Entry
+      tags:
+        - Walker APIs
   /walker/visit_nested_node:
     post:
       operationId: api_root_walker_visit_nested_node_post

@@ -220,6 +220,25 @@ walker detach_nested_node {
     }
 }
 
+walker update_nested_node_trigger_save {
+    can enter_nested with Nested entry {
+        here.parent.child.data["c"] = 3;
+        here.parent.child.arr.append(3);
+        here.parent.child.val = 3;
+        here.parent.child.enum_field = Enum.A;
+        here.parent.data["b"] = 2;
+        here.parent.arr.append(2);
+        here.parent.val = 2;
+        here.parent.enum_field = Enum.C;
+        here.data["a"] = 1;
+        here.arr.append(1);
+        here.val = 1;
+        here.enum_field = Enum.B;
+        
+        _.save(here);
+    }
+}
+
 walker visit_nested_node {
     can enter_root with `root entry {
         nesteds = [-->(`?Nested)];
