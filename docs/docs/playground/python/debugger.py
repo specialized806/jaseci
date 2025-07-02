@@ -1,7 +1,5 @@
 import bdb
-import time
 from typing import Callable
-
 
 class Debugger(bdb.Bdb):
 
