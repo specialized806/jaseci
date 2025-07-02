@@ -891,4 +891,4 @@ curl -X POST http://localhost:8000/walker/generate_daily_stats \
 
 ---
 
-*Ready to master Jac's type system? Continue to [Chapter 17: Type System Deep Dive](chapter_17.md)!*
+*Ready to master Jac's type system? Continue to [Chapter 17: Type System Deep Dive](chapter_16.md)!*
