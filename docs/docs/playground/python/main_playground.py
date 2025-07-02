@@ -2,6 +2,7 @@ import io
 import re
 import json
 import contextlib
+import textwrap
 
 from collections.abc import Iterable
 
@@ -10,7 +11,6 @@ SAFE_CODE = globals()["SAFE_CODE"]
 JAC_PATH  = globals()["JAC_PATH"]
 CB_STDOUT = globals()["CB_STDOUT"]
 CB_STDERR = globals()["CB_STDERR"]
-
 debugger  = globals()["debugger"]
 
 # Redirect stdout and stderr to javascript callback.
@@ -30,19 +30,16 @@ class JsIO(io.StringIO):
 
 
 with open(JAC_PATH, "w") as f:
-    SAFE_CODE += "\n" + \
-        """
+    SAFE_CODE += textwrap.dedent("""
         with entry {
             print("<==START PRINT GRAPH==>");
             final_graph = printgraph(format="json");
             print(final_graph);
             print("<==END PRINT GRAPH==>");
         }
-        """
+    """).strip()
     f.write(SAFE_CODE)
 
-
-import json
 
 def deduplicate_graph_json(graph_json_str):
     graph = json.loads(graph_json_str)

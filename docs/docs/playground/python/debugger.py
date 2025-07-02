@@ -25,23 +25,8 @@ class Debugger(bdb.Bdb):
         """Called when we stop or break at a line."""
         if self.curframe is None:
             self.curframe = frame
-            if frame.f_code.co_filename != self.filepath:
-                self.set_continue()
-            return
-    
-        if frame.f_code.co_filename == self.filepath:
-            try:
-                with open(self.filepath, "r") as f:
-                    total_lines = sum(1 for _ in f)
-            except Exception:
-                total_lines = 0
-            current_line = frame.f_lineno
-
-            # If we are within the last 6 lines, continue to the end
-            print(f"Current line: {current_line}, Total lines: {total_lines}")
-            if current_line >= total_lines - 1:
-                self.set_continue()
-                return
+            self.set_continue()
+        elif frame.f_code.co_filename == self.filepath:
             self._send_graph()
             self.curframe = frame
             self.cb_break(self, frame.f_lineno)
