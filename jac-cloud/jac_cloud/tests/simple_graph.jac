@@ -1037,11 +1037,16 @@ walker increment_counter {
 }
 
 walker trigger_counter_task {
+    has id: int;
+
     can enter with `root entry {
         tcs = [-->(`?TaskCounter)];
         if tcs {
             report create_task(increment_counter(val=1), tcs[0]);
         }
+
+        # Trigger walker save
+        self.__jac__.apply();
     }
 }
 

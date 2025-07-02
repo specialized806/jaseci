@@ -905,7 +905,14 @@ class SimpleGraphTest(JacCloudTest):
 
         if getenv("TASK_CONSUMER_CRON_SECOND"):
             for i in range(1, 4):
-                res = self.post_api("trigger_counter_task")
+                res = self.post_api("trigger_counter_task", json={"id": i})
+
+                wlk = self.q_walker.find_one(
+                    {"name": "trigger_counter_task", "archetype.id": i}
+                )
+
+                assert wlk is not None
+                self.assertEqual(i, wlk["archetype"]["id"])
 
                 self.assertEqual(200, res["status"])
                 self.assertEqual(1, len(res["reports"]))
