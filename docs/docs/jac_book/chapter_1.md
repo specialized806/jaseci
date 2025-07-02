@@ -11,19 +11,19 @@ Jac emerged from the need to better handle interconnected, graph-like data struc
 <br/>
 ### **Traditional Approach to Modelling Relationships**
 
-In traditional programming, relationships can be modelled with a number of structures such as functions, methods, classes, pointer references, or even databases. 
+In traditional programming, relationships can be modelled with a number of structures such as functions, methods, classes, pointer references, or even databases.
 
-Lets consider how we might model a simple social network with friends and mutual connections in Python. First we define a `Person` class. A person class may contain a list of references to other `Person` objects to represent friendships. 
+Lets consider how we might model a simple social network with friends and mutual connections in Python. First we define a `Person` class. A person class may contain a list of references to other `Person` objects to represent friendships.
 
 ```python
 class Person:
     def __init__(self, name):
         self.name = name
-        self.friends = []  
+        self.friends = []
 
     def add_friend(self, friend):
         self.friends.append(friend)
-        friend.friends.append(self)  
+        friend.friends.append(self)
 ```
 
 
