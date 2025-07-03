@@ -11,6 +11,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     Alert,
+    BinderPass,
     CFGBuildPass,
     DeclImplMatchPass,
     DefUsePass,
@@ -61,6 +62,7 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+        self.cur_symbols: list[uni.Symbol] = []
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -72,8 +74,9 @@ class JacProgram:
 
     def parse_str(self, source_str: str, file_path: str) -> uni.Module:
         """Convert a Jac file to an AST."""
+        # print('parsing --:', file_path)
         had_error = False
-        if file_path.endswith(".py"):
+        if file_path.endswith(".py") or file_path.endswith(".pyi"):
             parsed_ast = py_ast.parse(source_str)
             py_ast_ret = PyastBuildPass(
                 ir_in=uni.PythonModuleAst(
@@ -114,13 +117,23 @@ class JacProgram:
 
     def build(self, file_path: str, use_str: str | None = None) -> uni.Module:
         """Convert a Jac file to an AST."""
-        mod_targ = self.compile(file_path, use_str)
+        # mod_targ = self.compile(file_path, use_str)
+        with open(file_path, "r", encoding="utf-8") as file:
+            use_str = file.read()
+        mod_targ = self.parse_str(use_str, file_path)
         JacImportDepsPass(ir_in=mod_targ, prog=self)
-        for mod in self.mod.hub.values():
-            SymTabLinkPass(ir_in=mod, prog=self)
-        for mod in self.mod.hub.values():
-            DefUsePass(mod, prog=self)
+        BinderPass(ir_in=mod_targ, prog=self)
+        # for mod in self.mod.hub.values():
+        #     SymTabLinkPass(ir_in=mod, prog=self)
+        # for mod in self.mod.hub.values():
+        #     DefUsePass(mod, prog=self)
+        # print("JacProgram.build: Done!!!!")
+        print(mod_targ.sym_pp())
         return mod_targ
+
+    def bind(self, mod: uni.Module) -> None:
+        """Bind the Jac module."""
+        pass
 
     def run_schedule(
         self,

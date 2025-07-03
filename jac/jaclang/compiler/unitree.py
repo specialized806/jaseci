@@ -235,10 +235,12 @@ class Symbol:
         defn: NameAtom,
         access: SymbolAccess,
         parent_tab: UniScopeNode,
+        imported: bool = False,
     ) -> None:
         """Initialize."""
         self.defn: list[NameAtom] = [defn]
         self.uses: list[NameAtom] = []
+        self.imported: bool = imported
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
@@ -317,7 +319,16 @@ class UniScopeNode(UniNode):
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
         if name in self.names_in_scope:
-            return self.names_in_scope[name]
+            if not self.names_in_scope[name].imported:
+                return self.names_in_scope[name]
+            else:
+                sym = self.names_in_scope[name]
+                from icecream import ic
+                if name =='math':
+                    ic('i am making error')
+                    return
+                ic('i am making error')
+                return  sym.decl.parent.parent.from_loc.sym_tab.kid_scope[0].lookup(name, deep=False)       
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
             if found:
@@ -332,6 +343,7 @@ class UniScopeNode(UniNode):
         access_spec: Optional[AstAccessNode] | SymbolAccess = None,
         single: bool = False,
         force_overwrite: bool = False,
+        imported :bool = False,
     ) -> Optional[UniNode]:
         """Set a variable in the symbol table.
 
@@ -352,6 +364,7 @@ class UniScopeNode(UniNode):
                     else access_spec.access_type if access_spec else SymbolAccess.PUBLIC
                 ),
                 parent_tab=self,
+                imported=imported
             )
         else:
             self.names_in_scope[node.sym_name].add_defn(node.name_spec)
@@ -385,6 +398,7 @@ class UniScopeNode(UniNode):
         access_spec: Optional[AstAccessNode] | SymbolAccess = None,
         single_decl: Optional[str] = None,
         force_overwrite: bool = False,
+        imported: bool = False,
     ) -> Optional[Symbol]:
         """Insert into symbol table."""
         if node.sym and self == node.sym.parent_tab:
@@ -394,6 +408,7 @@ class UniScopeNode(UniNode):
             single=single_decl is not None,
             access_spec=access_spec,
             force_overwrite=force_overwrite,
+            imported=imported
         )
         self.update_py_ctx_for_def(node)
         return node.sym
