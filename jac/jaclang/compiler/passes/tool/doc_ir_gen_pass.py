@@ -995,6 +995,9 @@ class DocIRGenPass(UniPass):
             elif i == node.name:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif isinstance(i, uni.Token) and i.name == Tok.COLON:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
             elif isinstance(node.body, Sequence) and i in node.body:
                 if not in_body:
                     parts.pop()
@@ -1350,7 +1353,7 @@ class DocIRGenPass(UniPass):
             if i == node.doc or (node.decorators and i in node.decorators):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
-            elif i in node.target:
+            elif self.is_within(i, node.target):
                 parts.append(i.gen.doc_ir)
             elif (
                 in_body

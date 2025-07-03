@@ -96,30 +96,41 @@ Traditional programming requires explicit database setup, connection management,
         node Counter {
             has value: int = 0;
 
-            can increment() -> int {
+            def increment() -> int {
                 self.value += 1;
                 return self.value;
             }
 
-            can get_value() -> int {
+            def get_value() -> int {
                 return self.value;
             }
         }
 
         walker get_counter {
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
             can get_counter_endpoint with `root entry {
                 counter_nodes = [root --> Counter];
+
+
                 if not counter_nodes {
                     counter = Counter();
                     root ++> counter;
                 } else {
                     counter = counter_nodes[0];
                 }
+
                 report {"value": counter.get_value()};
             }
         }
 
         walker increment_counter {
+            obj __specs__ {
+                static has auth: bool = False;
+            }
+
             can increment_counter_endpoint with `root entry {
                 counter_nodes = [root --> Counter];
                 if not counter_nodes {
@@ -310,13 +321,13 @@ Let's enhance our counter to track increment history:
 !!! example "Counter with History Tracking"
     ```jac
     # main.jac - Enhanced with history
-    import from datetime { datetime };
+    import from datetime { datetime }
 
     node Counter {
-        has value: int = 0;
         has created_at: str;
+        has value: int = 0;
 
-        can increment() -> int {
+        def increment() -> int {
             old_value = self.value;
             self.value += 1;
 
@@ -330,7 +341,7 @@ Let's enhance our counter to track increment history:
             return self.value;
         }
 
-        can get_history() -> list[dict] {
+        def get_history() -> list[dict] {
             history_nodes = [self --> HistoryEntry];
             return [
                 {
@@ -345,11 +356,15 @@ Let's enhance our counter to track increment history:
 
     node HistoryEntry {
         has timestamp: str;
-        has old_value: int;
-        has new_value: int;
+        has old_value: int = 0;
+        has new_value: int = 0;
     }
 
     walker get_counter_with_history {
+        obj __specs__ {
+            static has auth: bool = False;
+        }
+
         can get_counter_with_history_endpoint with `root entry {
             counter_nodes = [root --> Counter];
             if not counter_nodes {
@@ -372,6 +387,10 @@ Let's enhance our counter to track increment history:
     }
 
     walker increment_with_history {
+        obj __specs__ {
+            static has auth: bool = False;
+        }
+
         can increment_with_history_endpoint with `root entry {
             counter_nodes = [root --> Counter];
             if not counter_nodes {
@@ -437,7 +456,7 @@ The automatic persistence enables building sophisticated stateful applications. 
     node CounterManager {
         has created_at: str;
 
-        can create_counter(name: str) -> dict {
+        def create_counter(name: str) -> dict {
             # Check if counter already exists
             existing = [self --> Counter](?name == name);
             if existing {
@@ -449,7 +468,7 @@ The automatic persistence enables building sophisticated stateful applications. 
             return {"status": "created", "counter": name};
         }
 
-        can list_counters() -> list[dict] {
+        def list_counters() -> list[dict] {
             counters = [self --> Counter];
             return [
                 {"name": c.name, "value": c.value}
@@ -457,7 +476,7 @@ The automatic persistence enables building sophisticated stateful applications. 
             ];
         }
 
-        can get_total() -> int {
+        def get_total() -> int {
             counters = [self --> Counter];
             return sum([c.value for c in counters]);
         }
@@ -467,7 +486,7 @@ The automatic persistence enables building sophisticated stateful applications. 
         has name: str;
         has value: int = 0;
 
-        can increment(amount: int = 1) -> int {
+        def increment(amount: int = 1) -> int {
             self.value += amount;
             return self.value;
         }
@@ -475,6 +494,10 @@ The automatic persistence enables building sophisticated stateful applications. 
 
     walker create_counter {
         has name: str;
+
+        obj __specs__ {
+            static has auth: bool = False;
+        }
 
         can create_counter_endpoint with `root entry {
             manager_nodes = [root --> CounterManager];
@@ -493,6 +516,10 @@ The automatic persistence enables building sophisticated stateful applications. 
     walker increment_named_counter {
         has name: str;
         has amount: int = 1;
+
+        obj __specs__ {
+            static has auth: bool = False;
+        }
 
         can increment_named_counter_endpoint with `root entry {
             manager_nodes = [root --> CounterManager];
@@ -516,6 +543,10 @@ The automatic persistence enables building sophisticated stateful applications. 
     }
 
     walker get_all_counters {
+        obj __specs__ {
+            static has auth: bool = False;
+        }
+
         can get_all_counters_endpoint with `root entry {
             manager_nodes = [root --> CounterManager];
             if not manager_nodes {
@@ -562,69 +593,56 @@ curl -X POST http://localhost:8000/walker/get_all_counters \
 
 ---
 
-## Persistence Best Practices
+## Best Practices
 
-!!! tip "Effective Persistence Patterns"
-    - **Service Mode**: Always use `jac serve` for persistent applications
-    - **Database Backend**: Configure appropriate database in .env file
-    - **Root Connection**: Connect all persistent nodes to root or root-connected nodes
-    - **Initialization Checks**: Use filtering to check for existing data
-    - **Transaction Awareness**: Changes persist automatically at request completion
-
-### Production Deployment
-
-!!! example "Production Configuration"
-    === ".env"
-        ```bash
-        # Production .env
-        DATABASE_URL=postgresql://user:password@host:5432/dbname
-        SECRET_KEY=your-production-secret-key
-        DEBUG=false
-        ```
-
-    === "Docker Setup"
-        ```dockerfile
-        # Dockerfile
-        FROM python:3.11
-
-        WORKDIR /app
-        COPY requirements.txt .
-        RUN pip install -r requirements.txt
-
-        COPY . .
-        EXPOSE 8000
-
-        CMD ["jac", "serve", "main.jac", "--host", "0.0.0.0"]
-        ```
-
----
+!!! summary "Persistence Guidelines"
+    - **Service mode only**: Use `jac serve` for persistent applications, not `jac run`
+    - **Connect to root**: All persistent data must be reachable from root
+    - **Initialize gracefully**: Check for existing data before creating new instances
+    - **Use proper IDs**: Generate unique identifiers for nodes that need them
+    - **Plan for concurrency**: Consider multiple users accessing the same data
+    - **Database configuration**: Set up proper database connections for production
 
 ## Key Takeaways
 
 !!! summary "What We've Learned"
-    - **Service Requirement**: Persistence only works with `jac serve`, not `jac run`
-    - **Database Backend**: Requires proper database configuration
-    - **Root Node**: Central entry point for all persistent graph structures
-    - **Request Lifecycle**: State persists automatically between API requests
-    - **Service Restarts**: Data survives service restarts with proper database setup
-    - **Graph Integrity**: Relationships between nodes persist automatically
+    **Persistence Fundamentals:**
 
-### Next Steps
+    - **Service requirement**: Persistence only works with `jac serve` and database backends
+    - **Root connection**: All persistent nodes must be connected to the root node
+    - **Automatic behavior**: Data persists without explicit save/load operations
+    - **Request isolation**: Each API request has access to the same persistent graph
 
-In the upcoming chapters, we'll explore:
+    **Root Node Concept:**
 
-- **Chapter 14**: Advanced Jac Cloud features and deployment
-- **Chapter 15**: Multi-user systems with shared persistent state
-- **Chapter 16**: Scaling persistent applications in production
+    - **Graph anchor**: Starting point for all persistent data structures
+    - **Request context**: Available automatically in every API endpoint
+    - **Transaction boundary**: Changes persist at the end of each successful request
+    - **State consistency**: Maintains graph integrity across service restarts
+
+    **State Management:**
+
+    - **Automatic persistence**: Connected nodes survive service restarts
+    - **Graph integrity**: Relationships between nodes are maintained
+    - **Type preservation**: Node properties retain their types across persistence
+    - **Concurrent access**: Multiple requests can safely access the same data
+
+    **Development Patterns:**
+
+    - **Initialization checks**: Use filtering to find existing data before creating new
+    - **Unique identification**: Generate proper IDs for nodes that need them
+    - **Data validation**: Implement business rules at the application level
+    - **Error handling**: Graceful handling of missing or invalid data
 
 !!! tip "Try It Yourself"
-    Create your own persistent application by:
-    - Building a todo list API that persists tasks
-    - Adding user authentication with persistent user data
-    - Creating a simple blog with persistent posts and comments
+    Build persistent applications by creating:
+    - A todo list API with persistent tasks
+    - A blog system with posts and comments
+    - An inventory management system
+    - A user profile system with preferences
 
-    Remember: Only nodes connected to root (directly or indirectly) will persist when using `jac serve` with a database!
+    Remember: Only nodes connected to root (directly or indirectly) will persist when using `jac serve`!
 
 ---
 
-*Ready to explore advanced cloud features? Continue to [Chapter 14: Advanced Jac Cloud](chapter_14.md)!*
+*Ready to explore cloud deployment? Continue to [Chapter 14: Jac Cloud Introduction](chapter_14.md)!*
