@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
+class DirectImportPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
 
     def pre_transform(self) -> None:
@@ -54,11 +54,11 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
         # 6. import from math {sqrt as s, pi as p}
         # 7. include math                     <---- equivalent to import all
         # Process imports until no more imported modules to process
-        while self.last_imported:
-            current_module = self.last_imported.pop(0)
-            all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
+        # while self.last_imported:
+        current_module = self.last_imported.pop(0)
+        all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
+        for i in all_imports:
+            self.process_import(i)
 
         return ir_in
 
@@ -90,11 +90,21 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
                         else:
                             if from_mod_target in self.prog.mod.hub:
                                 return
-                            self.load_mod(self.prog.compile(file_path=from_mod_target))
+                            # self.load_mod(self.prog.compile(file_path=from_mod_target))
+                            with open(from_mod_target, "r", encoding="utf-8") as f: 
+                                self.load_mod(self.prog.parse_str(
+                                    f.read(),
+                                    file_path=from_mod_target,
+                                ))
         else:
             if target in self.prog.mod.hub:
                 return
-            self.load_mod(self.prog.compile(file_path=target))
+            # self.load_mod(self.prog.compile(file_path=target))
+            with open(target, "r", encoding="utf-8") as f:
+                self.load_mod(self.prog.parse_str(
+                    f.read(),
+                    file_path=target,
+                ))
 
     def import_py_module(self, node: uni.ModulePath) -> None:
         """Import a Python module."""
@@ -123,12 +133,12 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
                 ).ir_out
             if mod:
                 self.prog.mod.hub[mod.loc.mod_path] = mod
-                self.last_imported.append(mod)
+                # self.last_imported.append(mod)
 
     def load_mod(self, mod: uni.Module) -> None:
         """Attach a module to a node."""
         self.prog.mod.hub[mod.loc.mod_path] = mod
-        self.last_imported.append(mod)
+        # self.last_imported.append(mod)
 
     # TODO: Refactor this to a function for impl and function for test
 
@@ -138,7 +148,15 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
         if os.path.exists(jac_init_path):
             if jac_init_path in self.prog.mod.hub:
                 return self.prog.mod.hub[jac_init_path]
-            return self.prog.compile(file_path=jac_init_path)
+            # return self.prog.compile(file_path=jac_init_path)
+            with open(jac_init_path, "r", encoding="utf-8") as f:
+                mod = self.prog.parse_str(
+                    f.read(),
+                    file_path=jac_init_path,
+                )
+                self.load_mod(mod)
+            return mod
+
         elif os.path.exists(py_init_path := os.path.join(target, "__init__.py")):
             with open(py_init_path, "r") as f:
                 file_source = f.read()

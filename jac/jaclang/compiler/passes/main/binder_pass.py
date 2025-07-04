@@ -68,22 +68,26 @@ class BinderPass(UniPass):
 
         # 5. import from math {sqrt}
         if node.from_loc and node.items:
-            path = node.from_loc
-            with open(
-                path.resolve_relative_path(), "r"
-            ) as f:
-                source_str = f.read()
-                new_mod = self.prog.parse_str(
-                    source_str,
-                    file_path=path.resolve_relative_path()
-                )
+            print('import from:', node.from_loc.unparse())
+            self.cur_scope.def_insert(
+                node.items[0], single_decl="import", imported=True
+            )
+        #     path = node.from_loc
+        #     with open(
+        #         path.resolve_relative_path(), "r"
+        #     ) as f:
+        #         source_str = f.read()
+        #         new_mod = self.prog.parse_str(
+        #             source_str,
+        #             file_path=path.resolve_relative_path()
+        #         )
                 
-                # print('parsing done:', new_mod.name)
-                from jaclang.compiler.passes.main import BinderPass
-                BinderPass(ir_in=new_mod, prog=self.prog)
-                new_mod.parent_scope = self.cur_scope
-                node.parent.kid_scope.append(new_mod)
-            self.cur_scope.def_insert(node.items[0], single_decl="import", imported=True)
+        #         # print('parsing done:', new_mod.name)
+        #         from jaclang.compiler.passes.main import BinderPass
+        #         BinderPass(ir_in=new_mod, prog=self.prog)
+        #         new_mod.parent_scope = self.cur_scope
+        #         node.parent.kid_scope.append(new_mod)
+        #     self.cur_scope.def_insert(node.items[0], single_decl="import", imported=True)
             # print(f'---------new modd - ------------------')
             # print('-------',new_mod.loc.mod_path,'-------')
             # print(new_mod.sym_pp())
@@ -92,33 +96,54 @@ class BinderPass(UniPass):
 
         # 6. import from math {sqrt as s, pi as p}
         # 7. include math                     <---- equivalent to import all
+        # 1. import math
+        # 2. import math as m
+        # 3. import math, random
+        # 4. import math as m, random as r
+        # 5. import from math {sqrt}
+        # 6. import from math {sqrt as s, pi as p}
+        # 7. include math                     <---- equivalent to import all
 
     def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Enter atom trailer node."""
         from icecream import ic
         ic('enter_atom_trailer', node.target.unparse())
-        # # This is used to bind the symbol for the atom trailer, e.g., `math.sqrt`
-        if node.loc.mod_path == 'a.py':
-            return
-        # print('enter_atom_trailer:', node.target.unparse())
-        # print(node.pp())
-        # if self.ir_in.name == "math":
-        #     return 
-        # print(node.target)
-        # print('cur sym tabs||',self.cur_sym_tab)
-        try:
-            ic(node.target.unparse())
-            p = self.cur_sym_tab[-1].lookup(node.target.unparse())
-        except Exception as e:
-            ic('Error looking up atom trailer:', e)
-            exit()
-        if p:
-            chain = node.as_attr_list
-            node.sym_tab.chain_use_lookup(chain)
-        # from icecream import ic
-        # ic('p',p)
-        # print('enter_atom_trailer: p:', p)
-        # print('p.imported--> ',p.imported)
+        attr_list = node.as_attr_list
+        while attr_list:
+            attr = attr_list.pop(0)
+            if isinstance(attr, uni.AstSymbolNode):
+                print('attr:', attr.unparse())
+                p = self.cur_sym_tab[-1].lookup(attr.sym_name)
+                if p and p.imported:
+                    # p.add_use(attr)
+                    # check binderrequired and bind if required
+                    if p.binder_required(attr_list[-1]):
+                        print('binding:', p.decl.loc.mod_path)
+                        print(p.decl.name_of)
+                        print(p.decl.name_of.parent.unparse())
+                        print('fom loc :',p.decl.name_of.parent.from_loc)
+                        if isinstance(p.decl.name_of,uni.ModuleItem) and p.decl.name_of.parent.from_loc:
+                                q = self.prog.bind(
+                                    p.decl.name_of.parent.from_loc.resolve_relative_path(),
+                                )
+                                print('binding done:', q.name)
+                                pass
+                        else:
+                            pass
+                        # exit()
+                        # self.prog.bind(
+                            
+                        # )
+                    print('found attr:', p)
+                elif p :
+                    print('found attr:', p)
+                    p.add_use(attr)
+                else:
+                    self.ice(
+                        f"Symbol '{attr.sym_name}' not found in current scope: {self.cur_scope.scope_name}"
+                    )
+            else:
+                self.ice(f"Expected AstSymbolNode, got {type(attr)}")
 
     def enter_assignment(self, node: uni.Assignment) -> None:
         """Enter assignment node."""
@@ -157,18 +182,6 @@ class BinderPass(UniPass):
 
     def exit_test(self, node: uni.Test) -> None:
         self.pop_scope()
-
-    # def exit_module_path(self, node: uni.ModulePath) -> None:
-    #     if node.alias:
-    #         node.alias.sym_tab.def_insert(node.alias, single_decl="import")
-    #     elif node.path and isinstance(node.path[0], uni.Name):
-    #         if node.parent_of_type(uni.Import) and not (
-    #             node.parent_of_type(uni.Import).from_loc
-    #             and node.parent_of_type(uni.Import).is_jac
-    #         ):
-    #             node.path[0].sym_tab.def_insert(node.path[0])
-    #     else:
-    #         pass  # Need to support pythonic import symbols with dots in it
 
     def enter_archetype(self, node: uni.Archetype) -> None:
         self.push_scope_and_link(node)
