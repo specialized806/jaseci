@@ -9,6 +9,7 @@ import subprocess
 import urllib.error
 import urllib.parse
 import urllib.request
+import requests
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -340,7 +341,7 @@ def print_tabbed_tables(
 
 DEFAULT_MAIN_REPO = "jaclang/jaclang"
 DEFAULT_EXTRA_REPOS = ["TrueSelph/jivas", "jaseci-labs/jac_playground"]
-
+GITHUB_STATS_PATH = os.path.join(os.path.dirname(__file__), '../docs/docs/assets/github_stats.json')
 
 def main() -> None:
     """Run the script."""
@@ -389,8 +390,26 @@ def main() -> None:
     token = os.getenv("GITHUB_TOKEN")
 
     repo_tables = []
+    repo_stats = {}
     for repo_full in repos:
         owner, repo = repo_full.split("/")
+        # Fetch repo stats (stars/forks)
+        stats_url = f"https://api.github.com/repos/{repo_full}"
+        try:
+            stats_resp = requests.get(stats_url, timeout=10)
+            if stats_resp.status_code == 200:
+                stats_data = stats_resp.json()
+                repo_stats[repo_full] = {
+                    "stars": stats_data.get("stargazers_count", 0),
+                    "forks": stats_data.get("forks_count", 0)
+                }
+            else:
+                repo_stats[repo_full] = {"stars": "N/A", "forks": "N/A"}
+        except Exception as e:
+            print(f"Error fetching GitHub stats for {repo_full}: {e}")
+            repo_stats[repo_full] = {"stars": "N/A", "forks": "N/A"}
+
+        # ...existing code...
         max_days = max(periods)
         all_commits = fetch_commits(owner or "", repo or "", max_days, token)
         if all_commits is None:
@@ -402,7 +421,14 @@ def main() -> None:
             contributors = process_contributors(all_commits, days)
             contributors_by_period.append(contributors)
         repo_tables.append((repo_full, contributors_by_period))
-
+    # Save stats to JSON file
+    # Remove previous file if it exists
+    if os.path.exists(GITHUB_STATS_PATH):
+        os.remove(GITHUB_STATS_PATH)
+    os.makedirs(os.path.dirname(GITHUB_STATS_PATH), exist_ok=True)
+    with open(GITHUB_STATS_PATH, "w") as f:
+        json.dump(repo_stats, f)
+    
     print_tabbed_tables(repo_tables, periods)
 
 
