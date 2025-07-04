@@ -2,14 +2,6 @@
 
 Now that we have a jac application served up, let's build a simple chatbot using Retrieval Augmented Generation (RAG) with Jac Cloud and Streamlit as our frontend interface.
 
-### Preparation / Installation
-
-There are a couple of additional dependenices we need here
-
-```bash
-pip install mtllm==0.3.2 jac-streamlit==0.0.3 langchain==0.1.16 langchain_community==0.0.34 chromadb==0.5.0 pypdf==4.2.0
-```
-
 ## Building a Streamlit Interface
 
 Before we begin building out our chatbot, let's first build a simple GUI to interact with the chatbot. Streamlit offers several Chat elements, enabling you to build Graphical User Interfaces (GUIs) for conversational agents or chatbots. Leveraging session state along with these elements allows you to construct anything from a basic chatbot to a more advanced, ChatGPT-like experience using purely Python code.

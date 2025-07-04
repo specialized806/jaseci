@@ -47,7 +47,7 @@ This project demonstrates a modern Retrieval-Augmented Generation (RAG) chatbot 
 
 Install the necessary dependacies
 ```bash
-pip install jaclang jac-cloud jac-streamlit langchain-openai langchain-community
+pip install jaclang jac-cloud jac-streamlit mtllm langchain-openai langchain-community chromadb pypdf
 ```
 
 To use the Web Search, get a free API key from [Serper](https://serper.dev/).

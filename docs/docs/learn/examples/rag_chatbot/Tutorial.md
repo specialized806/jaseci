@@ -1,7 +1,7 @@
 # RAG Chatbot Full Guide
 
 ## Overview
-This project is a Retrieval-Augmented Generation (RAG) chatbot that leverages Jac Cloud, LangChain, ChromaDB, and Streamlit. It allows users to upload documents (PDFs), which are then indexed for semantic search. The chatbot can answer questions using both the uploaded documents and large language models (LLMs), optionally enhanced with real-time web search.
+This project is a Retrieval-Augmented Generation (RAG) chatbot that leverages MTP, Jac Cloud, LangChain, ChromaDB, and Jac-Streamlit. It allows users to upload documents (PDFs), which are then indexed for semantic search. The chatbot can answer questions using both the uploaded documents and large language models (LLMs), optionally enhanced with real-time web search.
 
 ## Features
 - Upload and index PDF documents for question answering
@@ -19,27 +19,25 @@ This project is a Retrieval-Augmented Generation (RAG) chatbot that leverages Ja
 ## Setup Instructions
 1. **Install dependencies** (Python 3.12+ recommended):
    ```bash
-   pip install jaclang jac-cloud jac-streamlit langchain chromadb pypdf openai ollama
+   pip install jaclang jac-cloud jac-streamlit mtllm langchain-openai langchain-community chromadb pypdf
    ```
-2. **Start the Jac Cloud server**:
+
+2. **Add your env varaibles**
+   To use the Web Search, get a free API key from [Serper](https://serper.dev/)
    ```bash
-   jac serve solution/server.jac
+   export OPENAI_API_KEY=<your-openai-key>
+   export SERPER_API_KEY=<your-serper-key>
    ```
-3. **Register and login a user** (see API section or use Swagger UI at `http://localhost:8000/docs`):
+
+3. **Start the Jac Chatbot server**:
    ```bash
-   curl --location 'http://localhost:8000/user/register' \
-     --header 'Content-Type: application/json' \
-     --data '{"email": "test@mail.com", "password": "password"}'
-   # Then login to get your access token
-   curl --location 'http://localhost:8000/user/login' \
-     --header 'Content-Type: application/json' \
-     --data '{"email": "test@mail.com", "password": "password"}'
+   jac serve server.jac
    ```
+
 4. **Run the Streamlit frontend**:
    ```bash
-   jac run solution/client.jac
+   jac run client.jac
    ```
-   Or, if using a Python wrapper for Streamlit, adapt as needed.
 
 ## Usage Guide
 - Open the Streamlit app in your browser.
