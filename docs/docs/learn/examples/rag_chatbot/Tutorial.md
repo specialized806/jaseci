@@ -1,16 +1,4 @@
-# RAG Chatbot with Jac Cloud — Full Documentation
-
-## Table of Contents
-- [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-- [Usage Guide](#usage-guide)
-- [API Endpoints](#api-endpoints)
-- [Advanced Features](#advanced-features)
-- [Troubleshooting](#troubleshooting)
-
----
+# Full Guide
 
 ## Overview
 This project is a Retrieval-Augmented Generation (RAG) chatbot that leverages Jac Cloud, LangChain, ChromaDB, and Streamlit. It allows users to upload documents (PDFs), which are then indexed for semantic search. The chatbot can answer questions using both the uploaded documents and large language models (LLMs), optionally enhanced with real-time web search.
