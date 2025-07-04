@@ -2,36 +2,9 @@
 Jac Cloud is a jaclang plugin that bootstraps your jac application into a running web server. It allows you to serve your jac code as a REST API and interact with it from any client that can make HTTP requests. To set up Jac Cloud, you need to install the `jaclang` and `jac-cloud` python package using pip:
 
 ```bash
-pip install jaclang==0.7.19 jac-cloud==0.1.1
+pip install jaclang jac-cloud jac-streamlit
 ```
 
-## Installing your VSCode Extension
-To make your development experience easier, you should install the jac extension for Visual Studio Code. This extension provides syntax highlighting, code snippets, and other features to help you write Jac Cloud code more efficiently. You can install the extension from the Visual Studio Code marketplace [here](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension).
-
-![Jac Extension](images/1_vscode.png)
-
-## Your First Jac Cloud Application
-Now that you have your database set up, you can start building your first Jac application. Create a new file called `server.jac` and add the following code:
-
-```jac
-walker interact {
-    can return_message with `root entry {
-        report {
-            "response": "Hello, world!"
-        };
-    }
-}
-
-walker interact_with_body {
-    has name: str;
-
-    can return_message with `root entry {
-        report {
-            "response": "Hello, " + self.name + "!"
-        };
-    }
-}
-```
 
 This code defines two walkers, `hello_world_no_body` and `hello_world_with_body`. The `hello_world_no_body` walker returns a simple message "Hello, world!" when called. The `hello_world_with_body` walker takes a `name` parameter and returns a message "Hello, `name`!". No need to worry about what a walker is for now. Think of it as a function that can be called as an API endpoint.
 
