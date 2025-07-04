@@ -271,6 +271,11 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
+    def binder_required(self,node:AstSymbolNode) -> bool:
+        """Check if binder is required for this symbol."""
+        return True
+        
+
     @property
     def fetch_sym_tab(self) -> Optional[UniScopeNode]:
         """Get symbol table."""
@@ -323,12 +328,8 @@ class UniScopeNode(UniNode):
                 return self.names_in_scope[name]
             else:
                 sym = self.names_in_scope[name]
-                from icecream import ic
-                if name =='math':
-                    ic('i am making error')
-                    return
-                ic('i am making error')
-                return  sym.decl.parent.parent.from_loc.sym_tab.kid_scope[0].lookup(name, deep=False)       
+                print(''''symmmmmm''', sym)
+                return sym
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
             if found:

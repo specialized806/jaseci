@@ -1,5 +1,6 @@
 
 import random
+
 from b import Person
 
 class AJAC:
