@@ -9,10 +9,12 @@ import subprocess
 import urllib.error
 import urllib.parse
 import urllib.request
-import requests
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+
 
 tabel_css = """
 <style>
@@ -341,7 +343,10 @@ def print_tabbed_tables(
 
 DEFAULT_MAIN_REPO = "jaclang/jaclang"
 DEFAULT_EXTRA_REPOS = ["TrueSelph/jivas", "jaseci-labs/jac_playground"]
-GITHUB_STATS_PATH = os.path.join(os.path.dirname(__file__), '../docs/docs/assets/github_stats.json')
+GITHUB_STATS_PATH = os.path.join(
+    os.path.dirname(__file__), "../docs/docs/assets/github_stats.json"
+)
+
 
 def main() -> None:
     """Run the script."""
@@ -401,7 +406,7 @@ def main() -> None:
                 stats_data = stats_resp.json()
                 repo_stats[repo_full] = {
                     "stars": stats_data.get("stargazers_count", 0),
-                    "forks": stats_data.get("forks_count", 0)
+                    "forks": stats_data.get("forks_count", 0),
                 }
             else:
                 repo_stats[repo_full] = {"stars": "N/A", "forks": "N/A"}
@@ -428,7 +433,7 @@ def main() -> None:
     os.makedirs(os.path.dirname(GITHUB_STATS_PATH), exist_ok=True)
     with open(GITHUB_STATS_PATH, "w") as f:
         json.dump(repo_stats, f)
-    
+
     print_tabbed_tables(repo_tables, periods)
 
 
