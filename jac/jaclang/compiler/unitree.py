@@ -244,6 +244,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.symbol_table: Optional[UniScopeNode] = None
 
     @property
     def decl(self) -> NameAtom:
@@ -271,14 +272,15 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
-    def binder_required(self,node:AstSymbolNode) -> bool:
+    def binder_required(self, node: AstSymbolNode) -> bool:
         """Check if binder is required for this symbol."""
         return True
-        
 
     @property
     def fetch_sym_tab(self) -> Optional[UniScopeNode]:
         """Get symbol table."""
+        if self.symbol_table:
+            return self.symbol_table
         return self.parent_tab.find_scope(self.sym_name)
 
     def add_defn(self, node: NameAtom) -> None:
@@ -328,7 +330,7 @@ class UniScopeNode(UniNode):
                 return self.names_in_scope[name]
             else:
                 sym = self.names_in_scope[name]
-                print(''''symmmmmm''', sym)
+                print("""'symmmmmm""", sym)
                 return sym
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
@@ -344,7 +346,7 @@ class UniScopeNode(UniNode):
         access_spec: Optional[AstAccessNode] | SymbolAccess = None,
         single: bool = False,
         force_overwrite: bool = False,
-        imported :bool = False,
+        imported: bool = False,
     ) -> Optional[UniNode]:
         """Set a variable in the symbol table.
 
@@ -365,7 +367,7 @@ class UniScopeNode(UniNode):
                     else access_spec.access_type if access_spec else SymbolAccess.PUBLIC
                 ),
                 parent_tab=self,
-                imported=imported
+                imported=imported,
             )
         else:
             self.names_in_scope[node.sym_name].add_defn(node.name_spec)
@@ -409,7 +411,7 @@ class UniScopeNode(UniNode):
             single=single_decl is not None,
             access_spec=access_spec,
             force_overwrite=force_overwrite,
-            imported=imported
+            imported=imported,
         )
         self.update_py_ctx_for_def(node)
         return node.sym
