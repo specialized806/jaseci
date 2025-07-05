@@ -87,6 +87,8 @@ class BinderPass(UniPass):
         uni.MatchCase,
         uni.DictCompr,
         uni.ListCompr,
+        uni.GenCompr,
+        uni.SetCompr,
         uni.LambdaExpr,
         uni.WithStmt,
         uni.WhileStmt,
