@@ -172,6 +172,8 @@ class BinderPass(UniPass):
                             node, "here", set_name_of=node.method_owner
                         )
                     )
+                    # TODO: Handle atom trailer here
+                    # "can ability2 with MyNode.Inner.DeepInner entry"
                     node_name = node.signature.arch_tag_info.unparse()
                     par_tab = self.cur_scope.lookup(node_name)
                     here_sym.symbol_table = par_tab
@@ -182,6 +184,8 @@ class BinderPass(UniPass):
                             node, "visitor", set_name_of=node.method_owner
                         )
                     )
+                    # TODO: Handle atom trailer here
+                    # "can ability2 with Mywalker.Inner.DeepInner entry"
                     walker_name = node.signature.arch_tag_info.unparse()
                     par_tab = self.cur_scope.lookup(walker_name)
                     visitor_sym.symbol_table = par_tab
