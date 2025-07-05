@@ -330,7 +330,6 @@ class UniScopeNode(UniNode):
                 return self.names_in_scope[name]
             else:
                 sym = self.names_in_scope[name]
-                print("""'symmmmmm""", sym)
                 return sym
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
@@ -3501,7 +3500,7 @@ class InnerCompr(AstAsyncNode, UniScopeNode):
         return res
 
 
-class ListCompr(AtomExpr):
+class ListCompr(AtomExpr, UniScopeNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
@@ -3515,6 +3514,7 @@ class ListCompr(AtomExpr):
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True

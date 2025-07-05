@@ -18,6 +18,8 @@ The symbol table is a fundamental data structure that enables name resolution,
 type checking, and semantic analysis throughout the compilation process.
 """
 
+from typing import Optional
+
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniScopeNode
@@ -64,20 +66,17 @@ class BinderPass(UniPass):
         else:
             return []
 
-    def is_global(self, node: uni.Symbol) -> bool:
+    # TODO: Every call for this function should be moved to symbol table it self
+    def check_global(self, node_name: str) -> Optional[uni.Symbol]:
         for symbol in self.cur_globals:
-            if symbol.sym_name == node.sym_name:
-                return True
-        return False
+            if symbol.sym_name == node_name:
+                return symbol
+        return None
 
     @property
     def cur_module_scope(self) -> UniScopeNode:
         """Return the current module."""
         return self.scope_stack[0]
-
-    @property
-    def cur_imports(self) -> list[uni.Symbol]:
-        pass
 
     ###############################################
     ## Handling for nodes that creates new scope ##
@@ -87,7 +86,7 @@ class BinderPass(UniPass):
     SCOPE_NODES = (
         uni.MatchCase,
         uni.DictCompr,
-        uni.InnerCompr,
+        uni.ListCompr,
         uni.LambdaExpr,
         uni.WithStmt,
         uni.WhileStmt,
@@ -102,16 +101,28 @@ class BinderPass(UniPass):
         uni.TypedCtxBlock,
         uni.Module,
         uni.Ability,
+        uni.Test,
+        uni.Archetype,
+        uni.ImplDef,
+        uni.SemDef,
+        uni.Enum,
     )
+
+    # All nodes that creates new global stack
+    GLOBAL_STACK_NODES = (uni.Ability, uni.Archetype)
 
     def enter_node(self, node) -> None:
         if isinstance(node, self.SCOPE_NODES):
             self.push_scope_and_link(node)
+        if isinstance(node, self.GLOBAL_STACK_NODES):
+            self.globals_stack.append([])
         super().enter_node(node)
 
     def exit_node(self, node):
         if isinstance(node, self.SCOPE_NODES):
             self.pop_scope()
+        if isinstance(node, self.GLOBAL_STACK_NODES):
+            self.globals_stack.pop()
         super().exit_node(node)
 
     #####################################
@@ -121,14 +132,21 @@ class BinderPass(UniPass):
         """Enter assignment node."""
         for i in node.target:
             if isinstance(i, uni.AtomTrailer):
-                # Need to get the correct symbol of the first item in the atom trailer
-                # We need to check cur_globals first to get the correct symbol
-                # TODO: check if this is an imported symbol and if yes then resolve this import
-                i.sym_tab.chain_def_insert(i.as_attr_list)
+                first_obj = i.as_attr_list[0]
+                first_obj_sym = self.cur_scope.lookup(
+                    first_obj.sym_name
+                )  # Need to perform lookup as the symbol is not bound yet
+                if first_obj_sym.imported:
+                    self.resolve_import(node)
+
             elif isinstance(i, uni.AstSymbolNode):
-                if self.is_global(i):
-                    return
-                self.cur_scope.def_insert(i, single_decl="assignment")
+                #  TODO: Move this into symbol table
+                if glob_sym := self.check_global(i.sym_name):
+                    i.name_spec._sym = glob_sym
+                    glob_sym.add_defn(i)
+                else:
+                    self.cur_scope.def_insert(i, single_decl="assignment")
+
             else:
                 self.log_error("Assignment target not valid")
 
@@ -139,27 +157,23 @@ class BinderPass(UniPass):
         )
         symbol.symbol_table = self.cur_scope
         if node.is_method:
-            node.sym_tab.def_insert(uni.Name.gen_stub_from_node(node, "self"))
-            node.sym_tab.def_insert(
+            self.cur_scope.def_insert(uni.Name.gen_stub_from_node(node, "self"))
+            self.cur_scope.def_insert(
                 uni.Name.gen_stub_from_node(
                     node, "super", set_name_of=node.method_owner
                 )
             )
-        self.globals_stack.append([])
-
-    def exit_ability(self, node: uni.Ability) -> None:
-        self.globals_stack.pop()
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         for name in node.target:
-            sym = self.cur_scope.lookup(name.sym_name)
+            sym = self.cur_module_scope.lookup(name.sym_name)
             if not sym:
                 sym = self.cur_module_scope.def_insert(name, single_decl="assignment")
             self.globals_stack[-1].append(sym)
 
     def enter_import(self, node: uni.Import) -> None:
         if node.is_absorb:
-            print("Need to resolve", node.unparse())
+            self.resolve_import(node)
             return
         for item in node.items:
             if item.alias:
@@ -169,146 +183,175 @@ class BinderPass(UniPass):
             else:
                 self.cur_scope.def_insert(item, imported=True)
 
-    # def enter_import(self, node: uni.Import) -> None:
-    #     """Enter import node."""
-    #     # 1. import math
-    #     if node.items and not node.from_loc:
-    #         # print('node.items.unparsed:', node.items[0].unparse())
-    #         self.cur_scope.def_insert(node.items[0], single_decl="import",imported=True)
+    def enter_test(self, node: uni.Test) -> None:
+        import unittest
 
-    #     # 2. import math as m
+        for i in [j for j in dir(unittest.TestCase()) if j.startswith("assert")]:
+            self.cur_scope.def_insert(
+                uni.Name.gen_stub_from_node(node, i, set_name_of=node)
+            )
 
-    #     # 3. import math, random
+    def enter_archetype(self, node: uni.Archetype) -> None:
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="archetype")
 
-    #     # 4. import math as m, random as r
+    def enter_impl_def(self, node: uni.ImplDef) -> None:
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, single_decl="impl")
 
-    #     # 5. import from math {sqrt}
-    #     if node.from_loc and node.items:
-    #         print('import from:', node.from_loc.unparse())
-    #         self.cur_scope.def_insert(
-    #             node.items[0], single_decl="import", imported=True
-    #         )
-    #     #     path = node.from_loc
-    #     #     with open(
-    #     #         path.resolve_relative_path(), "r"
-    #     #     ) as f:
-    #     #         source_str = f.read()
-    #     #         new_mod = self.prog.parse_str(
-    #     #             source_str,
-    #     #             file_path=path.resolve_relative_path()
-    #     #         )
+    def enter_sem_def(self, node: uni.SemDef) -> None:
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, single_decl="sem")
 
-    #     #         # print('parsing done:', new_mod.name)
-    #     #         from jaclang.compiler.passes.main import BinderPass
-    #     #         BinderPass(ir_in=new_mod, prog=self.prog)
-    #     #         new_mod.parent_scope = self.cur_scope
-    #     #         node.parent.kid_scope.append(new_mod)
-    #     #     self.cur_scope.def_insert(node.items[0], single_decl="import", imported=True)
-    #         # print(f'---------new modd - ------------------')
-    #         # print('-------',new_mod.loc.mod_path,'-------')
-    #         # print(new_mod.sym_pp())
-    #         # print('-----------------------')
-    #         # exit()
+    def enter_enum(self, node: uni.Enum) -> None:
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
-    #     # 6. import from math {sqrt as s, pi as p}
-    #     # 7. include math                     <---- equivalent to import all
-    #     # 1. import math
-    #     # 2. import math as m
-    #     # 3. import math, random
-    #     # 4. import math as m, random as r
-    #     # 5. import from math {sqrt}
-    #     # 6. import from math {sqrt as s, pi as p}
-    #     # 7. include math                     <---- equivalent to import all
+    def enter_param_var(self, node: uni.ParamVar) -> None:
+        self.cur_scope.def_insert(node)
 
-    # def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
-    #     """Enter atom trailer node."""
-    #     from icecream import ic
-    #     ic('enter_atom_trailer', node.target.unparse())
-    #     attr_list = node.as_attr_list
-    #     while attr_list:
-    #         attr = attr_list.pop(0)
-    #         if isinstance(attr, uni.AstSymbolNode):
-    #             print('attr:', attr.unparse())
-    #             p = self.cur_sym_tab[-1].lookup(attr.sym_name)
-    #             if p and p.imported:
-    #                 # p.add_use(attr)
-    #                 # check binderrequired and bind if required
-    #                 if p.binder_required(attr_list[-1]):
-    #                     print('binding:', p.decl.loc.mod_path)
-    #                     print(p.decl.name_of)
-    #                     print(p.decl.name_of.parent.unparse())
-    #                     print('fom loc :',p.decl.name_of.parent.from_loc)
-    #                     if isinstance(p.decl.name_of,uni.ModuleItem) and p.decl.name_of.parent.from_loc:
-    #                             q = self.prog.bind(
-    #                                 p.decl.name_of.parent.from_loc.resolve_relative_path(),
-    #                             )
-    #                             print('binding done:', q.name)
-    #                             pass
-    #                     else:
-    #                         pass
-    #                     # exit()
-    #                     # self.prog.bind(
+    def enter_has_var(self, node: uni.HasVar) -> None:
+        if isinstance(node.parent, uni.ArchHas):
+            self.cur_scope.def_insert(
+                node, single_decl="has var", access_spec=node.parent
+            )
+        else:
+            self.ice("Inconsistency in AST, has var should be under arch has")
 
-    #                     # )
-    #                 print('found attr:', p)
-    #             elif p :
-    #                 print('found attr:', p)
-    #                 p.add_use(attr)
-    #             else:
-    #                 self.ice(
-    #                     f"Symbol '{attr.sym_name}' not found in current scope: {self.cur_scope.scope_name}"
-    #                 )
-    #         else:
-    #             self.ice(f"Expected AstSymbolNode, got {type(attr)}")
+    def enter_in_for_stmt(self, node: uni.InForStmt) -> None:
+        if isinstance(node.target, uni.AtomTrailer):
+            if isinstance(node.target, uni.AtomTrailer):
+                first_obj = node.target.as_attr_list[0]
+                first_obj_sym = self.cur_scope.lookup(
+                    first_obj.sym_name
+                )  # Need to perform lookup as the symbol is not bound yet
+                if first_obj_sym.imported:
+                    self.resolve_import(node)
+            # node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+        elif isinstance(node.target, uni.AstSymbolNode):
+            #  TODO: Move this into symbol table
+            if glob_sym := self.check_global(node.target.sym_name):
+                node.target.name_spec._sym = glob_sym
+                glob_sym.add_defn(node.target)
+            else:
+                self.cur_scope.def_insert(node.target)
+        else:
+            self.log_error("For loop assignment target not valid")
 
-    # def exit_global_vars(self, node: uni.GlobalVars) -> None:
-    #     for i in self.get_all_sub_nodes(node, uni.Assignment):
-    #         for j in i.target:
-    #             if isinstance(j, uni.AstSymbolNode):
-    #                 j.sym_tab.def_insert(j, access_spec=node, single_decl="global var")
-    #             else:
-    #                 self.ice("Expected name type for global vars")
+    ##################################
+    ##    Creating symbols from     ##
+    ##    Comprehensions support    ##
+    ##################################
 
-    # def enter_test(self, node: uni.Test) -> None:
-    #     self.push_scope_and_link(node)
-    #     import unittest
+    # In compr we use the symbol before it's being declared [print(x) for x in [1, 2, 3]]
+    # so to fix this we need to change the traversal here to start with the inner compr first
+    # then traverse the expr
 
-    #     for i in [j for j in dir(unittest.TestCase()) if j.startswith("assert")]:
-    #         node.sym_tab.def_insert(
-    #             uni.Name.gen_stub_from_node(node, i, set_name_of=node)
-    #         )
+    def enter_list_compr(self, node: uni.ListCompr) -> None:
+        self.prune()
+        for compr in node.compr:
+            self.traverse(compr)
+        self.traverse(node.out_expr)
 
-    # def exit_test(self, node: uni.Test) -> None:
-    #     self.pop_scope()
+    def enter_gen_compr(self, node: uni.GenCompr) -> None:
+        self.enter_list_compr(node)
+
+    def enter_set_compr(self, node: uni.SetCompr) -> None:
+        self.enter_list_compr(node)
+
+    def enter_dict_compr(self, node: uni.DictCompr) -> None:
+        self.prune()
+        for compr in node.compr:
+            self.traverse(compr)
+        self.traverse(node.kv_pair)
+
+    def enter_inner_compr(self, node: uni.InnerCompr) -> None:
+        if isinstance(node.target, uni.AtomTrailer):
+            self.cur_scope.chain_def_insert(node.target.as_attr_list)
+
+        elif isinstance(node.target, uni.AstSymbolNode):
+            self.cur_scope.def_insert(node.target)
+
+        else:
+            self.log_error("Named target not valid")
+
+    #####################
+    ## Collecting uses ##
+    #####################
+    def exit_name(self, node: uni.Name) -> None:
+
+        if isinstance(node.parent, uni.AtomTrailer):
+            return
+
+        # assert node.sym is not None, f"{node.loc}"
+
+        #  TODO: Move this into symbol table
+        if glob_sym := self.check_global(node.value):
+            if not node.sym:
+                glob_sym.add_use(node)
+        else:
+            # assert node.sym is not None, f"{node.loc}"
+            print(node.loc, self.cur_scope.scope_name, node.sym)
+            self.cur_scope.use_lookup(node, sym_table=self.cur_scope)
 
     # def enter_archetype(self, node: uni.Archetype) -> None:
-    #     self.push_scope_and_link(node)
-    #     assert node.parent_scope is not None
-    #     node.parent_scope.def_insert(node, access_spec=node, single_decl="archetype")
+    #     node.sym_tab.inherit_baseclasses_sym(node)
 
-    # def exit_archetype(self, node: uni.Archetype) -> None:
-    #     self.pop_scope()
+    #     def inform_from_walker(node: uni.UniNode) -> None:
+    #         for i in (
+    #             node.get_all_sub_nodes(uni.VisitStmt)
+    #             + node.get_all_sub_nodes(uni.DisengageStmt)
+    #             + node.get_all_sub_nodes(uni.EdgeOpRef)
+    #             + node.get_all_sub_nodes(uni.EventSignature)
+    #         ):
+    #             i.from_walker = True
 
-    # def enter_impl_def(self, node: uni.ImplDef) -> None:
-    #     self.push_scope_and_link(node)
-    #     assert node.parent_scope is not None
-    #     node.parent_scope.def_insert(node, single_decl="impl")
-
-    # def exit_impl_def(self, node: uni.ImplDef) -> None:
-    #     self.pop_scope()
-
-    # def enter_sem_def(self, node: uni.SemDef) -> None:
-    #     self.push_scope_and_link(node)
-    #     assert node.parent_scope is not None
-    #     node.parent_scope.def_insert(node, single_decl="sem")
-
-    # def exit_sem_def(self, node: uni.SemDef) -> None:
-    #     self.pop_scope()
+    #     if node.arch_type.name == Tok.KW_WALKER:
+    #         inform_from_walker(node)
+    #         for i in self.get_all_sub_nodes(node, uni.Ability):
+    #             if isinstance(i.body, uni.ImplDef):
+    #                 inform_from_walker(i.body)
 
     # def enter_enum(self, node: uni.Enum) -> None:
-    #     self.push_scope_and_link(node)
-    #     assert node.parent_scope is not None
-    #     node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
+    #     node.sym_tab.inherit_baseclasses_sym(node)
 
-    # def exit_enum(self, node: uni.Enum) -> None:
-    # self.pop_scope()
+    # def enter_type_ref(self, node: uni.TypeRef) -> None:
+    #     self.cur_scope.use_lookup(node)
+
+    # def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
+    #     chain = node.as_attr_list
+    #     node.sym_tab.chain_use_lookup(chain)
+
+    # def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    # def enter_float(self, node: uni.Float) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    # def enter_int(self, node: uni.Int) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    # def enter_string(self, node: uni.String) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    # def enter_bool(self, node: uni.Bool) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    # def enter_builtin_type(self, node: uni.BuiltinType) -> None:
+    #     node.sym_tab.use_lookup(node)
+
+    def enter_expr_as_item(self, node: uni.ExprAsItem) -> None:
+        if node.alias:
+            if isinstance(node.alias, uni.AtomTrailer):
+                self.cur_scope.chain_def_insert(node.alias.as_attr_list)
+            elif isinstance(node.alias, uni.AstSymbolNode):
+                if glob_sym := self.check_global(node.alias.sym_name):
+                    node.alias.name_spec._sym = glob_sym
+                    glob_sym.add_defn(node.alias)
+                else:
+                    self.cur_scope.def_insert(node.alias)
+            else:
+                self.log_error("For expr as target not valid")
+
+    def resolve_import(self, node: uni.UniNode):
+        print("Need to resolve import for", node.unparse())
