@@ -165,6 +165,26 @@ class BinderPass(UniPass):
                     node, "super", set_name_of=node.method_owner
                 )
             )
+            if node.signature and isinstance(node.signature, uni.EventSignature):
+                if node.method_owner.arch_type.name == 'KW_WALKER':
+                    here_sym = self.cur_scope.def_insert(
+                        uni.Name.gen_stub_from_node(
+                            node, "here", set_name_of=node.method_owner
+                        )
+                    )
+                    node_name = node.signature.arch_tag_info.unparse()
+                    par_tab = self.cur_scope.lookup(node_name)
+                    here_sym.symbol_table = par_tab
+                    
+                if node.method_owner.arch_type.name == 'KW_NODE':
+                    visitor_sym = self.cur_scope.def_insert(
+                        uni.Name.gen_stub_from_node(
+                            node, "visitor", set_name_of=node.method_owner
+                        )
+                    )
+                    walker_name = node.signature.arch_tag_info.unparse()
+                    par_tab = self.cur_scope.lookup(walker_name)
+                    visitor_sym.symbol_table = par_tab
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         for name in node.target:

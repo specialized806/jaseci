@@ -14,6 +14,7 @@ from jaclang.compiler.passes.main import (
     BinderPass,
     CFGBuildPass,
     DeclImplMatchPass,
+    DirectImportPass,
     DefUsePass,
     InheritancePass,
     JacAnnexPass,
@@ -114,37 +115,21 @@ class JacProgram:
         if not no_cgen:
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
         return mod_targ
-    e = 90
+    
     def bind(self, file_path: str) -> uni.Module:
         """Bind the Jac module."""
-        JacProgram.e += 1
-        if JacProgram.e > 109:
-            exit()
-
-        with open(file_path, "r", encoding="utf-8") as file:
-            use_str = file.read()
-        print(987878787)
-        mod_targ = self.parse_str(use_str, file_path)
-        BinderPass(ir_in=mod_targ, prog=self)
-        return mod_targ
+        pass
 
     def build(self, file_path: str, use_str: str | None = None) -> uni.Module:
         """Convert a Jac file to an AST."""
-        # mod_targ = self.compile(file_path, use_str)
         with open(file_path, "r", encoding="utf-8") as file:
             use_str = file.read()
         mod_targ = self.parse_str(use_str, file_path)
         # To AnnexImpl and to bind direct imports
         # from a import b - we need to parse
         # but if it is `import math` then we do not need to parse
-        # JacPyImportDepsPass(ir_in=mod_targ, prog=self)
+        # DirectImportPass(ir_in=mod_targ, prog=self)
         BinderPass(ir_in=mod_targ, prog=self)
-        # self.bind(file_path)
-        # for mod in self.mod.hub.values():
-        #     SymTabLinkPass(ir_in=mod, prog=self)
-        # for mod in self.mod.hub.values():
-        #     DefUsePass(mod, prog=self)
-        # print("JacProgram.build: Done!!!!")
         print(mod_targ.sym_pp())
         print('all mods:', self.mod.hub.keys())
         return mod_targ
