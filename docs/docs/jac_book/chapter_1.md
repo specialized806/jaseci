@@ -25,7 +25,7 @@ class Person:
         self.friends.append(friend)
         friend.friends.append(self)
 ```
-
+<br/>
 
 Since friendships are a two-way relationship, we need to ensure that when one person adds a friend, the other person also has that friendship established. This requires additional logic in our methods.
 ```python
@@ -41,6 +41,7 @@ bob.add_friend(charlie)
 charlie.add_friend(bob)  # Again, redundant but necessary
 ```
 <br/>
+
 ### **Modelling Relationships Naturally**
 
 Lets see how we might define these relationships in Jac, a language designed to handle relationships naturally and concisely.
@@ -54,7 +55,7 @@ node Person {
 
 edge FriendsWith;
 ```
-
+<br/>
 That single line of code defines a `Person` node with a `name` attribute and a `FriendsWith` edge type. Now we can create people and establish friendships in a much more natural way:
 
 ```jac
@@ -67,7 +68,7 @@ charlie = root ++> Person(name="Charlie");
 alice <+:FriendsWith:+> bob;
 bob <+:FriendsWith:+> charlie;
 ```
-
+<br/>
 
 The Jac version is not only more concise but also naturally handles the spatial relationships between entities.
 
@@ -112,7 +113,7 @@ with entry {
     print(f"User {user[0].username} created post: {post[0].title}");
 }
 ```
-
+<br/>
 
 ### **Edges: First-Class Relationships**
 
@@ -148,7 +149,7 @@ with entry {
     }
 }
 ```
-
+<br/>
 
 
 ### **Walkers: Mobile Computation**
@@ -189,7 +190,7 @@ with entry {
     alice[0] spawn GreetFriends();
 }
 ```
-
+<br/>
 
 ## Scale-Agnostic Programming Concept
 ---
@@ -226,7 +227,7 @@ with entry {
     counter[0].increment();
 }
 ```
-
+<br/>
 
 ### **Multi-User Isolation**
 
@@ -272,8 +273,7 @@ with entry {
     GetProfile() spawn root;
 }
 ```
-
-
+<br/>
 
 ## Comparison with Python and Traditional Languages
 ---
@@ -306,7 +306,7 @@ with entry {
     }
 }
 ```
-
+<br/>
 
 
 ### Key Differences
@@ -340,7 +340,7 @@ edge FriendsWith {
     has closeness: int;  # 1-10 scale
 }
 ```
-
+<br/>
 
 We can now create simple friends and establish friendships with metadata:
 ```jac
@@ -368,6 +368,7 @@ alice +>:FriendsWith(since="2020-01-15", closeness=8):+> bob;
 alice +>:FriendsWith(since="2021-06-10", closeness=9):+> charlie;
 bob +>:FriendsWith(since="2020-12-03", closeness=7):+> charlie;
 ```
+<br/>
 
 ### Creating the walker
 Next, lets create a walker to analyze the friend network and find common interests:
@@ -396,11 +397,14 @@ walker FindCommonInterests {
     }
 }
 ```
+<br/>
+
 To use the walker, you need to spawn it on a node of type `Person`—this node is provided as the first argument to the walker. As the walker traverses the graph, it maintains a list of common interests which is stored in the `common_interests` attribute and updates whenever it visits other `Person` nodes. The walker’s `find_common` ability is automatically triggered each time it encounters a `Person` node, where it compares interests with the target person and prints any shared interests it finds.
 
 
 ### Bringing it all together
 Finally, we can use the walker to analyze Alice's friends and find common interests:
+
 <div class="code-block">
 ```jac
 node Person {
@@ -481,6 +485,7 @@ with entry {
 }
 ```
 </div>
+<br/>
 
 This example demonstrates how Jac's Object-Spatial Programming model allows you to express complex relationships and computations in a natural, intuitive way. The walker traverses the graph, finding common interests and printing them out, all while maintaining the relationships defined by edges.
 

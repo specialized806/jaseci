@@ -3,6 +3,18 @@
     --md-code-hl-operator-color: #b68500;
 }
 
+/* Admonition styles */
+.md-typeset .admonition{
+    border-radius: 10px;
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+    border-color: #ff9800;
+    color: #ff9800;
+    background-color: #ff91001a;
+    font-size: larger;
+}
 
 .md-typeset .admonition.question,
 .md-typeset details.question {
@@ -249,12 +261,27 @@ font-family: 'Segoe UI', 'Montserrat', 'Roboto', 'Arial', sans-serif;
     font-family: 'Fira Mono', 'JetBrains Mono', 'Menlo', 'Consolas', 'Liberation Mono', 'monospace' !important;
     font-size: 15px;
     border-radius: 6px !important;
+    --md-code-hl-name-color: #fafafa;
+    --md-code-hl-keyword-color: #8BE9FD;
+    --md-code-hl-function-color: #FF79C6;
+    --md-code-hl-constant-color: #BD93F9;
+    --md-code-hl-string-color: #50FA7B;
+    --md-code-hl-number-color: #FFB86C;
+    --md-code-hl-operator-color: #FFB86C;
+    --md-code-hl-punctuation-color: #F8F8F2;
+    --md-code-hl-comment-color: #6272A4;
+    border: 1px solid #555555;
+}
+
+.md-typeset code{
+    color: #f8f8f2;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap');
 
 .md-typeset pre>code {
-    background-color: #101010;
+    background-color: #282a36;
+    --md-code-fg-color: #f8f8f2;
 }
 
 /* ---------- Footer ---------- */
