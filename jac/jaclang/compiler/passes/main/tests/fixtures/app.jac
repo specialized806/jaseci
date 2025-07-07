@@ -10,7 +10,7 @@ glob aa = 9;
 with entry{
     Y: int;
     Y = 0;
-    b.Person.ss = 9;
+    # b.Person.ss = 9;
     n = 0;
     z = Y;
     aa = 9;
