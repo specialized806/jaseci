@@ -2509,7 +2509,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         return res
 
 
-class WhileStmt(CodeBlockStmt, UniScopeNode):
+class WhileStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
