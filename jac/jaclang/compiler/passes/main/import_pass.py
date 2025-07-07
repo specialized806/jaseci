@@ -33,14 +33,14 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
+class JacImportDepsPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
 
     def pre_transform(self) -> None:
         """Initialize the JacImportPass."""
         super().pre_transform()
         self.last_imported: list[uni.Module] = []
-        self.load_builtins()
+        # self.load_builtins()
 
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
@@ -67,8 +67,8 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
         imp_node = i.parent_of_type(uni.Import)
         if imp_node.is_jac:
             self.import_jac_module(node=i)
-        elif imp_node.is_py:
-            self.import_py_module(node=i)
+        # elif imp_node.is_py:
+        #     self.import_py_module(node=i)
 
     def import_jac_module(self, node: uni.ModulePath) -> None:
         """Import a module."""
@@ -96,34 +96,34 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
                 return
             self.load_mod(self.prog.compile(file_path=target))
 
-    def import_py_module(self, node: uni.ModulePath) -> None:
-        """Import a Python module."""
-        file_to_raise = node.resolve_relative_path()
-        if 'vendor' in file_to_raise:
-            # Skip importing vendor modules
-            return
-        print(f"Importing Python module: {file_to_raise}")
-        if file_to_raise in self.prog.mod.hub:
-            return
-        if not file_to_raise.endswith((".py", ".pyi")) or file_to_raise in [None, "built-in", "frozen"]:
-            return
-        if not os.path.isfile(file_to_raise):   
-                return
-        with open(file_to_raise, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            # Create a module from the Python AST
-            from jaclang.compiler.passes.main import PyastBuildPass
+    # def import_py_module(self, node: uni.ModulePath) -> None:
+    #     """Import a Python module."""
+    #     file_to_raise = node.resolve_relative_path()
+    #     if 'vendor' in file_to_raise:
+    #         # Skip importing vendor modules
+    #         return
+    #     print(f"Importing Python module: {file_to_raise}")
+    #     if file_to_raise in self.prog.mod.hub:
+    #         return
+    #     if not file_to_raise.endswith((".py", ".pyi")) or file_to_raise in [None, "built-in", "frozen"]:
+    #         return
+    #     if not os.path.isfile(file_to_raise):   
+    #             return
+    #     with open(file_to_raise, "r", encoding="utf-8") as f:
+    #         file_source = f.read()
+    #         # Create a module from the Python AST
+    #         from jaclang.compiler.passes.main import PyastBuildPass
 
-            mod = PyastBuildPass(
-                    ir_in=uni.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=uni.Source(file_source, file_to_raise),
-                    ),
-                    prog=self.prog,
-                ).ir_out
-            if mod:
-                self.prog.mod.hub[mod.loc.mod_path] = mod
-                self.last_imported.append(mod)
+    #         mod = PyastBuildPass(
+    #                 ir_in=uni.PythonModuleAst(
+    #                     py_ast.parse(file_source),
+    #                     orig_src=uni.Source(file_source, file_to_raise),
+    #                 ),
+    #                 prog=self.prog,
+    #             ).ir_out
+    #         if mod:
+    #             self.prog.mod.hub[mod.loc.mod_path] = mod
+    #             self.last_imported.append(mod)
 
     def load_mod(self, mod: uni.Module) -> None:
         """Attach a module to a node."""
@@ -154,22 +154,22 @@ class JacPyImportDepsPass(Transform[uni.Module, uni.Module]):
                 inject_src=uni.Source("", target),
             )
 
-    def load_builtins(self) -> None:
-        """Load builtins module if not already loaded."""
-        from jaclang.compiler.passes.main import PyastBuildPass
-        builtins_path = os.path.join(
-            os.path.dirname(__file__),
-            "../../../vendor/typeshed/stdlib/builtins.pyi"
-        )
-        with open(builtins_path, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            mod = PyastBuildPass(
-                ir_in=uni.PythonModuleAst(
-                    py_ast.parse(file_source),
-                    orig_src=uni.Source(file_source, builtins_path),
-                ),
-                prog=self.prog,
-            ).ir_out
-            if mod:
-                self.prog.mod.hub["builtins"] = mod
-                self.last_imported.append(mod)
+    # def load_builtins(self) -> None:
+    #     """Load builtins module if not already loaded."""
+    #     from jaclang.compiler.passes.main import PyastBuildPass
+    #     builtins_path = os.path.join(
+    #         os.path.dirname(__file__),
+    #         "../../../vendor/typeshed/stdlib/builtins.pyi"
+    #     )
+    #     with open(builtins_path, "r", encoding="utf-8") as f:
+    #         file_source = f.read()
+    #         mod = PyastBuildPass(
+    #             ir_in=uni.PythonModuleAst(
+    #                 py_ast.parse(file_source),
+    #                 orig_src=uni.Source(file_source, builtins_path),
+    #             ),
+    #             prog=self.prog,
+    #         ).ir_out
+    #         if mod:
+    #             self.prog.mod.hub["builtins"] = mod
+    #             self.last_imported.append(mod)

@@ -220,15 +220,13 @@ def build(filename: str) -> None:
         jac build myprogram.jac
         jac build myprogram.jac --no-typecheck
     """
-    # if filename.endswith(".jac"):
-    (out := JacProgram()).build(file_path=filename)
-    errs = len(out.errors_had)
-    warnings = len(out.warnings_had)
-    print(f"Errors: {errs}, Warnings: {warnings}")
-    #     with open(filename[:-4] + ".jir", "wb") as f:
-    #         pickle.dump(out, f)
-    # else:
-    #     print("Not a .jac file.", file=sys.stderr)
+    if filename.endswith((".jac", ".py")):
+        (out := JacProgram()).build(file_path=filename)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+        print(f"Errors: {errs}, Warnings: {warnings}")
+    else:
+        print("Not a .jac/.py file.", file=sys.stderr)
 
 
 @cmd_registry.register

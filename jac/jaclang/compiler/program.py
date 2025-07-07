@@ -14,11 +14,10 @@ from jaclang.compiler.passes.main import (
     BinderPass,
     CFGBuildPass,
     DeclImplMatchPass,
-    DirectImportPass,
     DefUsePass,
     InheritancePass,
     JacAnnexPass,
-    JacPyImportDepsPass,
+    JacImportDepsPass,
     PyBytecodeGenPass,
     PyJacAstLinkPass,
     PyastBuildPass,
@@ -63,7 +62,7 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
-        self.cur_symbols: list[uni.Symbol] = []
+        # self.cur_symbols: list[uni.Symbol] = []
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -75,7 +74,7 @@ class JacProgram:
 
     def parse_str(self, source_str: str, file_path: str) -> uni.Module:
         """Convert a Jac file to an AST."""
-        print('parsing --:', file_path)
+        # print('parsing --:', file_path)
         had_error = False
         if file_path.endswith(".py") or file_path.endswith(".pyi"):
             parsed_ast = py_ast.parse(source_str)
@@ -130,8 +129,8 @@ class JacProgram:
         # but if it is `import math` then we do not need to parse
         # DirectImportPass(ir_in=mod_targ, prog=self)
         BinderPass(ir_in=mod_targ, prog=self)
-        print(mod_targ.sym_pp())
-        print('all mods:', self.mod.hub.keys())
+        # print(mod_targ.sym_pp())
+        # print('all mods:', self.mod.hub.keys())
         return mod_targ
 
     def run_schedule(

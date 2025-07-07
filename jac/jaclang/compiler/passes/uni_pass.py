@@ -23,7 +23,6 @@ class UniPass(Transform[uni.Module, uni.Module]):
         prog: JacProgram,
     ) -> None:
         """Initialize parser."""
-        # print(self.__class__.__name__, "initializing with", ir_in.loc)
         self.term_signal = False
         self.prune_signal = False
         Transform.__init__(self, ir_in, prog)
@@ -36,8 +35,6 @@ class UniPass(Transform[uni.Module, uni.Module]):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Run on entering node."""
-        # if node.__class__.__name__ not in ['Semi','Int','Token'] and self.__class__.__name__ == "BinderPass":
-        #     print(f"Entering: {node.__class__.__name__}: {node.loc}")
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
