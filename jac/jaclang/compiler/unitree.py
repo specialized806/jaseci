@@ -2521,7 +2521,6 @@ class WhileStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     ) -> None:
         self.condition = condition
         self.body: list[CodeBlockStmt] = list(body)
-        self.else_body = else_body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         AstElseBodyNode.__init__(self, else_body=else_body)
