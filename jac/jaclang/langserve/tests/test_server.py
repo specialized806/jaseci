@@ -6,10 +6,7 @@ import lsprotocol.types as lspt
 import pytest
 from jaclang import JacMachineInterface as _
 from jaclang.langserve.engine import JacLangServer
-print("Importing JacLangServer")
-print(JacLangServer)
-# from .session import LspSession
-from jaclang.langserve.tests.session import LspSession
+from .session import LspSession
 
 
 class TestJacLangServer(TestCase):
@@ -415,15 +412,15 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
 
-        circle_file = uris.from_fs_path(self.fixture_abs_path("../../../../main.jac"))
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle.jac"))
         lsp.deep_check(circle_file)
         test_cases = [
-            (14, 13, ["circle.jac:47:8-47:14", "69:8-69:14", "74:8-74:14"]),
+            (47, 12, ["circle.jac:47:8-47:14", "69:8-69:14", "74:8-74:14"]),
             (54, 66, ["54:62-54:76", "65:22-65:36"]),
             (62, 14, ["65:43-65:56", "70:32-70:45"]),
         ]
         for line, char, expected_refs in test_cases:
-            references = str(lsp.get_definition(circle_file, lspt.Position(line, char)))
+            references = str(lsp.get_references(circle_file, lspt.Position(line, char)))
             for expected in expected_refs:
                 self.assertIn(expected, references)
 
@@ -591,6 +588,3 @@ class TestJacLangServer(TestCase):
             )
             for expected in expected_refs:
                 self.assertIn(expected, references)
-
-a = TestJacLangServer()
-a.test_go_to_reference()
