@@ -1,4 +1,4 @@
-# **Chapter 1: Introduction to Jac**
+# **1. Introduction to Jac**
 ---
 Welcome to Jac, a revolutionary programming language that transforms how we think about computation and data relationships. This chapter introduces you to Jac's core concepts and shows why it represents a fundamental shift in programming paradigms.
 
@@ -323,8 +323,85 @@ with entry {
 ## Simple Friend Network Example
 ---
 
-Let's build a complete friend network example that demonstrates Jac's core concepts:
+Let's build a complete friend network example that demonstrates Jac's core concepts.
 
+
+### Creating nodes
+First lets define our `Person` node and a `FriendsWith` edge to represent friendships:
+```jac
+node Person {
+    has name: str;
+    has age: int;
+    has interests: list[str] = [];
+}
+
+edge FriendsWith {
+    has since: str;
+    has closeness: int;  # 1-10 scale
+}
+```
+
+
+We can now create simple friends and establish friendships with metadata:
+```jac
+# Create friend network
+alice = root ++> Person(
+    name="Alice",
+    age=25,
+    interests=["coding", "music", "hiking"]
+);
+
+bob = root ++> Person(
+    name="Bob",
+    age=27,
+    interests=["music", "sports", "cooking"]
+);
+
+charlie = root ++> Person(
+    name="Charlie",
+    age=24,
+    interests=["coding", "gaming", "music"]
+);
+
+# Create friendships with metadata
+alice +>:FriendsWith(since="2020-01-15", closeness=8):+> bob;
+alice +>:FriendsWith(since="2021-06-10", closeness=9):+> charlie;
+bob +>:FriendsWith(since="2020-12-03", closeness=7):+> charlie;
+```
+
+### Creating the walker
+Next, lets create a walker to analyze the friend network and find common interests:
+```jac
+walker FindCommonInterests {
+    has target_person: Person;
+    has common_interests: list[str] = [];
+
+    can find_common with Person entry {
+        if here == self.target_person {
+            return;  # Skip self
+        }
+
+        # Find shared interests
+        shared = [];
+        for interest in here.interests {
+            if interest in self.target_person.interests {
+                shared.append(interest);
+            }
+        }
+
+        if shared {
+            self.common_interests.extend(shared);
+            print(f"{here.name} and {self.target_person.name} both like: {', '.join(shared)}");
+        }
+    }
+}
+```
+To use the walker, you need to spawn it on a node of type `Person`—this node is provided as the first argument to the walker. As the walker traverses the graph, it maintains a list of common interests which is stored in the `common_interests` attribute and updates whenever it visits other `Person` nodes. The walker’s `find_common` ability is automatically triggered each time it encounters a `Person` node, where it compares interests with the target person and prints any shared interests it finds.
+
+
+### Bringing it all together
+Finally, we can use the walker to analyze Alice's friends and find common interests:
+<div class="code-block">
 ```jac
 node Person {
     has name: str;
@@ -403,16 +480,10 @@ with entry {
     print(f"Close friendships ({len(close_friendships)} found):");
 }
 ```
+</div>
 
+This example demonstrates how Jac's Object-Spatial Programming model allows you to express complex relationships and computations in a natural, intuitive way. The walker traverses the graph, finding common interests and printing them out, all while maintaining the relationships defined by edges.
 
-
-## Best Practices
----
-- **Think spatially**: Model your data as connected entities rather than isolated objects
-- **Start simple**: Begin with basic nodes and edges before adding complex walkers
-- **Leverage persistence**: Use the root node to automatically persist your data
-- **Use type annotations**: Take advantage of Jac's mandatory typing for better code safety
-- **Design for scale**: Remember that your code will automatically scale from single-user to multi-user
 
 ## Key Takeaways
 ---
