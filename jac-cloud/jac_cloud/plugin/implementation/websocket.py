@@ -306,14 +306,10 @@ async def connection_execution(websocket: WebSocket) -> None:
 
 @websocket_router.websocket("")
 async def websocket_endpoint(
-    websocket: WebSocket, channel_id: str | None = None
+    websocket: WebSocket, channel_id: str | None = None, auth: str | None = None
 ) -> None:
     """Websocket Endpoint."""
-    if not websocket_events:
-        await websocket.close()
-        return
-
-    if not authenticate_websocket(websocket):
+    if not authenticate_websocket(websocket, auth):
         if not isinstance(
             public_root := NodeAnchor.Collection.find_by_id(PUBLIC_ROOT_ID), NodeAnchor
         ):
