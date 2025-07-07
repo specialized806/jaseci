@@ -281,7 +281,8 @@ class Symbol:
         """Get symbol table."""
         if self.symbol_table:
             return self.symbol_table
-        return self.parent_tab.find_scope(self.sym_name)
+        self.symbol_table = self.parent_tab.find_scope(self.sym_name)
+        return self.symbol_table
 
     def add_defn(self, node: NameAtom) -> None:
         """Add defn."""

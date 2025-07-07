@@ -42,16 +42,16 @@ class BinderPass(UniPass):
             self.scope_stack.append(key_node)
         else:
             self.scope_stack.append(self.cur_scope.link_kid_scope(key_node=key_node))
-        print(
-            f"Enter a new scope for {key_node.__class__.__name__}::{key_node.scope_name}, current stack {len(self.scope_stack)}"
-        )
+        # print(
+        #     f"Enter a new scope for {key_node.__class__.__name__}::{key_node.scope_name}, current stack {len(self.scope_stack)}"
+        # )
 
     def pop_scope(self) -> UniScopeNode:
         """Remove current scope from scope stack."""
         key_node = self.scope_stack.pop()
-        print(
-            f"Exiting scope {key_node.__class__.__name__}::{key_node.scope_name}, current stack {len(self.scope_stack)}"
-        )
+        # print(
+        #     f"Exiting scope {key_node.__class__.__name__}::{key_node.scope_name}, current stack {len(self.scope_stack)}"
+        # )
         return key_node
 
     @property
@@ -175,7 +175,7 @@ class BinderPass(UniPass):
                     # TODO: Handle atom trailer here
                     # "can ability2 with MyNode.Inner.DeepInner entry"
                     node_name = node.signature.arch_tag_info.unparse()
-                    par_tab = self.cur_scope.lookup(node_name)
+                    par_tab = self.cur_scope.lookup(node_name).fetch_sym_tab
                     here_sym.symbol_table = par_tab
                     
                 if node.method_owner.arch_type.name == 'KW_NODE':
@@ -187,7 +187,7 @@ class BinderPass(UniPass):
                     # TODO: Handle atom trailer here
                     # "can ability2 with Mywalker.Inner.DeepInner entry"
                     walker_name = node.signature.arch_tag_info.unparse()
-                    par_tab = self.cur_scope.lookup(walker_name)
+                    par_tab = self.cur_scope.lookup(walker_name).fetch_sym_tab
                     visitor_sym.symbol_table = par_tab
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
@@ -317,7 +317,7 @@ class BinderPass(UniPass):
                 glob_sym.add_use(node)
         else:
             # assert node.sym is not None, f"{node.loc}"
-            print(node.loc, self.cur_scope.scope_name, node.sym)
+            # print(node.loc, self.cur_scope.scope_name, node.sym)
             self.cur_scope.use_lookup(node, sym_table=self.cur_scope)
 
     # def enter_archetype(self, node: uni.Archetype) -> None:
@@ -346,6 +346,7 @@ class BinderPass(UniPass):
 
     # def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
     #     chain = node.as_attr_list
+    #     # print(chain[0].sym_name, chain[0].sym_tab, "chain use lookup")
     #     node.sym_tab.chain_use_lookup(chain)
 
     # def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
