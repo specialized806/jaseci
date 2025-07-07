@@ -355,35 +355,33 @@ with entry {
 
 ## Best Practices
 ---
-!!! summary "Development Best Practices"
-    - **Use virtual environments**: Keep your Jac projects isolated
-    - **Start with entry blocks**: Always begin executable code with `with entry`
-    - **Type everything**: Take advantage of mandatory type annotations
-    - **Organize your code**: Use proper project structure from the beginning
-    - **Test early and often**: Run your code frequently to catch errors quickly
+- **Use virtual environments**: Keep your Jac projects isolated
+- **Start with entry blocks**: Always begin executable code with `with entry`
+- **Type everything**: Take advantage of mandatory type annotations
+- **Organize your code**: Use proper project structure from the beginning
+- **Test early and often**: Run your code frequently to catch errors quickly
 
 ## Key Takeaways
+---
+**Environment Setup:**
 
-!!! summary "What We've Learned"
-    **Environment Setup:**
+- **Installation**: Simple pip install with Python 3.12+ requirement
+- **VS Code Extension**: Provides syntax highlighting and error detection
+- **Virtual Environments**: Recommended for project isolation
 
-    - **Installation**: Simple pip install with Python 3.12+ requirement
-    - **VS Code Extension**: Provides syntax highlighting and error detection
-    - **Virtual Environments**: Recommended for project isolation
+**Jac Fundamentals:**
 
-    **Jac Fundamentals:**
+- **Entry blocks**: `with entry { }` defines program execution start
+- **Type safety**: Mandatory type annotations prevent runtime errors
+- **Project structure**: Clean organization with interface/implementation separation
+- **CLI commands**: `jac run` for execution, `jac serve` for web applications
 
-    - **Entry blocks**: `with entry { }` defines program execution start
-    - **Type safety**: Mandatory type annotations prevent runtime errors
-    - **Project structure**: Clean organization with interface/implementation separation
-    - **CLI commands**: `jac run` for execution, `jac serve` for web applications
+**Key Differences from Python:**
 
-    **Key Differences from Python:**
-
-    - Curly braces `{ }` instead of indentation for code blocks
-    - Semicolons `;` required for statement termination
-    - Mandatory type annotations for all variables and functions
-    - `glob` for global variables instead of `global` keyword
+- Curly braces `{ }` instead of indentation for code blocks
+- Semicolons `;` required for statement termination
+- Mandatory type annotations for all variables and functions
+- `glob` for global variables instead of `global` keyword
 
 !!! tip "Try It Yourself"
     Practice the basics by creating:
