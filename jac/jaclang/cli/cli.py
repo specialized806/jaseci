@@ -206,7 +206,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
 
 
 @cmd_registry.register
-def build(filename: str) -> None:
+def build(filename: str, typecheck: bool = False) -> None:
     """Build the specified .jac file.
 
     Compiles a Jac source file into a Jac Intermediate Representation (.jir) file,
@@ -218,12 +218,17 @@ def build(filename: str) -> None:
 
     Examples:
         jac build myprogram.jac
-        jac build myprogram.jac --no-typecheck
+        jac build myprogram.jac -t
     """
     if filename.endswith((".jac", ".py")):
         (out := JacProgram()).build(file_path=filename)
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
+        if typecheck:
+            for mods in out.mod.hub.values():
+                header = f"{'='*6} SymTable({mods.name}) {'='*(22-len(mods.name))}"
+                divider = "=" * 40
+                print(f"{divider}\n{header}\n{divider}\n{mods.sym_tab.sym_pp()}")
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
         print("Not a .jac/.py file.", file=sys.stderr)
