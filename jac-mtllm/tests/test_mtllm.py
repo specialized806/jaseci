@@ -43,7 +43,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         # Check if the output contains the expected context information
-        self.assertIn("method_include_context", stdout_value)
+        self.assertIn("Average marks for Alice : 86.75", stdout_value)
 
     def test_llm_call_override(self) -> None:
         """Test the foo() by llm(); functionality."""
