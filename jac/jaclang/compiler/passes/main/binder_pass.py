@@ -409,6 +409,7 @@ class BinderPass(UniPass):
         This handles cases where:
         - 'apple' is an imported module
         - We need to parse the module and link it properly
+        - We need to iterate through the full chain and link each symbol
         """
         attr_list = atom_trailer.as_attr_list
         if not attr_list:
@@ -435,71 +436,171 @@ class BinderPass(UniPass):
         if not import_node:
             self.log_error(f"Could not find import statement for symbol '{first_obj_sym.sym_name}'")
             return
-        print('import node ',import_node)
-        print('first obj sym ',first_obj_sym)
-        print('first obj sym decl',first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path())
-            
+        
         # Parse and link the imported module
-        # module_path = self._resolve_module_path(import_node, first_obj_sym)
-        #TODO: Move this to _resolve_module_path method
         module_path = first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path() 
         
         if module_path:
             linked_module = self._parse_and_link_module(module_path, first_obj_sym)
             if linked_module:
                 print(f"[DEBUG] Successfully linked module: {module_path}")
+                # Now iterate through the full attribute chain
+                self._link_attribute_chain(attr_list, first_obj_sym, linked_module)
             else:
                 print(f"[DEBUG] Failed to link module: {module_path}")
-        
-
 
     def _find_import_for_symbol(self, symbol: uni.Symbol) -> Optional[uni.Import]:
-        """Find the import statement that created this symbol."""
-        # Look through the module for import statements
-        for import_node in self.cur_module_scope.get_all_sub_nodes(uni.Import):
-            for item in import_node.items:
-                if hasattr(item, 'alias') and item.alias and item.alias.sym_name == symbol.sym_name:
-                    return import_node
-                elif hasattr(item, 'sym_name') and item.sym_name == symbol.sym_name:
-                    return import_node
+        """
+        Find the import statement that declares the given symbol.
+        
+        This is used to resolve the module path for imported symbols.
+        """
+        if not symbol.decl:
+            return None
+            
+        import_node = symbol.decl.find_parent_of_type(uni.Import)
+        if import_node:
+            return import_node
+            
+        # If not found, check the symbol's parent scopes
+        current_scope = symbol.decl.parent_scope
+        while current_scope:
+            import_node = current_scope.find_first_of_type(uni.Import)
+            if import_node:
+                return import_node
+            current_scope = current_scope.parent_scope
+            
         return None
 
-    # def _resolve_module_path(self, import_node: uni.Import, symbol: uni.Symbol) -> Optional[str]:
-    #     """Resolve the actual module path from import statement."""
-    #     # Handle different import patterns
-    #     if import_node.from_loc:
-    #         # from module import item
-    #         base_path = import_node.from_loc.dot_path_str
-    #         return self._construct_full_module_path(base_path)
-    #     else:
-    #         # import module or import module as alias
-    #         for item in import_node.items:
-    #             if (hasattr(item, 'alias') and item.alias and item.alias.sym_name == symbol.sym_name) or \
-    #                (hasattr(item, 'sym_name') and item.sym_name == symbol.sym_name):
-    #                 if hasattr(item, 'dot_path_str'):
-    #                     return self._construct_full_module_path(item.dot_path_str)
-    #                 elif hasattr(item, 'name') and hasattr(item.name, 'value'):
-    #                     return self._construct_full_module_path(item.name.value)
-    #     return None
-
-    # def _construct_full_module_path(self, module_name: str) -> str:
-    #     """Construct full file path for the module."""
-    #     # Try .jac extension first, then .py
-    #     possible_paths = [
-    #         f"{module_name}.jac",
-    #         f"{module_name}.py",
-    #         f"{module_name}/__init__.jac",
-    #         f"{module_name}/__init__.py"
-    #     ]
+    def _link_attribute_chain(self, attr_list: list[uni.AstSymbolNode], first_symbol: uni.Symbol, current_module: uni.Module) -> None:
+        """
+        Link the full attribute chain (e.g., M1.M2.function) by:
+        1. Starting with the first symbol (M1) linked to its module
+        2. For each subsequent attribute, look it up in the previous symbol's table
+        3. Add use references for each symbol in the chain
+        4. Ensure that symbols are properly connected through their symbol tables
+        """
+        current_symbol = first_symbol
+        current_sym_table = current_module.sym_tab
         
-    #     import os
-    #     for path in possible_paths:
-    #         if os.path.exists(path):
-    #             return os.path.abspath(path)
-                
-    #     # If not found locally, return the .jac path for potential resolution
-    #     return f"{module_name}.jac"
+        print(f"[DEBUG] Starting attribute chain linking with {len(attr_list)} attributes")
+        
+        # Add use for the first symbol (M1)
+        first_obj = attr_list[0]
+        current_symbol.add_use(first_obj)
+        print('first symbol', first_obj)
+        print('current  symbol',current_symbol )
+        print(f"[DEBUG] Added use for first symbol: {first_obj.sym_name}")
+        print('uses', current_symbol.uses)
+        
+        # Iterate through remaining attributes in the chain
+        for i in range(1, len(attr_list)):
+            attr_node = attr_list[i]
+            attr_name = attr_node.sym_name
+            
+            print(f"[DEBUG] Processing attribute {i}: {attr_name}")
+            
+            # Look up the attribute in the current symbol table
+            attr_symbol = current_sym_table.lookup(attr_name)
+            
+            if not attr_symbol:
+                print(f"[DEBUG] Attribute '{attr_name}' not found in symbol table")
+                # If it's an imported symbol, we might need to parse its module
+                if self._is_potential_import(attr_name, current_sym_table):
+                    attr_symbol = self._resolve_nested_import(attr_name, current_sym_table)
+                    
+                if not attr_symbol:
+                    self.log_error(f"Could not resolve attribute '{attr_name}' in chain")
+                    break
+            
+            # Add use reference for this attribute
+            attr_symbol.add_use(attr_node)
+            print(f"[DEBUG] Added use for attribute: {attr_name}")
+            
+            # If this symbol has its own symbol table, update current context
+            if hasattr(attr_symbol, 'symbol_table') and attr_symbol.symbol_table:
+                current_sym_table = attr_symbol.symbol_table
+                print(f"[DEBUG] Updated current symbol table to: {current_sym_table.scope_name}")
+            elif attr_symbol.imported:
+                # Try to resolve the imported symbol's module
+                nested_module = self._resolve_imported_symbol_module(attr_symbol)
+                if nested_module:
+                    current_sym_table = nested_module.sym_tab
+                    attr_symbol.symbol_table = current_sym_table
+                    print(f"[DEBUG] Resolved imported symbol's module: {nested_module.loc.mod_path}")
+                else:
+                    print(f"[DEBUG] Could not resolve imported symbol's module for: {attr_name}")
+            
+            current_symbol = attr_symbol
 
+    def _is_potential_import(self, attr_name: str, sym_table: uni.UniScopeNode) -> bool:
+        """Check if an attribute might be an import that needs resolution."""
+        # Look for import statements that might contain this attribute
+        for import_node in sym_table.get_all_sub_nodes(uni.Import):
+            for item in import_node.items:
+                if hasattr(item, 'sym_name') and item.sym_name == attr_name:
+                    return True
+                elif hasattr(item, 'alias') and item.alias and item.alias.sym_name == attr_name:
+                    return True
+        return False
+
+    def _resolve_nested_import(self, attr_name: str, sym_table: uni.UniScopeNode) -> Optional[uni.Symbol]:
+        """Resolve a nested import within a module."""
+        # Find the import statement for this attribute
+        for import_node in sym_table.get_all_sub_nodes(uni.Import):
+            for item in import_node.items:
+                target_name = None
+                if hasattr(item, 'alias') and item.alias and item.alias.sym_name == attr_name:
+                    target_name = item.sym_name if hasattr(item, 'sym_name') else attr_name
+                elif hasattr(item, 'sym_name') and item.sym_name == attr_name:
+                    target_name = attr_name
+                
+                if target_name:
+                    # Try to parse and link the module
+                    try:
+                        module_path = item.find_parent_of_type(uni.ModulePath).resolve_relative_path()
+                        if module_path:
+                            # Create a temporary symbol for this import
+                            temp_symbol = uni.Symbol(
+                                sym_name=attr_name,
+                                decl=item,
+                                access_spec=None,
+                                imported=True
+                            )
+                            
+                            linked_module = self._parse_and_link_module(module_path, temp_symbol)
+                            if linked_module:
+                                # Insert the symbol into the current symbol table
+                                sym_table.def_insert(item, imported=True)
+                                return temp_symbol
+                    except Exception as e:
+                        print(f"[DEBUG] Failed to resolve nested import for {attr_name}: {e}")
+        
+        return None
+
+    def _resolve_imported_symbol_module(self, symbol: uni.Symbol) -> Optional[uni.Module]:
+        """Resolve the module for an imported symbol."""
+        if not symbol.imported or not symbol.decl:
+            return None
+            
+        try:
+            # Find the module path from the import declaration
+            import_node = symbol.decl.find_parent_of_type(uni.Import)
+            if not import_node:
+                return None
+                
+            module_path = symbol.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path()
+            if not module_path:
+                return None
+                
+            # Parse and link the module
+            linked_module = self._parse_and_link_module(module_path, symbol)
+            return linked_module
+            
+        except Exception as e:
+            print(f"[DEBUG] Failed to resolve imported symbol module: {e}")
+            return None
+    
     def _parse_and_link_module(self, module_path: str, symbol: uni.Symbol) -> Optional[uni.Module]:
         """Parse the module and link it to the symbol."""
         try:
