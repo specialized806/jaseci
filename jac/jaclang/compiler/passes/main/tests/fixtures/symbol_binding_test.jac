@@ -20,15 +20,15 @@ with entry {
     
 }
 def ccc() {
-    # aa = 99;
+    # aa = 99; #Error:name 'aa' is assigned to before global declaration
     if (0) {
         :global:aa;
         :global:bb;
         aa = 88;
         bb = 0;
         p = 90;
-        M1.k = 0;
-    }
+        # M1.k = 0; #TODO: AtomTrailer isn't supported
+    } 
     aa = 99;
     print(aa);
 }

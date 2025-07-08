@@ -540,11 +540,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
+            all_refs = node_selected.sym.uses + node_selected.sym.defn;
             list_of_references: <>list[lspt.Location] =
                 [ lspt.Location(
                     uri=uris.from_fs_path(<>node.loc.mod_path),
                     range=utils.create_range(<>node.loc)
-                ) for <>node in node_selected.sym.uses ];
+                ) for <>node in all_refs ];
             return list_of_references;
         }
         return [];
