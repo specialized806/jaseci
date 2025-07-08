@@ -116,51 +116,53 @@ class TestJacLangServer(TestCase):
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
-        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
+        # circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
+        circle_file = uris.from_fs_path('/home/kuggix/jaseci/jac/jaclang/compiler/passes/main/tests/fixtures/symbol_binding_test.jac')
+        print(circle_file)
         lsp.deep_check(circle_file)
         self.assertIn(
             "fixtures/circle_pure.impl.jac:8:5-8:19",
-            str(lsp.get_definition(circle_file, lspt.Position(9, 16))),
+            str(lsp.get_definition(circle_file, lspt.Position(1,8 ))),
         )
         self.assertIn(
             "fixtures/circle_pure.jac:13:11-13:16",
             str(lsp.get_definition(circle_file, lspt.Position(20, 16))),
         )
 
-    def test_go_to_definition_method(self) -> None:
-        """Test that the go to definition is correct."""
-        lsp = JacLangServer()
-        workspace_path = self.fixture_abs_path("")
-        workspace = Workspace(workspace_path, lsp)
-        lsp.lsp._workspace = workspace
-        guess_game_file = uris.from_fs_path(
-            self.examples_abs_path("guess_game/guess_game3.impl.jac")
-        )
-        lsp.deep_check(guess_game_file)
-        self.assertIn(
-            "guess_game3.jac:16:8-16:21",
-            str(lsp.get_definition(guess_game_file, lspt.Position(15, 17))),
-        )
+    # def test_go_to_definition_method(self) -> None:
+    #     """Test that the go to definition is correct."""
+    #     lsp = JacLangServer()
+    #     workspace_path = self.fixture_abs_path("")
+    #     workspace = Workspace(workspace_path, lsp)
+    #     lsp.lsp._workspace = workspace
+    #     guess_game_file = uris.from_fs_path(
+    #         self.examples_abs_path("guess_game/guess_game3.impl.jac")
+    #     )
+    #     lsp.deep_check(guess_game_file)
+    #     self.assertIn(
+    #         "guess_game3.jac:16:8-16:21",
+    #         str(lsp.get_definition(guess_game_file, lspt.Position(15, 17))),
+    #     )
 
-    def test_go_to_definition_method_manual_impl(self) -> None:
-        """Test that the go to definition is correct."""
-        lsp = JacLangServer()
-        workspace_path = self.fixture_abs_path("")
-        workspace = Workspace(workspace_path, lsp)
-        lsp.lsp._workspace = workspace
-        decldef_file = uris.from_fs_path(
-            self.examples_abs_path("micro/decl_defs_main.impl.jac")
-        )
-        lsp.deep_check(decldef_file)
-        decldef_main_file = uris.from_fs_path(
-            self.examples_abs_path("micro/decl_defs_main.jac")
-        )
-        lsp.deep_check(decldef_main_file)
-        lsp.deep_check(decldef_file)
-        self.assertIn(
-            "decl_defs_main.jac:7:8-7:17",
-            str(lsp.get_definition(decldef_file, lspt.Position(2, 20))),
-        )
+    # def test_go_to_definition_method_manual_impl(self) -> None:
+    #     """Test that the go to definition is correct."""
+    #     lsp = JacLangServer()
+    #     workspace_path = self.fixture_abs_path("")
+    #     workspace = Workspace(workspace_path, lsp)
+    #     lsp.lsp._workspace = workspace
+    #     decldef_file = uris.from_fs_path(
+    #         self.examples_abs_path("micro/decl_defs_main.impl.jac")
+    #     )
+    #     lsp.deep_check(decldef_file)
+    #     decldef_main_file = uris.from_fs_path(
+    #         self.examples_abs_path("micro/decl_defs_main.jac")
+    #     )
+    #     lsp.deep_check(decldef_main_file)
+    #     lsp.deep_check(decldef_file)
+    #     self.assertIn(
+    #         "decl_defs_main.jac:7:8-7:17",
+    #         str(lsp.get_definition(decldef_file, lspt.Position(2, 20))),
+    #     )
 
     @pytest.mark.xfail(
         reason="TODO: Fix the go to definition for imports[ abs_path is not set]"

@@ -1,0 +1,6 @@
+
+
+
+
+class Apple:
+    color = "red"

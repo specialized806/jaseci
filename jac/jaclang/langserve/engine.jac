@@ -202,114 +202,114 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position,
         completion_trigger: Optional[str]
     ) -> lspt.CompletionList {
-        try {
-            document = self.workspace.get_text_document(file_path);
-            mod_ir = self.get_ir(file_path);
-            if not mod_ir {
-                return lspt.CompletionList(is_incomplete=False, items=[]);
-            }
-            current_line = document.lines[position.line];
-            current_pos = position.character;
-            current_symbol_path = utils.parse_symbol_path(current_line, current_pos);
-            builtin_mod =
-                next(
-                    ( mod for (name, mod) in self.mod.hub.items() if 'builtins' in name )
-                );
-            builtin_tab = builtin_mod.sym_tab;
-            assert isinstance(builtin_tab, UniScopeNode) ;
-            completion_items = [];
-            node_selected =
-                utils.find_deepest_symbol_node_at_pos(
-                    mod_ir,
-                    position.line,
-                    (position.character - 2)
-                );
-            mod_tab = mod_ir.sym_tab if not node_selected else node_selected.sym_tab;
-            current_symbol_table = mod_tab;
-            if completion_trigger == '.' {
-                if current_symbol_path {
-                    temp_tab = mod_tab;
-                    for symbol in current_symbol_path {
-                        if symbol == 'self' {
-                            is_ability_def =
-                                temp_tab
-                                if isinstance(temp_tab, uni.ImplDef)
-                                else temp_tab.find_parent_of_type(uni.ImplDef);
-                            if not is_ability_def {
-                                archi_owner =
-                                    mod_tab.find_parent_of_type(uni.Archetype);
-                                temp_tab =
-                                    archi_owner.sym_tab
-                                    if archi_owner and archi_owner.sym_tab
-                                    else mod_tab;
-                                continue;
-                            } else {
-                                archi_owner =
-                                    is_ability_def.decl_link.find_parent_of_type(
-                                        uni.Archetype
-                                    )
-                                    if is_ability_def.decl_link
-                                    else None;
-                                temp_tab =
-                                    archi_owner.sym_tab
-                                    if archi_owner and archi_owner.sym_tab
-                                    else temp_tab;
-                                continue;
-                            }
-                        }
-                        symb = temp_tab.lookup(symbol);
-                        if symb {
-                            fetc_tab = symb.fetch_sym_tab;
-                            if fetc_tab {
-                                temp_tab = fetc_tab;
-                            } else {
-                                temp_tab =
-                                    symb.defn[0].type_sym_tab
-                                    if symb.defn[0].type_sym_tab
-                                    else temp_tab;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                    completion_items += utils.collect_all_symbols_in_scope(
-                        temp_tab,
-                        up_tree=False
-                    );
-                    if isinstance(temp_tab, uni.Archetype) and temp_tab.base_classes  {
-                        base = [];
-                        for base_name in temp_tab.base_classes {
-                            if isinstance(base_name, uni.Name) and base_name.sym  {
-                                base.append(base_name.sym);
-                            }
-                        }
-                        for base_class_symbol in base {
-                            if base_class_symbol.fetch_sym_tab {
-                                completion_items += utils.collect_all_symbols_in_scope(
-                                    base_class_symbol.fetch_sym_tab,
-                                    up_tree=False
-                                );
-                            }
-                        }
-                    }
-                }
-            } elif node_selected and node_selected.find_parent_of_type(uni.Archetype)
-            or node_selected.find_parent_of_type(uni.ImplDef)
-             {
-                self_symbol =
+        # try {
+        #     document = self.workspace.get_text_document(file_path);
+        #     mod_ir = self.get_ir(file_path);
+        #     if not mod_ir {
+        #         return lspt.CompletionList(is_incomplete=False, items=[]);
+        #     }
+        #     current_line = document.lines[position.line];
+        #     current_pos = position.character;
+        #     current_symbol_path = utils.parse_symbol_path(current_line, current_pos);
+        #     builtin_mod =
+        #         next(
+        #             ( mod for (name, mod) in self.mod.hub.items() if 'builtins' in name )
+        #         );
+        #     builtin_tab = builtin_mod.sym_tab;
+        #     assert isinstance(builtin_tab, UniScopeNode) ;
+        #     completion_items = [];
+        #     node_selected =
+        #         utils.find_deepest_symbol_node_at_pos(
+        #             mod_ir,
+        #             position.line,
+        #             (position.character - 2)
+        #         );
+        #     mod_tab = mod_ir.sym_tab if not node_selected else node_selected.sym_tab;
+        #     current_symbol_table = mod_tab;
+        #     if completion_trigger == '.' {
+        #         if current_symbol_path {
+        #             temp_tab = mod_tab;
+        #             for symbol in current_symbol_path {
+        #                 if symbol == 'self' {
+        #                     is_ability_def =
+        #                         temp_tab
+        #                         if isinstance(temp_tab, uni.ImplDef)
+        #                         else temp_tab.find_parent_of_type(uni.ImplDef);
+        #                     if not is_ability_def {
+        #                         archi_owner =
+        #                             mod_tab.find_parent_of_type(uni.Archetype);
+        #                         temp_tab =
+        #                             archi_owner.sym_tab
+        #                             if archi_owner and archi_owner.sym_tab
+        #                             else mod_tab;
+        #                         continue;
+        #                     } else {
+        #                         archi_owner =
+        #                             is_ability_def.decl_link.find_parent_of_type(
+        #                                 uni.Archetype
+        #                             )
+        #                             if is_ability_def.decl_link
+        #                             else None;
+        #                         temp_tab =
+        #                             archi_owner.sym_tab
+        #                             if archi_owner and archi_owner.sym_tab
+        #                             else temp_tab;
+        #                         continue;
+        #                     }
+        #                 }
+        #                 symb = temp_tab.lookup(symbol);
+        #                 if symb {
+        #                     fetc_tab = symb.fetch_sym_tab;
+        #                     if fetc_tab {
+        #                         temp_tab = fetc_tab;
+        #                     } else {
+        #                         temp_tab =
+        #                             symb.defn[0].type_sym_tab
+        #                             if symb.defn[0].type_sym_tab
+        #                             else temp_tab;
+        #                     }
+        #                 } else {
+        #                     break;
+        #                 }
+        #             }
+        #             completion_items += utils.collect_all_symbols_in_scope(
+        #                 temp_tab,
+        #                 up_tree=False
+        #             );
+        #             if isinstance(temp_tab, uni.Archetype) and temp_tab.base_classes  {
+        #                 base = [];
+        #                 for base_name in temp_tab.base_classes {
+        #                     if isinstance(base_name, uni.Name) and base_name.sym  {
+        #                         base.append(base_name.sym);
+        #                     }
+        #                 }
+        #                 for base_class_symbol in base {
+        #                     if base_class_symbol.fetch_sym_tab {
+        #                         completion_items += utils.collect_all_symbols_in_scope(
+        #                             base_class_symbol.fetch_sym_tab,
+        #                             up_tree=False
+        #                         );
+        #                     }
+        #                 }
+        #             }
+        #         }
+        #     } elif node_selected and node_selected.find_parent_of_type(uni.Archetype)
+        #     or node_selected.find_parent_of_type(uni.ImplDef)
+        #      {
+        #         self_symbol =
 
-                    [lspt.CompletionItem(
-                        label='self',
-                        kind=lspt.CompletionItemKind.Variable
-                    )];
-            } else {
-                self_symbol = [];
-            }
-            return lspt.CompletionList(is_incomplete=False, items=completion_items);
-        } except Exception as e {
+        #             [lspt.CompletionItem(
+        #                 label='self',
+        #                 kind=lspt.CompletionItemKind.Variable
+        #             )];
+        #     } else {
+        #         self_symbol = [];
+        #     }
+        #     return lspt.CompletionList(is_incomplete=False, items=completion_items);
+        # } except Exception as e {
             self.log_py(f"'Error during completion: '{e}");
             return lspt.CompletionList(is_incomplete=False, items=[]);
-        }
+        # }
     }
 
     """Rename module."""
@@ -425,7 +425,100 @@ class JacLangServer(JacProgram , LanguageServer) {
         return [];
     }
 
-    """Return definition location for a file."""
+    # """Return definition location for a file."""
+    # def get_definition(
+    #     self: JacLangServer,
+    #     file_path: str,
+    #     position: lspt.Position
+    # ) -> Optional[lspt.Location] {
+    #     file_path_fs = file_path.removeprefix('file://');
+    #     if file_path_fs not in self.mod.hub {
+    #         return None;
+    #     }
+    #     sem_mgr = self.sem_managers.get(file_path_fs);
+    #     if not sem_mgr {
+    #         return None;
+    #     }
+    #     token_index =
+    #         utils.find_index(sem_mgr.sem_tokens, position.line, position.character);
+    #     if token_index is None {
+    #         return None;
+    #     }
+    #     node_selected = sem_mgr.static_sem_tokens[token_index][3];
+    #     if node_selected {
+    #         if isinstance(node_selected, uni.Name)
+    #         and node_selected.parent
+    #         and isinstance(node_selected.parent, uni.ModulePath)
+    #          {
+    #             spec = node_selected.parent.parent.abs_path;
+    #             if spec {
+    #                 spec = spec[ 5 : ] if spec.startswith('File:') else spec;
+    #                 return lspt.Location(
+    #                     uri=uris.from_fs_path(spec),
+    #                     range=lspt.Range(
+    #                         start=lspt.Position(line=0, character=0),
+    #                         end=lspt.Position(line=0, character=0)
+    #                     )
+    #                 );
+    #             } else {
+    #                 return None;
+    #             }
+    #         } elif node_selected.parent
+    #         and isinstance(node_selected.parent, uni.ModuleItem)
+    #          {
+    #             path =
+    #                 node_selected.parent.abs_path
+    #                 or node_selected.parent.from_mod_path.abs_path
+    #                 ;
+    #             loc_range = (0, 0, 0, 0);
+    #             if path and loc_range  {
+    #                 path = path[ 5 : ] if path.startswith('File:') else path;
+    #                 return lspt.Location(
+    #                     uri=uris.from_fs_path(path),
+    #                     range=lspt.Range(
+    #                         start=lspt.Position(
+    #                             line=loc_range[0],
+    #                             character=loc_range[1]
+    #                         ),
+    #                         end=lspt.Position(line=loc_range[2], character=loc_range[3])
+    #                     )
+    #                 );
+    #             }
+    #         } elif isinstance(node_selected, uni.ElementStmt) {
+    #             return None;
+    #         }
+    #         decl_node =
+    #             node_selected.parent.body.target
+    #             if node_selected.parent
+    #             and isinstance(node_selected.parent, uni.AstImplNeedingNode)
+    #             and isinstance(node_selected.parent.body, uni.ImplDef)
+
+    #             else node_selected.sym.decl
+    #             if node_selected.sym and node_selected.sym.decl
+    #             else node_selected;
+    #         if isinstance(decl_node, list) {
+    #             valid_path = decl_node[0].loc.mod_path;
+    #         } else {
+    #             valid_path = decl_node.loc.mod_path;
+    #         }
+    #         decl_uri = uris.from_fs_path(valid_path);
+    #         if isinstance(decl_node, list) {
+    #             valid_range = decl_node[0].loc;
+    #         } else {
+    #             valid_range = decl_node.loc;
+    #         }
+    #         try {
+    #             decl_range = utils.create_range(valid_range);
+    #         } except ValueError {
+    #             return None;
+    #         }
+    #         decl_location = lspt.Location(uri=decl_uri, range=decl_range);
+    #         return decl_location;
+    #     } else {
+    #         return None;
+    #     }
+    # }
+        """Return definition location for a file."""
     def get_definition(
         self: JacLangServer,
         file_path: str,
@@ -446,57 +539,61 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[token_index][3];
         if node_selected {
-            if isinstance(node_selected, uni.Name)
-            and node_selected.parent
-            and isinstance(node_selected.parent, uni.ModulePath)
-             {
-                spec = node_selected.parent.parent.abs_path;
-                if spec {
-                    spec = spec[ 5 : ] if spec.startswith('File:') else spec;
-                    return lspt.Location(
-                        uri=uris.from_fs_path(spec),
-                        range=lspt.Range(
-                            start=lspt.Position(line=0, character=0),
-                            end=lspt.Position(line=0, character=0)
-                        )
-                    );
-                } else {
-                    return None;
-                }
-            } elif node_selected.parent
-            and isinstance(node_selected.parent, uni.ModuleItem)
-             {
-                path =
-                    node_selected.parent.abs_path
-                    or node_selected.parent.from_mod_path.abs_path
-                    ;
-                loc_range = (0, 0, 0, 0);
-                if path and loc_range  {
-                    path = path[ 5 : ] if path.startswith('File:') else path;
-                    return lspt.Location(
-                        uri=uris.from_fs_path(path),
-                        range=lspt.Range(
-                            start=lspt.Position(
-                                line=loc_range[0],
-                                character=loc_range[1]
-                            ),
-                            end=lspt.Position(line=loc_range[2], character=loc_range[3])
-                        )
-                    );
-                }
-            } elif isinstance(node_selected, uni.ElementStmt) {
-                return None;
-            }
+            # print(f"'node_selected: {node_selected}");
+            # if isinstance(node_selected, uni.Name)
+            # and node_selected.parent
+            # and isinstance(node_selected.parent, uni.ModulePath)
+            #  {
+            #     spec = node_selected.parent.parent.abs_path;
+            #     if spec {
+            #         spec = spec[ 5 : ] if spec.startswith('File:') else spec;
+            #         return lspt.Location(
+            #             uri=uris.from_fs_path(spec),
+            #             range=lspt.Range(
+            #                 start=lspt.Position(line=0, character=0),
+            #                 end=lspt.Position(line=0, character=0)
+            #             )
+            #         );
+            #     } else {
+            #         return None;
+            #     }
+            # } elif node_selected.parent
+            # and isinstance(node_selected.parent, uni.ModuleItem)
+            #  {
+            #     path =
+            #         node_selected.parent.abs_path
+            #         or node_selected.parent.from_mod_path.abs_path
+            #         ;
+            #     loc_range = (0, 0, 0, 0);
+            #     if path and loc_range  {
+            #         path = path[ 5 : ] if path.startswith('File:') else path;
+            #         return lspt.Location(
+            #             uri=uris.from_fs_path(path),
+            #             range=lspt.Range(
+            #                 start=lspt.Position(
+            #                     line=loc_range[0],
+            #                     character=loc_range[1]
+            #                 ),
+            #                 end=lspt.Position(line=loc_range[2], character=loc_range[3])
+            #             )
+            #         );
+            #     }
+            # } elif isinstance(node_selected, uni.ElementStmt) {
+            #     return None;
+            # }
             decl_node =
                 node_selected.parent.body.target
                 if node_selected.parent
                 and isinstance(node_selected.parent, uni.AstImplNeedingNode)
                 and isinstance(node_selected.parent.body, uni.ImplDef)
 
-                else node_selected.sym.decl
+                else node_selected.sym.decl 
                 if node_selected.sym and node_selected.sym.decl
                 else node_selected;
-            if isinstance(decl_node, list) {
+            if modulepath_node:=decl_node.find_parent_of_type(uni.ModulePath) {
+                valid_path = modulepath_node.resolve_relative_path();
+            }
+            elif isinstance(decl_node, list) {
                 valid_path = decl_node[0].loc.mod_path;
             } else {
                 valid_path = decl_node.loc.mod_path;
@@ -540,6 +637,21 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
+            self.log_py(
+                f"'Found references for '{node_selected.sym_name}' in '{file_path_fs}'"
+            );
+            self.log_py(
+                f'symbol: {node_selected.sym}'
+            );
+            self.log_py(
+                f'symbol defn: {node_selected.sym.defn}'
+            );
+            self.log_py(
+                f'symbol decl : {node_selected.sym.decl}'
+            );
+            self.log_py(
+                f'symbol uses : {node_selected.sym.uses}'
+            );
             all_refs = node_selected.sym.uses + node_selected.sym.defn;
             list_of_references: <>list[lspt.Location] =
                 [ lspt.Location(

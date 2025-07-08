@@ -264,6 +264,26 @@ class BinderPass(UniPass):
         else:
             self.log_error("For loop assignment target not valid")
 
+    def enter_func_call(self, node: uni.FuncCall) -> None:
+        if isinstance(node.target, uni.AtomTrailer):
+            if isinstance(node.target, uni.AtomTrailer):
+                first_obj = node.target.as_attr_list[0]
+                first_obj_sym = self.cur_scope.lookup(
+                    first_obj.sym_name
+                )  # Need to perform lookup as the symbol is not bound yet
+                if first_obj_sym.imported:
+                    self.resolve_import(node)
+            # node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+        elif isinstance(node.target, uni.AstSymbolNode):
+            #  TODO: Move this into symbol table
+            if glob_sym := self.check_global(node.target.sym_name):
+                node.target.name_spec._sym = glob_sym
+                glob_sym.add_defn(node.target)
+            else:
+                self.cur_scope.def_insert(node.target)
+        else:
+            self.log_error("For loop assignment target not valid")
+
     ##################################
     ##    Creating symbols from     ##
     ##    Comprehensions support    ##
@@ -341,31 +361,11 @@ class BinderPass(UniPass):
     # def enter_enum(self, node: uni.Enum) -> None:
     #     node.sym_tab.inherit_baseclasses_sym(node)
 
-    # def enter_type_ref(self, node: uni.TypeRef) -> None:
-    #     self.cur_scope.use_lookup(node)
-
     # def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
     #     chain = node.as_attr_list
     #     # print(chain[0].sym_name, chain[0].sym_tab, "chain use lookup")
     #     node.sym_tab.chain_use_lookup(chain)
 
-    # def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
-    #     node.sym_tab.use_lookup(node)
-
-    # def enter_float(self, node: uni.Float) -> None:
-    #     node.sym_tab.use_lookup(node)
-
-    # def enter_int(self, node: uni.Int) -> None:
-    #     node.sym_tab.use_lookup(node)
-
-    # def enter_string(self, node: uni.String) -> None:
-    #     node.sym_tab.use_lookup(node)
-
-    # def enter_bool(self, node: uni.Bool) -> None:
-    #     node.sym_tab.use_lookup(node)
-
-    # def enter_builtin_type(self, node: uni.BuiltinType) -> None:
-    #     node.sym_tab.use_lookup(node)
 
     def enter_expr_as_item(self, node: uni.ExprAsItem) -> None:
         if node.alias:
@@ -382,12 +382,14 @@ class BinderPass(UniPass):
 
     def resolve_import(self, node: uni.UniNode):
         """Resolve imports for atom trailers like 'apple.color.bla.blah'."""
-        print(f"[DEBUG] Resolving import for: {node.unparse()}")
-        
+        print('Resolving import for node:', node.__class__.__name__)
         if isinstance(node, uni.Assignment):
             self._resolve_assignment_imports(node)
         elif isinstance(node, uni.InForStmt):
             self._resolve_for_loop_imports(node)
+        elif isinstance(node, uni.FuncCall):
+            if isinstance(node.target, uni.AtomTrailer):
+                self._resolve_atom_trailer_import(node.target)
         else:
             self.log_warning(f"Import resolution not implemented for {type(node).__name__}")
 
@@ -416,7 +418,6 @@ class BinderPass(UniPass):
             raise ValueError("Atom trailer must have at least one attribute")
             
         first_obj = attr_list[0]
-        print(f"[DEBUG] Processing atom trailer, first object: {first_obj.sym_name}")
         
         # Look up the first symbol in the chain
         first_obj_sym = self.cur_scope.lookup(first_obj.sym_name)
@@ -429,7 +430,6 @@ class BinderPass(UniPass):
             print(f"[DEBUG] Symbol '{first_obj.sym_name}' is not imported, skipping")
             return
             
-        print(f"[DEBUG] Found imported symbol: {first_obj_sym.sym_name}")
         
         # Get the module path from the import
         import_node = self._find_import_for_symbol(first_obj_sym)
@@ -439,11 +439,11 @@ class BinderPass(UniPass):
         
         # Parse and link the imported module
         module_path = first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path() 
-        
         if module_path:
             linked_module = self._parse_and_link_module(module_path, first_obj_sym)
+            # print('linked_module ',linked_module)
+            # print(isinstance(linked_module, uni.UniScopeNode))
             if linked_module:
-                print(f"[DEBUG] Successfully linked module: {module_path}")
                 # Now iterate through the full attribute chain
                 self._link_attribute_chain(attr_list, first_obj_sym, linked_module)
             else:
@@ -457,20 +457,14 @@ class BinderPass(UniPass):
         """
         if not symbol.decl:
             return None
-            
-        import_node = symbol.decl.find_parent_of_type(uni.Import)
+
+        import_node: uni.Import = symbol.decl.find_parent_of_type(uni.Import)
         if import_node:
             return import_node
-            
-        # If not found, check the symbol's parent scopes
-        current_scope = symbol.decl.parent_scope
-        while current_scope:
-            import_node = current_scope.find_first_of_type(uni.Import)
-            if import_node:
-                return import_node
-            current_scope = current_scope.parent_scope
-            
-        return None
+        self.ice(
+            f"Symbol '{symbol.sym_name}' does not have a valid import declaration"
+        )
+
 
     def _link_attribute_chain(self, attr_list: list[uni.AstSymbolNode], first_symbol: uni.Symbol, current_module: uni.Module) -> None:
         """
@@ -482,29 +476,23 @@ class BinderPass(UniPass):
         """
         current_symbol = first_symbol
         current_sym_table = current_module.sym_tab
-        
-        print(f"[DEBUG] Starting attribute chain linking with {len(attr_list)} attributes")
-        
+        # print('current_symbol ',current_symbol)
+        # print('current_sym_table ',current_sym_table)
         # Add use for the first symbol (M1)
         first_obj = attr_list[0]
         current_symbol.add_use(first_obj)
-        print('first symbol', first_obj)
-        print('current  symbol',current_symbol )
-        print(f"[DEBUG] Added use for first symbol: {first_obj.sym_name}")
-        print('uses', current_symbol.uses)
+        # first_obj.sym.decl.loc = current_module.loc
+        # print('first_obj ',first_obj)
         
         # Iterate through remaining attributes in the chain
         for i in range(1, len(attr_list)):
             attr_node = attr_list[i]
             attr_name = attr_node.sym_name
             
-            print(f"[DEBUG] Processing attribute {i}: {attr_name}")
-            
             # Look up the attribute in the current symbol table
             attr_symbol = current_sym_table.lookup(attr_name)
-            
+            # print('attr_symbol ',attr_symbol)
             if not attr_symbol:
-                print(f"[DEBUG] Attribute '{attr_name}' not found in symbol table")
                 # If it's an imported symbol, we might need to parse its module
                 if self._is_potential_import(attr_name, current_sym_table):
                     attr_symbol = self._resolve_nested_import(attr_name, current_sym_table)
@@ -515,23 +503,21 @@ class BinderPass(UniPass):
             
             # Add use reference for this attribute
             attr_symbol.add_use(attr_node)
-            print(f"[DEBUG] Added use for attribute: {attr_name}")
             
             # If this symbol has its own symbol table, update current context
             if hasattr(attr_symbol, 'symbol_table') and attr_symbol.symbol_table:
                 current_sym_table = attr_symbol.symbol_table
-                print(f"[DEBUG] Updated current symbol table to: {current_sym_table.scope_name}")
             elif attr_symbol.imported:
                 # Try to resolve the imported symbol's module
                 nested_module = self._resolve_imported_symbol_module(attr_symbol)
                 if nested_module:
                     current_sym_table = nested_module.sym_tab
                     attr_symbol.symbol_table = current_sym_table
-                    print(f"[DEBUG] Resolved imported symbol's module: {nested_module.loc.mod_path}")
                 else:
                     print(f"[DEBUG] Could not resolve imported symbol's module for: {attr_name}")
             
             current_symbol = attr_symbol
+            current_sym_table = current_symbol.fetch_sym_tab
 
     def _is_potential_import(self, attr_name: str, sym_table: uni.UniScopeNode) -> bool:
         """Check if an attribute might be an import that needs resolution."""
@@ -588,7 +574,7 @@ class BinderPass(UniPass):
             import_node = symbol.decl.find_parent_of_type(uni.Import)
             if not import_node:
                 return None
-                
+            print('shoulbd be moudlepath ::',symbol.decl.find_parent_of_type(uni.ModulePath))
             module_path = symbol.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path()
             if not module_path:
                 return None
@@ -604,34 +590,23 @@ class BinderPass(UniPass):
     def _parse_and_link_module(self, module_path: str, symbol: uni.Symbol) -> Optional[uni.Module]:
         """Parse the module and link it to the symbol."""
         try:
-            print(f"[DEBUG] Attempting to parse module: {module_path}")
             existing_module = None
             # Check if module is already loaded
             if module_path in self.prog.mod.hub:
                 existing_module = self.prog.mod.hub[module_path]
-                print(f"[DEBUG] Module already loaded: {module_path}")
                 symbol.symbol_table = existing_module.sym_tab
                 return existing_module
-            print(f"[DEBUG] Module not found in hub, parsing: {module_path}")
             with open(module_path, "r", encoding="utf-8") as file:
                 source_str = file.read()
             # Parse the module using the same logic as JacProgram.build
             parsed_module:uni.Module = self.prog.parse_str(source_str=source_str, file_path=module_path)
 
-            # Run the binder pass
+            #TODO:  Run the binder pass
             BinderPass(ir_in=parsed_module, prog=self.prog)
             # Link the symbol to the module's symbol table
-            symbol.symbol_table = parsed_module.sym_tab
-            print('sym.decl ',symbol.decl)
-            print('sym.uses ',symbol.uses)
-            
-            print(f"[DEBUG] Successfully parsed and ran binder {symbol.symbol_table}")
-            
-            print(f"[DEBUG] Successfully parsed and linked module: {module_path}")
-            print(f"[DEBUG] Module symbol table: {parsed_module.sym_tab.scope_name}")            
+            symbol.symbol_table = parsed_module.sym_tab          
             return parsed_module
             
         except Exception as e:
             self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
-            print(f"[DEBUG] Exception during module parsing: {e}")
             return None
