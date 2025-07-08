@@ -10,6 +10,7 @@ import inspect
 import json
 import logging
 import os
+from types import MethodType
 from typing import Callable, get_type_hints
 
 # This will prevent LiteLLM from fetching pricing information from
@@ -117,6 +118,9 @@ class Model:
             if isinstance(incl_info, dict):
                 for key, value in incl_info.items():
                     inputs_detail.append(f"{key} = {value}")
+
+        if isinstance(caller, MethodType):
+            inputs_detail.insert(0, f"self = {caller.__self__}")
 
         # Prepare the messages for the LLM call.
         messages: list[MessageType] = [
