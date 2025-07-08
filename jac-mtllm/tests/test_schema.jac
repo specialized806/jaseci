@@ -126,14 +126,14 @@ test bool_return {
     is_true = is_statement_true(statement);
     print(f"Statement {statement} is {is_true}");
     assert isinstance(is_true, bool);
-    assert is_true == true;
+    assert is_true == True;
 
     # Should be false.
     statement = "1 + 1 = 3";
     is_true = is_statement_true(statement);
     print(f"Statement {statement} is {is_true}");
     assert isinstance(is_true, bool);
-    assert is_true == false;
+    assert is_true == False;
 }
 
 
