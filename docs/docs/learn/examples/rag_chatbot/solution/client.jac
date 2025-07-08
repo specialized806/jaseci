@@ -38,7 +38,9 @@ def bootstrap_frontend(token: str) {
         with st.chat_message("assistant") {
 
             # Call walker API
-            response = requests.post("http://localhost:8000/walker/interact", json={"message": prompt, "session_id": "123"},
+            response = requests.post(
+                "http://localhost:8000/walker/interact",
+                json={"message": prompt, "session_id": "123"},
                 headers={"Authorization": f"Bearer {token}"}
             );
 
