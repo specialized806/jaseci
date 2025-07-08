@@ -22,9 +22,9 @@ nav:
     - Learn Jac Language:
       - Introduction: "jac_book/index.md"
       - 1. Welcome to Jac: "jac_book/chapter_1.md"
-      - 2. Environment Setup and First Program: "jac_book/chapter_2.md"
-      - 3. Variables, Types, and Basic Syntax: "jac_book/chapter_3.md"
-      - 4. Functions, AI functions and Decorators: "jac_book/chapter_4.md"
+      - 2. Starting Jac, Variables and Types: "jac_book/chapter_2.md"
+      - 3. Functions, Control Flow, and Collections in Jac: "jac_book/chapter_3.md"
+      - 4. AI functions and Decorators: "jac_book/chapter_4.md"
       - 5. Advanced AI Operations: "jac_book/chapter_5.md"
       - 6. Imports System and File Operations: "jac_book/chapter_6.md"
       - 7. Enhanced OOP - Objects and Classes: "jac_book/chapter_7.md"
