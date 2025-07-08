@@ -1,14 +1,11 @@
-# RThis guide will walk you through building a state-of-the-art Retrieval-Augmented Generation (RAG) chatbot using Jac Cloud, Jac-Streamlit, Model Context Protocol (MCP), LangChain, ChromaDB, and modern LLMs. You'll learn to:
+# RAG Chatbot Full Guide
+
+## 1. Introduction & Overview
+This guide will walk you through building a state-of-the-art Retrieval-Augmented Generation (RAG) chatbot using Jac Cloud, Jac-Streamlit, Model Context Protocol (MCP), LangChain, ChromaDB, and modern LLMs. You'll learn to:
 - Upload and index your own documents (PDFs)
 - Chat with an AI assistant that uses both your documents and LLMs
 - Build modular MCP servers for tool management
-- Use ReAct pattern for intelligent tool orchestrationhatbot Full Guide
-
-## 1. Introduction & Overview
-This guide will walk you through building a state-of-the-art Retrieval-Augmented Generation (RAG) chatbot using Jac Cloud, Jac-Streamlit, LangChain, ChromaDB, and modern LLMs. You’ll learn to:
-- Upload and index your own documents (PDFs)
-- Chat with an AI assistant that uses both your documents and LLMs
-- Add advanced dialogue routing for smarter conversations
+- Use ReAct pattern for intelligent tool orchestration
 
 ## 2. Features & Architecture
 - **Document Upload & Ingestion**: Upload PDFs, which are processed and indexed for semantic search.
@@ -79,7 +76,31 @@ This guide will walk you through building a state-of-the-art Retrieval-Augmented
    ```
 
 ## 5. Streamlit Frontend (`client.jac`)
-The frontend is built with Jac-Streamlit and handles authentication, PDF upload, and chat. Here’s how it works:
+The frontend is built with Jac-Streamlit and handles authentication, PDF upload, and chat with an improved user experience.
+
+**Updated Title and Chat Logic:**
+```jac
+st.title("Welcome to your Jac MCP Chatbot!");
+
+if prompt := st.chat_input("What is up?") {
+    st.session_state.messages.append({"role": "user", "content": prompt});
+
+    with st.chat_message("user") {
+        st.markdown(prompt);
+    }
+
+    with st.chat_message("assistant") {
+        with st.spinner("Thinking...") {
+            response = requests.post("http://localhost:8000/walker/interact", ...);
+            st.write(response["reports"][0]["response"]);
+            st.session_state.messages.append({"role": "assistant", "content": response["reports"][0]["response"]});
+        }
+    }
+}
+```
+- Updated title to reflect MCP architecture
+- Added spinner with "Thinking..." message for better user experience
+- Captures user input, sends it to the backend, and displays both user and assistant messages in the chat UI.
 
 **Authentication and Token Handling:**
 ```jac
@@ -113,18 +134,6 @@ if uploaded_file {
 }
 ```
 - Lets users upload PDFs, which are base64-encoded and sent to the backend for processing.
-
-**Chat Logic:**
-```jac
-if prompt := st.chat_input("What is up?") {
-    st.session_state.messages.append({"role": "user", "content": prompt});
-    ...
-    response = requests.post("http://localhost:8000/walker/interact", ...);
-    ...
-    st.session_state.messages.append({"role": "assistant", "content": response["reports"][0]["response"]});
-}
-```
-- Captures user input, sends it to the backend, and displays both user and assistant messages in the chat UI.
 
 ## 6. MCP Server Architecture (`mcp_server.jac`)
 The MCP server exposes tools for document search and web search using the Model Context Protocol.
@@ -185,7 +194,13 @@ def call_mcp_tool(name: str, arguments:dict) -> str {
 - Handles both structured content and text responses
 
 ## 8. RAG Engine & Web Search (`tools.jac`)
-The RAG engine manages document ingestion, chunking, embedding, and retrieval.
+The RAG engine manages document ingestion, chunking, embedding, and retrieval. Note the updated import structure:
+
+**Updated Imports:**
+```jac
+import from langchain_community.vectorstores.chroma {Chroma}  // Updated import path
+```
+The classes `RagEngine` and `WebSearch` are imported as `from rag {RagEngine, WebSearch}` in other files.
 
 **Document Loading and Chunking:**
 ```jac
@@ -234,11 +249,12 @@ node Session {
     has chat_history: list[dict];
     has status: int = 1;
 
-    """Generate a response using uploaded documents and web search. Tool names are 'search_docs', 'search_web'."""
+    "Generate a helpful response to the user's message. Use available mcp tool when needed."
     def respond(message:str, chat_history:list[dict]) -> str
         by llm(
             method="ReAct",
-            tools=([call_mcp_tool]),
+            tools=([use_mcp_tool]),
+            messages=chat_history,
             max_react_iterations=6
         );
 }
@@ -246,13 +262,20 @@ node Session {
 - Each user session has a unique ID and chat history
 - The `respond` method uses ReAct pattern for intelligent tool orchestration
 - LLM can reason about which tools to use and when
+- Uses the updated `Model` class from mtllm
 
 **MCP Tool Integration:**
 ```jac
-def call_mcp_tool(name: str, arguments: dict) -> str {
+"""Available tools: 'search_docs' or 'search_web' with {"query": "your query"}.
+
+Example:
+{"name": "search_docs", "arguments": {"query": "example"}}
+"""
+def use_mcp_tool(name: str, arguments: dict[str, str]) -> str {
     return mcp_client.call_mcp_tool(name=name, arguments=arguments);
 }
 ```
+- Provides clear documentation for available tools
 - Bridges the LLM's tool calls to the MCP server
 - Allows seamless integration between ReAct and MCP tools
 
@@ -300,13 +323,13 @@ walker upload_pdf {
 ```
 - Saves uploaded PDFs to disk and triggers ingestion into the RAG engine.
 
-## 7. Usage Guide
+## 10. Usage Guide
 - Open the Streamlit app in your browser.
 - Upload one or more PDF files. The backend will process and index them.
 - Start chatting! Ask questions about the uploaded documents or general queries.
 - The bot will use both your documents and LLMs to answer.
 
-## 8. API Endpoints (selected)
+## 11. API Endpoints (selected)
 - `POST /user/register` — Register a new user
 - `POST /user/login` — Login and receive an access token
 - `POST /walker/upload_pdf` — Upload a PDF (requires Bearer token)
@@ -314,16 +337,20 @@ walker upload_pdf {
 
 See `http://localhost:8000/docs` for full Swagger API documentation.
 
-## 9. Advanced Features
+## 12. Advanced Features
 - **Web Search**: If enabled and API key is set, the bot can augment answers with real-time web search results.
 - **ChromaDB Vector Search**: Efficient semantic search over your documents.
 - **Session Management**: Each chat session is tracked for context.
+- **MCP Architecture**: Modular tool system using Model Context Protocol.
+- **ReAct Pattern**: Intelligent reasoning and acting capabilities.
 - **Extensible**: Add new walkers or endpoints in Jac for custom logic.
 
-## 10. Troubleshooting
+## 13. Troubleshooting
 - Ensure all dependencies are installed and compatible with your Python version.
+- Make sure to start the MCP server before the main server.
 - If document upload fails, check server logs for errors.
 - For LLM/API issues, verify your API keys and environment variables.
+- Check that all three services (MCP server, main server, frontend) are running on their respective ports.
 
 ---
 For a quick overview, see `Overview`.
