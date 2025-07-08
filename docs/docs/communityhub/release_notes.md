@@ -10,7 +10,7 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 - **`jac create_system_admin` cli now support local db**: `DATABASE_HOST` are now not required when creating system admin.
 
-- **Bug fix on else part in while loop**: Now we are supporting while loop with else part.
+- **Bug fix on supporting while loop with else part**: Now we are supporting while loop with else part.
 
 ## jaclang 0.8.3 / jac-cloud 0.2.3 / mtllm 0.3.8
 
