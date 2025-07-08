@@ -194,13 +194,9 @@ def call_mcp_tool(name: str, arguments:dict) -> str {
 - Handles both structured content and text responses
 
 ## 8. RAG Engine & Web Search (`tools.jac`)
-The RAG engine manages document ingestion, chunking, embedding, and retrieval. Note the updated import structure:
+The RAG engine manages document ingestion, chunking, embedding, and retrieval.
 
-**Updated Imports:**
-```jac
-import from langchain_community.vectorstores.chroma {Chroma}  // Updated import path
-```
-The classes `RagEngine` and `WebSearch` are imported as `from rag {RagEngine, WebSearch}` in other files.
+The objects `RagEngine` and `WebSearch` are imported as `from rag {RagEngine, WebSearch}` in other files.
 
 **Document Loading and Chunking:**
 ```jac
