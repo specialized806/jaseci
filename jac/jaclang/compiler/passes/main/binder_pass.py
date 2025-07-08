@@ -279,6 +279,8 @@ class BinderPass(UniPass):
             if glob_sym := self.check_global(node.target.sym_name):
                 node.target.name_spec._sym = glob_sym
                 glob_sym.add_defn(node.target)
+            elif found_symbol :=self.cur_scope.lookup(node.target.sym_name):
+                found_symbol.decl.sym.add_use(node.target)
             else:
                 self.cur_scope.def_insert(node.target)
         else:
