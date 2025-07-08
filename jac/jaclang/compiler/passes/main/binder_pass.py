@@ -381,4 +381,156 @@ class BinderPass(UniPass):
                 self.log_error("For expr as target not valid")
 
     def resolve_import(self, node: uni.UniNode):
-        print("Need to resolve import for", node.unparse())
+        """Resolve imports for atom trailers like 'apple.color.bla.blah'."""
+        print(f"[DEBUG] Resolving import for: {node.unparse()}")
+        
+        if isinstance(node, uni.Assignment):
+            self._resolve_assignment_imports(node)
+        elif isinstance(node, uni.InForStmt):
+            self._resolve_for_loop_imports(node)
+        else:
+            self.log_warning(f"Import resolution not implemented for {type(node).__name__}")
+
+    def _resolve_assignment_imports(self, node: uni.Assignment) -> None:
+        """Handle import resolution for assignment statements."""
+        for target in node.target:
+            if isinstance(target, uni.AtomTrailer):
+                self._resolve_atom_trailer_import(target)
+
+    def _resolve_for_loop_imports(self, node: uni.InForStmt) -> None:
+        """Handle import resolution for for-loop statements."""
+        if isinstance(node.target, uni.AtomTrailer):
+            self._resolve_atom_trailer_import(node.target)
+
+    def _resolve_atom_trailer_import(self, atom_trailer: uni.AtomTrailer) -> None:
+        """
+        Resolve imports for atom trailer like 'apple.color.bla.blah'.
+        
+        This handles cases where:
+        - 'apple' is an imported module
+        - We need to parse the module and link it properly
+        """
+        attr_list = atom_trailer.as_attr_list
+        if not attr_list:
+            raise ValueError("Atom trailer must have at least one attribute")
+            
+        first_obj = attr_list[0]
+        print(f"[DEBUG] Processing atom trailer, first object: {first_obj.sym_name}")
+        
+        # Look up the first symbol in the chain
+        first_obj_sym = self.cur_scope.lookup(first_obj.sym_name)
+        
+        if not first_obj_sym:
+            print(f"[DEBUG] Symbol '{first_obj.sym_name}' not found in current scope")
+            return
+            
+        if not first_obj_sym.imported:
+            print(f"[DEBUG] Symbol '{first_obj.sym_name}' is not imported, skipping")
+            return
+            
+        print(f"[DEBUG] Found imported symbol: {first_obj_sym.sym_name}")
+        
+        # Get the module path from the import
+        import_node = self._find_import_for_symbol(first_obj_sym)
+        if not import_node:
+            self.log_error(f"Could not find import statement for symbol '{first_obj_sym.sym_name}'")
+            return
+        print('import node ',import_node)
+        print('first obj sym ',first_obj_sym)
+        print('first obj sym decl',first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path())
+            
+        # Parse and link the imported module
+        # module_path = self._resolve_module_path(import_node, first_obj_sym)
+        #TODO: Move this to _resolve_module_path method
+        module_path = first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path() 
+        
+        if module_path:
+            linked_module = self._parse_and_link_module(module_path, first_obj_sym)
+            if linked_module:
+                print(f"[DEBUG] Successfully linked module: {module_path}")
+            else:
+                print(f"[DEBUG] Failed to link module: {module_path}")
+        
+
+
+    def _find_import_for_symbol(self, symbol: uni.Symbol) -> Optional[uni.Import]:
+        """Find the import statement that created this symbol."""
+        # Look through the module for import statements
+        for import_node in self.cur_module_scope.get_all_sub_nodes(uni.Import):
+            for item in import_node.items:
+                if hasattr(item, 'alias') and item.alias and item.alias.sym_name == symbol.sym_name:
+                    return import_node
+                elif hasattr(item, 'sym_name') and item.sym_name == symbol.sym_name:
+                    return import_node
+        return None
+
+    # def _resolve_module_path(self, import_node: uni.Import, symbol: uni.Symbol) -> Optional[str]:
+    #     """Resolve the actual module path from import statement."""
+    #     # Handle different import patterns
+    #     if import_node.from_loc:
+    #         # from module import item
+    #         base_path = import_node.from_loc.dot_path_str
+    #         return self._construct_full_module_path(base_path)
+    #     else:
+    #         # import module or import module as alias
+    #         for item in import_node.items:
+    #             if (hasattr(item, 'alias') and item.alias and item.alias.sym_name == symbol.sym_name) or \
+    #                (hasattr(item, 'sym_name') and item.sym_name == symbol.sym_name):
+    #                 if hasattr(item, 'dot_path_str'):
+    #                     return self._construct_full_module_path(item.dot_path_str)
+    #                 elif hasattr(item, 'name') and hasattr(item.name, 'value'):
+    #                     return self._construct_full_module_path(item.name.value)
+    #     return None
+
+    # def _construct_full_module_path(self, module_name: str) -> str:
+    #     """Construct full file path for the module."""
+    #     # Try .jac extension first, then .py
+    #     possible_paths = [
+    #         f"{module_name}.jac",
+    #         f"{module_name}.py",
+    #         f"{module_name}/__init__.jac",
+    #         f"{module_name}/__init__.py"
+    #     ]
+        
+    #     import os
+    #     for path in possible_paths:
+    #         if os.path.exists(path):
+    #             return os.path.abspath(path)
+                
+    #     # If not found locally, return the .jac path for potential resolution
+    #     return f"{module_name}.jac"
+
+    def _parse_and_link_module(self, module_path: str, symbol: uni.Symbol) -> Optional[uni.Module]:
+        """Parse the module and link it to the symbol."""
+        try:
+            print(f"[DEBUG] Attempting to parse module: {module_path}")
+            existing_module = None
+            # Check if module is already loaded
+            if module_path in self.prog.mod.hub:
+                existing_module = self.prog.mod.hub[module_path]
+                print(f"[DEBUG] Module already loaded: {module_path}")
+                symbol.symbol_table = existing_module.sym_tab
+                return existing_module
+            print(f"[DEBUG] Module not found in hub, parsing: {module_path}")
+            with open(module_path, "r", encoding="utf-8") as file:
+                source_str = file.read()
+            # Parse the module using the same logic as JacProgram.build
+            parsed_module:uni.Module = self.prog.parse_str(source_str=source_str, file_path=module_path)
+
+            # Run the binder pass
+            BinderPass(ir_in=parsed_module, prog=self.prog)
+            # Link the symbol to the module's symbol table
+            symbol.symbol_table = parsed_module.sym_tab
+            print('sym.decl ',symbol.decl)
+            print('sym.uses ',symbol.uses)
+            
+            print(f"[DEBUG] Successfully parsed and ran binder {symbol.symbol_table}")
+            
+            print(f"[DEBUG] Successfully parsed and linked module: {module_path}")
+            print(f"[DEBUG] Module symbol table: {parsed_module.sym_tab.scope_name}")            
+            return parsed_module
+            
+        except Exception as e:
+            self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
+            print(f"[DEBUG] Exception during module parsing: {e}")
+            return None

@@ -129,8 +129,10 @@ class JacProgram:
         # but if it is `import math` then we do not need to parse
         # DirectImportPass(ir_in=mod_targ, prog=self)
         BinderPass(ir_in=mod_targ, prog=self)
-        # print(mod_targ.sym_pp())
-        # print('all mods:', self.mod.hub.keys())
+        # print(f"[DEBUG] All loaded modules: {list(self.mod.hub.keys())}")
+        for mod in self.mod.hub.values():
+            print(f"[DEBUG] Module: {mod.loc.mod_path}")
+            print(mod.sym_pp())
         return mod_targ
 
     def run_schedule(
