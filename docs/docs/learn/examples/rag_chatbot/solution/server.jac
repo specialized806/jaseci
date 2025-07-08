@@ -1,29 +1,38 @@
-import base64;
 import sys;
+import from mtllm.llm {Model}
+import from rag {RagEngine, WebSearch}
 import os;
+import base64;
+import requests;
+import anyio;
 import mcp_client;
-import from mtllm.llms {OpenAI}
-import from rag {RagEngine}
 
 glob rag_engine:RagEngine = RagEngine();
-glob llm = OpenAI(model_name='gpt-4o');
-
+glob llm = Model(model_name='gpt-4o');
 glob MCP_SERVER_URL: str = os.getenv('MCP_SERVER_URL', 'http://localhost:8899/mcp');
 
-def call_mcp_tool(name: str, arguments: dict) -> str {
+
+"""Available tools: 'search_docs' or 'search_web' with {"query": "your query"}.
+
+Example:
+{"name": "search_docs", "arguments": {"query": "example"}}
+"""
+def use_mcp_tool(name: str, arguments: dict[str, str]) -> str {
     return mcp_client.call_mcp_tool(name=name, arguments=arguments);
 }
+
 
 node Session {
     has id: str;
     has chat_history: list[dict];
     has status: int = 1;
 
-    """Generate a response using uploaded documents and web search. Tool names are 'search_docs', 'search_web'."""
+    "Generate a helpful response to the user's message. Use available mcp tool when needed."
     def respond(message:str, chat_history:list[dict]) -> str
         by llm(
             method="ReAct",
-            tools=([call_mcp_tool]),
+            tools=([use_mcp_tool]),
+            messages=chat_history,
             max_react_iterations=6
         );
 }
