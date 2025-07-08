@@ -215,5 +215,3 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
 
 ValidateTreeParentTest.self_attach_micro_tests()
-
-PyastGenPassTests().test_sem_decorator()
