@@ -115,23 +115,3 @@ class JacImportDepsPass(Transform[uni.Module, uni.Module]):
                 inject_name=target.split(os.path.sep)[-1],
                 inject_src=uni.Source("", target),
             )
-
-    # def load_builtins(self) -> None:
-    #     """Load builtins module if not already loaded."""
-    #     from jaclang.compiler.passes.main import PyastBuildPass
-    #     builtins_path = os.path.join(
-    #         os.path.dirname(__file__),
-    #         "../../../vendor/typeshed/stdlib/builtins.pyi"
-    #     )
-    #     with open(builtins_path, "r", encoding="utf-8") as f:
-    #         file_source = f.read()
-    #         mod = PyastBuildPass(
-    #             ir_in=uni.PythonModuleAst(
-    #                 py_ast.parse(file_source),
-    #                 orig_src=uni.Source(file_source, builtins_path),
-    #             ),
-    #             prog=self.prog,
-    #         ).ir_out
-    #         if mod:
-    #             self.prog.mod.hub["builtins"] = mod
-    #             self.last_imported.append(mod)
