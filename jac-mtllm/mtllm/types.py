@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass
 from enum import StrEnum
 from io import BytesIO
-from typing import Callable, TypeAlias, get_type_hints
+from typing import Callable, Generator, TypeAlias, get_type_hints
 
 from PIL.Image import open as open_image
 
@@ -220,6 +220,7 @@ class CompletionRequest:
     messages: list[MessageType]
     tools: list[Tool]
     params: dict  # Additional parameters for the LLM request.
+    stream: bool = False  # Whether to stream the response.
     resp_type: type | None = None  # Type from which the json schema is generated.
 
     def __post_init__(self) -> None:
@@ -283,6 +284,8 @@ class CompletionResult:
     output: object
     tool_calls: list[ToolCall]
 
+
+TokenStream: TypeAlias = Generator[str, None, None]
 
 # -----------------------------------------------------------------------------
 # Media content types

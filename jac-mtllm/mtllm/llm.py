@@ -11,7 +11,7 @@ import json
 import logging
 import os
 from types import MethodType
-from typing import Callable, get_type_hints
+from typing import Callable, get_type_hints, Generator
 
 # This will prevent LiteLLM from fetching pricing information from
 # the bellow URL every time we import the litellm and use a cached
@@ -20,11 +20,14 @@ from typing import Callable, get_type_hints
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 import litellm
+from litellm import CustomStreamWrapper
 from litellm._logging import _disable_debugging
+from litellm.types.utils import Delta, ModelResponse
 
 from .types import (
     CompletionRequest,
     CompletionResult,
+    TokenStream,
     Image,
     LiteLLMMessage,
     Media,
@@ -154,17 +157,31 @@ class Model:
         # Prepare return type.
         return_type = get_type_hints(caller).get("return")
 
+        is_streaming = return_type == TokenStream
+        return_type = str if return_type == TokenStream else return_type
+
         # Prepare the llm call request.
         req = CompletionRequest(
             messages=messages,
             tools=tools,
             resp_type=return_type,
+            stream=is_streaming,
             params={},
         )
 
+        # TODO: Support mockllm for mocktesting.
+        # Invoke streaming request, this will result in a generator that the caller
+        # should either do .next() or .__iter__() by calling `for tok in resp: ...`
+        if req.stream:
+            if req.tools:
+                raise RuntimeError(
+                    "Streaming responses are not supported with tool calls yet."
+                )
+            return self._dispatch_streaming_response(req)
+
         # Invoke the LLM and handle tool calls.
         while True:
-            resp = self.completion(req)
+            resp = self._completion_no_streaming(req)
             if resp.tool_calls:
                 for tool_call in resp.tool_calls:
                     if tool_call.is_finish_call():
@@ -176,15 +193,14 @@ class Model:
 
         return resp.output
 
-    def completion(self, req: CompletionRequest) -> CompletionResult:
+    def _completion_no_streaming(self, req: CompletionRequest) -> CompletionResult:
         """Perform a completion request with the LLM."""
         if self.model_name.lower().strip() == "mockllm":
             return self._dispatch_mock_llm_call(req)
-        return self._dispatch_llm_call(req)
+        return self._dispatch_no_streaming_call(req)
 
-    def _dispatch_llm_call(self, req: CompletionRequest) -> CompletionResult:
-        """Dispatch the LLM call with the given request."""
-        # Prepare the parameters for the LLM call
+    def _make_model_params(self, req: CompletionRequest) -> dict:
+        """Prepare the parameters for the LLM call."""
         params = {
             "model": self.model_name,
             "api_base": self.config.get("host") or self.config.get("api_base"),
@@ -196,39 +212,7 @@ class Model:
             # "top_k": self.call_params.get("top_k", 50),
             # "top_p": self.call_params.get("top_p", 0.9),
         }
-
-        # Call the LiteLLM API
-        self._log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
-        output = litellm.completion(**params)
-
-        # Output format:
-        # https://docs.litellm.ai/docs/#response-format-openai-format
-        #
-        # TODO: Handle stream output (type ignoring stream response)
-        message: LiteLLMMessage = output.choices[0].message  # type: ignore
-        req.add_message(message)
-
-        output_content: str = message.content  # type: ignore
-        self._log_info(f"LLM call completed with response:\n{output_content}")
-        output_value = req.parse_response(output_content)
-
-        tool_calls: list[ToolCall] = []
-        for tool_call in message.tool_calls or []:  # type: ignore
-            if tool := req.get_tool(tool_call["function"]["name"]):
-                args_json = json.loads(tool_call["function"]["arguments"])
-                args = tool.parse_arguments(args_json)
-                tool_calls.append(
-                    ToolCall(call_id=tool_call["id"], tool=tool, args=args)
-                )
-            else:
-                raise RuntimeError(
-                    f"Attempted to call tool: '{tool_call['function']['name']}' which was not present."
-                )
-
-        return CompletionResult(
-            output=output_value,
-            tool_calls=tool_calls,
-        )
+        return params
 
     def _dispatch_mock_llm_call(self, req: CompletionRequest) -> CompletionResult:
         """Dispatch the mock LLM call with the given request."""
@@ -255,3 +239,55 @@ class Model:
         # remove and log properly.
         if bool(self.config.get("verbose", False)):
             print(message)
+
+    def _dispatch_no_streaming_call(self, req: CompletionRequest) -> CompletionResult:
+        # Construct the parameters for the LLM call
+        params = self._make_model_params(req)
+
+        # Call the LiteLLM API
+        self._log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
+        response = litellm.completion(**params)
+
+        # Output format:
+        # https://docs.litellm.ai/docs/#response-format-openai-format
+        #
+        # TODO: Handle stream output (type ignoring stream response)
+        message: LiteLLMMessage = response.choices[0].message  # type: ignore
+        req.add_message(message)
+
+        output_content: str = message.content  # type: ignore
+        self._log_info(f"LLM call completed with response:\n{output_content}")
+        output_value = req.parse_response(output_content)
+
+        tool_calls: list[ToolCall] = []
+        for tool_call in message.tool_calls or []:  # type: ignore
+            if tool := req.get_tool(tool_call["function"]["name"]):
+                args_json = json.loads(tool_call["function"]["arguments"])
+                args = tool.parse_arguments(args_json)
+                tool_calls.append(
+                    ToolCall(call_id=tool_call["id"], tool=tool, args=args)
+                )
+            else:
+                raise RuntimeError(
+                    f"Attempted to call tool: '{tool_call['function']['name']}' which was not present."
+                )
+
+        return CompletionResult(
+            output=output_value,
+            tool_calls=tool_calls,
+        )
+
+    def _dispatch_streaming_response(
+        self, req: CompletionRequest
+    ) -> Generator[str, None, None]:
+        # Construct the parameters for the LLM call
+        params = self._make_model_params(req)
+
+        # Call the LiteLLM API
+        self._log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
+        response: CustomStreamWrapper = litellm.completion(**params, stream=True)  # type: ignore
+
+        for chunk in response:
+            if chunk.choices and chunk.choices[0].delta:
+                delta: Delta = chunk.choices[0].delta
+                yield delta.content or ""
