@@ -354,13 +354,8 @@ class BinderPass(UniPass):
         if isinstance(node.target, uni.AtomTrailer):
             self.handle_symbol_chain(node.target, 'use')
         elif isinstance(node.target, uni.AstSymbolNode):
-            if self._is_builtin_symbol(node.target.sym_name):
-                builtins_mod = self.prog.mod.hub["builtins"]
-                builtin_symbol = builtins_mod.sym_tab.lookup(node.target.sym_name)
-                if builtin_symbol:
-                    node.target.name_spec._sym = builtin_symbol
-                    builtin_symbol.add_use(node.target)
-                    return
+            if self._handle_builtin_symbol(node.target.sym_name, node.target):
+                return
             
             self.handle_simple_symbol(node.target, 'use')
         else:
@@ -409,14 +404,8 @@ class BinderPass(UniPass):
             return
 
         # Check if this is a builtin symbol first
-        if self._is_builtin_symbol(node.value):
-            if "builtins" in self.prog.mod.hub:
-                builtins_mod = self.prog.mod.hub["builtins"]
-                builtin_symbol = builtins_mod.sym_tab.lookup(node.value)
-                if builtin_symbol:
-                    node._sym = builtin_symbol
-                    builtin_symbol.add_use(node)
-                    return
+        if self._handle_builtin_symbol(node.value, node):
+            return
 
         glob_sym = self.check_global(node.value)
         if glob_sym:
@@ -427,13 +416,7 @@ class BinderPass(UniPass):
 
     def enter_builtin_type(self, node: uni.BuiltinType) -> None:
         """Enter builtins node like str, int, list, etc."""
-        if self._is_builtin_symbol(node.value):
-            builtins_mod = self.prog.mod.hub["builtins"]
-            builtin_symbol = builtins_mod.sym_tab.lookup(node.value)
-            if builtin_symbol:
-                node.sym = builtin_symbol
-                builtin_symbol.add_use(node)
-                return
+        self._handle_builtin_symbol(node.value, node)
 
     def enter_expr_as_item(self, node: uni.ExprAsItem) -> None:
         """Enter expression as item (for with statements)."""
@@ -593,3 +576,18 @@ class BinderPass(UniPass):
         """Check if a symbol is a builtin symbol."""
         builtins_mod = self.prog.mod.hub["builtins"]
         return symbol_name in builtins_mod.sym_tab.names_in_scope
+
+    def _handle_builtin_symbol(self, symbol_name: str, target_node: uni.AstSymbolNode) -> bool:
+        """Handle builtin symbol lookup and linking."""
+        if not self._is_builtin_symbol(symbol_name):
+            return False
+
+        builtins_mod = self.prog.mod.hub["builtins"]
+        builtin_symbol = builtins_mod.sym_tab.lookup(symbol_name)
+        
+        if not builtin_symbol:
+            return False
+
+        target_node.name_spec._sym = builtin_symbol            
+        builtin_symbol.add_use(target_node)
+        return True
