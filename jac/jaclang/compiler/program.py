@@ -62,7 +62,6 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
-        # self.cur_symbols: list[uni.Symbol] = []
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -123,10 +122,7 @@ class JacProgram:
         with open(file_path, "r", encoding="utf-8") as file:
             use_str = file.read()
         mod_targ = self.parse_str(use_str, file_path)
-        # To AnnexImpl and to bind direct imports
-        # from a import b - we need to parse
-        # but if it is `import math` then we do not need to parse
-        # DirectImportPass(ir_in=mod_targ, prog=self)
+        # TODO: AnnexImpl handling
         BinderPass(ir_in=mod_targ, prog=self)
         return mod_targ
 

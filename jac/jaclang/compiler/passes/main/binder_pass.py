@@ -228,12 +228,11 @@ class BinderPass(UniPass):
             )
         )
         
-        # Add context-specific symbols for event signatures
         if node.signature and isinstance(node.signature, uni.EventSignature):
             self._setup_event_context(node)
 
     def _setup_event_context(self, node: uni.Ability) -> None:
-        """Setup context symbols for event signatures."""
+        """Setup context symbols for event signatures :'here','visitor'."""
         try:
             arch_type = node.method_owner.arch_type.name
             
@@ -496,10 +495,10 @@ class BinderPass(UniPass):
             current_symbol = attr_symbol
             current_sym_table = current_symbol.fetch_sym_tab
     
+    #TODO:move this to Jac Program
     def _parse_and_link_module(self, module_path: str, symbol: uni.Symbol) -> Optional[uni.Module]:
         """Parse the module and link it to the symbol."""
         try:
-            # Check if module is already loaded
             if module_path in self.prog.mod.hub:
                 existing_module = self.prog.mod.hub[module_path]
                 symbol.symbol_table = existing_module.sym_tab
@@ -508,14 +507,10 @@ class BinderPass(UniPass):
             with open(module_path, "r", encoding="utf-8") as file:
                 source_str = file.read()
                 
-            # Parse the module
             parsed_module: uni.Module = self.prog.parse_str(source_str=source_str, file_path=module_path)
-
-            # Run the binder pass on the parsed module
             BinderPass(ir_in=parsed_module, prog=self.prog)
-            
-            # Link the symbol to the module's symbol table
-            symbol.symbol_table = parsed_module.sym_tab          
+            symbol.symbol_table = parsed_module.sym_tab        
+  
             return parsed_module
             
         except Exception as e:
