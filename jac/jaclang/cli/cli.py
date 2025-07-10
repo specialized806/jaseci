@@ -226,6 +226,8 @@ def build(filename: str, typecheck: bool = False) -> None:
         warnings = len(out.warnings_had)
         if typecheck:
             for mods in out.mod.hub.values():
+                if mods.name == 'builtins':
+                    continue
                 header = f"{'='*6} SymTable({mods.name}) {'='*(22-len(mods.name))}"
                 divider = "=" * 40
                 print(f"{divider}\n{header}\n{divider}\n{mods.sym_tab.sym_pp()}")

@@ -1,22 +1,4 @@
-"""Symbol Table Construction + Binding Pass for the Jac compiler.
-
-This pass builds the hierarchical symbol table structure for the entire program by:
-
-1. Creating symbol tables for each scope in the program (modules, archetypes, abilities, blocks)
-2. Establishing parent-child relationships between nested scopes
-3. Registering symbols for various language constructs:
-   - Global variables and imports
-   - Archetypes (objects, nodes, edges, walkers) and their members
-   - Abilities (methods and functions) and their parameters
-   - Enums and their values
-   - Local variables in various block scopes
-
-4. Adding special symbols like 'self' and 'super' in appropriate contexts
-5. Maintaining scope boundaries for proper symbol resolution
-
-The symbol table is a fundamental data structure that enables name resolution,
-type checking, and semantic analysis throughout the compilation process.
-"""
+"""Binding Pass for the Jac compiler."""
 
 import ast as py_ast
 import os
