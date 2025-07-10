@@ -327,11 +327,7 @@ class UniScopeNode(UniNode):
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
         if name in self.names_in_scope:
-            if not self.names_in_scope[name].imported:
                 return self.names_in_scope[name]
-            else:
-                sym = self.names_in_scope[name]
-                return sym
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
             if found:
