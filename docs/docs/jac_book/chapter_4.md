@@ -1,9 +1,9 @@
-# Chapter 4: More Functions 
+# Chapter 4: More Functions
 ---
 Jac provides a powerful function system with mandatory type annotations, built-in AI capabilities, decorators, and first-class support for functional programming patterns. This chapter builds a math functions library with AI-powered features and timing capabilities to demonstrate these features.
 
 
-> In Jac, functions are first-class citizens and can be passed around, returned from other functions, and stored in data structures. 
+> In Jac, functions are first-class citizens and can be passed around, returned from other functions, and stored in data structures.
 
 ## Functional Programming in Jac
 ---
@@ -76,7 +76,7 @@ with entry {
     b: float = 5.0;
 
     # Change this to "subtract", "multiply", or "divide" to test other operations
-    operation_name: str = "add";  
+    operation_name: str = "add";
 
     if operation_name in operations {
         result: float = calculator(a, b, operations[operation_name]);
@@ -90,7 +90,7 @@ with entry {
 
 
 ### Lambda Functions
-Lambda functions are anonymous functions that can be defined in a single line. They are useful for short, throwaway functions that are not reused elsewhere. 
+Lambda functions are anonymous functions that can be defined in a single line. They are useful for short, throwaway functions that are not reused elsewhere.
 
 Lambda functions follow the syntax `lambda parameters: return_type: expression` and can be assigned to variables or used directly in expressions. They are particularly useful for functional programming patterns like map, filter, and reduce.
 
@@ -117,7 +117,7 @@ with entry {
 <br />
 
 ### Higher-Order Functions
-Higher-order functions are functions that can take other functions as arguments or return functions as results. This allows for powerful abstractions and code reuse. 
+Higher-order functions are functions that can take other functions as arguments or return functions as results. This allows for powerful abstractions and code reuse.
 
 ```jac
 # Higher-order function that applies operation to list
@@ -261,7 +261,7 @@ def decorator_name(func: callable) -> callable {
 ```
 
 !!! note
-    `*args` is a python contruct that allows a function to accept a variable number of positional arguments, while `**kwargs` allows it to accept a variable number of keyword arguments. 
+    `*args` is a python contruct that allows a function to accept a variable number of positional arguments, while `**kwargs` allows it to accept a variable number of keyword arguments.
 
 
 Decorators provide a clean way to add functionality to functions without modifying their core logic. The general syntax for using decorators in Jac is:
