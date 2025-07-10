@@ -51,6 +51,7 @@ def resolve_module(target: str, base_path: str) -> Tuple[str, str]:
     while level < len(parts) and parts[level] == "":
         level += 1
     actual_parts = parts[level:]
+
     for sp in site.getsitepackages():
         res = _candidate_from(sp, actual_parts)
         if res:
@@ -74,6 +75,7 @@ def resolve_module(target: str, base_path: str) -> Tuple[str, str]:
     res = _candidate_from(base_dir, actual_parts)
     if res:
         return res
+
     jacpath = os.getenv("JACPATH")
     if jacpath:
         res = _candidate_from(jacpath, actual_parts)
@@ -86,15 +88,21 @@ def resolve_module(target: str, base_path: str) -> Tuple[str, str]:
                 return os.path.join(root, target_jac), "jac"
             if target_py in files:
                 return os.path.join(root, target_py), "py"
+
     return os.path.join(base_dir, *actual_parts), "py"
+
+
 def infer_language(target: str, base_path: str) -> str:
     """Infer language for target relative to base path."""
     _, lang = resolve_module(target, base_path)
     return lang
+
+
 def resolve_relative_path(target: str, base_path: str) -> str:
     """Resolve only the path component for a target."""
     path, _ = resolve_module(target, base_path)
     return path
+
 
 def get_typeshed_paths() -> list[str]:
     """Return the typeshed stubs and stdlib directories if available."""

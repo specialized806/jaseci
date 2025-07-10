@@ -116,13 +116,11 @@ class TestJacLangServer(TestCase):
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
-        # circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
-        circle_file = uris.from_fs_path('/home/kuggix/jaseci/jac/jaclang/compiler/passes/main/tests/fixtures/symbol_binding_test.jac')
-        print(circle_file)
+        circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
         lsp.deep_check(circle_file)
         self.assertIn(
             "fixtures/circle_pure.impl.jac:8:5-8:19",
-            str(lsp.get_definition(circle_file, lspt.Position(1,8 ))),
+            str(lsp.get_definition(circle_file, lspt.Position(9,16))),
         )
         self.assertIn(
             "fixtures/circle_pure.jac:13:11-13:16",
