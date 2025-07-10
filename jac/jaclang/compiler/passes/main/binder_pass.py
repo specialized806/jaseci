@@ -138,8 +138,35 @@ class BinderPass(UniPass):
                 first_obj_sym = self.cur_scope.lookup(
                     first_obj.sym_name
                 )  # Need to perform lookup as the symbol is not bound yet
+                if not first_obj_sym:
+                    return  # TODO: Handle this case properly
+                # print(node.unparse())
+                # print(f"[DEBUG] First object symbol: {first_obj_sym}")
+                # print(f"[DEBUG] First object symbol: {first_obj_sym.fetch_sym_tab}")
+                # print(f"[DEBUG] First object name spec: {first_obj.name_spec}")
                 if first_obj_sym.imported:
+                    # print('going if')
                     self.resolve_import(node)
+                else:
+                    # print('going else')
+                    try:
+                        first_obj_sym.add_defn(first_obj.name_spec)
+                        current_sym_tab = first_obj_sym.fetch_sym_tab
+                        # print(f"[DEBUG] Current symbol table: {current_sym_tab}")
+                        for j in i.as_attr_list[1:]:
+                            # print(f"[DEBUG] Processing attribute: {j.sym_name}")
+                            attr_sym = current_sym_tab.lookup(j.sym_name)
+                            if not attr_sym:
+                                self.log_error(
+                                    f"Could not resolve attribute '{j.sym_name}' in chain"
+                                )
+                                break
+                            attr_sym.add_defn(j)
+                            current_sym_tab = attr_sym.fetch_sym_tab
+                    except Exception as e:
+                        pass
+                         #TODO: need to fix this
+
 
             elif isinstance(i, uni.AstSymbolNode):
                 #  TODO: Move this into symbol table
@@ -159,36 +186,44 @@ class BinderPass(UniPass):
         )
         symbol.symbol_table = self.cur_scope
         if node.is_method:
-            self.cur_scope.def_insert(uni.Name.gen_stub_from_node(node, "self"))
+            self_name = uni.Name.gen_stub_from_node(node, "self")
+            self.cur_scope.def_insert(self_name)
+            arc_sym = node.parent_of_type(uni.Archetype)
+            self_name.sym.symbol_table = arc_sym
             self.cur_scope.def_insert(
                 uni.Name.gen_stub_from_node(
                     node, "super", set_name_of=node.method_owner
                 )
             )
             if node.signature and isinstance(node.signature, uni.EventSignature):
-                if node.method_owner.arch_type.name == 'KW_WALKER':
-                    here_sym = self.cur_scope.def_insert(
-                        uni.Name.gen_stub_from_node(
-                            node, "here", set_name_of=node.method_owner
+                try:
+                    if node.method_owner.arch_type.name == 'KW_WALKER':
+                        here_sym = self.cur_scope.def_insert(
+                            uni.Name.gen_stub_from_node(
+                                node, "here", set_name_of=node.method_owner
+                            )
                         )
-                    )
-                    # TODO: Handle atom trailer here
-                    # "can ability2 with MyNode.Inner.DeepInner entry"
-                    node_name = node.signature.arch_tag_info.unparse()
-                    par_tab = self.cur_scope.lookup(node_name).fetch_sym_tab
-                    here_sym.symbol_table = par_tab
-                    
-                if node.method_owner.arch_type.name == 'KW_NODE':
-                    visitor_sym = self.cur_scope.def_insert(
-                        uni.Name.gen_stub_from_node(
-                            node, "visitor", set_name_of=node.method_owner
+                        # TODO: Handle atom trailer here
+                        # "can ability2 with MyNode.Inner.DeepInner entry"
+                        node_name = node.signature.arch_tag_info.unparse()
+                        par_tab = self.cur_scope.lookup(node_name).fetch_sym_tab
+                        here_sym.symbol_table = par_tab
+                        
+                    if node.method_owner.arch_type.name == 'KW_NODE':
+                        visitor_sym = self.cur_scope.def_insert(
+                            uni.Name.gen_stub_from_node(
+                                node, "visitor", set_name_of=node.method_owner
+                            )
                         )
+                        # TODO: Handle atom trailer here
+                        # "can ability2 with Mywalker.Inner.DeepInner entry"
+                        walker_name = node.signature.arch_tag_info.unparse()
+                        par_tab = self.cur_scope.lookup(walker_name).fetch_sym_tab
+                        visitor_sym.symbol_table = par_tab
+                except Exception as e:
+                    self.log_error(
+                        f"Error while inserting 'here' or 'visitor' symbol: {str(e)}"
                     )
-                    # TODO: Handle atom trailer here
-                    # "can ability2 with Mywalker.Inner.DeepInner entry"
-                    walker_name = node.signature.arch_tag_info.unparse()
-                    par_tab = self.cur_scope.lookup(walker_name).fetch_sym_tab
-                    visitor_sym.symbol_table = par_tab
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         for name in node.target:
@@ -266,13 +301,36 @@ class BinderPass(UniPass):
 
     def enter_func_call(self, node: uni.FuncCall) -> None:
         if isinstance(node.target, uni.AtomTrailer):
-            if isinstance(node.target, uni.AtomTrailer):
                 first_obj = node.target.as_attr_list[0]
                 first_obj_sym = self.cur_scope.lookup(
                     first_obj.sym_name
                 )  # Need to perform lookup as the symbol is not bound yet
+                # print(node.unparse())
+                # print(f"[DEBUG] First object symbol: {first_obj_sym}")
+                if not first_obj_sym:
+                    return #TODO: Handle this case properly
                 if first_obj_sym.imported:
                     self.resolve_import(node)
+                else:
+                    first_obj_sym.add_use(first_obj.name_spec)
+                current_sym_tab = first_obj_sym.fetch_sym_tab
+                try:
+                    # print(f"[DEBUG] Current symbol table: {current_sym_tab}")
+                    # print(node.unparse())
+                    for i in node.target.as_attr_list[1:]:
+                        # print(f"[DEBUG] Processing attribute: {i.sym_name}")
+                        attr_sym = current_sym_tab.lookup(i.sym_name)
+                        if not attr_sym:
+                            self.log_error(
+                                f"Could not resolve attribute '{i.sym_name}' in chain"
+                            )
+                            break
+                        attr_sym.add_use(i)
+                        current_sym_tab = attr_sym.fetch_sym_tab
+                except Exception:
+                    pass
+                    # TODO: need to fix this
+
             # node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
         elif isinstance(node.target, uni.AstSymbolNode):
             #  TODO: Move this into symbol table
@@ -383,7 +441,7 @@ class BinderPass(UniPass):
 
     def resolve_import(self, node: uni.UniNode):
         """Resolve imports for atom trailers like 'apple.color.bla.blah'."""
-        print('Resolving import for node:', node.__class__.__name__)
+        # print('Resolving import for node:', node.__class__.__name__)
         if isinstance(node, uni.Assignment):
             self._resolve_assignment_imports(node)
         elif isinstance(node, uni.InForStmt):
@@ -424,11 +482,11 @@ class BinderPass(UniPass):
         first_obj_sym = self.cur_scope.lookup(first_obj.sym_name)
         
         if not first_obj_sym:
-            print(f"[DEBUG] Symbol '{first_obj.sym_name}' not found in current scope")
+            # print(f"[DEBUG] Symbol '{first_obj.sym_name}' not found in current scope")
             return
             
         if not first_obj_sym.imported:
-            print(f"[DEBUG] Symbol '{first_obj.sym_name}' is not imported, skipping")
+            # print(f"[DEBUG] Symbol '{first_obj.sym_name}' is not imported, skipping")
             return
             
         # We need to handle all 7 types of import patterns here
@@ -444,10 +502,20 @@ class BinderPass(UniPass):
         if not import_node:
             self.log_error(f"Could not find import statement for symbol '{first_obj_sym.sym_name}'")
             return
-        
+        # print(atom_trailer.loc.mod_path, atom_trailer.loc)
+        # print('first_obj_sym>>',first_obj_sym)
+        # print('first_obj_sym decl>>',first_obj_sym.decl)
         # Parse and link the imported module
-        module_path = first_obj_sym.decl.find_parent_of_type(uni.ModulePath).resolve_relative_path() 
-        if module_path:
+        mod_item_node = first_obj_sym.decl.find_parent_of_type(uni.ModuleItem)
+        if not mod_item_node:
+            mod_path_node = first_obj_sym.decl.find_parent_of_type(uni.ModulePath)
+        else:
+            mod_path_node = mod_item_node.find_parent_of_type(uni.Import)
+            mod_path_node = mod_path_node.from_loc
+            print(f"[DEBUG] Module item node: {mod_item_node}")
+        # print(f"[DEBUG] Module path node: {mod_path_node}")
+        module_path = mod_path_node.resolve_relative_path() 
+        if module_path: 
             linked_module = self._parse_and_link_module(module_path, first_obj_sym)
             # print(isinstance(linked_module, uni.UniScopeNode))
             if linked_module:
@@ -495,7 +563,8 @@ class BinderPass(UniPass):
         for i in range(1, len(attr_list)):
             attr_node = attr_list[i]
             attr_name = attr_node.sym_name
-            
+            if not current_sym_table:
+                return # TODO: Handle this case properly
             # Look up the attribute in the current symbol table
             attr_symbol = current_sym_table.lookup(attr_name)
             if not attr_symbol:
@@ -513,6 +582,9 @@ class BinderPass(UniPass):
         """Parse the module and link it to the symbol."""
         try:
             existing_module = None
+            if 'unitree' in module_path:
+                print(f"[DEBUG] Unitree module detected: {module_path}")
+                exit()
             # Check if module is already loaded
             if module_path in self.prog.mod.hub:
                 existing_module = self.prog.mod.hub[module_path]

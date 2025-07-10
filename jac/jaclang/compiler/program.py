@@ -74,7 +74,6 @@ class JacProgram:
 
     def parse_str(self, source_str: str, file_path: str) -> uni.Module:
         """Convert a Jac file to an AST."""
-        print('parsing --:', file_path)
         had_error = False
         if file_path.endswith(".py") or file_path.endswith(".pyi"):
             parsed_ast = py_ast.parse(source_str)
@@ -129,10 +128,6 @@ class JacProgram:
         # but if it is `import math` then we do not need to parse
         # DirectImportPass(ir_in=mod_targ, prog=self)
         BinderPass(ir_in=mod_targ, prog=self)
-        # print(f"[DEBUG] All loaded modules: {list(self.mod.hub.keys())}")
-        # for mod in self.mod.hub.values():
-        #     print(f"[DEBUG] Module: {mod.loc.mod_path}")
-        #     print(mod.sym_pp())
         return mod_targ
 
     def run_schedule(
