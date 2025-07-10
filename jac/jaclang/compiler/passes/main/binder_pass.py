@@ -462,6 +462,7 @@ class BinderPass(UniPass):
             return import_node
         self.ice(f"Symbol '{symbol.sym_name}' does not have a valid import declaration")
 
+    # TODO: this is an important function: it should support all 7 types of imports here
     def _get_module_path_from_symbol(self, symbol: uni.Symbol) -> Optional[str]:
         """Extract module path from symbol's import declaration."""
         mod_item_node = symbol.decl.find_parent_of_type(uni.ModuleItem)
