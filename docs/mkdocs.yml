@@ -18,7 +18,7 @@ nav:
         - "learn/examples/rag_chatbot/Tutorial.md"
       - RPG game with AI Genarated Maps: "learn/examples/mtp_examples/rpg_game.md"
       - Agentic Fantasy Trading Game: "learn/examples/mtp_examples/fantasy_trading_game.md"
-    - Learn Jac Language:
+    - Learn Jac Language (WIP):
       - Introduction: "jac_book/index.md"
       - 1. Welcome to Jac: "jac_book/chapter_1.md"
       - 2. Starting Jac, Variables and Types: "jac_book/chapter_2.md"
