@@ -14,7 +14,9 @@ def generate_essay(topic: str) -> str by llm(stream=True);
 
 with entry {
     topic = "The orca whale and its hunting techniques";
-    for tok in generate_essay(topic) {
+    resp = generate_essay(topic);
+    assert resp is not str;
+    for tok in resp {
         print(tok, end='', flush=True);
     }
     print();
