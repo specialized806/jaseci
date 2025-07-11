@@ -1,30 +1,32 @@
 # MCP Chatbot Overview
 
-This project demonstrates a modern Retrieval-Augmented Generation (RAG) chatbot built using the Jac programming language, MTLLM, Jac Cloud, and Model Context Protocol (MCP) servers. It combines document ingestion, semantic search, and large language models (LLMs) to deliver a conversational AI experience that can answer questions based on your own documents.
+This project demonstrates a modern Retrieval-Augmented Generation (RAG) chatbot built using the Jac programming language, MTLLM, Jac Cloud, and Model Context Protocol (MCP) servers. It combines document ingestion, semantic search, and large language models (LLMs) to deliver a conversational AI experience that can answer questions based on your own documents—including images and videos.
 
 ## Key Features
 
-- **Document Upload & Ingestion**: Upload PDF files, which are automatically processed and indexed for semantic search.
-- **Retrieval-Augmented Generation**: Combines LLMs with document retrieval for accurate, context-aware answers.
+- **Document, Image & Video Upload & Ingestion**: Upload PDF, image, and video files, which are automatically processed and indexed for semantic and multimodal search.
+- **Retrieval-Augmented Generation**: Combines LLMs with document and media retrieval for accurate, context-aware answers.
 - **Web Search Integration**: Optionally augments responses with real-time web search results.
 - **MCP Server Architecture**: Uses Model Context Protocol for modular tool management and better scalability.
-- **Streamlit Frontend**: User-friendly chat interface for interacting with the bot and uploading documents.
-- **API Server**: RESTful endpoints for chat, document upload, and more, powered by Jac Cloud.
+- **Streamlit Frontend**: User-friendly chat interface for interacting with the bot and uploading documents, images, and videos.
+- **API Server**: RESTful endpoints for chat, document/media upload, and more, powered by Jac Cloud.
 - **Session Management**: Maintains chat history and user sessions.
+- **Multimodal Chat**: Users can chat about uploaded images and videos, not just text documents.
 
 ## Technologies Used
 - Jac & Jac Cloud & Jac MTLLM
 - Model Context Protocol (MCP)
 - LangChain, ChromaDB, PyPDF, Streamlit
 - OpenAI or local LLMs (Ollama)
+- Multimodal LLMs and media processing libraries
 
 ## Architecture
 
-- **client.jac**: Implements the Streamlit-based frontend for chat and document upload.
+- **client.jac**: Implements the Streamlit-based frontend for chat and document/image/video upload.
 - **server.jac**: Hosts the API, manages sessions, and coordinates with MCP tools using ReAct pattern.
-- **mcp_server.jac**: MCP server that exposes document search and web search tools.
+- **mcp_server.jac**: MCP server that exposes document, image, and video search tools.
 - **mcp_client.jac**: Client interface for communicating with MCP servers.
-- **tools.jac**: Contains the RAG engine and web search implementations used by the MCP server.
+- **tools.jac**: Contains the RAG engine, multimodal and web search implementations used by the MCP server.
 
 
 === "Frontend Preview"
