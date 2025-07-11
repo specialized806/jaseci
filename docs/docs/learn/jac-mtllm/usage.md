@@ -325,3 +325,31 @@ The ReAct method demonstrates genuine agentic behavior because:
 4. **Goal-Oriented**: It works towards solving the complete problem, not just individual steps
 
 A full tutorial on [building an agentic application is available here.](../examples/mtp_examples/fantasy_trading_game.md)
+
+
+## Streaming Outputs
+
+The streaming feature allows you to receive tokens from LLM functions in real-time, enabling dynamic interactions and responsive applications. This is particularly useful for generating content like essays, code, or any long-form text where you want to display results as they are produced.
+
+In the invoke parameters, you can set `stream=True` to enable streaming:
+
+```jac linenums="1"
+import from mtllm { Model }
+
+glob llm = Model(model_name="gpt-4o-mini");
+
+""" Generate short essay (less than 300 words) about the given topic """
+def generate_essay(topic: str) -> str by llm(stream=True);
+
+
+with entry {
+    topic = "The orca whale and it's hunting techniques";
+    for tok in generate_essay(topic) {
+        print(tok, end='', flush=True);
+    }
+    print(end='\n');
+}
+```
+
+??? example "NOTE:
+    "The `stream=True` will only support the output of type `str` and at the moment tool calling is not supported in streaming mode. That will be supported in the future."
