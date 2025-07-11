@@ -31,7 +31,7 @@ def get_person_info(img: Image) -> Person:
 ```
 
 ??? example "NOTE:
-    "The above example will be change with a ease of use API in the future. The current example is a low-level API that requires you to define the function and its parameters manually. The ease of use API will allow you to define the function and its parameters in a more user-friendly way."
+    "The above example will be changed to use an easier-to-use API in the future. The current example is a low-level API that requires you to define the function and its parameters manually. The easier-to-use API will allow you to define the function and its parameters in a more user-friendly way."
 
 ## Invoke parameters
 
