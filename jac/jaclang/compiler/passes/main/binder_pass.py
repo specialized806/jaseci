@@ -222,7 +222,7 @@ class BinderPass(UniPass):
         self_name = uni.Name.gen_stub_from_node(node, "self")
         self.cur_scope.def_insert(self_name)
         arc_sym = node.parent_of_type(uni.Archetype)
-        self_name.sym.symbol_table = arc_sym
+        # self_name.sym.symbol_table = arc_sym
 
         self.cur_scope.def_insert(
             uni.Name.gen_stub_from_node(node, "super", set_name_of=node.method_owner)
@@ -250,7 +250,7 @@ class BinderPass(UniPass):
         )
         node_name = node.signature.arch_tag_info.unparse()
         par_tab = self.cur_scope.lookup(node_name).symbol_table
-        here_sym.symbol_table = par_tab
+        # here_sym.symbol_table = par_tab
 
     def _setup_node_context(self, node: uni.Ability) -> None:
         """Init 'visitor' for node; link symbol table to parent."""
@@ -259,7 +259,7 @@ class BinderPass(UniPass):
         )
         walker_name = node.signature.arch_tag_info.unparse()
         par_tab = self.cur_scope.lookup(walker_name).symbol_table
-        visitor_sym.symbol_table = par_tab
+        # visitor_sym.symbol_table = par_tab
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Enter global statement."""
@@ -513,7 +513,7 @@ class BinderPass(UniPass):
         try:
             if module_path in self.prog.mod.hub:
                 existing_module = self.prog.mod.hub[module_path]
-                symbol.symbol_table = existing_module.sym_tab
+                # symbol.symbol_table = existing_module.sym_tab
                 return existing_module
 
             with open(module_path, "r", encoding="utf-8") as file:
@@ -523,7 +523,7 @@ class BinderPass(UniPass):
                 source_str=source_str, file_path=module_path
             )
             BinderPass(ir_in=parsed_module, prog=self.prog)
-            symbol.symbol_table = parsed_module.sym_tab
+            # symbol.symbol_table = parsed_module.sym_tab
 
             return parsed_module
 
