@@ -244,7 +244,6 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
-        self.symbol_table: Optional[UniScopeNode] = None
 
     @property
     def decl(self) -> NameAtom:
@@ -272,17 +271,10 @@ class Symbol:
         out.reverse()
         return ".".join(out)
 
-    def binder_required(self, node: AstSymbolNode) -> bool:
-        """Check if binder is required for this symbol."""
-        return True
-
     @property
-    def fetch_sym_tab(self) -> Optional[UniScopeNode]:
+    def symbol_table(self) -> Optional[UniScopeNode]:
         """Get symbol table."""
-        if self.symbol_table:
-            return self.symbol_table
-        self.symbol_table = self.parent_tab.find_scope(self.sym_name)
-        return self.symbol_table
+        return self.parent_tab.find_scope(self.sym_name)
 
     def add_defn(self, node: NameAtom) -> None:
         """Add defn."""
@@ -327,7 +319,7 @@ class UniScopeNode(UniNode):
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
         if name in self.names_in_scope:
-                return self.names_in_scope[name]
+            return self.names_in_scope[name]
         for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
             if found:

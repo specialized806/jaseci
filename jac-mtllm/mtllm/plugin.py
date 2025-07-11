@@ -380,7 +380,7 @@ class JacMachine:
                 raise _pass.ice(
                     "Semantic Error: Couldn't infer by call body override at compile time."
                 )
-            ability = node.target.sym.fetch_sym_tab
+            ability = node.target.sym.symbol_table
             if not isinstance(ability, uni.Ability):
                 raise _pass.ice("Semantic Error: Expected an ability call.")
             extracted_type = (

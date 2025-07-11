@@ -112,18 +112,23 @@ class JacProgram:
         if not no_cgen:
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
         return mod_targ
-    
-    def bind(self, file_path: str) -> uni.Module:
-        """Bind the Jac module."""
-        pass
 
-    def build(self, file_path: str, use_str: str | None = None) -> uni.Module:
-        """Convert a Jac file to an AST."""
+    def bind(self, file_path: str, use_str: str | None = None) -> uni.Module:
+        """Bind the Jac module."""
         with open(file_path, "r", encoding="utf-8") as file:
             use_str = file.read()
         mod_targ = self.parse_str(use_str, file_path)
-        # TODO: AnnexImpl handling
         BinderPass(ir_in=mod_targ, prog=self)
+        return mod_targ
+
+    def build(self, file_path: str, use_str: str | None = None) -> uni.Module:
+        """Convert a Jac file to an AST."""
+        mod_targ = self.compile(file_path, use_str)
+        JacImportDepsPass(ir_in=mod_targ, prog=self)
+        for mod in self.mod.hub.values():
+            SymTabLinkPass(ir_in=mod, prog=self)
+        for mod in self.mod.hub.values():
+            DefUsePass(mod, prog=self)
         return mod_targ
 
     def run_schedule(

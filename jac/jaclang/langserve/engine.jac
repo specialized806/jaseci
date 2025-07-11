@@ -259,7 +259,7 @@ class JacLangServer(JacProgram , LanguageServer) {
                         }
                         symb = temp_tab.lookup(symbol);
                         if symb {
-                            fetc_tab = symb.fetch_sym_tab;
+                            fetc_tab = symb.symbol_table;
                             if fetc_tab {
                                 temp_tab = fetc_tab;
                             } else {
@@ -284,9 +284,9 @@ class JacLangServer(JacProgram , LanguageServer) {
                             }
                         }
                         for base_class_symbol in base {
-                            if base_class_symbol.fetch_sym_tab {
+                            if base_class_symbol.symbol_table {
                                 completion_items += utils.collect_all_symbols_in_scope(
-                                    base_class_symbol.fetch_sym_tab,
+                                    base_class_symbol.symbol_table,
                                     up_tree=False
                                 );
                             }

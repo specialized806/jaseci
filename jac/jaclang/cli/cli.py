@@ -206,7 +206,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
 
 
 @cmd_registry.register
-def build(filename: str, typecheck: bool = False) -> None:
+def build(filename: str) -> None:
     """Build the specified .jac file.
 
     Compiles a Jac source file into a Jac Intermediate Representation (.jir) file,
@@ -218,17 +218,47 @@ def build(filename: str, typecheck: bool = False) -> None:
 
     Examples:
         jac build myprogram.jac
-        jac build myprogram.jac -t
+        jac build myprogram.jac --no-typecheck
+    """
+    if filename.endswith(".jac"):
+        (out := JacProgram()).compile(file_path=filename)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
+        print(f"Errors: {errs}, Warnings: {warnings}")
+        with open(filename[:-4] + ".jir", "wb") as f:
+            pickle.dump(out, f)
+    else:
+        print("Not a .jac file.", file=sys.stderr)
+
+
+@cmd_registry.register
+def bind(filename: str, typecheck: bool = False) -> None:
+    """Bind the specified .jac file.
+
+    Parses and binds a Jac source file, resolving symbols and preparing it for execution.
+    This step is necessary before running the program, as it ensures all references
+    are correctly linked and the program structure is validated.
+    TODO: performs type checking.
+
+    Args:
+        filename: Path to the .jac file to bind
+        typecheck: Print the symbol table after binding (default: False)
+
+    Examples:
+        jac bind myprogram.jac
+        jac bind myprogram.jac -t
     """
     if filename.endswith((".jac", ".py")):
-        (out := JacProgram()).build(file_path=filename)
+        (out := JacProgram()).bind(file_path=filename)
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         if typecheck:
             for mods in out.mod.hub.values():
-                if mods.name == 'builtins':
+                if mods.name == "builtins":
                     continue
-                header = f"{'='*6} SymTable({mods.name}) {'='*(22-len(mods.name))}"
+                header = (
+                    f"{'=' * 6} SymTable({mods.name}) {'=' * (22 - len(mods.name))}"
+                )
                 divider = "=" * 40
                 print(f"{divider}\n{header}\n{divider}\n{mods.sym_tab.sym_pp()}")
         print(f"Errors: {errs}, Warnings: {warnings}")

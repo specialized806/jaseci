@@ -17,14 +17,10 @@ The pass runs early in the compilation pipeline to ensure all symbols from impor
 modules are available for subsequent passes like symbol table building and type checking.
 """
 
-import ast as py_ast
 import os
-from typing import Optional
-
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import Transform, UniPass
-from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.utils.log import logging
 
 

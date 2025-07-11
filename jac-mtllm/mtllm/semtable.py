@@ -215,7 +215,7 @@ class SemRegistry:
                 sem_scope = get_sem_scope(decl_node)
 
             # Get the symbol table that contains the symbol's members
-            scope_node = symbol.fetch_sym_tab
+            scope_node = symbol.symbol_table
             if scope_node is None:
                 # Try to find the scope node by name
                 scope_node = symbol.parent_tab.find_scope(symbol.sym_name)

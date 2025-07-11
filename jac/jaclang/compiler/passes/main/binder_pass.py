@@ -91,14 +91,14 @@ class BinderPass(UniPass):
 
     GLOBAL_STACK_NODES = (uni.Ability, uni.Archetype)
 
-    def enter_node(self, node) -> None:
+    def enter_node(self, node: uni.UniNode) -> None:
         if isinstance(node, self.SCOPE_NODES):
             self.push_scope_and_link(node)
         if isinstance(node, self.GLOBAL_STACK_NODES):
             self.globals_stack.append([])
         super().enter_node(node)
 
-    def exit_node(self, node):
+    def exit_node(self, node: uni.UniNode) -> None:
         if isinstance(node, self.SCOPE_NODES):
             self.pop_scope()
         if isinstance(node, self.GLOBAL_STACK_NODES):
@@ -113,13 +113,13 @@ class BinderPass(UniPass):
         attr_list = node.as_attr_list
         if not attr_list:
             return False
-            
+
         first_obj = attr_list[0]
         first_obj_sym = self.cur_scope.lookup(first_obj.sym_name)
-        
+
         if not first_obj_sym:
             return False
-            
+
         if first_obj_sym.imported:
             return self._handle_imported_chain(node, operation)
         else:
@@ -133,48 +133,54 @@ class BinderPass(UniPass):
         except Exception:
             return False
 
-    def _handle_local_chain(self, first_sym: uni.Symbol, attr_list: list[uni.AstSymbolNode], operation: str) -> bool:
+    def _handle_local_chain(
+        self, first_sym: uni.Symbol, attr_list: list[uni.AstSymbolNode], operation: str
+    ) -> bool:
         """Handle chains within local scope."""
         try:
-            current_sym_tab = first_sym.fetch_sym_tab
-            
-            if operation == 'define':
+            current_sym_tab = first_sym.symbol_table
+
+            if operation == "define":
                 first_sym.add_defn(attr_list[0].name_spec)
             else:  # operation == 'use'
                 first_sym.add_use(attr_list[0].name_spec)
-                
+
             for attr_node in attr_list[1:]:
                 if not current_sym_tab:
                     break
-                    
+
                 attr_sym = current_sym_tab.lookup(attr_node.sym_name)
                 if not attr_sym:
-                    self.log_error(f"Could not resolve attribute '{attr_node.sym_name}' in chain")
+                    self.log_error(
+                        f"Could not resolve attribute '{attr_node.sym_name}' in chain"
+                    )
                     return False
-                    
-                if operation == 'define':
+
+                if operation == "define":
                     attr_sym.add_defn(attr_node)
                 else:  # operation == 'use'
                     attr_sym.add_use(attr_node)
-                    
-                current_sym_tab = attr_sym.fetch_sym_tab
+
+                current_sym_tab = attr_sym.symbol_table
             return True
         except Exception:
             return False
 
-    def handle_simple_symbol(self, symbol_node: uni.AstSymbolNode, operation: str) -> bool:
+    def handle_simple_symbol(
+        self, symbol_node: uni.AstSymbolNode, operation: str
+    ) -> bool:
         """Handle simple symbol nodes (non-chain)."""
         glob_sym = self.check_global(symbol_node.sym_name)
-        
+
         if glob_sym:
             symbol_node.name_spec._sym = glob_sym
-            if operation == 'define':
+            if operation == "define":
                 glob_sym.add_defn(symbol_node)
             else:  # operation == 'use'
                 glob_sym.add_use(symbol_node)
             return True
         else:
-            if operation == 'define':
+            if operation == "define":
                 self.cur_scope.def_insert(symbol_node, single_decl="assignment")
             else:  # operation == 'use'
                 found_symbol = self.cur_scope.lookup(symbol_node.sym_name)
@@ -196,73 +202,63 @@ class BinderPass(UniPass):
     def _process_assignment_target(self, target: uni.Expr) -> None:
         """Process individual assignment target."""
         if isinstance(target, uni.AtomTrailer):
-            self.handle_symbol_chain(target, 'define')
+            self.handle_symbol_chain(target, "define")
         elif isinstance(target, uni.AstSymbolNode):
-            self.handle_simple_symbol(target, 'define')
+            self.handle_simple_symbol(target, "define")
         else:
             self.log_error("Assignment target not valid")
 
     def enter_ability(self, node: uni.Ability) -> None:
         """Enter ability node and set up method context."""
         assert node.parent_scope is not None
-        symbol = node.parent_scope.def_insert(
-            node, access_spec=node, single_decl="ability"
-        )
-        symbol.symbol_table = self.cur_scope
-        
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="ability")
+        # symbol.symbol_table = self.cur_scope
+
         if node.is_method:
             self._setup_method_context(node)
 
     def _setup_method_context(self, node: uni.Ability) -> None:
-        """Setup self, super, and context-specific symbols for methods."""
-        # Add 'self' symbol
+        """Set up method context by defining 'self', 'super', and event context symbols if needed."""
         self_name = uni.Name.gen_stub_from_node(node, "self")
         self.cur_scope.def_insert(self_name)
         arc_sym = node.parent_of_type(uni.Archetype)
         self_name.sym.symbol_table = arc_sym
-        
-        # Add 'super' symbol
+
         self.cur_scope.def_insert(
-            uni.Name.gen_stub_from_node(
-                node, "super", set_name_of=node.method_owner
-            )
+            uni.Name.gen_stub_from_node(node, "super", set_name_of=node.method_owner)
         )
-        
+
         if node.signature and isinstance(node.signature, uni.EventSignature):
             self._setup_event_context(node)
 
     def _setup_event_context(self, node: uni.Ability) -> None:
-        """Setup context symbols for event signatures :'here','visitor'."""
+        """Set up 'here' and 'visitor' symbols for event signatures."""
         try:
             arch_type = node.method_owner.arch_type.name
-            
-            if arch_type == 'KW_WALKER':
+
+            if arch_type == "KW_WALKER":
                 self._setup_walker_context(node)
-            elif arch_type == 'KW_NODE':
+            elif arch_type == "KW_NODE":
                 self._setup_node_context(node)
         except Exception as e:
             self.log_error(f"Error while setting up event context: {str(e)}")
 
     def _setup_walker_context(self, node: uni.Ability) -> None:
-        """Setup 'here' symbol for walker abilities."""
+        """Init 'here' for walker; link symbol table to parent."""
         here_sym = self.cur_scope.def_insert(
-            uni.Name.gen_stub_from_node(
-                node, "here", set_name_of=node.method_owner
-            )
+            uni.Name.gen_stub_from_node(node, "here", set_name_of=node.method_owner)
         )
         node_name = node.signature.arch_tag_info.unparse()
-        par_tab = self.cur_scope.lookup(node_name).fetch_sym_tab
+        par_tab = self.cur_scope.lookup(node_name).symbol_table
         here_sym.symbol_table = par_tab
 
     def _setup_node_context(self, node: uni.Ability) -> None:
-        """Setup 'visitor' symbol for node abilities."""
+        """Init 'visitor' for node; link symbol table to parent."""
         visitor_sym = self.cur_scope.def_insert(
-            uni.Name.gen_stub_from_node(
-                node, "visitor", set_name_of=node.method_owner
-            )
+            uni.Name.gen_stub_from_node(node, "visitor", set_name_of=node.method_owner)
         )
         walker_name = node.signature.arch_tag_info.unparse()
-        par_tab = self.cur_scope.lookup(walker_name).fetch_sym_tab
+        par_tab = self.cur_scope.lookup(walker_name).symbol_table
         visitor_sym.symbol_table = par_tab
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
@@ -288,7 +284,10 @@ class BinderPass(UniPass):
     def enter_test(self, node: uni.Test) -> None:
         """Enter test node and add unittest methods."""
         import unittest
-        for method_name in [j for j in dir(unittest.TestCase()) if j.startswith("assert")]:
+
+        for method_name in [
+            j for j in dir(unittest.TestCase()) if j.startswith("assert")
+        ]:
             self.cur_scope.def_insert(
                 uni.Name.gen_stub_from_node(node, method_name, set_name_of=node)
             )
@@ -333,12 +332,12 @@ class BinderPass(UniPass):
     def enter_func_call(self, node: uni.FuncCall) -> None:
         """Enter function call node."""
         if isinstance(node.target, uni.AtomTrailer):
-            self.handle_symbol_chain(node.target, 'use')
+            self.handle_symbol_chain(node.target, "use")
         elif isinstance(node.target, uni.AstSymbolNode):
             if self._handle_builtin_symbol(node.target.sym_name, node.target):
                 return
-            
-            self.handle_simple_symbol(node.target, 'use')
+
+            self.handle_simple_symbol(node.target, "use")
         else:
             self.log_error("Function call target not valid")
 
@@ -409,11 +408,12 @@ class BinderPass(UniPass):
     ############################
     def resolve_import(self, node: uni.UniNode) -> None:
         """Resolve imports for atom trailers like 'apple.color.bla.blah'."""
-
         if isinstance(node, uni.AtomTrailer):
             self._resolve_atom_trailer_import(node)
         else:
-            self.log_warning(f"Import resolution not implemented for {type(node).__name__}")
+            self.log_warning(
+                f"Import resolution not implemented for {type(node).__name__}"
+            )
 
     def _resolve_assignment_imports(self, node: uni.Assignment) -> None:
         """Handle import resolution for assignment statements."""
@@ -431,22 +431,24 @@ class BinderPass(UniPass):
         attr_list = atom_trailer.as_attr_list
         if not attr_list:
             raise ValueError("Atom trailer must have at least one attribute")
-            
+
         first_obj = attr_list[0]
         first_obj_sym = self.cur_scope.lookup(first_obj.sym_name)
         if not first_obj_sym or not first_obj_sym.imported:
             return
-            
+
         import_node = self._find_import_for_symbol(first_obj_sym)
         if not import_node:
-            self.log_error(f"Could not find import statement for symbol '{first_obj_sym.sym_name}'")
+            self.log_error(
+                f"Could not find import statement for symbol '{first_obj_sym.sym_name}'"
+            )
             return
 
         module_path = self._get_module_path_from_symbol(first_obj_sym)
         if not module_path:
-            self.log_error(f"Could not resolve module path for import")
+            self.log_error("Could not resolve module path for import")
             return
-            
+
         linked_module = self._parse_and_link_module(module_path, first_obj_sym)
         if linked_module:
             self._link_attribute_chain(attr_list, first_obj_sym, linked_module)
@@ -460,6 +462,7 @@ class BinderPass(UniPass):
         if import_node:
             return import_node
         self.ice(f"Symbol '{symbol.sym_name}' does not have a valid import declaration")
+        return None
 
     # TODO: this is an important function: it should support all 7 types of imports here
     def _get_module_path_from_symbol(self, symbol: uni.Symbol) -> Optional[str]:
@@ -469,10 +472,15 @@ class BinderPass(UniPass):
             mod_path_node = mod_item_node.find_parent_of_type(uni.Import).from_loc
         else:
             mod_path_node = symbol.decl.find_parent_of_type(uni.ModulePath)
-            
+
         return mod_path_node.resolve_relative_path() if mod_path_node else None
 
-    def _link_attribute_chain(self, attr_list: list[uni.AstSymbolNode], first_symbol: uni.Symbol, current_module: uni.Module) -> None:
+    def _link_attribute_chain(
+        self,
+        attr_list: list[uni.AstSymbolNode],
+        first_symbol: uni.Symbol,
+        current_module: uni.Module,
+    ) -> None:
         """Link the full attribute chain by resolving each symbol."""
         current_symbol = first_symbol
         current_sym_table = current_module.sym_tab
@@ -480,59 +488,65 @@ class BinderPass(UniPass):
         # Add use for the first symbol
         first_obj = attr_list[0]
         current_symbol.add_use(first_obj)
-        
+
         # Iterate through remaining attributes in the chain
         for attr_node in attr_list[1:]:
             if not current_sym_table:
                 return
-                
+
             attr_symbol = current_sym_table.lookup(attr_node.sym_name)
             if not attr_symbol:
-                self.log_error(f"Could not resolve attribute '{attr_node.sym_name}' in chain")
+                self.log_error(
+                    f"Could not resolve attribute '{attr_node.sym_name}' in chain"
+                )
                 break
-            
+
             attr_symbol.add_use(attr_node)
             current_symbol = attr_symbol
-            current_sym_table = current_symbol.fetch_sym_tab
-    
-    #TODO:move this to Jac Program
-    def _parse_and_link_module(self, module_path: str, symbol: uni.Symbol) -> Optional[uni.Module]:
+            current_sym_table = current_symbol.symbol_table
+
+    # TODO:move this to Jac Program
+    def _parse_and_link_module(
+        self, module_path: str, symbol: uni.Symbol
+    ) -> Optional[uni.Module]:
         """Parse the module and link it to the symbol."""
         try:
             if module_path in self.prog.mod.hub:
                 existing_module = self.prog.mod.hub[module_path]
                 symbol.symbol_table = existing_module.sym_tab
                 return existing_module
-                
+
             with open(module_path, "r", encoding="utf-8") as file:
                 source_str = file.read()
-                
-            parsed_module: uni.Module = self.prog.parse_str(source_str=source_str, file_path=module_path)
+
+            parsed_module: uni.Module = self.prog.parse_str(
+                source_str=source_str, file_path=module_path
+            )
             BinderPass(ir_in=parsed_module, prog=self.prog)
-            symbol.symbol_table = parsed_module.sym_tab        
-  
+            symbol.symbol_table = parsed_module.sym_tab
+
             return parsed_module
-            
+
         except Exception as e:
             self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
             return None
-    
+
     def load_builtins(self) -> None:
-        """Load built-in symbols from the builtins.pyi file."""
+        """Load built-in symbols from the b uiltins.pyi file."""
         try:
             builtins_path = os.path.join(
                 os.path.dirname(__file__),
-                "../../../vendor/typeshed/stdlib/builtins.pyi"
+                "../../../vendor/typeshed/stdlib/builtins.pyi",
             )
-            
+
             # lets keep this line until typeshed are merged with jaclang
             if not os.path.exists(builtins_path):
                 self.log_warning(f"Builtins file not found at {builtins_path}")
                 return
-                
+
             with open(builtins_path, "r", encoding="utf-8") as f:
                 file_source = f.read()
-            
+
             from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 
             mod = PyastBuildPass(
@@ -542,11 +556,11 @@ class BinderPass(UniPass):
                 ),
                 prog=self.prog,
             ).ir_out
-            
+
             if mod:
                 self.prog.mod.hub["builtins"] = mod
-                BinderPass(ir_in=mod, prog=self.prog)       
-         
+                BinderPass(ir_in=mod, prog=self.prog)
+
         except Exception as e:
             self.log_error(f"Failed to load builtins: {str(e)}")
 
@@ -555,17 +569,19 @@ class BinderPass(UniPass):
         builtins_mod = self.prog.mod.hub["builtins"]
         return symbol_name in builtins_mod.sym_tab.names_in_scope
 
-    def _handle_builtin_symbol(self, symbol_name: str, target_node: uni.AstSymbolNode) -> bool:
+    def _handle_builtin_symbol(
+        self, symbol_name: str, target_node: uni.AstSymbolNode
+    ) -> bool:
         """Handle builtin symbol lookup and linking."""
         if not self._is_builtin_symbol(symbol_name):
             return False
 
         builtins_mod = self.prog.mod.hub["builtins"]
         builtin_symbol = builtins_mod.sym_tab.lookup(symbol_name)
-        
+
         if not builtin_symbol:
             return False
 
-        target_node.name_spec._sym = builtin_symbol            
+        target_node.name_spec._sym = builtin_symbol
         builtin_symbol.add_use(target_node)
         return True

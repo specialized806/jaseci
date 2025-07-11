@@ -59,10 +59,10 @@ def resolve_module(target: str, base_path: str) -> Tuple[str, str]:
 
     typeshed_paths = get_typeshed_paths()
     for typeshed_dir in typeshed_paths:
-            res = _candidate_from_typeshed(typeshed_dir, actual_parts)
-            if res:
-                # print(f"Found '{target}' in typeshed: {res[0]}")
-                return res
+        res = _candidate_from_typeshed(typeshed_dir, actual_parts)
+        if res:
+            # print(f"Found '{target}' in typeshed: {res[0]}")
+            return res
 
     # If not found in any typeshed directory, but typeshed is configured,
     # return a stub .pyi path for type checking.
@@ -124,9 +124,10 @@ def get_typeshed_paths() -> list[str]:
         paths.append(stdlib)
     return paths
 
+
 def _candidate_from_typeshed(base: str, parts: list[str]) -> Optional[Tuple[str, str]]:
     """Find .pyi files in typeshed, trying module.pyi then package/__init__.pyi."""
-    if not parts: # 
+    if not parts:  #
         return None
 
     # This is the path prefix for the module/package, e.g., os.path.join(base, "collections", "abc")
@@ -154,7 +155,7 @@ def _candidate_from_typeshed(base: str, parts: list[str]) -> Optional[Tuple[str,
         # e.g., parts = ["requests"], candidate_prefix = base/requests
         # checks base/requests/requests/__init__.pyi
         # This part of the original heuristic is preserved.
-        if parts: # Ensure parts is not empty for parts[-1]
+        if parts:  # Ensure parts is not empty for parts[-1]
             inner_pkg_init_pyi = os.path.join(
                 candidate_prefix, parts[-1], "__init__.pyi"
             )
