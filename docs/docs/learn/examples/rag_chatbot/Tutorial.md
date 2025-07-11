@@ -1,7 +1,7 @@
 # MCP Chatbot Full Guide
 
 ## 1. Introduction & Overview
-This guide will walk you through building a state-of-the-art Retrieval-Augmented Generation (RAG) chatbot using Jac Cloud, Jac-Streamlit, Model Context Protocol (MCP), LangChain, ChromaDB, and modern LLMs. You'll learn to:
+This guide will walk you through building a Model Context Protocol(MCP) integrated chatbot using Jac Cloud, Jac-Streamlit, Model Context Protocol (MCP), LangChain, ChromaDB, and modern LLMs. You'll learn to:
 
 - Upload and index your own documents (PDFs), images, and videos
 - Chat with an AI assistant that uses both your documents, images, videos, and LLMs
