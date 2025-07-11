@@ -45,7 +45,7 @@ glob llm = Model(model_name="gpt-4o")
 def generate_joke() -> str by llm(tempreature=0.3);
 ```
 
-The `tempreature` parameter is used to control the randomness of the output. A lower value will result in more deterministic output, while a higher value will result in more random output.
+The `temperature` parameter is used to control the randomness of the output. A lower value will result in more deterministic output, while a higher value will result in more random output.
 
 The same can be done in Python as well. Here is how you can do that:
 
