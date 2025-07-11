@@ -42,7 +42,7 @@ import from mtllm.llm { Model }
 
 glob llm = Model(model_name="gpt-4o")
 
-def generate_joke() -> str by llm(tempreature=0.3);
+def generate_joke() -> str by llm(temperature=0.3);
 ```
 
 The `temperature` parameter is used to control the randomness of the output. A lower value will result in more deterministic output, while a higher value will result in more random output.
