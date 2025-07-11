@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast as ast3
 import fnmatch
 import html
 import inspect
@@ -20,10 +19,8 @@ from typing import (
     Any,
     Callable,
     Coroutine,
-    Mapping,
     Optional,
     ParamSpec,
-    Sequence,
     TYPE_CHECKING,
     Type,
     TypeAlias,
@@ -34,9 +31,7 @@ from typing import (
 from uuid import UUID
 
 
-from jaclang.compiler import unitree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, colors
-from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.archetype import (
     DataSpatialDestination,
@@ -90,11 +85,6 @@ class ExecutionContext:
         """Initialize JacMachine."""
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
-        sr_arch = Root()
-        sr_anch = sr_arch.__jac__
-        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
-        sr_anch.persistent = False
-        self.system_root = sr_anch
         self.custom: Any = MISSING
         if not isinstance(
             system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
@@ -197,7 +187,8 @@ class JacAccessValidation:
             > AccessLevel.NO_ACCESS
         ):
             logger.info(
-                f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
+                "Current root doesn't have read access to "
+                f"{to.__class__.__name__} {to.archetype.__class__.__name__}[{to.id}]"
             )
         return access_level
 
@@ -209,7 +200,8 @@ class JacAccessValidation:
             > AccessLevel.READ
         ):
             logger.info(
-                f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
+                "Current root doesn't have connect access to "
+                f"{to.__class__.__name__} {to.archetype.__class__.__name__}[{to.id}]"
             )
         return access_level
 
@@ -221,14 +213,15 @@ class JacAccessValidation:
             > AccessLevel.CONNECT
         ):
             logger.info(
-                f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
+                "Current root doesn't have write access to "
+                f"{to.__class__.__name__} {to.archetype.__class__.__name__}[{to.id}]"
             )
         return access_level
 
     @staticmethod
-    def check_access_level(to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor, no_custom: bool = False) -> AccessLevel:
         """Access validation."""
-        if not to.persistent:
+        if not to.persistent or to.hash == 0:
             return AccessLevel.WRITE
 
         jctx = JacMachineInterface.get_context()
@@ -240,6 +233,12 @@ class JacAccessValidation:
         # if current root is the target anchor
         if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
             return AccessLevel.WRITE
+
+        if (
+            not no_custom
+            and (custom_level := to.archetype.__jac_access__()) is not None
+        ):
+            return AccessLevel.cast(custom_level)
 
         access_level = AccessLevel.NO_ACCESS
 
@@ -1342,210 +1341,24 @@ class JacBasics:
         return func
 
     @staticmethod
-    def with_llm(
-        file_loc: str,
-        model: Any,  # noqa: ANN401
-        model_params: dict[str, Any],
-        scope: str,
-        incl_info: list[tuple[str, str]],
-        excl_info: list[tuple[str, str]],
-        inputs: list[tuple[str, str, str, Any]],
-        outputs: tuple,
-        action: str,
-        _globals: dict,
-        _locals: Mapping,
+    def sem(semstr: str, inner_semstr: dict[str, str]) -> Callable:
+        """Attach the semstring to the given object."""
+
+        def decorator(obj: object) -> object:
+            setattr(obj, "_jac_semstr", semstr)  # noqa:B010
+            setattr(obj, "_jac_semstr_inner", inner_semstr)  # noqa:B010
+            return obj
+
+        return decorator
+
+    @staticmethod
+    def call_llm(
+        model: object, caller: Callable, args: dict[str | int, object]
     ) -> Any:  # noqa: ANN401
-        """Jac's with_llm feature."""
+        """Call the LLM model."""
         raise ImportError(
             "mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."
         )
-
-    @staticmethod
-    def gen_llm_call_override(
-        _pass: PyastGenPass, node: ast.FuncCall
-    ) -> list[ast3.AST]:
-        """Generate python ast nodes for llm function body override syntax.
-
-        example:
-            foo() by llm();
-        """
-        _pass.log_warning(
-            "MT-LLM is not installed. Please install it with `pip install mtllm`."
-        )
-        return [
-            _pass.sync(
-                ast3.Raise(
-                    _pass.sync(
-                        ast3.Call(
-                            func=_pass.sync(
-                                ast3.Name(id="ImportError", ctx=ast3.Load())
-                            ),
-                            args=[
-                                _pass.sync(
-                                    ast3.Constant(
-                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
-                                    )
-                                )
-                            ],
-                            keywords=[],
-                        )
-                    )
-                )
-            )
-        ]
-
-    @staticmethod
-    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
-        """Generate the by LLM body."""
-        _pass.log_warning(
-            "MT-LLM is not installed. Please install it with `pip install mtllm`."
-        )
-        return [
-            _pass.sync(
-                ast3.Raise(
-                    _pass.sync(
-                        ast3.Call(
-                            func=_pass.sync(
-                                ast3.Name(id="ImportError", ctx=ast3.Load())
-                            ),
-                            args=[
-                                _pass.sync(
-                                    ast3.Constant(
-                                        value="mtllm is not installed. Please install it with `pip install mtllm` and run `jac clean`."  # noqa: E501
-                                    )
-                                )
-                            ],
-                            keywords=[],
-                        )
-                    )
-                )
-            )
-        ]
-
-    @staticmethod
-    def by_llm_call(
-        _pass: PyastGenPass,
-        model: ast3.AST,
-        model_params: dict[str, ast.Expr],
-        scope: ast3.AST,
-        inputs: Sequence[Optional[ast3.AST]],
-        outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
-        action: Optional[ast3.AST],
-        include_info: list[tuple[str, ast3.AST]],
-        exclude_info: list[tuple[str, ast3.AST]],
-    ) -> ast3.Call:
-        """Return the LLM Call, e.g. _JacFeature.with_llm()."""
-        _pass.log_warning(
-            "MT-LLM is not installed. Please install it with `pip install mtllm`."
-        )
-        return ast3.Call(
-            func=_pass.sync(
-                ast3.Attribute(
-                    value=_pass.sync(ast3.Name(id="_Jac", ctx=ast3.Load())),
-                    attr="with_llm",
-                    ctx=ast3.Load(),
-                )
-            ),
-            args=[],
-            keywords=[
-                _pass.sync(
-                    ast3.keyword(
-                        arg="file_loc",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="model",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="model_params",
-                        value=_pass.sync(ast3.Dict(keys=[], values=[])),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="scope",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="incl_info",
-                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="excl_info",
-                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="inputs",
-                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="outputs",
-                        value=_pass.sync(ast3.List(elts=[], ctx=ast3.Load())),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="action",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="_globals",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-                _pass.sync(
-                    ast3.keyword(
-                        arg="_locals",
-                        value=_pass.sync(ast3.Constant(value="None")),
-                    )
-                ),
-            ],
-        )
-
-    @staticmethod
-    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
-        """Get the by LLM call args."""
-        return {
-            "model": None,
-            "model_params": {},
-            "scope": None,
-            "inputs": [],
-            "outputs": [],
-            "action": None,
-            "include_info": [],
-            "exclude_info": [],
-        }
-
-    @staticmethod
-    def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool
-    ) -> Optional[str]:
-        """Jac's get_semstr_type feature."""
-
-    @staticmethod
-    def obj_scope(file_loc: str, attr: str) -> str:
-        """Jac's gather_scope feature."""
-        return ""
-
-    @staticmethod
-    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
-        """Jac's get_semstr_type implementation."""
-        return None, None
 
 
 class JacUtils:

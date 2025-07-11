@@ -244,6 +244,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.semstr: str = ""
 
     @property
     def decl(self) -> NameAtom:
@@ -2515,19 +2516,21 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         return res
 
 
-class WhileStmt(CodeBlockStmt, UniScopeNode):
+class WhileStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
         self,
         condition: Expr,
         body: Sequence[CodeBlockStmt],
+        else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],
     ) -> None:
         self.condition = condition
         self.body: list[CodeBlockStmt] = list(body)
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
+        AstElseBodyNode.__init__(self, else_body=else_body)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2544,6 +2547,8 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         for stmt in self.body:
             new_kid.append(stmt)
         new_kid.append(self.gen_token(Tok.RBRACE))
+        if self.else_body:
+            new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 

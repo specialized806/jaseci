@@ -29,14 +29,17 @@ with entry { # Generate random points
 
 This snippet natively imports Python packages `math` and `random` and runs identically to its Python counterpart. Jac targets Python bytecode, so all Python libraries work with Jac.
 
+## Four Types of Classes to Go Beyond OOP
 
-## Beyond OOP with Object-Spatial Programming
+In addtion to traditional python classes (`class` or the dataclass-like `obj`), Jac programmers can also use node classes (`node`), edge classes (`edge`), and walker classes (`walker`) for a new type of problem solving and agentic programming.
 
-Object-Spatial Programming (OSP) inverts the traditional relationship between data and computation. Rather than moving data to computation, OSP moves computation to data through topologically aware constructs. This paradigm introduces specialized archetypes—objects, nodes, edges and walkers—that model spatial relationships directly in the language and enable optimizations around data locality and distributed execution.
+Instances of node and edge classes allow for assembling objects in a graph structure to express semantic relationships between objects. This goes beyond only modeling objects in memory as a disconnected soup of instances.
+
+Walker classes inverts the traditional relationship between data and computation. Rather than moving data to computation with parameter passing, walkers enable moving computation to data as they represent computational units that moves through the topology of node and edge objects.
+
+These new constructs gives rise to a new paradigm for problem solving and implementation we call Object-Spatial Programming (OSP).
 
 ### Spatial Game Example
-
-**"Think of your data as an enemy spy network. In OOP, you'd sit at a desk phoning known contacts. In Jac, you deploy a Secret Agent (a walker) who infiltrates the network, moving from one safehouse to the next to uncover the entire plot on their own."**
 
 This example shows how computation flows spatially rather than centrally:
 
@@ -92,6 +95,7 @@ A walker travels through game stages using edges, demonstrating Object-Spatial P
 | • **Data Movement**: Objects moved to processing units    | • **Data Locality**: Computation happens where data lives     |
 | • **Rigid Structure**: Hard-coded execution patterns      | • **Composable Flows**: Stages as nodes, transitions as edges |
 | • **Single Machine**: Difficult to distribute             | • **Scale-Ready**: Walkers can traverse across devices        |
+
 
 ## Programming Abstractions for AI
 

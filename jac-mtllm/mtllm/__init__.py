@@ -1,5 +1,6 @@
 """MTLLM Package."""
 
-from mtllm.types import Image, Video
+from mtllm.llm import Model
+from mtllm.types import Image, MockToolCall, Video
 
-__all__ = ["Image", "Video"]
+__all__ = ["Image", "MockToolCall", "Model", "Video"]
