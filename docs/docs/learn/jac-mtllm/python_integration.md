@@ -2,7 +2,7 @@
 
 As Jaclang is a language that supersets Python, you can easily integrate it into your existing Python application. This guide will show you how to do that by integrating a AI feature into a simple Task Manager application build using Python.
 
-The MTLLM modlue itself is written as a Jaclang plugin which can also be used in Python applications. You can install the MTLLM module using pip:
+The MTLLM module itself is written as a Jaclang plugin which can also be used in Python applications. You can install the MTLLM module using pip:
 
 ```bash
 pip install mtllm
