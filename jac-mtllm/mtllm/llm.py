@@ -6,10 +6,12 @@ enhanced functionality and interface for language model operations.
 
 # flake8: noqa: E402
 
+import random
 import inspect
 import json
 import logging
 import os
+import time
 from types import MethodType
 from typing import Callable, get_type_hints, Generator
 
@@ -27,7 +29,6 @@ from litellm.types.utils import Delta, ModelResponse
 from .types import (
     CompletionRequest,
     CompletionResult,
-    TokenStream,
     Image,
     LiteLLMMessage,
     Media,
@@ -156,9 +157,17 @@ class Model:
 
         # Prepare return type.
         return_type = get_type_hints(caller).get("return")
+        is_streaming = bool(self.call_params.pop("stream", False))
 
-        is_streaming = return_type == TokenStream
-        return_type = str if return_type == TokenStream else return_type
+        if is_streaming:
+            if return_type is not str:
+                raise RuntimeError(
+                    "Streaming responses are only supported for str return types."
+                )
+            if tools:
+                raise RuntimeError(
+                    "Streaming responses are not supported with tool calls yet."
+                )
 
         # Prepare the llm call request.
         req = CompletionRequest(
@@ -177,7 +186,7 @@ class Model:
                 raise RuntimeError(
                     "Streaming responses are not supported with tool calls yet."
                 )
-            return self._dispatch_streaming_response(req)
+            return self._completion_streaming(req)
 
         # Invoke the LLM and handle tool calls.
         while True:
@@ -196,8 +205,16 @@ class Model:
     def _completion_no_streaming(self, req: CompletionRequest) -> CompletionResult:
         """Perform a completion request with the LLM."""
         if self.model_name.lower().strip() == "mockllm":
-            return self._dispatch_mock_llm_call(req)
+            return self._dispatch_no_streaming_mock_response(req)  # type: ignore
         return self._dispatch_no_streaming_call(req)
+
+    def _completion_streaming(
+        self, req: CompletionRequest
+    ) -> Generator[str, None, None]:
+        """Perform a streaming completion request with the LLM."""
+        if self.model_name.lower().strip() == "mockllm":
+            return self._dispatch_streaming_mock_response(req)  # type: ignore
+        return self._dispatch_streaming_response(req)
 
     def _make_model_params(self, req: CompletionRequest) -> dict:
         """Prepare the parameters for the LLM call."""
@@ -214,7 +231,21 @@ class Model:
         }
         return params
 
-    def _dispatch_mock_llm_call(self, req: CompletionRequest) -> CompletionResult:
+    def _dispatch_streaming_mock_response(
+        self, req: CompletionRequest
+    ) -> Generator[str, None, None]:
+        """Dispatch the mock LLM call with the given request."""
+        output = self.config["outputs"].pop(0)  # type: ignore
+        if req.stream:
+            while output:
+                chunk_len = random.randint(3, 10)
+                yield output[:chunk_len]  # Simulate token chunk
+                time.sleep(random.uniform(0.01, 0.05))  # Simulate network delay
+                output = output[chunk_len:]
+
+    def _dispatch_no_streaming_mock_response(
+        self, req: CompletionRequest
+    ) -> CompletionResult:
         """Dispatch the mock LLM call with the given request."""
         output = self.config["outputs"].pop(0)  # type: ignore
 
@@ -228,6 +259,7 @@ class Model:
             )
 
         self._log_info(f"Mock LLM call completed with response:\n{output}")
+
         return CompletionResult(
             output=output,
             tool_calls=[],
