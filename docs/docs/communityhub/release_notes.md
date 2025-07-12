@@ -8,6 +8,7 @@ This document provides a summary of new features, improvements, and bug fixes in
 - **\_.save(...) should not override root in runtime**: The previous version bypassed access validation because the target archetype root was overridden by the current root, simulating ownership of the archetype.
 - **Support Custom Access Validation**: Introduced the ability to override access validation. `Node`/`Edge` can override `__jac_access__` reserved function (`builtin`) to have a different way of validating access. Either you cross-check it by current attribute, check from db or global vars or by just returning specific access level. [PR#1524](https://github.com/jaseci-labs/jaseci/pull/1524)
 - **Get all Root Builtin Method**: Introduced `get_all_root` builtin method to get all the roots available in the memory. Developers can get all the roots in the memory/ database by calling `get_all_root()` method.
+- **Permission Update Builtin Methods**: Introduced `grant`, `revoke` builtin methods, `NO_ACCESS`, `READ`,  `CONNECT`, `WRITE` builtin enums,  to give the permission to a node or revoke the permission. Developers can use them by calling `grant(node_1, CONNECT)` or `revoke(node_1)` method.
 
 - **`jac create_system_admin` cli now support local db**: `DATABASE_HOST` are now not required when creating system admin.
 

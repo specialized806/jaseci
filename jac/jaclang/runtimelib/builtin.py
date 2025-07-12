@@ -14,17 +14,17 @@ from jaclang.runtimelib.machine import JacMachineInterface as Jac
 class AccessLevelEnum(Enum):
     """Access level constants for JAC objects."""
 
-    CONNECT = "CONNECT"
+    NO_ACCESS = "NO_ACCESS"
     READ = "READ"
+    CONNECT = "CONNECT"
     WRITE = "WRITE"
-    ADMIN = "ADMIN"
 
 
 # Create module level constants for easier access
-CONNECT = AccessLevelEnum.CONNECT
+NO_ACCESS = AccessLevelEnum.NO_ACCESS
 READ = AccessLevelEnum.READ
+CONNECT = AccessLevelEnum.CONNECT
 WRITE = AccessLevelEnum.WRITE
-ADMIN = AccessLevelEnum.ADMIN
 
 
 def printgraph(
@@ -128,8 +128,8 @@ __all__ = [
     "grant",
     "revoke",
     "get_all_root",
-    "CONNECT",
+    "NO_ACCESS",
     "READ",
+    "CONNECT",
     "WRITE",
-    "ADMIN",
 ]
