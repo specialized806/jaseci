@@ -4,10 +4,27 @@ from __future__ import annotations
 
 import json
 from abc import abstractmethod
+from enum import Enum
 from typing import ClassVar, Optional, override
 
 from jaclang.runtimelib.constructs import Archetype, NodeArchetype, Root
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
+
+
+class AccessLevelEnum(Enum):
+    """Access level constants for JAC objects."""
+
+    CONNECT = "CONNECT"
+    READ = "READ"
+    WRITE = "WRITE"
+    ADMIN = "ADMIN"
+
+
+# Create module level constants for easier access
+CONNECT = AccessLevelEnum.CONNECT
+READ = AccessLevelEnum.READ
+WRITE = AccessLevelEnum.WRITE
+ADMIN = AccessLevelEnum.ADMIN
 
 
 def printgraph(
@@ -49,6 +66,17 @@ def jid(obj: Archetype) -> str:
 def jobj(id: str) -> Archetype | None:
     """Get the object from the id."""
     return Jac.get_object(id)
+
+
+def grant(obj: Archetype, level: AccessLevelEnum) -> None:
+    """Grant permission for the object."""
+    assert isinstance(level, AccessLevelEnum), f'Use {CONNECT} instead of "CONNECT"'
+    Jac.perm_grant(obj, level=level.value)
+
+
+def revoke(obj: Archetype) -> None:
+    """Revoke permission for the object."""
+    Jac.perm_revoke(obj)
 
 
 def get_all_root() -> list[Jac.Root]:
@@ -97,5 +125,11 @@ __all__ = [
     "printgraph",
     "jid",
     "jobj",
+    "grant",
+    "revoke",
     "get_all_root",
+    "CONNECT",
+    "READ",
+    "WRITE",
+    "ADMIN",
 ]
