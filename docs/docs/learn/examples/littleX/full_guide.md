@@ -576,17 +576,15 @@ Now Lets create required walkers for LittleX.
             impl load_user_profiles.load_profiles {
                   self.profiles: list = [];
 
-                  for user in NodeAnchor.Collection.find({"name": "Profile"}) {
-                        user_node = user.architype;
-                        self.profiles.append(
-                        {"name": user_node.username, "id": jid(user_node)}
-                        );
+                  for each_root in allroots() {
+                        profile = [each_root --> (`?Profile)][0];
+              	       self.profiles.append({"name": user_node.username, "id": jid(user_node)});
                   }
                   report self.profiles;
             }
             ```
                   * `static has auth: bool = False` Set disable authentication for that walker.
-                  * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
+                  * `allroots()` Get list of roots.
                   * `user.architype` Get architype of user node.
                   * `jid(user_node)` Get the unique id of an object.
 
@@ -976,11 +974,11 @@ By default, users cannot access other users' nodes. To grant access, permission 
       ```
 - **Grant Read Access to All**
       ```jac
-      Jac.perm_grant(here, "READ");
+      grant(here, ReadPerm);
       ```
 - **perm_revoke Access**
       ```jac
-      Jac.perm_revoke(here);
+      revoke(here);
       ```
 
 === "Guide"
@@ -998,12 +996,12 @@ By default, users cannot access other users' nodes. To grant access, permission 
                         can tweet with Profile entry {
                               embedding = sentence_transformer.encode(self.content).tolist();
                               tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-                              Jac.perm_grant(tweet_node[0], level=ConnectPerm);
+                              grant(tweet_node[0], level=ConnectPerm);
                               report tweet_node;
                         }
                   }
                   ```
-        * `Jac.perm_grant(here, level="READ")` perm_grant that tweet node to everyone with read access.
+        * `grant(here, level=ReadPerm)` perm_grant that tweet node to everyone with read access.
 
       - Commenting on a Tweet
 
@@ -1014,12 +1012,12 @@ By default, users cannot access other users' nodes. To grant access, permission 
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.perm_grant(comment_node[0], level=ConnectPerm);
+                        grant(comment_node[0], level=ConnectPerm);
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
                   ```
-        * `Jac.perm_grant(tweet_node, level=ConnectPerm)` perm_grant the tweet node to connect level.
+        * `grant(tweet_node, level=ConnectPerm)` perm_grant the tweet node to connect level.
 
 === "littleX.jac Upto Now"
     ```jac linenums="1"
@@ -1242,7 +1240,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can like with profile entry {
                               tweet_node = &self.tweet_id;
-                              Jac.perm_grant(tweet_node, level=ConnectPerm);
+                              grant(tweet_node, level=ConnectPerm);
                               tweet_node +>:like():+> here;
                               report tweet_node;
                         }
@@ -1305,7 +1303,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         can add_comment with profile entry {
                               comment_node = here ++> comment(content=self.content);
                               tweet_node = &self.tweet_id;
-                              Jac.perm_grant(tweet_node, level=ConnectPerm);
+                              grant(tweet_node, level=ConnectPerm);
                               tweet_node ++> comment_node[0];
                               report comment_node[0];
                         }
@@ -1318,7 +1316,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.perm_grant(comment_node[0], level=ConnectPerm);
+                        grant(comment_node[0], level=ConnectPerm);
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
@@ -1342,7 +1340,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         }
 
                         can load_tweets with tweet entry {
-                              Jac.perm_grant(here, level="READ");
+                              grant(here, level=ReadPerm);
                               comments = here spawn load_comments();
                               likes = here spawn load_likes();
                               tweet_content = here spawn load_tweet();
