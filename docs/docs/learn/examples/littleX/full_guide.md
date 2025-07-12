@@ -352,7 +352,7 @@ Now, let's create the required nodes for LittleX.
             impl Tweet.comment {
                   current_profile = [root-->(`?Profile)];
                   comment_node = current_profile[0] ++> Comment(content=here.content);
-                  grant(comment_node[0], level=CONNECT);
+                  grant(comment_node[0], level=ConnectPerm);
                   self ++> comment_node[0];
                   report comment_node[0];
             }
@@ -361,7 +361,7 @@ Now, let's create the required nodes for LittleX.
 
             * `comment_node = current_profile[0] ++> Comment(content=here.content) `creates a `Comment` node with the given content, connected from the user's profile.
 
-            * `grant(comment_node[0], level=CONNECT)` grants connection permissions to the newly created `Comment` node.
+            * `grant(comment_node[0], level=ConnectPerm)` grants connection permissions to the newly created `Comment` node.
 
             * `self ++> comment_node[0]` links the `Comment` node to the `Tweet` node (self).
 
@@ -533,7 +533,7 @@ Now Lets create required walkers for LittleX.
             impl visit_profile.visit_profile {
                   visit [-->(`?Profile)] else {
                         new_profile = here ++> Profile();
-                        grant(new_profile[0], level=CONNECT);
+                        grant(new_profile[0], level=ConnectPerm);
                         visit new_profile;
                   }
             }
@@ -697,7 +697,7 @@ Now Lets create required walkers for LittleX.
             impl create_tweet.tweet {
                   embedding = sentence_transformer.encode(self.content).tolist();
                   tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-                  grant(tweet_node[0], level=CONNECT);
+                  grant(tweet_node[0], level=ConnectPerm);
                   report tweet_node;
             }
             ```
@@ -957,10 +957,10 @@ Jaclang offers explicit access control, ensuring data privacy and secure interac
 
 **Access Levels**
 
-- **`NO_ACCESS`:** No access to the current archetype.
-- **`READ`:** Read-only access to the current archetype.
-- **`CONNECT`:** Allows other users' nodes to connect to the current node.
-- **`WRITE`:** Full access, including modification of the current archetype.
+- **`NoPerm`:** No access to the current archetype.
+- **`ReadPerm`:** Read-only access to the current archetype.
+- **`ConnectPerm`:** Allows other users' nodes to connect to the current node.
+- **`WritePerm`:** Full access, including modification of the current archetype.
 
 **Granting and Managing Access**
 
@@ -998,7 +998,7 @@ By default, users cannot access other users' nodes. To grant access, permission 
                         can tweet with Profile entry {
                               embedding = sentence_transformer.encode(self.content).tolist();
                               tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-                              Jac.perm_grant(tweet_node[0], level="CONNECT");
+                              Jac.perm_grant(tweet_node[0], level=ConnectPerm);
                               report tweet_node;
                         }
                   }
@@ -1007,19 +1007,19 @@ By default, users cannot access other users' nodes. To grant access, permission 
 
       - Commenting on a Tweet
 
-        * Similar to liking, commenting requires CONNECT access.
+        * Similar to liking, commenting requires connect access.
         * A new comment node is created and linked to the tweet while granting READ access for others to view it.
         * **Comment Tweet Ability**
                   ```jac
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.perm_grant(comment_node[0], level="CONNECT");
+                        Jac.perm_grant(comment_node[0], level=ConnectPerm);
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
                   ```
-        * `Jac.perm_grant(tweet_node, level="CONNECT")` perm_grant the tweet node to connect level.
+        * `Jac.perm_grant(tweet_node, level=ConnectPerm)` perm_grant the tweet node to connect level.
 
 === "littleX.jac Upto Now"
     ```jac linenums="1"
@@ -1242,7 +1242,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can like with profile entry {
                               tweet_node = &self.tweet_id;
-                              Jac.perm_grant(tweet_node, level="CONNECT");
+                              Jac.perm_grant(tweet_node, level=ConnectPerm);
                               tweet_node +>:like():+> here;
                               report tweet_node;
                         }
@@ -1305,7 +1305,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         can add_comment with profile entry {
                               comment_node = here ++> comment(content=self.content);
                               tweet_node = &self.tweet_id;
-                              Jac.perm_grant(tweet_node, level="CONNECT");
+                              Jac.perm_grant(tweet_node, level=ConnectPerm);
                               tweet_node ++> comment_node[0];
                               report comment_node[0];
                         }
@@ -1318,7 +1318,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.perm_grant(comment_node[0], level="CONNECT");
+                        Jac.perm_grant(comment_node[0], level=ConnectPerm);
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
