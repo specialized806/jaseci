@@ -51,6 +51,11 @@ def jobj(id: str) -> Archetype | None:
     return Jac.get_object(id)
 
 
+def get_all_root() -> list[Jac.Root]:
+    """Get all the roots."""
+    return Jac.get_all_root()
+
+
 def _jac_graph_json(file: Optional[str] = None) -> str:
     """Get the graph in json string."""
     processed: list[Root | NodeArchetype] = []
@@ -92,4 +97,5 @@ __all__ = [
     "printgraph",
     "jid",
     "jobj",
+    "get_all_root",
 ]
