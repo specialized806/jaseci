@@ -21,10 +21,10 @@ class AccessLevelEnum(Enum):
 
 
 # Create module level constants for easier access
-NO_ACCESS = AccessLevelEnum.NO_ACCESS
-READ = AccessLevelEnum.READ
-CONNECT = AccessLevelEnum.CONNECT
-WRITE = AccessLevelEnum.WRITE
+NoPerm = AccessLevelEnum.NO_ACCESS
+ReadPerm = AccessLevelEnum.READ
+ConnectPerm = AccessLevelEnum.CONNECT
+WritePerm = AccessLevelEnum.WRITE
 
 
 def printgraph(
@@ -70,7 +70,7 @@ def jobj(id: str) -> Archetype | None:
 
 def grant(obj: Archetype, level: AccessLevelEnum) -> None:
     """Grant permission for the object."""
-    assert isinstance(level, AccessLevelEnum), f'Use {CONNECT} instead of "CONNECT"'
+    assert isinstance(level, AccessLevelEnum), f'Use {ConnectPerm} instead of "CONNECT"'
     Jac.perm_grant(obj, level=level.value)
 
 
@@ -79,7 +79,7 @@ def revoke(obj: Archetype) -> None:
     Jac.perm_revoke(obj)
 
 
-def get_all_root() -> list[Jac.Root]:
+def allroots() -> list[Jac.Root]:
     """Get all the roots."""
     return Jac.get_all_root()
 
@@ -127,9 +127,9 @@ __all__ = [
     "jobj",
     "grant",
     "revoke",
-    "get_all_root",
-    "NO_ACCESS",
-    "READ",
-    "CONNECT",
-    "WRITE",
+    "allroots",
+    "NoPerm",
+    "ReadPerm",
+    "ConnectPerm",
+    "WritePerm",
 ]

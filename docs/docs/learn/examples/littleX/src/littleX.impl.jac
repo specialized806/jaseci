@@ -54,7 +54,7 @@ impl Tweet.remove_like {
 impl Tweet.comment {
         current_profile = [root-->(`?Profile)];
         comment_node = current_profile[0] ++> Comment(content=visitor.content);
-        grant(comment_node[0], level=CONNECT);
+        grant(comment_node[0], level=ConnectPerm);
         self ++> comment_node[0];
         report comment_node[0];
     }
@@ -88,7 +88,7 @@ impl Comment.delete {
 impl visit_profile.visit_profile {
         visit [-->(`?Profile)] else {
             new_profile = here ++> Profile();
-            grant(new_profile[0], level=CONNECT);
+            grant(new_profile[0], level=ConnectPerm);
             visit new_profile;
         }
     }
@@ -96,7 +96,7 @@ impl visit_profile.visit_profile {
 impl load_user_profiles.load_profiles {
         self.profiles: list = [];
 
-        for each_root in get_all_root() {
+        for each_root in allroots() {
             profile = [each_root --> (`?Profile)][0];
             self.profiles.append(
                 {"name": profile.username, "id": jid(profile)}
@@ -107,7 +107,7 @@ impl load_user_profiles.load_profiles {
 impl create_tweet.tweet {
         embedding = sentence_transformer.encode(self.content).tolist();
         tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-        grant(tweet_node[0], level=CONNECT);
+        grant(tweet_node[0], level=ConnectPerm);
         report tweet_node;
     }
 

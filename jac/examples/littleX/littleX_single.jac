@@ -84,7 +84,7 @@ node Tweet {
         current_profile = [root-->( ` ? Profile ) ];
         comment_node =
             current_profile[0] +>:Post():+> Comment(content=visitor.content);
-        grant(comment_node[0], level=CONNECT);
+        grant(comment_node[0], level=ConnectPerm);
         self ++> comment_node[0];
         report comment_node[0] ;
     }
@@ -132,21 +132,21 @@ edge Post {}
 
 walker visit_profile {
     can visit_profile with `root entry {
-        visit [-->( ` ? Profile ) ] else {
+        visit [-->(`?Profile)] else {
             new_profile = here ++> Profile();
-            grant(new_profile[0], level=CONNECT);
+            grant(new_profile[0], level=ConnectPerm);
             visit new_profile;
         }
     }
 }
 
 
-walker update_profile ( visit_profile ) {
+walker update_profile(visit_profile) {
     has new_username: str;
 }
 
 
-walker get_profile ( visit_profile ) {}
+walker get_profile(visit_profile) {}
 
 
 walker load_user_profiles {
@@ -157,7 +157,7 @@ walker load_user_profiles {
     can load_profiles with `root entry {
         self.profiles: list = [];
         
-        for each_root in get_all_root() {
+        for each_root in allroots() {
             profile = [each_root --> (`?Profile)][0];
             self.profiles.append(
                 {"name": profile.username, "id": jid(profile)}
@@ -184,7 +184,7 @@ walker create_tweet ( visit_profile ) {
         embedding = vectorizer.fit_transform([self.content]).toarray().tolist();
         tweet_node =
             here +>: Post() :+> Tweet(content=self.content, embedding=embedding);
-        grant(tweet_node[0], level=CONNECT);
+        grant(tweet_node[0], level=ConnectPerm);
         report tweet_node ;
     }
 }
