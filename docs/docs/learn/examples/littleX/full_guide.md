@@ -352,7 +352,7 @@ Now, let's create the required nodes for LittleX.
             impl Tweet.comment {
                   current_profile = [root-->(`?Profile)];
                   comment_node = current_profile[0] ++> Comment(content=here.content);
-                  _.perm_grant(comment_node[0], level="CONNECT");
+                  grant(comment_node[0], level=CONNECT);
                   self ++> comment_node[0];
                   report comment_node[0];
             }
@@ -361,7 +361,7 @@ Now, let's create the required nodes for LittleX.
 
             * `comment_node = current_profile[0] ++> Comment(content=here.content) `creates a `Comment` node with the given content, connected from the user's profile.
 
-            * `_.perm_grant(comment_node[0], level="CONNECT")` grants connection permissions to the newly created `Comment` node.
+            * `grant(comment_node[0], level=CONNECT)` grants connection permissions to the newly created `Comment` node.
 
             * `self ++> comment_node[0]` links the `Comment` node to the `Tweet` node (self).
 
@@ -533,7 +533,7 @@ Now Lets create required walkers for LittleX.
             impl visit_profile.visit_profile {
                   visit [-->(`?Profile)] else {
                         new_profile = here ++> Profile();
-                        _.perm_grant(new_profile[0], level="CONNECT");
+                        grant(new_profile[0], level=CONNECT);
                         visit new_profile;
                   }
             }
@@ -697,7 +697,7 @@ Now Lets create required walkers for LittleX.
             impl create_tweet.tweet {
                   embedding = sentence_transformer.encode(self.content).tolist();
                   tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-                  _.perm_grant(tweet_node[0], level="CONNECT");
+                  grant(tweet_node[0], level=CONNECT);
                   report tweet_node;
             }
             ```

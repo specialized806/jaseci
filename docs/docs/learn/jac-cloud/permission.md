@@ -134,13 +134,13 @@ In essence, this line of code instructs the post node to remove the previously g
 walker make_public {
     can make_public with post entry {
         # Grant READ access to all users
-        _.perm_grant(here, "READ");
+        grant(here, READ);
         report "Post is now public!";
     }
 }
 ```
 
-The code snippet `_.perm_grant(here, "READ")` provides a mechanism to grant read access to all other root nodes concerning the data within the current node.
+The code snippet `grant(here, READ)` provides a mechanism to grant read access to all other root nodes concerning the data within the current node.
 
 Here's a breakdown of the elements:
 
@@ -156,13 +156,13 @@ Here's a breakdown of the elements:
 walker make_private {
     can make_private with post entry {
         # Remove all access
-        _.perm_revoke(here);
+        revoke(here);
         report "Post is now private!";
     }
 }
 ```
 
-The code snippet `_.perm_revoke(here)` is used to remove all previously granted access permissions from all other root nodes to the current node's data. It's the inverse operation of `_.perm_grant`.
+The code snippet `revoke(here)` is used to remove all previously granted access permissions from all other root nodes to the current node's data. It's the inverse operation of `grant`.
 
 Here's a breakdown:
 
@@ -188,7 +188,7 @@ walker create_public_post {
         here ++> post;
 
         # Make it readable by everyone, but only writable by owner
-        _.perm_grant(post, "READ");
+        grant(post, READ);
 
         report "Public post created!";
     }
