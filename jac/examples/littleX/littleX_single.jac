@@ -1,5 +1,4 @@
 import datetime;
-import from jac_cloud.core.archetype { NodeAnchor }
 import numpy;
 import from sklearn.feature_extraction.text { TfidfVectorizer }
 import from sklearn.metrics.pairwise { cosine_similarity }
@@ -158,8 +157,13 @@ walker load_user_profiles {
 
     can load_profiles with `root entry {
         self.profiles: list = [];
-        for user in NodeAnchor.Collection.find({"name" : "Profile" } ) { user_node =
-            user.archetype; self.profiles.append({"name" : user_node.username , "id" : jid(user_node) } ); }
+        
+        for each_root in get_all_root() {
+            profile = [each_root --> (`?Profile)][0];
+            self.profiles.append(
+                {"name": profile.username, "id": jid(profile)}
+            );
+        }
     }
 
     can report_profiles with exit {
