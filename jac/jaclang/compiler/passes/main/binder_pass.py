@@ -151,9 +151,9 @@ class BinderPass(UniPass):
 
                 attr_sym = current_sym_tab.lookup(attr_node.sym_name)
                 if not attr_sym:
-                    self.log_error(
-                        f"Could not resolve attribute '{attr_node.sym_name}' in chain"
-                    )
+                    #TODO # self.log_error(
+                    #     f"Could not resolve attribute '{attr_node.sym_name}' in chain"
+                    # )
                     return False
 
                 if operation == "define":
@@ -206,7 +206,9 @@ class BinderPass(UniPass):
         elif isinstance(target, uni.AstSymbolNode):
             self.handle_simple_symbol(target, "define")
         else:
-            self.log_error("Assignment target not valid")
+            pass
+            #TODO
+            # self.log_error("Assignment target not valid")
 
     def enter_ability(self, node: uni.Ability) -> None:
         """Enter ability node and set up method context."""
@@ -241,7 +243,9 @@ class BinderPass(UniPass):
             elif arch_type == "KW_NODE":
                 self._setup_node_context(node)
         except Exception as e:
-            self.log_error(f"Error while setting up event context: {str(e)}")
+            pass
+            # TODO
+            # self.log_error(f"Error while setting up event context: {str(e)}")
 
     def _setup_walker_context(self, node: uni.Ability) -> None:
         """Init 'here' for walker; link symbol table to parent."""
@@ -339,7 +343,9 @@ class BinderPass(UniPass):
 
             self.handle_simple_symbol(node.target, "use")
         else:
-            self.log_error("Function call target not valid")
+            pass
+            # TODO
+            # self.log_error("Function call target not valid")
 
     ##################################
     ##    Comprehensions support    ##
@@ -373,7 +379,9 @@ class BinderPass(UniPass):
         elif isinstance(node.target, uni.AstSymbolNode):
             self.cur_scope.def_insert(node.target)
         else:
-            self.log_error("Named target not valid")
+            pass
+            # TODO
+            # self.log_error("Named target not valid")
 
     #####################
     ## Collecting uses ##
@@ -439,14 +447,16 @@ class BinderPass(UniPass):
 
         import_node = self._find_import_for_symbol(first_obj_sym)
         if not import_node:
-            self.log_error(
-                f"Could not find import statement for symbol '{first_obj_sym.sym_name}'"
-            )
+            # TODO
+            # self.log_error(
+            #     f"Could not find import statement for symbol '{first_obj_sym.sym_name}'"
+            # )
             return
 
         module_path = self._get_module_path_from_symbol(first_obj_sym)
         if not module_path:
-            self.log_error("Could not resolve module path for import")
+            # TODO
+            # self.log_error("Could not resolve module path for import")
             return
 
         linked_module = self._parse_and_link_module(module_path, first_obj_sym)
@@ -496,9 +506,10 @@ class BinderPass(UniPass):
 
             attr_symbol = current_sym_table.lookup(attr_node.sym_name)
             if not attr_symbol:
-                self.log_error(
-                    f"Could not resolve attribute '{attr_node.sym_name}' in chain"
-                )
+                # self.log_error(
+                #     f"Could not resolve attribute '{attr_node.sym_name}' in chain"
+                # )
+                #TODO:
                 break
 
             attr_symbol.add_use(attr_node)
@@ -528,7 +539,8 @@ class BinderPass(UniPass):
             return parsed_module
 
         except Exception as e:
-            self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
+            #TODO
+            # self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
             return None
 
     def load_builtins(self) -> None:

@@ -8,6 +8,7 @@ import from typing { Callable, Optional }
 
 import jaclang.compiler.unitree as uni;
 import from jaclang { JacMachineInterface as Jac }
+import from jaclang.compiler.constant {SymbolType}
 import from jaclang.compiler.program { JacProgram }
 import from jaclang.compiler.unitree { UniScopeNode }
 import from sem_manager { SemTokManager }
@@ -133,8 +134,7 @@ class JacLangServer(JacProgram , LanguageServer) {
             file_path_fs = file_path.removeprefix('file://');
             document = self.workspace.get_text_document(file_path);
             self._clear_alerts_for_file(file_path_fs);
-            #TODO: This should be build not bind
-            build = self.bind(use_str=document.source, file_path=document.path);
+            build = self.build(use_str=document.source, file_path=document.path);
             self.update_modules(file_path_fs, build);
             if build.annexable_by {
                 return self.deep_check(
@@ -447,7 +447,25 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[token_index][3];
         if node_selected {
-            if isinstance(node_selected, uni.Name)
+            if (node_selected.sym.sym_type == SymbolType.MODULE) {
+                spec = node_selected.sym.decl.parent.resolve_relative_path();
+                if spec {
+                    spec = spec[ 5 : ] if spec.startswith('File:') else spec;
+                    return lspt.Location(
+                        uri=uris.from_fs_path(spec),
+                        range=lspt.Range(
+                            start=lspt.Position(line=0, character=0),
+                            end=lspt.Position(line=0, character=0)
+                        )
+                    );
+                } else {
+                    return None;
+                }
+            }
+            if isinstance(node_selected.sym, uni.NameAtom) {
+                node_selected = node_selected.name_of;
+            }
+            elif isinstance(node_selected, uni.Name)
             and node_selected.parent
             and isinstance(node_selected.parent, uni.ModulePath)
              {
