@@ -348,6 +348,35 @@ GITHUB_STATS_PATH = os.path.join(
 )
 
 
+def get_total_contributors(owner, repo, token=None):
+    headers = {"Authorization": f"token {token}"} if token else {}
+    contributors = set()
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=100&page={page}&anon=1"
+        try:
+            resp = requests.get(url, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data:
+                    break
+                for user in data:
+                    # contributors.add(user.get("login") or f"anon-{user.get('name', '')}")
+                    if user.get("type") == "Anonymous":
+                        continue
+                    contributors.add(user["login"])
+                if len(data) < 100:
+                    break  # Last page
+                page += 1
+            else:
+                print(f"Failed to fetch contributors for {owner}/{repo}, status: {resp.status_code}")
+                return "N/A"
+        except Exception as e:
+            print(f"Error fetching contributors for {owner}/{repo}: {e}")
+            return "N/A"
+    return len(contributors)
+
+
 def main() -> None:
     """Run the script."""
     owner, repo = get_repo_from_remote()
@@ -414,7 +443,10 @@ def main() -> None:
             print(f"Error fetching GitHub stats for {repo_full}: {e}")
             repo_stats[repo_full] = {"stars": "N/A", "forks": "N/A"}
 
-        # ...existing code...
+        # Fetch total contributors (all-time)
+        total_contributors = get_total_contributors(owner, repo, token)
+        repo_stats[repo_full]["total_contributors"] = total_contributors
+
         max_days = max(periods)
         all_commits = fetch_commits(owner or "", repo or "", max_days, token)
         if all_commits is None:
