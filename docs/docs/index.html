@@ -2322,7 +2322,7 @@
                     if (stats) {
                         document.querySelectorAll('#github-stars').forEach(el => el.textContent = stats.stars);
                         document.querySelectorAll('#github-forks').forEach(el => el.textContent = stats.forks);
-                        document.querySelectorAll('#github-contributors').forEach(el => el.textContent = stats.contributors);
+                        document.querySelectorAll('#github-contributors').forEach(el => el.textContent = stats.total_contributors);
                     } else {
                         document.querySelectorAll('#github-stars').forEach(el => el.textContent = 'N/A');
                         document.querySelectorAll('#github-forks').forEach(el => el.textContent = 'N/A');
