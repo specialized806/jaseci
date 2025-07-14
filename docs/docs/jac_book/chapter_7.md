@@ -62,7 +62,7 @@ obj PetShop {
 
 ## Object Inheritance
 ---
-Jac supports inheritance, allowing you to create subclasses that extend or override parent class behavior. 
+Jac supports inheritance, allowing you to create subclasses that extend or override parent class behavior.
 
 ### Simple Inheritance Example
 
@@ -100,7 +100,7 @@ In this example, `Dog` and `Cat` inherit from the `Animal` class. They can overr
 ---
 Unlike Python's naming conventions, Jac provides explicit access control that's enforced at runtime.
 
-### Public Access 
+### Public Access
 Public members are accessible from anywhere.
 
 ```jac
