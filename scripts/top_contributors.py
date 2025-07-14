@@ -348,7 +348,8 @@ GITHUB_STATS_PATH = os.path.join(
 )
 
 
-def get_total_contributors(owner, repo, token=None):
+def get_total_contributors(owner: str, repo: str, token: Optional[str] = None) -> int:
+    """Get total contributors for a GitHub repository."""
     headers = {"Authorization": f"token {token}"} if token else {}
     contributors = set()
     page = 1
@@ -361,7 +362,6 @@ def get_total_contributors(owner, repo, token=None):
                 if not data:
                     break
                 for user in data:
-                    # contributors.add(user.get("login") or f"anon-{user.get('name', '')}")
                     if user.get("type") == "Anonymous":
                         continue
                     contributors.add(user["login"])
@@ -369,11 +369,13 @@ def get_total_contributors(owner, repo, token=None):
                     break  # Last page
                 page += 1
             else:
-                print(f"Failed to fetch contributors for {owner}/{repo}, status: {resp.status_code}")
-                return "N/A"
+                print(
+                    f"Failed to fetch contributors for {owner}/{repo}, status: {resp.status_code}"
+                )
+                return 0
         except Exception as e:
             print(f"Error fetching contributors for {owner}/{repo}: {e}")
-            return "N/A"
+            return 0
     return len(contributors)
 
 
@@ -444,7 +446,10 @@ def main() -> None:
             repo_stats[repo_full] = {"stars": "N/A", "forks": "N/A"}
 
         # Fetch total contributors (all-time)
-        total_contributors = get_total_contributors(owner, repo, token)
+        if owner is None or repo is None:
+            total_contributors = 0
+        else:
+            total_contributors = get_total_contributors(owner, repo, token)
         repo_stats[repo_full]["total_contributors"] = total_contributors
 
         max_days = max(periods)
