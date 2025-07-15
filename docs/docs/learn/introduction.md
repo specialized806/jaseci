@@ -39,53 +39,6 @@ Walker classes inverts the traditional relationship between data and computation
 
 These new constructs gives rise to a new paradigm for problem solving and implementation we call Object-Spatial Programming (OSP).
 
-### Spatial Game Example
-
-This example shows how computation flows spatially rather than centrally:
-
-<div class="code-block">
-```jac
-# Define game stage nodes with properties
-node GameStage {
-    has name: str,
-    frame_time: float = 0.0;
-}
-
-# Walker that travels between game stages
-walker RenderWalk {
-    has fps: int = 60;  # Target frames per second
-
-    # Process each GameStage when walker arrives
-    can process with GameStage entry {
-        print(f"Processing {here.name} stage");
-
-        # Calculate frame time based on FPS
-        here.frame_time = 1000.0 / self.fps;  # ms per frame
-
-        # Move to next connected stage
-        visit [-->];  # Follow outgoing edges
-    }
-}
-
-# Entry point - construct the game stage flow
-with entry {
-    # Create the first stage
-    input_stage = GameStage(name="Input");
-
-    # Connect Stages using spatial connections
-    input_stage ++> GameStage(name="Update") ++>
-                    GameStage(name="Render") ++>
-                    GameStage(name="Present");
-
-    # Spawn walker to begin traversal
-    RenderWalk() spawn input_stage;
-}
-```
-
-</div>
-
-A walker travels through game stages using edges, demonstrating Object-Spatial Programming.
-
 ### Traditional OOP vs Object-Spatial Programming
 
 | **Traditional OOP**                                       | **Object-Spatial Programming**                                |
@@ -132,6 +85,77 @@ with entry {
     `
 
 `by llm()` delegates execution to an LLM without any extra library code.
+
+
+### Agentic AI with Meaning Typed Programming (MTP) Example
+
+This example demonstrates Multi-Tool Programming (MTP) in the Jaseci Stack, where Jac code seamlessly integrates LLMs and external APIs to create an intelligent, agentic workflow:
+
+**Your Intelligent Travel Planner with just 50 lines of code !!**
+
+```jac
+import os;
+import requests;
+import from mtllm.llm {Model}
+import from httpx  {get}
+
+glob llm = Model(model_name="gpt-4o");
+
+obj WebSearch {
+    has api_key: str = os.getenv("SERPER_API_KEY");
+    has base_url: str = "https://google.serper.dev/search";
+
+    def search(query: str) {
+        headers = {"X-API-KEY": self.api_key, "Content-Type": "application/json"};
+        payload = {"q": query};
+        resp = requests.post(self.base_url, headers=headers, json=payload);
+        if resp.status_code == 200 {
+            data = resp.json();
+            summary = "";
+            results = data.get("organic", []) if isinstance(data, dict) else [];
+            for r in results[:3] {
+                summary += f"{r.get('title', '')}: {r.get('link', '')}\n";
+                if r.get('snippet') {
+                    summary += f"{r['snippet']}\n";
+                }
+            }
+            return summary;
+        }
+        return f"Serper request failed: {resp.status_code}";
+    }
+}
+
+def search_web(query: str) -> str { return WebSearch().search(query=query); }
+
+"""You are a cheerful travel buddy.
+TASK:
+1. Find next Saturday (YYYY-MM-DD).
+2. Get weather: search_web("weather Saturday {location} {date}").
+   - GOOD = no 'rain'/'storm' & precip<30%.
+3. If GOOD:
+    a) search_web("outdoor events {location} {date}").
+    b) Pick 1 event → {name, time, venue, 1 fun fact}.
+    c) Add 1 nearby outdoor bonus spot (with why it’s cool).
+4. If BAD:
+    a) search_web("indoor things to do {location} {date}").
+    b) Pick 1 activity → {name, hours, location, approx cost}.
+5. Reply as 1 friendly paragraph:
+    [Greet + Weather] → [Main rec] → [Bonus/cosy alt + cost] → [Enthusiastic closing]."""
+def weekend_plan(location:str)->str by llm(method="ReAct",tools=[search_web]);
+
+with entry {print(weekend_plan("Michigan, USA"));}
+```
+
+??? example "Output"
+    `   Hey there! It's looking like a fantastic Saturday on July 19, 2025, in Michigan, with clear sunny skies and just a 10% chance of rain. Perfect weather for an outdoor adventure! I recommend checking out the Arenac County Fair, running until the 19th. It's a delightful local event with a variety of activities, from animal shows to fun rides, all happening at the Arenac County Fairgrounds. Here's a fun fact: it's one of the oldest county fairs in Michigan, celebrating local culture and community spirit.
+
+    While you're outdoors, why not visit the Sleeping Bear Dunes National Lakeshore nearby? It's renowned for its stunning landscape and offers breathtaking views of Lake Michigan. It's a cool spot for hiking and just soaking up nature's beauty.
+
+    Enjoy your day out in Michigan, and make the most of the sunshine! 🌞
+    `
+
+This MTP example shows how Jac can orchestrate LLMs and external APIs in a single workflow, enabling agentic, tool-using applications with minimal code.
+
 
 ## Zero to Infinite Scale without any Code Changes
 
