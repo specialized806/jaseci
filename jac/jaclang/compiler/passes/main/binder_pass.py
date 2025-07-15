@@ -214,7 +214,6 @@ class BinderPass(UniPass):
         """Enter ability node and set up method context."""
         assert node.parent_scope is not None
         node.parent_scope.def_insert(node, access_spec=node, single_decl="ability")
-        # symbol.symbol_table = self.cur_scope
 
         if node.is_method:
             self._setup_method_context(node)
@@ -223,8 +222,7 @@ class BinderPass(UniPass):
         """Set up method context by defining 'self', 'super', and event context symbols if needed."""
         self_name = uni.Name.gen_stub_from_node(node, "self")
         self.cur_scope.def_insert(self_name)
-        arc_sym = node.parent_of_type(uni.Archetype)
-        # self_name.sym.symbol_table = arc_sym
+        node.parent_of_type(uni.Archetype)
 
         self.cur_scope.def_insert(
             uni.Name.gen_stub_from_node(node, "super", set_name_of=node.method_owner)
@@ -242,28 +240,26 @@ class BinderPass(UniPass):
                 self._setup_walker_context(node)
             elif arch_type == "KW_NODE":
                 self._setup_node_context(node)
-        except Exception as e:
+        except Exception:
             pass
             # TODO
             # self.log_error(f"Error while setting up event context: {str(e)}")
 
     def _setup_walker_context(self, node: uni.Ability) -> None:
         """Init 'here' for walker; link symbol table to parent."""
-        here_sym = self.cur_scope.def_insert(
+        self.cur_scope.def_insert(
             uni.Name.gen_stub_from_node(node, "here", set_name_of=node.method_owner)
         )
         node_name = node.signature.arch_tag_info.unparse()
-        par_tab = self.cur_scope.lookup(node_name).symbol_table
-        # here_sym.symbol_table = par_tab
+        self.cur_scope.lookup(node_name).symbol_table
 
     def _setup_node_context(self, node: uni.Ability) -> None:
         """Init 'visitor' for node; link symbol table to parent."""
-        visitor_sym = self.cur_scope.def_insert(
+        self.cur_scope.def_insert(
             uni.Name.gen_stub_from_node(node, "visitor", set_name_of=node.method_owner)
         )
         walker_name = node.signature.arch_tag_info.unparse()
-        par_tab = self.cur_scope.lookup(walker_name).symbol_table
-        # visitor_sym.symbol_table = par_tab
+        self.cur_scope.lookup(walker_name).symbol_table
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Enter global statement."""
@@ -538,7 +534,7 @@ class BinderPass(UniPass):
 
             return parsed_module
 
-        except Exception as e:
+        except Exception:
             # TODO
             # self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
             return None

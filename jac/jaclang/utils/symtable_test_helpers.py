@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from jaclang.compiler.unitree import UniScopeNode, Symbol
+from jaclang.compiler.unitree import Symbol, UniScopeNode
 from jaclang.utils.test import TestCase
 
 
@@ -10,8 +10,11 @@ class SymTableTestMixin(TestCase):
     """Mixin class providing assertion methods for symbol table testing."""
 
     def assert_symbol_exists(
-        self, sym_table: UniScopeNode, symbol_name: str, symbol_type: str = None
-    ) -> None:
+        self,
+        sym_table: UniScopeNode,
+        symbol_name: str,
+        symbol_type: Optional[str] = None,
+    ) -> Symbol:
         """Assert that a symbol exists in the symbol table."""
         symbol = look_down(sym_table, symbol_name)
         self.assertIsNotNone(
@@ -25,7 +28,7 @@ class SymTableTestMixin(TestCase):
             )
         return symbol
 
-    def assert_symbol_decl_at(self, symbol, line: int, col: int) -> None:
+    def assert_symbol_decl_at(self, symbol: Symbol, line: int, col: int) -> None:
         """Assert that a symbol is declared at specific line and column."""
         decl_info = str(symbol)
         expected_decl = f"{line}:{col}"
@@ -36,7 +39,7 @@ class SymTableTestMixin(TestCase):
         )
 
     def assert_symbol_defns_at(
-        self, symbol, expected_defns: list[tuple[int, int]]
+        self, symbol: Symbol, expected_defns: list[tuple[int, int]]
     ) -> None:
         """Assert that a symbol has definitions at specific locations."""
         symbol_str = str(symbol)
@@ -63,12 +66,12 @@ class SymTableTestMixin(TestCase):
 
     def assert_symbol_complete(
         self,
-        sym_table,
+        sym_table: UniScopeNode,
         symbol_name: str,
         symbol_type: str,
         decl: tuple[int, int],
-        defns: list[tuple[int, int]] = None,
-        uses: list[tuple[int, int]] = None,
+        defns: Optional[list[tuple[int, int]]] = None,
+        uses: Optional[list[tuple[int, int]]] = None,
     ) -> None:
         """Assert complete symbol information (declaration, definitions, uses)."""
         symbol = self.assert_symbol_exists(sym_table, symbol_name, symbol_type)
