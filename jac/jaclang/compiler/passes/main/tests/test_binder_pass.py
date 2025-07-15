@@ -13,7 +13,7 @@ class BinderPassTests( SymTableTestMixin):
 
     def test_glob_sym_build(self) -> None:
         """Test symbol table construction for symbol_binding_test.jac fixture."""
-        mod_targ = JacProgram().build(self.fixture_abs_path("sym_binder.jac"))
+        mod_targ = JacProgram().bind(self.fixture_abs_path("sym_binder.jac"))
         sym_table = mod_targ.sym_tab
 
         #currenlty 'aa' is not in the main table, need fix #TODO

@@ -151,7 +151,7 @@ class BinderPass(UniPass):
 
                 attr_sym = current_sym_tab.lookup(attr_node.sym_name)
                 if not attr_sym:
-                    #TODO # self.log_error(
+                    # TODO # self.log_error(
                     #     f"Could not resolve attribute '{attr_node.sym_name}' in chain"
                     # )
                     return False
@@ -207,7 +207,7 @@ class BinderPass(UniPass):
             self.handle_simple_symbol(target, "define")
         else:
             pass
-            #TODO
+            # TODO
             # self.log_error("Assignment target not valid")
 
     def enter_ability(self, node: uni.Ability) -> None:
@@ -509,7 +509,7 @@ class BinderPass(UniPass):
                 # self.log_error(
                 #     f"Could not resolve attribute '{attr_node.sym_name}' in chain"
                 # )
-                #TODO:
+                # TODO:
                 break
 
             attr_symbol.add_use(attr_node)
@@ -539,7 +539,7 @@ class BinderPass(UniPass):
             return parsed_module
 
         except Exception as e:
-            #TODO
+            # TODO
             # self.log_error(f"Failed to parse module '{module_path}': {str(e)}")
             return None
 

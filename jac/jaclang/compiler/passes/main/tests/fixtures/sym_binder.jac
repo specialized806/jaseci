@@ -17,13 +17,13 @@ with entry{
 }
 with entry {
     Y = 99;
-    
+
 }
 def ccc() {
     # aa = 99; #Error:name 'aa' is assigned to before global declaration
     if (0) {
-        :global:aa;
-        :global:bb;
+        global aa;
+        global bb;
         aa = 88;
         bb = 0;
         p = 90;
