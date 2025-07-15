@@ -87,9 +87,9 @@ with entry {
 `by llm()` delegates execution to an LLM without any extra library code.
 
 
-### Agentic AI with Meaning Typed Programming (MTP) Example
+### Agentic AI with Meaning-Typed Programming (MTP) Example
 
-This example demonstrates Multi-Tool Programming (MTP) in the Jaseci Stack, where Jac code seamlessly integrates LLMs and external APIs to create an intelligent, agentic workflow:
+This example demonstrates Meaning-Typed Programming (MTP) in the Jaseci Stack, where Jac code seamlessly integrates LLMs and external APIs to create an intelligent, agentic workflow:
 
 **Your Intelligent Travel Planner with just 50 lines of code !!**
 
@@ -145,6 +145,13 @@ def weekend_plan(location:str)->str by llm(method="ReAct",tools=[search_web]);
 
 with entry {print(weekend_plan("Michigan, USA"));}
 ```
+
+!!! info "How To Run"
+    1. Install the MTLLM plugin by `pip install mtllm`
+    2. Get a free Serper API key: Visit [Serper.dev](https://serper.dev/)
+    3. Save your OpenAI API as an environment variable (`export OPENAI_API_KEY="xxxxxxxx"`).
+    > **Note:** > > You can use Gemini, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface.
+    4. Copy this code into `example.jac` file and run with `jac run example.jac`
 
 ??? example "Output"
     `   Hey there! It's looking like a fantastic Saturday on July 19, 2025, in Michigan, with clear sunny skies and just a 10% chance of rain. Perfect weather for an outdoor adventure! I recommend checking out the Arenac County Fair, running until the 19th. It's a delightful local event with a variety of activities, from animal shows to fun rides, all happening at the Arenac County Fairgrounds. Here's a fun fact: it's one of the oldest county fairs in Michigan, celebrating local culture and community spirit.
