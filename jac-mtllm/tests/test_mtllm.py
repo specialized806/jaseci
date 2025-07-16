@@ -6,6 +6,8 @@ import sys
 from jaclang import JacMachineInterface as Jac
 from jaclang.utils.test import TestCase
 
+from fixtures import python_lib_mode
+
 # Import the jac_import function from JacMachineInterface
 jac_import = Jac.jac_import
 
@@ -86,6 +88,15 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn('The image shows a hot air balloon shaped like a heart', stdout_value)
 
+    def test_streaming_output(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("streaming_output", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn('The orca whale, or killer whale, is one of the most intelligent and adaptable marine predators', stdout_value)
+
     def test_with_llm_method(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
@@ -150,6 +161,18 @@ class JacLanguageTests(TestCase):
         except Exception:
             self.skipTest("This test requires Pillow to be installed.")
 
+    def test_webp_image_support(self):
+        """Test MTLLLM image support for webp format."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("webp_support_test", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn( "full_name='Albert Einstein'", stdout_value)
+        self.assertIn( "year_of_death='1955'", stdout_value)
+
+
+
     def test_with_llm_video(self) -> None:
         """Test MTLLLM Video Implementation."""
         try:
@@ -200,3 +223,13 @@ class JacLanguageTests(TestCase):
             any(c.islower() for c in password),
             "Password should contain at least one lowercase letter.",
         )
+
+    def test_python_lib_mode(self) -> None:
+        """Test the Python library mode."""
+        person = python_lib_mode.test_get_person_info()
+
+        # Check if the output contains the expected person information
+        self.assertIn("Alan Turing", person.name)
+        self.assertIn("1912", str(person.birth_year))
+        self.assertIn("A pioneering mathematician and computer scientist", person.description)
+        self.assertIn("breaking the Enigma code", person.description)
