@@ -17,6 +17,7 @@ import from mtllm.llm { Model, Image }
 
 glob llm = Model(model_name="gpt-4o");
 
+'Personality of the Person'
 enum Personality {
    INTROVERT = "Introvert",
    EXTROVERT = "Extrovert"
@@ -24,6 +25,7 @@ enum Personality {
 
 sem Personality.INTROVERT = 'Person who is shy and reticent';
 sem Personality.EXTROVERT = 'Person who is outgoing and socially confident';
+
 
 
 obj Person {
@@ -35,7 +37,8 @@ obj Person {
 def get_person_info(img: Image) -> Person by llm();
 
 with entry {
-    person_obj = get_person_info(Image("person.png"));
+    image = Image("photo.jpg");
+    person_obj = get_person_info(image);
     print(person_obj);
 }
 ```
