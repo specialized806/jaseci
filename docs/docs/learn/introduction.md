@@ -87,7 +87,7 @@ with entry {
 `by llm()` delegates execution to an LLM without any extra library code.
 
 
-### Agentic AI with Meaning-Typed Programming (MTP) Example
+## Agentic AI with Meaning-Typed Programming (MTP)
 
 This example demonstrates Meaning-Typed Programming (MTP) in the Jaseci Stack, where Jac code seamlessly integrates LLMs and external APIs to create an intelligent, agentic workflow:
 
