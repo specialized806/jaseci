@@ -103,7 +103,7 @@ Jac provides novel constructs for integrating LLMs into code. A function body ca
 
 ```jac
 import from mtllm.llm { Model }
-glob llm = Model(model_name="gemini-2.0-flash");
+glob llm = Model(model_name="gemini/gemini-2.0-flash");
 
 enum Personality {
     INTROVERT = "Introvert",

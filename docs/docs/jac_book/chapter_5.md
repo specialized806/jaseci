@@ -104,12 +104,12 @@ MTLLM supports various AI models through a unified interface. Let's start with b
         <div class="code-block">
         ```jac
         # basic_setup.jac
-        import from mtllm.llms { OpenAI, Gemini }
+        import from mtllm.llm { Model}
 
         # Configure different models
-        glob text_model = OpenAI(model_name="gpt-4o");
-        glob vision_model = OpenAI(model_name="gpt-4-vision-preview");
-        glob gemini_model = Gemini(model_name="gemini-2.0-flash");
+        glob text_model = Model(model_name="gpt-4o");
+        glob vision_model = Model(model_name="gpt-4-vision-preview");
+        glob gemini_model = Model(model_name="gemini/gemini-2.0-flash");
 
         """Analyze text sentiment."""
         def analyze_sentiment(text: str) -> str by text_model();

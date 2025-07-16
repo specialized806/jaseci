@@ -170,10 +170,10 @@ Jac provides a powerful function system with mandatory type annotations, built-i
     === "Jac"
 
         ```jac
-        import from mtllm.llms { Gemini }
+        import from mtllm.llm { Model }
 
-        glob llm = Gemini(
-            model_name="gemini-2.0-flash"
+        glob llm = Model(
+            model_name="gemini/gemini-2.0-flash"
         );
 
         glob GEMINI_API_KEY = "";
@@ -279,10 +279,10 @@ Jac provides a powerful function system with mandatory type annotations, built-i
     === "Jac"
 
         ```jac
-        import from mtllm.llms { Gemini }
+        import from mtllm.llm { Model }
 
-        glob llm = Gemini(
-            model_name="gemini-2.0-flash"
+        glob llm = Model(
+            model_name="gemini/gemini-2.0-flash"
         );
 
         glob GEMINI_API_KEY = "";
