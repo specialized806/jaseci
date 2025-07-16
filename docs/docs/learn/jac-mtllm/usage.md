@@ -2,6 +2,44 @@
 
 This guide covers different ways you can use MTLLM to build AI-integrated software in Jaclang. From simple AI-powered functions to complex multi-agent systems, MTLLM provides the tools to seamlessly integrate Large Language Models into your applications. For truly agentic behavior that can reason, plan, and act autonomously, MTLLM offers the ReAct method with tool integration.
 
+## Supported Models
+
+MTLLM use [LiteLLM](https://docs.litellm.ai/docs) under the hood allowing seamless integration with a wide range of models.
+
+=== "OpenAI"
+    ```jac linenums="1"
+    import from mtllm {Model}
+
+    glob llm = Model(model_name = "gpt-4o")
+    ```
+=== "Gemini"
+    ```jac linenums="1"
+    import from mtllm {Model}
+
+    glob llm = Model(model_name = "gemini/gemini-2.0-flash")
+    ```
+=== "Anthropic"
+    ```jac linenums="1"
+    import from mtllm {Model}
+
+    glob llm = Model(model_name = "claude-3-5-sonnet-20240620")
+    ```
+=== "Ollama"
+    ```jac linenums="1"
+    import from mtllm {Model}
+
+    glob llm = Model(model_name = "ollama/llama3:70b")
+    ```
+=== "HuggingFace Models"
+    ```jac linenums="1"
+    import from mtllm {Model}
+
+    glob llm = Model(model_name = "huggingface/meta-llama/Llama-3.3-70B-Instruct")
+    ```
+
+??? Note
+    There are Many other supported models and model serving platforms available with LiteLLM, please check their [documentation](https://docs.litellm.ai/docs/providers) for model names.
+
 ### Key MTLLM Features
 
 LLM integration is a first class feature in Jaclang, enabling you to build AI-powered applications with minimal effort. Here are some of the key features:
