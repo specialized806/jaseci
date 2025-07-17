@@ -341,63 +341,140 @@ with entry {
 
 ## Graph Navigation and Filtering
 ---
-Jac provides powerful syntax for navigating graphs: `[-->]` gets outgoing connections, `[<--]` gets incoming connections, and filters can be applied to find specific nodes or edges.
+Jac provides powerful and expressive syntax for navigating and querying graph structures. Walkers can traverse connections directionally—forward or backward—and apply filters to control exactly which nodes or edges should be visited.
 
-### Basic Navigation
+### Directional Traversal
+- `-->` : Follows outgoing edges from the current node.
+- `<--` : Follows incoming edges to the current node.
 
+These can be wrapped in a visit statement to direct walker movement:
 ```jac
---8<-- "docs/examples/chapter_10_school.jac:1:67"
---8<-- "docs/examples/chapter_10_school.jac:117:166"
+visit [-->];   // Move to all connected child nodes
+visit [<--];   // Move to all parent nodes
 ```
 
 
-### Advanced Filtering
-
+### Filter by Node Type
+To narrow traversal to specific node types, use the filter syntax:
 ```jac
---8<-- "docs/examples/chapter_10_school.jac:1:177"
+-->(`?NodeType)
 ```
 
+This ensures the walker only visits nodes of the specified archetype.
+```jac
+# Example: Visit all Student nodes connected to the root
+walker FindStudents {
+    can start with `root entry {
+        visit [-->(`?Student)];
+    }
+}
+```
+This allows your walker to selectively traverse part of the graph, even in the presence of mixed node types.
+
+### Filtering by Node Attributes
+Jac also supports **attribute-based filtering** during traversal. You can match node properties using a rich syntax:
+
+```jac
+-->(`?NodeType: attr1 op value1, attr2 op value2, ...)
+```
+Where:
+
+- `NodeType` is the node archetype to match (e.g., `Student`)
+- `attr1`, `attr2` are properties of that node
+- `op` is a comparison operator
 
 
-## Best Practices
+#### Supported Operators
 
-!!! summary "Design Guidelines"
-    - **Nodes for Entities**: Use nodes for things that exist independently (students, teachers, classrooms)
-    - **Edges for Relationships**: Use edges for connections between entities (enrollment, teaching, friendship)
-    - **Rich Edge Properties**: Store relationship-specific data in edges (grades, dates, status)
-    - **Consistent Naming**: Use clear, descriptive names for node and edge types
-    - **Connect to Root**: Always connect important nodes to root for persistence
+| Operator   | Description                    | Example                             |
+|------------|--------------------------------|-------------------------------------|
+| `==`       | Equality                       | `grade == 90`                        |
+| `!=`       | Inequality                     | `status != "inactive"`              |
+| `<`        | Less than                      | `age < 18`                           |
+| `>`        | Greater than                   | `score > 70`                         |
+| `<=`       | Less than or equal to          | `temp <= 100`                       |
+| `>=`       | Greater than or equal to       | `hour >= 12`                        |
+| `is`       | Identity comparison            | `mood is "happy"`                   |
+| `is not`   | Negative identity comparison   | `type is not "admin"`              |
+| `in`       | Membership (value in list)     | `role in ["student", "teacher"]`    |
+| `not in`   | Negative membership            | `status not in ["inactive", "banned"]` |
+
+#### Example
+```jac
+# Find all students with a grade above 85
+walker FindTopStudents {
+    can start with `root entry {
+        visit [-->(`?Student: grade > 85)];
+    }
+}
+```
+This walker will only visit `Student` nodes where the `grade` property is greater than 85.
+
+### Filtering by Edge Type and Attributes
+In addition to filtering by node types and attributes, Jac also allows you to filter based on edge types and edge attributes, enabling precise control over traversal paths in complex graphs.
+
+To traverse only edges of a specific type, use the following syntax:
+```jac
+visit [->:EdgeType->];
+```
+
+This tells the walker to follow only edges labeled as `EdgeType`, regardless of the type of the nodes they connect.
+
+#### Example
+```jac
+# Only follow "enrolled_in" edges
+visit [->:enrolled_in->];
+```
+
+### Edge Atribute Filtering
+You can further refine edge traversal by applying attribute-based filters directly to the edge:
+```jac
+visit [->:EdgeType: attr1 op val1, attr2 op val2:->];
+```
+This format allows you to filter based on metadata stored on the edge itself, not the nodes.
+
+#### Example
+```jac
+# Follow "graded" edges where score is above 80
+visit [->:graded: score > 80:->];
+```
+This pattern is especially useful when edges carry contextual data, such as timestamps, weights, relationships, or scores.
+
+## Wrapping Up
+---
+In this chapter, we explored the foundational concepts of nodes and edges in Jac. We learned how to define nodes with properties, create edges to represent relationships, and navigate the graph using walkers. We also saw how to filter nodes and edges based on types and attributes, enabling powerful queries and interactions.
+These concepts form the backbone of Object-Spatial Programming, allowing you to model complex systems and relationships naturally. As you continue to build your Jac applications, keep these principles in mind to create rich, interconnected data structures that reflect the real-world entities and relationships you want to represent.
 
 ## Key Takeaways
+---
 
-!!! summary "What We've Learned"
-    **Node Fundamentals:**
+**Node Fundamentals:**
 
-    - **Spatial objects**: Nodes can be connected and automatically persist when linked to root
-    - **Property storage**: Nodes hold data using `has` declarations with automatic constructors
-    - **Automatic persistence**: Nodes connected to root persist between program runs
-    - **Type safety**: All node properties must have explicit types
+- **Spatial objects**: Nodes can be connected and automatically persist when linked to root
+- **Property storage**: Nodes hold data using `has` declarations with automatic constructors
+- **Automatic persistence**: Nodes connected to root persist between program runs
+- **Type safety**: All node properties must have explicit types
 
-    **Edge Fundamentals:**
+**Edge Fundamentals:**
 
-    - **First-class relationships**: Edges are full objects with their own properties and behaviors
-    - **Typed connections**: Edges define the nature of relationships between nodes
-    - **Bidirectional support**: Edges can be traversed in both directions
-    - **Rich metadata**: Store relationship-specific data directly in edge properties
+- **First-class relationships**: Edges are full objects with their own properties and behaviors
+- **Typed connections**: Edges define the nature of relationships between nodes
+- **Bidirectional support**: Edges can be traversed in both directions
+- **Rich metadata**: Store relationship-specific data directly in edge properties
 
-    **Graph Operations:**
+**Graph Operations:**
 
-    - **Creation syntax**: Use `++>` to create new connections, `-->` to reference existing ones
-    - **Navigation patterns**: `[-->]` for outgoing, `[<--]` for incoming connections
-    - **Filtering support**: Apply conditions to find specific nodes or edges
-    - **Traversal efficiency**: Graph operations are optimized for spatial queries
+- **Creation syntax**: Use `++>` to create new connections, `-->` to reference existing ones
+- **Navigation patterns**: `[-->]` for outgoing, `[<--]` for incoming connections
+- **Filtering support**: Apply conditions to find specific nodes or edges
+- **Traversal efficiency**: Graph operations are optimized for spatial queries
 
-    **Practical Applications:**
+**Practical Applications:**
 
-    - **Natural modeling**: Represent real-world entities and relationships directly
-    - **Query capabilities**: Find related data through graph traversal
-    - **Persistence automation**: No manual database management required
-    - **Scalable architecture**: Graph structure supports distributed processing
+- **Natural modeling**: Represent real-world entities and relationships directly
+- **Query capabilities**: Find related data through graph traversal
+- **Persistence automation**: No manual database management required
+- **Scalable architecture**: Graph structure supports distributed processing
 
 !!! tip "Try It Yourself"
     Practice with nodes and edges by building:
