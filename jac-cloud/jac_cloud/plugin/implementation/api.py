@@ -45,8 +45,8 @@ FILE_TYPES = {
     list[UploadFile] | None,
 }
 
-walker_router = APIRouter(prefix="/walker")
-webhook_walker_router = APIRouter(prefix="/webhook/walker")
+walker_router = APIRouter()
+webhook_walker_router = APIRouter()
 
 
 class EntryType(StrEnum):
@@ -150,11 +150,25 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
         files: dict[str, Any] = {}
         message: dict[str, Any] = {}
 
+        if webhook is None:
+            target_authenticator = authenticator
+            target_router = walker_router
+            default_tags = ["Walker APIs"]
+            base_path = "/walker"
+        else:
+            target_authenticator = generate_webhook_auth(webhook)
+            target_router = webhook_walker_router
+            default_tags = ["Webhook Walker APIs"]
+            base_path = "/webhook/walker"
+
         if path:
             if not path.startswith("/"):
-                path = f"/{path}"
+                path = f"{base_path}/{cls.__name__}/{path}"
+
             if isinstance(as_query, list):
                 as_query += PATH_VARIABLE_REGEX.findall(path)
+        else:
+            path = f"{base_path}/{cls.__name__}"
 
         hintings = get_type_hints(cls)
 
@@ -290,15 +304,6 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
         ) -> Response:
             return api_entry(request, background_task, None, payload)
 
-        if webhook is None:
-            target_authenticator = authenticator
-            target_router = walker_router
-            default_tags = ["Walker APIs"]
-        else:
-            target_authenticator = generate_webhook_auth(webhook)
-            target_router = webhook_walker_router
-            default_tags = ["Webhook Walker APIs"]
-
         for method in methods:
             method = method.lower()
 
@@ -330,11 +335,9 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
                         settings["dependencies"] = cast(list, target_authenticator)
 
                     if entry_type.upper() in ROOT_ENTRIES:
-                        walker_method(f"/{cls.__name__}{path}", **settings)(api_root)
+                        walker_method(f"{path}", **settings)(api_root)
                     if entry_type.upper() in NODE_ENTRIES:
-                        walker_method(f"/{cls.__name__}/{{node}}{path}", **settings)(
-                            api_entry
-                        )
+                        walker_method(f"{path}/{{node}}", **settings)(api_entry)
 
 
 def specs(

@@ -74,7 +74,7 @@ walker my_walker {
 | `methods` | `list[str]` | Allowed HTTP methods: `"get"`, `"post"`, `"put"`, `"delete"`, etc. | `["post"]` |
 | `as_query` | `str \| list[str]` | Fields to treat as query parameters. Use `"*"` for all fields | `[]` |
 | `auth` | `bool` | Whether endpoint requires authentication | `true` |
-| `path` | `str` | Additional path after auto-generated path | N/A |
+| `path` | `str` | If it starts with `/`, it will be the complete path. Otherwise, it will be prefixed with `/walker` (for walkers) or /`webhook/walker` (for webhooks). If not specified, it defaults to the walker's name with its respective prefix. | N/A |
 | `private` | `bool` | Skip walker in auto-generation | `false` |
 
 ### Advanced Settings

@@ -367,7 +367,13 @@ walker post_path_var {
     has a: str;
 
     class __specs__ {
-        has path: str = "/{a}", methods: list = ["post", "get"];
+        has path: str = "{a}", methods: list = ["post", "get"];
+    }
+}
+
+walker post_custom_path {
+    class __specs__ {
+        has path: str = "/custom/walker/path", methods: list = ["post"];
     }
 }
 
@@ -409,7 +415,7 @@ walker combination2 {
     has e: str = "";
 
     class __specs__ {
-        has path: str = "/{a}",
+        has path: str = "{a}",
         methods: list = ["post", "get", "put", "patch", "delete", "head", "trace", "options"],
         as_query: list = ["b"],
         excluded: list = ["d", "e"];
@@ -978,7 +984,7 @@ walker webhook_by_path {
         has webhook: dict = {
             "type": "path",
             "name": "test_key"
-        }, path: str = "/{test_key}";
+        }, path: str = "{test_key}";
     }
 }
 
@@ -992,6 +998,18 @@ walker webhook_by_body {
             "type": "body",
             "name": "test_key"
         };
+    }
+}
+walker webhook_custom_path {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "body",
+            "name": "test_key"
+        }, path: str = "/custom/webhook/path";
     }
 }
 
