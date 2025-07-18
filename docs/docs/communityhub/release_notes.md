@@ -3,6 +3,7 @@
 This document provides a summary of new features, improvements, and bug fixes in each version of Jac and Jaseci. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](./breaking_changes.md) page.
 
 ## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0 (Unreleased)
+- **Jac Cloud Hot Reload**: Introduced the ability to enable development mode like uvicorn by adding `--reload` in `jac serve`
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
 

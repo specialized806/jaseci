@@ -11,8 +11,14 @@ Transform any Jac application into a cloud API server with a single command:
 jac serve main.jac
 
 # With custom host and port (optional)
-jac serve main.jac --host 0.0.0.0 --port 8080
+jac serve main.jac --host 0.0.0.0 --port 8080 --reload
 ```
+
+## Development Mode
+- `--reload`
+    - Enable auto-reload. Uvicorn supports two versions of auto-reloading behavior enabled by this option. Default: `False`.
+
+---
 
 Once started, your API will be available at:
 
