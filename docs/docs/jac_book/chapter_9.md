@@ -144,7 +144,7 @@ walker StateAgent {
 <br />
 This allows `StateAgent` to be generic and extensible. If we later add new service nodes like `Location`, `Date`, or `WeatherForecast`, we don’t need to modify the walker—so long as those nodes inherit from `Service`, the walker will visit them automatically.
 
-The ```-->(`?[Node])``` syntax is a powerful feature of Jac that allows you to filter nodes by type. It tells the walker to visit any node that matches the `[Node]` type, regardless of its specific implementation.
+The ```-->(`?NodeType)``` syntax is a powerful feature of Jac that allows you to filter nodes by type. It tells the walker to visit any node that matches the `NodeType` type, regardless of its specific implementation.
 
 ### Usecase: A Smarter NPC
 Imagine we want to create an NPC (non-player character) that adjusts its behavior based on the environment. It could change its mood depending on the **weather** or **time of day**—perhaps it's cheerful in the morning, grumpy when it's hot, or sleepy at night.
