@@ -1144,3 +1144,32 @@ async walker async_walker {
 
 # ------------------------------------------------------------- #
 #################################################################
+
+#################################################################
+#                    DYNAMIC WALKER ENDPOINT                    #
+# ------------------------------------------------------------- #
+
+walker generate_walker {
+
+    can enter2 with `root entry {
+        report self.__class__.__name__;
+    }
+
+    can enter with `root entry {
+        type(
+            "generated_walker",
+            (_.Walker,),
+            {
+                "enter": generate_walker.enter2,
+                "__specs__": generate_walker.__specs__
+            }
+        );
+    }
+
+    class __specs__ {
+        static has auth: bool = False, methods: list = ["get"];
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################

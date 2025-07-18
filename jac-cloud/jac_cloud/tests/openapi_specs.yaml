@@ -2728,6 +2728,47 @@ paths:
       summary: Enter summary here!!!
       tags:
         - Documented
+  /walker/generate_walker:
+    get:
+      operationId: api_root_walker_generate_walker_get
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse_Any_"
+          description: Successful Response
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/generate_walker/{node}:
+    get:
+      operationId: api_entry_walker_generate_walker__node__get
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse_Any_"
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Api Entry
+      tags:
+        - Walker APIs
   /walker/get_all_query:
     get:
       operationId: api_root_walker_get_all_query_get

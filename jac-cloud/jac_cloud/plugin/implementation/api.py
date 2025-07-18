@@ -12,6 +12,7 @@ from fastapi import (
     APIRouter,
     BackgroundTasks,
     Depends,
+    FastAPI,
     File,
     HTTPException,
     Request,
@@ -45,8 +46,12 @@ FILE_TYPES = {
     list[UploadFile] | None,
 }
 
-walker_router = APIRouter()
-webhook_walker_router = APIRouter()
+
+class Routers:
+    """Router Handler."""
+
+    main_router: FastAPI | None = None
+    walker_router = APIRouter()
 
 
 class EntryType(StrEnum):
@@ -152,12 +157,10 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
 
         if webhook is None:
             target_authenticator = authenticator
-            target_router = walker_router
             default_tags = ["Walker APIs"]
             base_path = "/walker"
         else:
             target_authenticator = generate_webhook_auth(webhook)
-            target_router = webhook_walker_router
             default_tags = ["Webhook Walker APIs"]
             base_path = "/webhook/walker"
 
@@ -307,7 +310,9 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
         for method in methods:
             method = method.lower()
 
-            walker_method = getattr(target_router, method)
+            walker_method = getattr(
+                Routers.main_router or Routers.walker_router, method
+            )
 
             match method:
                 case "websocket":
