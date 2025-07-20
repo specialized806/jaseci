@@ -11,8 +11,8 @@ from jaclang.compiler.passes.main import PyastBuildPass
 from jaclang.compiler.passes.tool.doc_ir_gen_pass import DocIRGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
-from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 from jaclang.runtimelib.utils import read_file_with_encoding
+from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 
 class AstKidInfo:

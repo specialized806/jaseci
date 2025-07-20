@@ -107,7 +107,7 @@ class JacProgram:
         """Convert a Jac file to an AST."""
         if not use_str:
             use_str = read_file_with_encoding(file_path)
-        mod_targ = self.parse_str(use_str, file_path)
+        mod_targ = self.parse_str(use_str, file_path)  # type: ignore
         self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
         if not no_cgen:
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
@@ -117,7 +117,7 @@ class JacProgram:
         """Bind the Jac module."""
         if not use_str:
             use_str = read_file_with_encoding(file_path)
-        mod_targ = self.parse_str(use_str, file_path)
+        mod_targ = self.parse_str(use_str, file_path)  # type: ignore
         BinderPass(ir_in=mod_targ, prog=self)
         return mod_targ
 
