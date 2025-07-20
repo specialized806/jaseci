@@ -103,7 +103,10 @@ def proc_file_sess(
     elif filename.endswith(".py"):
         mod = mod[:-3]
     else:
-        print("Not a valid file!\nOnly supports `.jac`, `.jir`, and `.py`", file=sys.stderr)
+        print(
+            "Not a valid file!\nOnly supports `.jac`, `.jir`, and `.py`",
+            file=sys.stderr,
+        )
     mach = ExecutionContext(session=session, root=root)
     Jac.set_context(mach)
     return base, mod, mach

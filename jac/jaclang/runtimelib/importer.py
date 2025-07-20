@@ -194,7 +194,11 @@ class PythonImporter(Importer):
                         )
                         if imp_spec and imp_spec.loader:
                             imported_module = importlib.util.module_from_spec(imp_spec)
-                            module_name = spec.override_name if spec.override_name else imp_spec.name
+                            module_name = (
+                                spec.override_name
+                                if spec.override_name
+                                else imp_spec.name
+                            )
                             imported_module.__name__ = module_name
                             sys.modules[module_name] = imported_module
                             imp_spec.loader.exec_module(imported_module)
@@ -204,7 +208,7 @@ class PythonImporter(Importer):
                             )
                 else:
                     imported_module = importlib.import_module(name=spec.target)
-            
+
             main_module = __import__("__main__")
             if spec.absorb:
                 for name in dir(imported_module):
