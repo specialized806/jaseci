@@ -43,6 +43,9 @@ pytest-asyncio = "^0.22.0"
 pytest-xdist = "^3.6.1"
 pytest-cov = "^5.0.0"
 pre-commit = "^3.7.1"
+# Interagular is needed for lark strict mode to test shift/reduce errors.
+# See: # https://github.com/jaseci-labs/jaseci/actions/runs/16420786288/job/46398499477?pr=23760
+interegular = "0.3.3"
 
 [tool.mypy]
 mypy_path = ["stubs"]
