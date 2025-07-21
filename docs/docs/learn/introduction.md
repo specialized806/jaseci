@@ -87,82 +87,154 @@ with entry {
 `by llm()` delegates execution to an LLM without any extra library code.
 
 
-## Agentic AI with Meaning-Typed Programming (MTP)
+## Agentic Programming with Nodes and Walkers
 
-This example demonstrates Meaning-Typed Programming (MTP) in the Jaseci Stack, where Jac code seamlessly integrates LLMs and external APIs to create an intelligent, agentic workflow:
+This example demonstrates Meaning-Typed Programming (MTP) in the Jaseci Stack, with Nodes and Walkers.
+Here nodes represent meaningful entities (like Weights, Cardio Machines), while walkers (agents) traverse these nodes, collect contextual information, and collaborate with an LLM to generate a personalized workout plan.
 
-**Your Intelligent Travel Planner with just 50 lines of code !!**
+**Your Intelligent Fitness Planner !!**
 
 ```jac
-import os;
-import requests;
-import from mtllm.llm {Model}
-import from httpx  {get}
+import from mtllm { Model }
 
-glob llm = Model(model_name="gpt-4o");
+glob llm = Model(model_name="gpt-4o-mini");
 
-obj WebSearch {
-    has api_key: str = os.getenv("SERPER_API_KEY");
-    has base_url: str = "https://google.serper.dev/search";
+node Equipment {}
 
-    def search(query: str) {
-        headers = {"X-API-KEY": self.api_key, "Content-Type": "application/json"};
-        payload = {"q": query};
-        resp = requests.post(self.base_url, headers=headers, json=payload);
-        if resp.status_code == 200 {
-            data = resp.json();
-            summary = "";
-            results = data.get("organic", []) if isinstance(data, dict) else [];
-            for r in results[:3] {
-                summary += f"{r.get('title', '')}: {r.get('link', '')}\n";
-                if r.get('snippet') {
-                    summary += f"{r['snippet']}\n";
-                }
-            }
-            return summary;
-        }
-        return f"Serper request failed: {resp.status_code}";
+walker FitnessAgent {
+    has gear: dict = {};
+
+    can start with `root entry {
+        visit [-->(`?Equipment)];
     }
 }
 
-def search_web(query: str) -> str { return WebSearch().search(query=query); }
+node Weights(Equipment) {
+    has available: bool = True;
 
-"""You are a cheerful travel buddy.
-TASK:
-1. Find next Saturday (YYYY-MM-DD).
-2. Get weather: search_web("weather Saturday {location} {date}").
-   - GOOD = no 'rain'/'storm' & precip<30%.
-3. If GOOD:
-    a) search_web("outdoor events {location} {date}").
-    b) Pick 1 event → {name, time, venue, 1 fun fact}.
-    c) Add 1 nearby outdoor bonus spot (with why it’s cool).
-4. If BAD:
-    a) search_web("indoor things to do {location} {date}").
-    b) Pick 1 activity → {name, hours, location, approx cost}.
-5. Reply as 1 friendly paragraph:
-    [Greet + Weather] → [Main rec] → [Bonus/cosy alt + cost] → [Enthusiastic closing]."""
-def weekend_plan(location:str)->str by llm(method="ReAct",tools=[search_web]);
+    can check with FitnessAgent entry {
+        visitor.gear["weights"] = self.available;
+    }
+}
 
-with entry {print(weekend_plan("Michigan, USA"));}
+node Cardio(Equipment) {
+    has machine: str = "treadmill";
+
+    can check with FitnessAgent entry {
+        visitor.gear["cardio"] = self.machine;
+    }
+}
+
+"""Create a personalized workout plan based on available equipment and space."""
+def create_workout(gear: dict) -> str by llm(incl_info=(gear));
+
+node Trainer {
+    can plan with FitnessAgent entry {
+        visitor.gear["workout"] = create_workout(visitor.gear);
+    }
+}
+
+walker CoachWalker(FitnessAgent) {
+    can get_plan with `root entry {
+        visit [-->(`?Trainer)];
+    }
+}
+
+with entry {
+    root ++> Weights();
+    root ++> Cardio();
+    root ++> Trainer();
+
+    agent = CoachWalker() spawn root;
+    print("Your Workout Plan:");
+    print(agent.gear['workout']);
+}
 ```
 
 !!! info "How To Run"
     1. Install the MTLLM plugin by `pip install mtllm`
-    2. Get a free Serper API key: Visit [Serper.dev](https://serper.dev/)
-    3. Save your OpenAI API as an environment variable (`export OPENAI_API_KEY="xxxxxxxx"`).
+    2. Save your OpenAI API as an environment variable (`export OPENAI_API_KEY="xxxxxxxx"`).
     > **Note:** > > You can use Gemini, Anthropic or other API services as well as host your own LLM using Ollama or Huggingface.
     4. Copy this code into `example.jac` file and run with `jac run example.jac`
 
 ??? example "Output"
-    `   Hey there! It's looking like a fantastic Saturday on July 19, 2025, in Michigan, with clear sunny skies and just a 10% chance of rain. Perfect weather for an outdoor adventure! I recommend checking out the Arenac County Fair, running until the 19th. It's a delightful local event with a variety of activities, from animal shows to fun rides, all happening at the Arenac County Fairgrounds. Here's a fun fact: it's one of the oldest county fairs in Michigan, celebrating local culture and community spirit.
+    `   Your Workout Plan:
+        **Personalized Workout Plan**
 
-    While you're outdoors, why not visit the Sleeping Bear Dunes National Lakeshore nearby? It's renowned for its stunning landscape and offers breathtaking views of Lake Michigan. It's a cool spot for hiking and just soaking up nature's beauty.
+        **Duration:** 4 weeks
+        **Frequency:** 5 days a week
 
-    Enjoy your day out in Michigan, and make the most of the sunshine! 🌞
+        **Week 1-2: Building Strength and Endurance**
+
+        **Day 1: Upper Body Strength**
+        - Warm-up: 5 minutes treadmill walk
+        - Dumbbell Bench Press: 3 sets of 10-12 reps
+        - Dumbbell Rows: 3 sets of 10-12 reps
+        - Shoulder Press: 3 sets of 10-12 reps
+        - Bicep Curls: 3 sets of 12-15 reps
+        - Tricep Extensions: 3 sets of 12-15 reps
+        - Cool down: Stretching
+
+        **Day 2: Cardio and Core**
+        - Warm-up: 5 minutes treadmill walk
+        - Treadmill Intervals: 20 minutes (1 min sprint, 2 min walk)
+        - Plank: 3 sets of 30-45 seconds
+        - Russian Twists: 3 sets of 15-20 reps
+        - Bicycle Crunches: 3 sets of 15-20 reps
+        - Cool down: Stretching
+
+        **Day 3: Lower Body Strength**
+        - Warm-up: 5 minutes treadmill walk
+        - Squats: 3 sets of 10-12 reps
+        - Lunges: 3 sets of 10-12 reps per leg
+        - Deadlifts (dumbbells): 3 sets of 10-12 reps
+        - Calf Raises: 3 sets of 15-20 reps
+        - Glute Bridges: 3 sets of 12-15 reps
+        - Cool down: Stretching
+
+        **Day 4: Active Recovery**
+        - 30-45 minutes light treadmill walk or yoga/stretching
+
+        **Day 5: Full Body Strength**
+        - Warm-up: 5 minutes treadmill walk
+        - Circuit (repeat 3 times):
+        - Push-ups: 10-15 reps
+        - Dumbbell Squats: 10-12 reps
+        - Bent-over Dumbbell Rows: 10-12 reps
+        - Mountain Climbers: 30 seconds
+        - Treadmill: 15 minutes steady pace
+        - Cool down: Stretching
+
+        **Week 3-4: Increasing Intensity**
+
+        **Day 1: Upper Body Strength with Increased Weight**
+        - Follow the same structure as weeks 1-2 but increase weights by 5-10%.
+
+        **Day 2: Longer Cardio Session**
+        - Warm-up: 5 minutes treadmill walk
+        - Treadmill: 30 minutes at a steady pace
+        - Core Exercises: Same as weeks 1-2, but add an additional set.
+
+        **Day 3: Lower Body Strength with Increased Weight**
+        - Increase weights for all exercises by 5-10%.
+        - Add an extra set for each exercise.
+
+        **Day 4: Active Recovery**
+        - 30-60 minutes light treadmill walk or yoga/stretching
+
+        **Day 5: Full Body Strength Circuit with Cardio Intervals**
+        - Circuit (repeat 4 times):
+        - Push-ups: 15 reps
+        - Dumbbell Squats: 12-15 reps
+        - Jumping Jacks: 30 seconds
+        - Dumbbell Shoulder Press: 10-12 reps
+        - Treadmill: 1 minute sprint after each circuit
+        - Cool down: Stretching
+
+        Ensure to hydrate and listen to your body throughout the program. Adjust weights and reps as needed based on your fitness level.
     `
 
-This MTP example shows how Jac can orchestrate LLMs and external APIs in a single workflow, enabling agentic, tool-using applications with minimal code.
-
+This MTP example demonstrates how Jac seamlessly integrates LLMs with structured node-walker logic, enabling intelligent, context-aware agents with just a few lines of code.
 
 ## Zero to Infinite Scale without any Code Changes
 
