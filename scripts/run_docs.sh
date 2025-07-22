@@ -1,2 +1,2 @@
-pip install -r scripts/docs_requirements.txt
+pip install -r docs/requirements.txt
 python docs/scripts/mkdocs_serve.py
