@@ -1,9 +1,0 @@
-starlette
-uvicorn
-watchdog
-mkdocs
-mkdocs-material
-pymdown-extensions
-mkdocs-material
-mkdocs-video
-mkdocs-open-in-new-tab
