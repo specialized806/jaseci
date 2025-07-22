@@ -1,3 +1,2 @@
-cd jac/docs
-pip install -e .
-mkdocs serve
+pip install -r scripts/docs_requirements.txt
+python docs/scripts/mkdocs_serve.py
