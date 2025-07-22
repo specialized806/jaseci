@@ -17,6 +17,8 @@ jac serve main.jac --host 0.0.0.0 --port 8080 --reload
 ## Development Mode
 - `--reload`
     - Enable auto-reload. Uvicorn supports two versions of auto-reloading behavior enabled by this option. Default: `False`.
+- `--watch path/to/dir1,path/to/dir2`
+    - Select which path/s (comma separated) to watch for changes for auto-reload. Requires `--reload` to work. Defaults to main jac directory
 
 ---
 
