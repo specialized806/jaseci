@@ -16,26 +16,31 @@ if TYPE_CHECKING:
 
 def read_file_with_encoding(file_path: str) -> str:
     """Read file with proper encoding detection."""
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
-    except UnicodeDecodeError:
+    encodings_to_try = [
+        "utf-8-sig",
+        "utf-8",
+        "utf-16",
+        "utf-16le",
+        "utf-16be",
+        # "latin-1", # TODO: Support reading files with Latin-1 encoding
+    ]
+
+    for encoding in encodings_to_try:
         try:
-            with open(file_path, "r", encoding="utf-16") as f:
+            with open(file_path, "r", encoding=encoding) as f:
                 return f.read()
-        except UnicodeDecodeError:
-            try:
-                with open(file_path, "r", encoding="utf-8-sig") as f:
-                    return f.read()
-            except UnicodeDecodeError:
-                try:
-                    with open(file_path, "r", encoding="latin-1") as f:
-                        return f.read()
-                except Exception as e:
-                    raise IOError(
-                        f"Could not read file {file_path} with any encoding: {e},   "
-                        f"\nReport this issue: https://github.com/jaseci-labs/jaseci/issues"
-                    ) from e
+        except UnicodeError:
+            continue
+        except Exception as e:
+            raise IOError(
+                f"Could not read file {file_path}: {e}. "
+                f"Report this issue: https://github.com/jaseci-labs/jaseci/issues"
+            ) from e
+
+    raise IOError(
+        f"Could not read file {file_path} with any encoding. "
+        f"Report this issue: https://github.com/jaseci-labs/jaseci/issues"
+    )
 
 
 @contextmanager
