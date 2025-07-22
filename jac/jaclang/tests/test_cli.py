@@ -49,6 +49,7 @@ class JacCliTests(TestCase):
         self.assertIn("This is a test Python file.", stdout_value)
         self.assertIn("Result: 42", stdout_value)
         self.assertIn("Python execution completed.", stdout_value)
+        self.assertIn("10", stdout_value)
 
     def test_jac_cli_alert_based_err(self) -> None:
         """Basic test for pass."""

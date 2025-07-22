@@ -12,3 +12,8 @@ def main():
 if __name__ == "__main__":
     main()
     print("Python execution completed.")
+
+
+from jaclang.tests.fixtures import py_namedexpr
+
+py_namedexpr.walrus_example()
