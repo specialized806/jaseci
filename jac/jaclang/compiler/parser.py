@@ -1865,14 +1865,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def atomic_call(self, _: None) -> uni.FuncCall:
             """Grammar rule.
 
-            atomic_call: atomic_chain LPAREN param_list? by_llm? RPAREN by_llm?
+            atomic_call: atomic_chain LPAREN param_list? by_llm? RPAREN
             """
             target = self.consume(uni.Expr)
             self.consume_token(Tok.LPAREN)
             params_sn = self.match(list)
             genai_call = self.match(uni.Expr)
             self.consume_token(Tok.RPAREN)
-            body_genai_call = self.match(uni.Expr)
 
             return uni.FuncCall(
                 target=target,
@@ -1882,7 +1881,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     else []
                 ),
                 genai_call=genai_call,
-                body_genai_call=body_genai_call,
                 kid=self.flat_cur_nodes,
             )
 
