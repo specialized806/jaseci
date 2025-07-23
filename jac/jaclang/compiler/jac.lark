@@ -331,7 +331,7 @@ index_slice: LSQUARE                                                            
            | list_val
 
 // [Heading]: Function calls.
-atomic_call: atomic_chain LPAREN param_list? by_call? RPAREN by_call?
+atomic_call: atomic_chain LPAREN param_list? by_call? RPAREN
 
 by_call: KW_BY expression
 
@@ -452,9 +452,9 @@ builtin_type: TYP_TYPE
 // ************************************************************************* //
 
 PYNLINE: /::py::(.|\n|\r)*?::py::/
-GLOBAL_OP: /:g:|:global:/
-NONLOCAL_OP: /:nl:|:nonlocal:/
 TYPE_OP: /`/
+GLOBAL_OP: "global"
+NONLOCAL_OP: "nonlocal"
 
 // [Heading]: f-string tokens.
 FSTR_START.1: "f\""
