@@ -18,11 +18,10 @@ This project demonstrates a modern Retrieval-Augmented Generation (RAG) chatbot 
 ## Technologies Used
 - **Jac Language**: Object Spatial Programming with nodes and walkers
 - **Mean Typed Programming (MTP)**: LLM-based query classification and routing
-- **Jac Cloud & Jac MTLLM**: Backend infrastructure and multimodal LLM integration
+- **Jac Cloud**: Backend infrastructure and a Production ready server
 - **Model Context Protocol (MCP)** with FastMCP for tool management
 - **LangChain, ChromaDB, PyPDF**: Document processing and vector storage
 - **Streamlit**: Frontend interface
-- **OpenAI GPT-4o-mini**: Multimodal LLM capabilities
 - **Serper API**: Real-time web search
 
 ## Architecture
