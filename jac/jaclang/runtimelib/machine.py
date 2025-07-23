@@ -880,6 +880,15 @@ class JacBasics:
         return JacMachine.exec_ctx
 
     @staticmethod
+    def commit(anchor: Anchor | Archetype | None = None) -> None:
+        """Commit all data from memory to datasource."""
+        if isinstance(anchor, Archetype):
+            anchor = anchor.__jac__
+
+        mem = JacMachineInterface.get_context().mem
+        mem.commit(anchor)
+
+    @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
         ctx = JacMachineInterface.get_context()

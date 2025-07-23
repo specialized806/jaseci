@@ -272,7 +272,6 @@ walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         _.destroy(nested);
-        # nested.__jac__.apply();
 
         report [-->(`?Nested)];
     }
@@ -525,7 +524,7 @@ walker manual_create_nested_node {
             enum_field = Enum.A
         );
         here ++> n;
-        here.__jac__.apply();
+        _.commit(here);
 
         # simulate no auto save
         jsrc = _.get_context().mem;
@@ -551,7 +550,7 @@ walker manual_update_nested_node {
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
-        nested.__jac__.apply();
+        _.commit(nested);
 
         # simulate no auto save
         jsrc = _.get_context().mem;
@@ -567,7 +566,7 @@ walker manual_detach_nested_node {
         nested = [-->(`?Nested)][0];
         detached = here del--> [-->(`?Nested)];
         _.destroy(nested);
-        nested.__jac__.apply();
+        _.commit(nested);
 
         # simulate no auto save
         jsrc = _.get_context().mem;
@@ -582,7 +581,7 @@ walker manual_delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         _.destroy(nested);
-        nested.__jac__.apply();
+        _.commit(nested);
 
         # simulate no auto save
         jsrc = _.get_context().mem;
@@ -597,7 +596,7 @@ walker manual_delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = [edge-->][0];
         _.destroy(nested_edge);
-        nested_edge.__jac__.apply();
+        _.commit(nested_edge);
 
         # simulate no auto save
         jsrc = _.get_context().mem;
@@ -1121,8 +1120,7 @@ walker trigger_counter_task {
             report create_task(increment_counter(val=1), tcs[0]);
         }
 
-        # Trigger walker save
-        self.__jac__.apply();
+        _.save(self);
     }
 }
 

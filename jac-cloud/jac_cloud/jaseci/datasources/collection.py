@@ -1,6 +1,7 @@
 """Collection Abstract."""
 
 from os import getenv
+from tempfile import gettempdir
 from typing import (
     Any,
     AsyncGenerator,
@@ -148,7 +149,7 @@ class Collection(Generic[T]):
                 )
             else:
                 logger.info("DATABASE_HOST is not available! Using LocalDB...")
-                path = getenv("DATABASE_PATH") or "mydatabase"
+                path = getenv("DATABASE_PATH") or f"{gettempdir()}/mydatabase"
                 set_storage(
                     repository=path,
                     storage="sqlite",

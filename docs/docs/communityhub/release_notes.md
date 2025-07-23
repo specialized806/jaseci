@@ -18,6 +18,7 @@ This document provides a summary of new features, improvements, and bug fixes in
   - depth - how deep the traversal from source. Count includes edges. Defaults to 1
   - node_types - Node filter by name. Defaults to no filter
   - edge_types - Edge filter by name. Defaults to no filter
+- **Dedicated Memory commit interface.**: Introduced the interface to commit memory to db at runtime. Previously, we only have it on jac-cloud but we generalized it and support it for both jac and jac-cloud.
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
 
