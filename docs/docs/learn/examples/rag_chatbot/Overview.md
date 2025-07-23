@@ -80,7 +80,7 @@ pip install jaclang jac-cloud jac-streamlit mtllm langchain langchain-community 
 To use the Web Search, get a free API key from [Serper](https://serper.dev/).
 ```bash
 export OPENAI_API_KEY=<your-openai-key>
-export SERPER_API_KEY=<your-serper-key>  # Get free API key from https://serper.dev/
+export SERPER_API_KEY=<your-serper-key>
 ```
 
 To run the MCP server (in one terminal)
