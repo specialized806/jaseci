@@ -1,8 +1,8 @@
 import from mtllm { Model }
 
 glob llm = Model(
-    model_name="gpt-4o-mini",
-    # model_name="mockllm",
+    # model_name="gpt-4o-mini",
+    model_name="mockllm",
 
     outputs=[
         "Average marks for Alice : 86.75"
