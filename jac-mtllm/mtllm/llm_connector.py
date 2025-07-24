@@ -24,7 +24,7 @@ import litellm
 from litellm import CustomStreamWrapper
 from litellm._logging import _disable_debugging
 
-import openai
+from openai import OpenAI, Stream
 
 from .types import (
     CompletionRequest,
@@ -53,12 +53,12 @@ class LLMConnector(ABC):
     @staticmethod
     def for_model(model_name: str, **kwargs: object) -> "LLMConnector":
         """Construct the appropriate LLM connector based on the model name."""
-        if kwargs.get("proxy_url"):
-            kwargs["base_url"] = kwargs.pop("proxy_url")
-            return ProxyLLMConnector(model_name, **kwargs)
         if model_name.lower().strip() == MODEL_MOCK:
             return MockLLMConnector(model_name, **kwargs)
-        return LiteLLMConnector(model_name, **kwargs)
+        if kwargs.get("proxy_url"):
+            kwargs["base_url"] = kwargs.pop("proxy_url")
+            return LiteLLMConnector(True, model_name, **kwargs)
+        return LiteLLMConnector(False, model_name, **kwargs)
 
     def make_model_params(self, req: CompletionRequest) -> dict:
         """Prepare the parameters for the LLM call."""
@@ -147,9 +147,10 @@ class MockLLMConnector(LLMConnector):
 class LiteLLMConnector(LLMConnector):
     """LLM Connector for LiteLLM, a lightweight wrapper around OpenAI API."""
 
-    def __init__(self, model_name: str, **kwargs: object) -> None:
+    def __init__(self, proxy: bool, model_name: str, **kwargs: object) -> None:
         """Initialize the LiteLLM connector."""
         super().__init__(model_name, **kwargs)
+        self.proxy = proxy
 
         # Every litellm call will be logged to the tty and that pollutes the output.
         # When there is a by llm() call in the jaclang.
@@ -164,7 +165,14 @@ class LiteLLMConnector(LLMConnector):
 
         # Call the LiteLLM API
         self.log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
-        response = litellm.completion(**params)
+        if self.proxy:
+            client = OpenAI(
+                base_url=params.pop("api_base", "htpp://localhost:4000"),
+                api_key=params.pop("api_key"),
+            )
+            response = client.chat.completions.create(**params)
+        else:
+            response = litellm.completion(**params)
 
         # Output format:
         # https://docs.litellm.ai/docs/#response-format-openai-format
@@ -203,91 +211,16 @@ class LiteLLMConnector(LLMConnector):
 
         # Call the LiteLLM API
         self.log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
-        response: CustomStreamWrapper = litellm.completion(**params, stream=True)  # type: ignore
+        if self.proxy:
+            client = OpenAI(
+                base_url=params.pop("api_base"),
+                api_key=params.pop("api_key"),
+            )
 
-        for chunk in response:
-            if chunk.choices and chunk.choices[0].delta:
-                delta = chunk.choices[0].delta
-                yield delta.content or ""
-
-
-# -----------------------------------------------------------------------------
-# Proxy LLM Connector
-# -----------------------------------------------------------------------------
-
-
-class ProxyLLMConnector(LiteLLMConnector):
-    """LLM Connector for a proxy server that uses LiteLLM under the hood."""
-
-    def __init__(self, model_name: str, **kwargs: object) -> None:
-        """Initialize the Proxy LLM connector."""
-        super().__init__(model_name, **kwargs)
-        if not self.config.get("api_key"):
-            raise ValueError("Proxy LLM requires 'api_key' to be set.")
-        base_url = None
-        for url_keys in ["base_url", "host", "api_base"]:
-            if url_keys in self.config:
-                base_url = self.config[url_keys]
-                break
-        if not base_url:
-            self.log_info(f"No base URL provided, defaulting to '{DEFAULT_BASE_URL}'.")
-            base_url = DEFAULT_BASE_URL
-        self.config["api_base"] = base_url
-
-    @override
-    def dispatch_no_streaming(self, req: CompletionRequest) -> CompletionResult:
-        """Dispatch the LLM call to the proxy server."""
-        params = self.make_model_params(req)
-
-        self.log_info(f"Calling Proxy LLM: {self.model_name} with params:\n{params}")
-        client = openai.OpenAI(
-            base_url=params.pop("api_base", "htpp://localhost:4000"),
-            api_key=params.pop("api_key"),
-        )
-        response = client.chat.completions.create(**params)
-        # Output format:
-        # https://docs.litellm.ai/docs/#response-format-openai-format
-        #
-        # TODO: Handle stream output (type ignoring stream response)
-        message = response.choices[0].message  # type: ignore
-        req.add_message(Message(role=message.role, content=message.content))
-
-        output_content: str = message.content  # type: ignore
-        self.log_info(f"LLM call completed with response:\n{output_content}")
-        output_value = req.parse_response(output_content)
-
-        tool_calls: list[ToolCall] = []
-        for tool_call in message.tool_calls or []:  # type: ignore
-            if tool := req.get_tool(tool_call["function"]["name"]):
-                args_json = json.loads(tool_call["function"]["arguments"])
-                args = tool.parse_arguments(args_json)
-                tool_calls.append(
-                    ToolCall(call_id=tool_call["id"], tool=tool, args=args)
-                )
-            else:
-                raise RuntimeError(
-                    f"Attempted to call tool: '{tool_call['function']['name']}' which was not present."
-                )
-
-        return CompletionResult(
-            output=output_value,
-            tool_calls=tool_calls,
-        )
-
-    @override
-    def dispatch_streaming(self, req: CompletionRequest) -> Generator[str, None, None]:
-        """Dispatch the LLM call to the proxy server with streaming."""
-        # Construct the parameters for the LLM call
-        params = self.make_model_params(req)
-
-        self.log_info(f"Calling Proxy LLM: {self.model_name} with params:\n{params}")
-        client = openai.OpenAI(
-            base_url=params.pop("api_base"),
-            api_key=params.pop("api_key"),
-        )
-
-        # Call the LiteLLM API
-        response = client.chat.completions.create(**params, stream=True)
+            # Call the LiteLLM API
+            response = client.chat.completions.create(**params, stream=True)
+        else:
+            response = litellm.completion(**params, stream=True)  # type: ignore
 
         for chunk in response:
             if chunk.choices and chunk.choices[0].delta:
