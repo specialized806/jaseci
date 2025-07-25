@@ -95,9 +95,9 @@ Here nodes represent meaningful entities (like Weights, Cardio Machines), while 
 **Your Intelligent Fitness Planner !!**
 
 ```jac
-import from mtllm { Model }
+import from mtllm.llm {Model}
 
-glob llm = Model(model_name="gpt-4o-mini");
+glob llm = Model(model_name="gemini/gemini-2.5-flash");
 
 node Equipment {}
 
@@ -107,10 +107,13 @@ walker FitnessAgent {
     can start with `root entry {
         visit [-->(`?Equipment)];
     }
+
+    """Create a personalized workout plan based on available equipment and space."""
+    def create_workout(gear: dict) -> str by llm();
 }
 
 node Weights(Equipment) {
-    has available: bool = True;
+    has available: bool = False;
 
     can check with FitnessAgent entry {
         visitor.gear["weights"] = self.available;
@@ -125,12 +128,9 @@ node Cardio(Equipment) {
     }
 }
 
-"""Create a personalized workout plan based on available equipment and space."""
-def create_workout(gear: dict) -> str by llm(incl_info=(gear));
-
 node Trainer {
     can plan with FitnessAgent entry {
-        visitor.gear["workout"] = create_workout(visitor.gear);
+        visitor.gear["workout"] = visitor.create_workout(visitor.gear);
     }
 }
 
