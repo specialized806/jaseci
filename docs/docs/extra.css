@@ -459,7 +459,7 @@ hr {
 
 /* Title */
 .feedback-title {
-  font-size: 1.1em;
+  font-size: 1.4em;
   font-weight: 600;
   color: #ffab40;
   margin-bottom: 0.7em;
@@ -468,7 +468,7 @@ hr {
 /* Buttons wrapper */
 .feedback-buttons {
   display: flex;
-  gap: 1em;
+  gap: 3em;
   align-items: center;
   margin-bottom: 0.7em;
   justify-content: center;
@@ -503,7 +503,7 @@ hr {
 
 /* Hover effect */
 .thumb:hover {
-  background: linear-gradient(135deg, #ff9800, #ffab40);
+  background: linear-gradient(135deg, #23272e 0%, #ff9800 60%, #ffab40 60%);
   color: #fff;
 }
 
@@ -527,7 +527,7 @@ hr {
   border: none;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 1em;
+  font-size: 1.2em;
   cursor: pointer;
   padding: 0.5em 1.2em;
   box-shadow: 0 2px 8px rgba(255,171,64,0.08);
