@@ -152,7 +152,7 @@ class PythonImporter(Importer):
 
         self.resolver = PythonModuleResolver()
 
-    def generate_jac_ast_from_python(self, file_path: str) -> types.ModuleType:
+    def load_and_execute(self, file_path: str) -> types.ModuleType:
         """Convert Python file to Jac AST and create module."""
         module_name = os.path.splitext(os.path.basename(file_path))[0]
         module = types.ModuleType(module_name)
@@ -176,8 +176,8 @@ class PythonImporter(Importer):
                 target=spec.target,
                 base_path=spec.base_path,
             )
-            imported_module = self.generate_jac_ast_from_python(python_file_path)
-            JacMachineInterface.load_module(imported_module.__name__, imported_module)
+            imported_module = self.load_and_execute(python_file_path)
+            # JacMachineInterface.load_module(imported_module.__name__, imported_module)
 
             loaded_items: list = []
             self.result = ImportReturn(imported_module, loaded_items, self)
