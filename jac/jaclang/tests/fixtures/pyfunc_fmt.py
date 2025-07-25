@@ -28,10 +28,10 @@ def baz():
 print(baz())    
 
 
-
-
-
-
+try:
+    a = 90
+except FileNotFoundError:
+    pass
 
 
 condition = 10
