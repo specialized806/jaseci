@@ -5,6 +5,8 @@ This document provides a summary of new features, improvements, and bug fixes in
 ## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0 (Unreleased)
 
 - **Removed LLM Override**: `function_call() by llm()` has been removed as it was introduce ambiguity in the grammer with LALR(1) shift/reduce error. This feature will be reintroduced in a future release with a different syntax.
+- **Enhanced Python File Support**: The `jac run` command now supports direct execution of `.py` files, expanding interoperability between Python and Jac environments.
+- **Improved Windows Compatibility**: Fixed file encoding issues that previously caused `UnicodeDecodeError` on Windows systems, ensuring seamless cross-platform development.
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
 
