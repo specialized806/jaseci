@@ -277,3 +277,17 @@ Now that you understand the basics, explore these features:
 - [Webhook Integration](webhook.md) - Create API integrations
 - [Environment Variables](env_vars.md) - Configure your application
 - [Logging & Monitoring](logging.md) - Track application performance
+
+## Edge Case: Manually Creating Walker Endpoints
+
+While not recommended, as you typically shouldn't change your API specifications in this manner, Jac Cloud does support manually creating walker endpoints.
+This allows for advanced customization if absolutely necessary, but generally, you should rely on the automatic generation and configuration via **specs**.
+
+Example Code snippet:
+
+```
+type("NameOfYourWalker", (_.Walker,), {
+    "__specs__": your_specs_class,
+    ... annotations / additional fields ...
+})
+```
