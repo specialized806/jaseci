@@ -1038,10 +1038,15 @@ class PyastGenPass(UniPass):
             ]
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
+        name = (
+            node.name.sym_name[2:]
+            if node.name.sym_name.startswith("<>")
+            else node.name.sym_name
+        )
         node.gen.py_ast = [
             self.sync(
                 ast3.arg(
-                    arg=node.name.sym_name,
+                    arg=name,
                     annotation=(
                         cast(ast3.expr, node.type_tag.gen.py_ast[0])
                         if node.type_tag
@@ -2258,10 +2263,15 @@ class PyastGenPass(UniPass):
         pass
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
+        name = (
+            node.key.sym_name[2:]
+            if node.key and node.key.sym_name.startswith("<>")
+            else node.key.sym_name
+        )
         node.gen.py_ast = [
             self.sync(
                 ast3.keyword(
-                    arg=node.key.sym_name if node.key else None,
+                    arg=name if node.key else None,
                     value=cast(ast3.expr, node.value.gen.py_ast[0]),
                 )
             )
@@ -2942,9 +2952,8 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = [self.sync(op_cls())]
 
     def exit_name(self, node: uni.Name) -> None:
-        node.gen.py_ast = [
-            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
-        ]
+        name = node.sym_name[2:] if node.sym_name.startswith("<>") else node.sym_name
+        node.gen.py_ast = [self.sync(ast3.Name(id=name, ctx=node.py_ctx_func()))]
 
     def exit_float(self, node: uni.Float) -> None:
         node.gen.py_ast = [self.sync(ast3.Constant(value=float(node.value)))]
