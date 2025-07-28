@@ -1420,6 +1420,18 @@ class SimpleGraphTest(JacCloudTest):
         res.raise_for_status()
         self.assertEqual({"status": 200, "reports": ["generated_walker"]}, res.json())
 
+    def trigger_custom_walkers(self) -> None:
+        """Test custom specification walkers."""
+        res = get(f"{self.host}/walker/html_response")
+        res.raise_for_status()
+        self.assertEqual(
+            '<!DOCTYPE html><html lang="en"><body>HELLO WORLD</body></html>', res.text
+        )
+        self.assertEqual("text/html; charset=utf-8", res.headers["content-type"])
+
+        resp = self.post_api("exclude_in_specs")
+        self.assertEqual({"status": 200, "reports": []}, resp)
+
     # Individual test methods for each feature
 
     def test_01_openapi_specs(self) -> None:
@@ -1572,3 +1584,7 @@ class SimpleGraphTest(JacCloudTest):
     def test_22_generate_dynamic_walker(self) -> None:
         """Test multiple simultaneous request."""
         self.trigger_generate_walker()
+
+    def test_23_trigger_custom_walkers(self) -> None:
+        """Test custom specification walkers."""
+        self.trigger_custom_walkers()

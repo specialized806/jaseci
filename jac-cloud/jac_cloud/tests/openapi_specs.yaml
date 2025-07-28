@@ -3058,6 +3058,19 @@ paths:
       summary: Api Entry
       tags:
         - Walker APIs
+  /walker/html_response:
+    get:
+      operationId: api_root_walker_html_response_get
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: Successful Response
+      summary: Api Root
+      tags:
+        - Walker APIs
   /walker/manual_create_nested_node:
     post:
       operationId: api_root_walker_manual_create_nested_node_post

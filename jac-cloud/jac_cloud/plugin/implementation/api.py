@@ -19,7 +19,7 @@ from fastapi import (
     Response,
     UploadFile,
 )
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse, ORJSONResponse
 
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
@@ -85,6 +85,8 @@ class DefaultSpecs:
     response_description: str = "Successful Response"
     responses: dict[int | str, dict[str, Any]] | None = None
     deprecated: bool | None = None
+    include_in_schema: bool = True
+    response_class: type[Response] = JSONResponse
     name: str | None = None
     openapi_extra: dict[str, Any] | None = None
     schedule: dict[str, Any] | None = None
@@ -147,6 +149,8 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
         response_description: str = specs.response_description
         responses: dict[int | str, dict[str, Any]] | None = specs.responses
         deprecated: bool | None = specs.deprecated
+        include_in_schema: bool = specs.include_in_schema
+        response_class: type[Response] = specs.response_class
         name: str | None = specs.name
         openapi_extra: dict[str, Any] | None = specs.openapi_extra
 
@@ -237,7 +241,7 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
             background_task: BackgroundTasks,
             node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
-        ) -> ORJSONResponse:
+        ) -> Response:
             log = log_entry(
                 cls.__name__,
                 user.email if (user := getattr(request, "_user", None)) else None,
@@ -333,6 +337,8 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
                         "response_description": response_description,
                         "responses": responses,
                         "deprecated": deprecated,
+                        "include_in_schema": include_in_schema,
+                        "response_class": response_class,
                         "name": name,
                         "openapi_extra": openapi_extra,
                     }
@@ -364,6 +370,8 @@ def specs(
     response_description: str = "Successful Response",
     responses: dict[int | str, dict[str, Any]] | None = None,
     deprecated: bool | None = None,
+    include_in_schema: bool = True,
+    response_class: type[Response] = Response,
     name: str | None = None,
     openapi_extra: dict[str, Any] | None = None,
     schedule: dict[str, Any] | None = None,
@@ -388,6 +396,8 @@ def specs(
             _response_description = response_description
             _responses = responses
             _deprecated = deprecated
+            _include_in_schema = include_in_schema
+            _response_class = response_class
             _name = name
             _openapi_extra = openapi_extra
             _schedule = schedule
@@ -409,6 +419,8 @@ def specs(
                 response_description: str = _response_description
                 responses: dict[int | str, dict[str, Any]] | None = _responses
                 deprecated: bool | None = _deprecated
+                include_in_schema = _include_in_schema
+                response_class = _response_class
                 name: str | None = _name
                 openapi_extra: dict[str, Any] | None = _openapi_extra
                 schedule: dict[str, Any] | None = _schedule

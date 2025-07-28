@@ -89,11 +89,18 @@ walker my_walker {
 
 | **Setting** | **Type** | **Description** | **Default** |
 |-------------|----------|-----------------|-------------|
-| `tags` | `list[str]` | API tags for grouping in Swagger UI | `None` |
+| `response_model` | `Any` | Type for response serialization and validation | `None` |
+| `tags` | `list[str \| Enum]` | API tags for grouping in Swagger UI | `None` |
+| `status_code` | `int` | Default response status code | `None` |
 | `summary` | `str` | Brief endpoint description | `None` |
 | `description` | `str` | Detailed endpoint description (supports Markdown) | `None` |
-| `status_code` | `int` | Default response status code | `None` |
+| `response_description` | `str` | Description for the default response | `"Successful Response"` |
+| `responses` | `dict[int \| str, dict]` | Additional responses that could be returned | `None` |
 | `deprecated` | `bool` | Mark endpoint as deprecated | `None` |
+| `include_in_schema` | `bool` | Include endpoint in generated OpenAPI schema | `True` |
+| `response_class` | `Type[Response]` | Response class to use for this endpoint | `JSONResponse` |
+| `name` | `str` | Internal name for the path operation | `None` |
+| `openapi_extra` | `dict[str, Any]` | Extra metadata for OpenAPI schema | `None` |
 
 ## Examples for Beginners
 

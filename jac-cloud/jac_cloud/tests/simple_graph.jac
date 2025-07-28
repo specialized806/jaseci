@@ -6,6 +6,7 @@ import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 import from jac_cloud.plugin.implementation {create_task}
 import from dataclasses {dataclass}
 import from fastapi {UploadFile}
+import from fastapi.responses {HTMLResponse}
 import from typing {Any}
 
 class User(BaseUser) {
@@ -644,6 +645,27 @@ walker documentation {
         has deprecated: bool | None = True;
         has name: str | None = "Enter name here!!!";
         has openapi_extra: dict[str, Any] | None = {"addons": True};
+    }
+}
+
+walker exclude_in_specs {
+    class __specs__ {
+        has include_in_schema: bool = False;
+    }
+}
+
+walker html_response {
+
+    class __specs__ {
+        has auth: bool = False;
+        has methods: list = ["get"];
+        has response_class: type = HTMLResponse;
+        has entry_type: str = "ROOT";
+    }
+
+    can enter with `root entry {
+        html = """<!DOCTYPE html><html lang="en"><body>HELLO WORLD</body></html>""";
+        _.report(HTMLResponse(html), custom=True);
     }
 }
 
