@@ -4,7 +4,7 @@
 }
 
 /* Admonition styles */
-.md-typeset .admonition{
+.md-typeset .admonition {
     border-radius: 10px;
 }
 
@@ -217,7 +217,7 @@ body,
 .md-typeset h4,
 .md-typeset h5,
 .md-typeset h6 {
-font-family: 'Segoe UI', 'Montserrat', 'Roboto', 'Arial', sans-serif;
+    font-family: 'Segoe UI', 'Montserrat', 'Roboto', 'Arial', sans-serif;
     font-weight: 700;
     letter-spacing: 0.02em;
     margin-bottom: 0.2em !important;
@@ -254,7 +254,7 @@ font-family: 'Segoe UI', 'Montserrat', 'Roboto', 'Arial', sans-serif;
 
 /* ---------- Code blocks ---------- */
 .md-typeset pre,
-.md-typeset pre > code,
+.md-typeset pre>code,
 .md-typeset code,
 .md-typeset .code-block,
 .md-typeset .code-output {
@@ -273,7 +273,7 @@ font-family: 'Segoe UI', 'Montserrat', 'Roboto', 'Arial', sans-serif;
     border: 1px solid #555555;
 }
 
-.md-typeset code{
+.md-typeset code {
     color: #f8f8f2;
 }
 
@@ -410,7 +410,7 @@ blockquote::after {
 }
 
 /* Remove custom task list checkmark styling */
-.md-typeset ul li.task-list-item input[type="checkbox"]:checked + label::before {
+.md-typeset ul li.task-list-item input[type="checkbox"]:checked+label::before {
     content: "";
     color: inherit;
     font-size: 1em;
