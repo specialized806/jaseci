@@ -26,32 +26,32 @@
 
 # Jaseci Ecosystem
 
-Welcome to the Jaseci project. This repository houses the core libraries and tooling for building next-generation applications with the Jac programming language. 
+Welcome to the Jaseci project. This repository houses the core libraries and tooling for building next-generation applications with the Jac programming language.
 
-Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
+Jaseci serves as the implementation stack for the Jac programming language, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime stack enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
 
 The project brings together a set of components that work seamlessly together:
 
 - **[`jaclang`](jac/):** The Jac programming language, a drop‑in replacement for and superset of Python.
+- **[`mtllm`](jac-mtllm/):** Easy integration of large language models into your applications.
 - **[`jac-cloud`](jac-cloud/):** Cloud‑native utilities that automatically turn a Jac application into a production-ready server stack.
 - **[`jac VSCE`](jac/support/vscode_ext):** The official VS Code extension for Jac.
-- **[`mtllm`](jac-mtllm/):** Easy integration of large language models into your applications.
 
 ---
 
 
 ## Core Concepts
 
-Jaseci's power is rooted in four key principles, designed to work in synergy.
+Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases. Jaseci's power is rooted in four key principles.
 
 
 * **AI-Native:** Treat AI models as a native type. Weave them into your logic as effortlessly as calling a function with first-class AI abstractions.
 
-* **Data-Spatial:** Model your domain as a graph and deploy concurrent **walkers** to process information in a distributed, emergent way. Code moves to data, not the other way around.
+* **Agentic Object-Spatial Programming Model:** Model your domain as a graph and deploy agentic **walkers** to process information in a distributed, emergent way. Code can now move to data, in addition to data moving to code.
 
 * **Python Superset:** Use the entire Python ecosystem (`pip`, `numpy`, `pandas`, etc.) without friction. All valid Python code is also valid Jac code, ensuring a gentle learning curve.
 
-* **Cloud-Ready:** Deploy your application as a production-ready API server with a single `jac-cloud` command, scaling from local development to a distributed cloud environment.
+* **Cloud-Native:** Deploy your application as a production-ready API server with a single `jac serve` command, scaling from local development to a distributed cloud environment.
 
 ---
 
@@ -65,7 +65,7 @@ Jaseci's power is rooted in four key principles, designed to work in synergy.
 
 Get the complete, stable toolkit from PyPI:
 ```bash
-pip install jaclang jac-cloud jac-mtllm
+pip install jaclang jac-cloud mtllm
 ```
 This is the fastest way to get started with building applications.
 
@@ -100,7 +100,7 @@ The `jac` CLI is your primary interface for interacting with the Jaseci ecosyste
 ---
 
 
-## 🚀 Awesome Jaseci Projects 
+## 🚀 Awesome Jaseci Projects
 
 Explore these impressive projects built with Jaseci! These innovative applications showcase the power and versatility of the Jaseci ecosystem. Consider supporting these projects or getting inspired to build your own.
 
