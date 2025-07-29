@@ -9,7 +9,7 @@ class FeedbackWidget {
         this.cancelBtn = document.getElementById('cancelBtn');
         this.successMessage = document.getElementById('successMessage');
         this.commentInput = document.getElementById('commentInput');
-        
+
         this.selectedRating = null;
         this.isSubmitting = false;
 
@@ -19,11 +19,11 @@ class FeedbackWidget {
     init() {
         // Check if we should hide the form on main domain
         this.checkDomain();
-        
+
         // Set up event listeners
         this.toggle.addEventListener('click', () => this.toggleForm());
         this.cancelBtn.addEventListener('click', () => this.closeForm());
-        
+
         this.ratingBtns.forEach(btn => {
             btn.addEventListener('click', () => this.selectRating(btn));
         });
@@ -32,7 +32,7 @@ class FeedbackWidget {
         this.commentInput.addEventListener('input', () => this.updateSubmitButton());
 
         this.formElement.addEventListener('submit', (e) => this.handleSubmit(e));
-        
+
         // Close form when clicking outside
         document.addEventListener('click', (e) => {
             if (!this.container.contains(e.target)) {
@@ -47,7 +47,7 @@ class FeedbackWidget {
     checkDomain() {
         const currentUrl = window.location.href;
         const mainDomainUrl = 'https://www.jac-lang.org/';
-        
+
         // Only hide if we're exactly on the main domain (no path)
         if (currentUrl === mainDomainUrl) {
             this.container.style.display = 'none';
@@ -70,14 +70,14 @@ class FeedbackWidget {
     selectRating(btn) {
         // Remove selected class from all buttons
         this.ratingBtns.forEach(b => b.classList.remove('selected'));
-        
+
         // Add selected class to clicked button
         btn.classList.add('selected');
-        
+
         // Store rating
         this.selectedRating = btn.dataset.rating;
         document.getElementById('ratingInput').value = this.selectedRating;
-        
+
         // Update submit button immediately after rating selection
         this.updateSubmitButton();
     }
@@ -86,9 +86,9 @@ class FeedbackWidget {
         const comment = this.commentInput.value.trim();
         const hasRating = this.selectedRating !== null;
         const hasComment = comment.length > 0;
-        
+
         console.log('Update Submit Button:', { hasRating, hasComment, comment: comment.length, rating: this.selectedRating });
-        
+
         this.submitBtn.disabled = !(hasRating && hasComment);
     }
 
@@ -101,16 +101,16 @@ class FeedbackWidget {
 
     async handleSubmit(e) {
         e.preventDefault();
-        
+
         if (this.isSubmitting) return;
-        
+
         this.isSubmitting = true;
         this.submitBtn.disabled = true;
         this.submitBtn.textContent = 'Submitting...';
 
         try {
             const formData = new FormData(this.formElement);
-            
+
             const response = await fetch(this.formElement.action, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -119,7 +119,7 @@ class FeedbackWidget {
 
             // Show success message
             this.showSuccess();
-            
+
         } catch (error) {
             console.error('Error submitting feedback:', error);
             // Still show success since no-cors mode doesn't give us response details
