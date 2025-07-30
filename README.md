@@ -22,6 +22,12 @@
 
 [**Website**](https://www.jac-lang.org/) · [**Full Documentation**](https://www.jac-lang.org/learn/getting_started/) · [**Contribution Guide**](https://www.jac-lang.org/internals/contrib/)
 
+=======
+  [jac-lang.org] | [Getting Started] | [Contributing]
+
+  [jac-lang.org]: https://www.jac-lang.org/
+  [Getting Started]: https://www.jac-lang.org/learn/getting_started/
+  [Contributing]: https://www.jac-lang.org/internals/contrib/
 </div>
 
 # Jaseci Ecosystem
