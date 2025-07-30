@@ -10,30 +10,36 @@ pip install mtllm
 
 ## AI-Integrated Function Example
 
-This example demonstrates how MTLLM enables LLM integration into functions using the `by` keyword.
+Let's consider an example program where we attempt to categorize a person by their personality using an LLM. For simplicity we will be using names of historical figures.
 
 ### Standard Implementation
 
-Traditional translation implementation with manual API integration:
+Traditional implementation of this program with a manual algorithm:
 
 ```jac linenums="1"
-def translate(eng_sentence: str, target_lang: str) -> str {
-    # Traditional approach: manual API calls, prompt engineering, response parsing
-    # Lots of boilerplate code would go here...
 
-    return "Hola Mundo";  # Hardcoded for demo
+enum Personality {
+    INTROVERT = "Introvert",
+    EXTROVERT = "Extrovert",
+    AMBIVERT = "Ambivert"
+}
+
+def get_personality(name: str) -> Personality {
+    # Traditional approach: manual algorithm, prompt-engineered LLM call, etc.
 }
 
 with entry {
-    print(translate("Hello World", "es"));
+    name = "Albert Einstein";
+    result = get_personality(name);
+    print(f"{result.value} personality detected for {name}");
 }
 ```
 
-**Limitations**: This approach is restricted to language codes (`es`, `fr`, etc.) and requires extensive prompt engineering to handle natural language inputs like "Language spoken in Somalia" or "The language of Shakespeare."
+**Limitations**: Defining an algorithm in code for this problem is difficult, while integrating an LLM to perform the task would require manual prompt engineering, response parsing, and type conversion to be implemented by the developer.
 
 ### MTLLM Implementation
 
-The `by` keyword abstraction enables functions to process natural language inputs and generate contextually appropriate outputs:
+The `by` keyword abstraction enables functions to process inputs of any type and generate contextually appropriate outputs of the specified type:
 
 #### Step 1: Configure LLM Model
 
@@ -48,20 +54,10 @@ glob llm = Model(model_name="gpt-4o");
 Add `by llm` to enable LLM integration:
 
 ```jac linenums="1"
-import from mtllm {Model}
-
-glob llm = Model(model_name="gpt-4o");
-
-def translate(eng_sentence: str, target_lang: str) -> str by llm();
-
-with entry {
-    print(translate("Hello World", "Language spoken in Somalia"));
-    print(translate("Good morning", "The language of Cervantes"));
-    print(translate("Thank you", "What people speak in Tokyo"));
-}
+def get_personality(name: str) -> Personality by llm();
 ```
 
-The function now processes natural language descriptions and performs contextual translation.
+This will auto-generate a prompt for performing the task and provide an output that strictly adheres to the type `Personality`.
 
 #### Step 3: Execute the Application
 
@@ -69,7 +65,7 @@ Set your API key and run:
 
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
-jac run translator.jac
+jac run personality.jac
 ```
 
-For advanced usage of the `by` abstraction, refer to the [Usage Guide](./usage.md) for documentation on object methods, function overriding, and multi-agent workflows.
+For complete usage methodologies of the `by` abstraction, refer to the [Usage Guide](./usage.md) for documentation on object methods, object instantiation, and multi-agent workflows.
