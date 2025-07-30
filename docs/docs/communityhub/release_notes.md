@@ -2,20 +2,21 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of Jac and Jaseci. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](./breaking_changes.md) page.
 
-## jaclang 0.8.5 / jac-cloud 0.2.5 / jac-streamlit 0.0.4 / mtllm 0.4.0 (Unreleased)
+## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0 (Unreleased)
+- **Jac Cloud Hot Reload**: Introduced the ability to enable development mode like uvicorn by adding `--reload` in `jac serve`. This supports targetting specific directories by using `--watch path/to/dir1,path/to/dir2` (comma separated).
 
-- **Removed LLM Override**: `function_call() by llm()` has been removed as it introduced ambiguity in the grammar with LALR(1) shift/reduce error. This feature will be reintroduced in a future release with a different syntax.
+- **Removed LLM Override**: `function_call() by llm()` has been removed as it was introduce ambiguity in the grammer with LALR(1) shift/reduce error. This feature will be reintroduced in a future release with a different syntax.
 - **Enhanced Python File Support**: The `jac run` command now supports direct execution of `.py` files, expanding interoperability between Python and Jac environments.
-- **Improved Windows Compatibility**: Fixed file encoding issues that previously caused `UnicodeDecodeError` on Windows systems, ensuring seamless cross-platform development.
 - **Jac-Streamlit Plugin**: Introduced comprehensive Streamlit integration for Jac applications with two new CLI commands:
   - `jac streamlit` - Run Streamlit applications written in Jac directly from `.jac` files
-  - `jac dot_view` - Visualize Jac graph structures in interactive Streamlit applications with both static (pygraphviz) and interactive (streamlit-agraph) viewing options
-- **Jac Cloud Traverse API**: Introduced the ability to traverse graphs with enhanced control options:
-  - `source` - Starting node/edge (defaults to root)
-  - `detailed` - Include archetype context in response (defaults to False)
-  - `depth` - Traversal depth from source, including edges (defaults to 1)
-  - `node_types` - Filter nodes by name (defaults to no filter)
-  - `edge_types` - Filter edges by name (defaults to no filter)
+  - `jac dot_view` - Visualize Jac graph structures in interactive Streamlit applications with both static (pygraphviz) 
+- **Improved Windows Compatibility**: Fixed file encoding issues that previously caused `UnicodeDecodeError` on Windows systems, ensuring seamless cross-platform development.
+- **Jac Clouds Traverse API**: Introduced the ability to traverse graph. This API support control of the following:
+  - source - Starting node/edge. Defaults to root
+  - detailed - If response includes archetype context. Defaults to False
+  - depth - how deep the traversal from source. Count includes edges. Defaults to 1
+  - node_types - Node filter by name. Defaults to no filter
+  - edge_types - Edge filter by name. Defaults to no filter
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
 
