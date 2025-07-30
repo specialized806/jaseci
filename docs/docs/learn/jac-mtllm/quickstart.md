@@ -88,12 +88,11 @@ class Personality(Enum):
     AMBIVERT = "Ambivert"
 
 @by(model=llm)
-def get_personality(name: str) -> Personality:
-    pass
+def get_personality(name: str) -> Personality: ...
 
 name = "Albert Einstein"
 result = get_personality(name)
 print(f"{result.value} personality detected for {name}")
 ```
 
-To learn mo about usage of `by` in python, please refer to [MTLLM python Interface](./python_integration.md).
+To learn more about usage of `by` in python, please refer to [MTLLM python Interface](./python_integration.md).
