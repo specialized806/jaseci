@@ -46,7 +46,7 @@ The `by` keyword abstraction enables functions to process inputs of any type and
 ```jac linenums="1"
 import from mtllm {Model}
 
-glob llm = Model(model_name="gpt-4o");
+glob llm = Model(model_name="gemini/gemini-2.0-flash");
 ```
 
 #### Step 2: Implement LLM-Integrated Function
@@ -64,8 +64,36 @@ This will auto-generate a prompt for performing the task and provide an output t
 Set your API key and run:
 
 ```bash
-export OPENAI_API_KEY="your-api-key-here"
+export GEMINI_API_KEY="your-api-key-here"
 jac run personality.jac
 ```
 
 For complete usage methodologies of the `by` abstraction, refer to the [Usage Guide](./usage.md) for documentation on object methods, object instantiation, and multi-agent workflows.
+
+
+### MTLLM Usage in Python
+
+As MTLLM is a python package, it can be natively used in jac. The following code show the above example application built in native python with MTLLM.
+
+```python linenums="1"
+import jaclang
+from mtllm import Model, by
+from enum import Enum
+
+llm = Model(model_name="gemini/gemini-2.0-flash")
+
+class Personality(Enum):
+    INTROVERT = "Introvert"
+    EXTROVERT = "Extrovert"
+    AMBIVERT = "Ambivert"
+
+@by(model=llm)
+def get_personality(name: str) -> Personality:
+    pass
+
+name = "Albert Einstein"
+result = get_personality(name)
+print(f"{result.value} personality detected for {name}")
+```
+
+To learn mo about usage of `by` in python, please refer to [MTLLM python Interface](./python_integration.md).
