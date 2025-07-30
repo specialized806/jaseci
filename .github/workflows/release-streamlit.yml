@@ -30,4 +30,3 @@ jobs:
         run: |
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry publish
-        continue-on-error: true
