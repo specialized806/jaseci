@@ -18,7 +18,7 @@ This document provides a detailed breakdown of how plugins are structured and im
 
 ---
 
-##  Plugin Architecture in `machine.py`
+##  Plugin Architecture class implementation
 
 ### Classes Implemented
 
@@ -30,7 +30,7 @@ This document provides a detailed breakdown of how plugins are structured and im
 
 ---
 
-## Class: `JacMachineInterface`
+## What does JacmachineInterface class do
 
 This class is the core **interface layer** of the plugin system. It:
 
