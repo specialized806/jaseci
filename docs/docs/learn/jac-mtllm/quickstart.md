@@ -8,46 +8,15 @@ To get started with MTLLM, install the base package:
 pip install mtllm
 ```
 
-MTLLM supports multiple LLM providers. Choose and install the integration you need:
+## AI-Integrated Function Example
 
-=== "OpenAI"
-    ```bash
-    pip install mtllm[openai]
-    ```
-=== "Anthropic"
-    ```bash
-    pip install mtllm[anthropic]
-    ```
-=== "Google"
-    ```bash
-    pip install mtllm[google]
-    ```
-=== "Groq"
-    ```bash
-    pip install mtllm[groq]
-    ```
-=== "Huggingface"
-    ```bash
-    pip install mtllm[huggingface]
-    ```
-=== "Ollama"
-    ```bash
-    pip install mtllm[ollama]
-    ```
-=== "Together"
-    ```bash
-    pip install mtllm[together]
-    ```
+This example demonstrates how MTLLM enables LLM integration into functions using the `by` keyword.
 
-## Your First AI Integrated Function
+### Standard Implementation
 
-Let's build a simple translation function that demonstrates how MTLLM transforms ordinary functions into intelligent, reasoning components.
+Traditional translation implementation with manual API integration:
 
-### The Traditional Approach
-
-Here's how you'd typically handle translation with manual API integration:
-
-```jac
+```jac linenums="1"
 def translate(eng_sentence: str, target_lang: str) -> str {
     # Traditional approach: manual API calls, prompt engineering, response parsing
     # Lots of boilerplate code would go here...
@@ -60,26 +29,26 @@ with entry {
 }
 ```
 
-**The Problem**: You're limited to language codes (`es`, `fr`, etc.) and need extensive prompt engineering to handle natural language inputs like "Language spoken in Somalia" or "The language of Shakespeare."
+**Limitations**: This approach is restricted to language codes (`es`, `fr`, etc.) and requires extensive prompt engineering to handle natural language inputs like "Language spoken in Somalia" or "The language of Shakespeare."
 
-### The MTP Way: `by` keyword
+### MTLLM Implementation
 
-With the `by` keyword abstraction in MTLLM, your functions become intelligent agents that can reason about their inputs and produce contextually appropriate outputs:
+The `by` keyword abstraction enables functions to process natural language inputs and generate contextually appropriate outputs:
 
-#### Step 1: Import Your LLM
+#### Step 1: Configure LLM Model
 
-```jac
-import from mtllm.llm {Model}
+```jac linenums="1"
+import from mtllm {Model}
 
 glob llm = Model(model_name="gpt-4o");
 ```
 
-#### Step 2: Transform Your Function into an Agent
+#### Step 2: Implement LLM-Integrated Function
 
-Simply add `by llm` to make your function AI-integrated:
+Add `by llm` to enable LLM integration:
 
-```jac
-import from mtllm.llm {Model}
+```jac linenums="1"
+import from mtllm {Model}
 
 glob llm = Model(model_name="gpt-4o");
 
@@ -92,9 +61,9 @@ with entry {
 }
 ```
 
-**That's it!** 🎉 Your function now intelligently understands natural language descriptions and performs contextual translation.
+The function now processes natural language descriptions and performs contextual translation.
 
-#### Step 3: Run Your AI Integrated Application
+#### Step 3: Execute the Application
 
 Set your API key and run:
 
@@ -103,4 +72,4 @@ export OPENAI_API_KEY="your-api-key-here"
 jac run translator.jac
 ```
 
-Ready to explore more advanced ways of using the `by` abstraction? Continue with the [Usage Guide](./usage.md) to learn about all the ways you can build AI-integrated software with MTLLM, including object methods, function overriding, and complex multi-agent workflows.
+For advanced usage of the `by` abstraction, refer to the [Usage Guide](./usage.md) for documentation on object methods, function overriding, and multi-agent workflows.
