@@ -30,6 +30,128 @@ This document provides a detailed breakdown of how plugins are structured and im
 
 ---
 
+## good example to understand the 3 classes and use of proxy class
+You're building a plugin-driven data pipeline framework.
+Each plugin can implement one or more of:
+
+- load_data(source: str) -> dict
+
+- transform_data(data: dict) -> dict
+
+- save_data(data: dict, target: str) -> None
+
+We will:
+
+- Declare a hook spec
+
+- Implement two plugins (one for CSV, one for JSON)
+
+- Dynamically generate a proxy interface
+
+- Run a pipeline using the proxy
+
+Lets implement the 2 plugins CSVPlugin and JSONPlugin
+
+```python
+import pluggy
+
+hookspec = pluggy.HookspecMarker("pipeline")
+hookimpl = pluggy.HookimplMarker("pipeline")
+
+class PipelineSpec:
+    @hookspec(firstresult=True)
+    def load_data(self, source: str) -> dict:
+        """Loads data from a source."""
+
+    @hookspec
+    def transform_data(self, data: dict) -> dict:
+        """Transforms the given data."""
+
+    @hookspec
+    def save_data(self, data: dict, target: str) -> None:
+        """Saves data to the target."""
+
+class CSVPlugin:
+    @hookimpl
+    def load_data(self, source: str) -> dict:
+        if source.endswith(".csv"):
+            print(f"Loading CSV from {source}")
+            return {"data": [1, 2, 3]}
+        return None
+
+    @hookimpl
+    def transform_data(self, data: dict) -> dict:
+        print("Transforming CSV data by squaring...")
+        data["data"] = [x * x for x in data["data"]]
+        return data
+
+class JSONPlugin:
+    @hookimpl
+    def load_data(self, source: str) -> dict:
+        if source.endswith(".json"):
+            print(f"Loading JSON from {source}")
+            return {"data": [10, 20, 30]}
+        return None
+
+    @hookimpl
+    def save_data(self, data: dict, target: str) -> None:
+        print(f"Saving data to {target}: {data}")
+
+```
+
+Lets register the plugins and create a dynamic proxy that can help to decide what plugin method to implement
+
+```python
+import pluggy
+from specs import PipelineSpec, CSVPlugin, JSONPlugin
+
+plugin_manager = pluggy.PluginManager("pipeline")
+plugin_manager.add_hookspecs(PipelineSpec)
+plugin_manager.register(CSVPlugin())
+plugin_manager.register(JSONPlugin())
+
+def make_proxy_method(name):
+    def proxy_method(self, *args, **kwargs):
+        return getattr(self.plugin_manager.hook, name)(*args, **kwargs)
+    return proxy_method
+
+def generate_proxy_class(hook_names: list[str]):
+    methods = {name: make_proxy_method(name) for name in hook_names}
+    methods["__init__"] = lambda self, plugin_manager: setattr(self, "plugin_manager", plugin_manager)
+    return type("Proxy", (), methods)
+
+hook_names = ["load_data", "transform_data", "save_data"]
+Proxy = generate_proxy_class(hook_names)
+
+
+```
+
+Lets use the proxy to call the plugins methods adoptively
+
+```python
+proxy = Proxy(plugin_manager)
+
+# Step 1: Load data
+source = "file.csv"
+data = proxy.load_data(source)
+
+# Step 2: Transform (all plugins get to contribute)
+data = proxy.transform_data(data)
+
+# Step 3: Save (only plugins with save_data do it)
+proxy.save_data(data, "output.json")
+
+
+```
+It will return
+
+```text
+Loading CSV from file.csv
+Transforming CSV data by squaring...
+Saving data to output.json: {'data': [1, 4, 9]}
+
+```
+You can see it calls the transforming and saving method dynamically but for loading data it calls the CSVPlugin instead of JSONPlugin. The reason is CSVPlugin is registered first. Give it a try by changing the order of registration. In jaclang we have implemented internally for the proxy to use the last registered method.
 ## What does JacmachineInterface class do
 
 This class is the core **interface layer** of the plugin system. It:
