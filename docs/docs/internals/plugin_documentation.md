@@ -41,14 +41,14 @@ This class is the core **interface layer** of the plugin system. It:
 ### Inherited Static Classes
 
 - `JacClassReferences`
-- `JacAccessValidation`
-- `JacNode`
-- `JacEdge`
-- `JacWalker`
-- `JacBuiltin`
-- `JacCmd`
-- `JacBasics`
-- `JacUtils`
+- `JacAccessValidation`: Static functions related to access/permission managment in Jac are implemented
+- `JacNode`: Static functions related to nodes are implemented
+- `JacEdge`: Static functions related to edges are implemented(only one function can be merged with JacNode)
+- `JacWalker` : Missing documentation.
+- `JacBuiltin`: Centralized reference holder for core Jaseci class and type aliases.
+- `JacCmd`: Static functions related to cmd implementation
+- `JacBasics` : Missing documentation.
+- `JacUtils`: utility functions related to Jac are implemented
 
 ---
 
