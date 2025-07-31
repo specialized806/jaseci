@@ -282,7 +282,13 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
                     if jctx.custom is not MISSING:
                         log_exit(
                             (
-                                {"custom": jctx.custom.body}
+                                {
+                                    "response": getattr(
+                                        jctx.custom,
+                                        "body",
+                                        jctx.custom.__class__.__name__,
+                                    )
+                                }
                                 if isinstance(jctx.custom, Response)
                                 else jctx.custom
                             ),

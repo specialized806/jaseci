@@ -8,7 +8,7 @@ from typing import cast
 
 from bson import ObjectId
 
-from httpx import get, post
+from httpx import get, post, stream
 
 from pymongo.collection import Collection as PCollection
 from pymongo.mongo_client import MongoClient
@@ -1422,6 +1422,9 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_custom_walkers(self) -> None:
         """Test custom specification walkers."""
+        resp = self.post_api("exclude_in_specs")
+        self.assertEqual({"status": 200, "reports": []}, resp)
+
         res = get(f"{self.host}/walker/html_response")
         res.raise_for_status()
         self.assertEqual(
@@ -1429,8 +1432,13 @@ class SimpleGraphTest(JacCloudTest):
         )
         self.assertEqual("text/html; charset=utf-8", res.headers["content-type"])
 
-        resp = self.post_api("exclude_in_specs")
-        self.assertEqual({"status": 200, "reports": []}, resp)
+        with stream("GET", f"{self.host}/walker/stream_response") as streamer:
+            streamer.raise_for_status()
+            self.assertEqual(
+                "text/event-stream; charset=utf-8", streamer.headers["content-type"]
+            )
+            for i, chunk in enumerate(streamer.iter_text()):
+                self.assertEqual(str(i), chunk)
 
     # Individual test methods for each feature
 

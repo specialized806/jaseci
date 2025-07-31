@@ -3064,9 +3064,9 @@ paths:
       responses:
         "200":
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       summary: Api Root
       tags:
@@ -3907,6 +3907,19 @@ paths:
       security:
         - HTTPBearer: []
       summary: Api Entry
+      tags:
+        - Walker APIs
+  /walker/stream_response:
+    get:
+      operationId: api_root_walker_stream_response_get
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponse_Any_"
+          description: Successful Response
+      summary: Api Root
       tags:
         - Walker APIs
   /walker/traverse_graph:

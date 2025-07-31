@@ -6,7 +6,7 @@ import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 import from jac_cloud.plugin.implementation {create_task}
 import from dataclasses {dataclass}
 import from fastapi {UploadFile}
-import from fastapi.responses {HTMLResponse}
+import from fastapi.responses {HTMLResponse, StreamingResponse}
 import from typing {Any}
 
 class User(BaseUser) {
@@ -659,13 +659,36 @@ walker html_response {
     class __specs__ {
         has auth: bool = False;
         has methods: list = ["get"];
-        has response_class: type = HTMLResponse;
         has entry_type: str = "ROOT";
     }
 
     can enter with `root entry {
         html = """<!DOCTYPE html><html lang="en"><body>HELLO WORLD</body></html>""";
         _.report(HTMLResponse(html), custom=True);
+    }
+}
+
+walker stream_response {
+
+    class __specs__ {
+        has auth: bool = False;
+        has methods: list = ["get"];
+        has entry_type: str = "ROOT";
+    }
+
+    can enter with `root entry {
+        def generator() -> Generator[str, None, None] {
+            for i in range(100) {
+                yield str(i);
+            }
+        }
+        _.report(
+            StreamingResponse(
+                generator(),
+                media_type="text/event-stream"
+            ),
+            custom=True
+        );
     }
 }
 
