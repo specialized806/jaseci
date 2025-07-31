@@ -275,22 +275,22 @@ To save a walker or object to memory (queued for later database commit):
 
 ```jac
 # Save a walker instance
-_.save(my_walker_instance)
+save(my_walker_instance)
 
 # Save an object instance
-_.save(my_object_instance)
+save(my_object_instance)
 ```
 
 ### **Commit**
 
 **Commit all in-memory data:**
 ```jac
-_.commit()  # Saves everything currently in memory to database
+commit()  # Saves everything currently in memory to database
 ```
 
 **Commit specific archetype:**
 ```jac
-_.commit(archetype)  # Only commits this specific archetype
+commit(archetype)  # Only commits this specific archetype
 ```
 
 ## Helpful Environment Variables

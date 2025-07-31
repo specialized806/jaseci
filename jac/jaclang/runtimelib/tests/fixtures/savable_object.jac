@@ -36,10 +36,10 @@ walker create_custom_object {
             ),
             enum_field = Enum.A
         );
-        _.save(self.obj);
+        save(self.obj);
 
         # commit the object to db
-        _.commit(self.obj);
+        commit(self.obj);
     }
 
     can exit1 with `root exit {
