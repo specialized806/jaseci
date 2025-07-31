@@ -86,7 +86,6 @@ These keywords are used exclusively to control the traversal behavior of `walker
 | `disengage` | Immediately terminates a walker's traversal. |
 | `report` | Sends a result from a walker back to its spawning context. |
 | `with entry` | Defines the main execution block for a module. |
-| `/` | Brings external modules and symbols into the current scope. |
 
 
 ---
@@ -133,7 +132,7 @@ This section covers other essential keywords used for various operations.
 | --- | --- |
 | `del` | Deletes objects, properties, or elements. |
 | `assert` | Verifies if a condition is true, raising an error if not. |
-| `<keyword>` | Used to escape reserved keywords when you want to use them as variable or attribute names, e.g., `<class>`, `<node>` |
+| `<keyword>` | Used to escape reserved keywords when you want to use them as variable or attribute names, e.g., `<>node= 90;`, `<>dict = 8;`|
 
 <!-- </div> -->
 
