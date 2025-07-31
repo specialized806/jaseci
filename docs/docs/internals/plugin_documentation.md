@@ -151,7 +151,7 @@ Transforming CSV data by squaring...
 Saving data to output.json: {'data': [1, 4, 9]}
 
 ```
-You can see it calls the transforming and saving method dynamically but for loading data it calls the CSVPlugin instead of JSONPlugin. The reason is CSVPlugin is registered first. Give it a try by changing the order of registration. In jaclang we have implemented internally for the proxy to use the last registered method.
+You can see it calls the transforming and saving method dynamically but for loading data it calls the CSVPlugin instead of JSONPlugin. The reason is CSVPlugin is registered first. Give it a try by changing the order of registration. In jaclang we have implemented internally for the proxy to use the last registered method instead of first implementation.c
 ## What does JacmachineInterface class do
 
 This class is the core **interface layer** of the plugin system. It:
