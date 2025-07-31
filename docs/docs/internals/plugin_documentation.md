@@ -24,8 +24,8 @@ This document provides a detailed breakdown of how plugins are structured and im
 
 | Class   | Role                                                                 |
 |---------|----------------------------------------------------------------------|
-| `Spec`  | Contains hook specifications using `@hookspec` — acts as a contract |
-| `Impl`  | Contains actual implementations of plugin logic using `@hookimpl`   |
+| `Spec`  | Defines placeholder methods that plugin implementations must implement. |
+| `Impl`  | wraps the actual methods of the original class with `@hookimpl`|
 | `Proxy` | Provides interface methods to call the registered plugin hooks via `plugin_manager.hook.<method>()` |
 
 ---
