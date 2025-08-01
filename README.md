@@ -22,12 +22,12 @@
 
 [**Website**](https://www.jac-lang.org/) · [**Full Documentation**](https://www.jac-lang.org/learn/getting_started/) · [**Contribution Guide**](https://www.jac-lang.org/internals/contrib/)
 
-=======
+<!-- =======
   [jac-lang.org] | [Getting Started] | [Contributing]
 
   [jac-lang.org]: https://www.jac-lang.org/
   [Getting Started]: https://www.jac-lang.org/learn/getting_started/
-  [Contributing]: https://www.jac-lang.org/internals/contrib/
+  [Contributing]: https://www.jac-lang.org/internals/contrib/ -->
 </div>
 
 # Jaseci Ecosystem
@@ -53,11 +53,11 @@ Jac is an innovative programming language that extends Python's semantics while 
 
 * **AI-Native:** Treat AI models as a native type. Weave them into your logic as effortlessly as calling a function with first-class AI abstractions.
 
-* **Agentic Object-Spatial Programming Model:** Model your domain as a graph and deploy agentic **walkers** to process information in a distributed, emergent way. Code can now move to data, in addition to data moving to code.
+* **Agentic Object-Spatial Programming Model:** Model your domain as a graph of objects and deploy agentic **walker** objects to travel through your object graph performing operations in-situ. Intuitively model AI state, the problem domain, and data.
 
 * **Python Superset:** Use the entire Python ecosystem (`pip`, `numpy`, `pandas`, etc.) without friction. All valid Python code is also valid Jac code, ensuring a gentle learning curve.
 
-* **Cloud-Native:** Deploy your application as a production-ready API server with a single `jac serve` command, scaling from local development to a distributed cloud environment.
+* **Cloud-Native:** Deploy your application as a production-ready API server with a single `jac serve` command, scaling from local prototype development to a distributed cloud environment with zero code changes.
 
 ---
 
@@ -98,7 +98,7 @@ The `jac` CLI is your primary interface for interacting with the Jaseci ecosyste
 
 | Command | Description |
 | :--- | :--- |
-| **`jac run <file.jac>`** | Executes a Jac file using the Jaseci runtime. |
+| **`jac run <file.jac>`** | Executes a Jac file, much like `python3`. |
 | **`jac build <file.jac>`** | Builds a self-contained Jac application from a source file. |
 | **`jac serve <file.jac>`** | Executes a Jac file to the cloud. |
 
