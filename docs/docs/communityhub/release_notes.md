@@ -12,14 +12,7 @@ This document provides a summary of new features, improvements, and bug fixes in
   - node_types - Node filter by name. Defaults to no filter
   - edge_types - Edge filter by name. Defaults to no filter
 
-- **Fixed CFG inacuracy when handling If statements with no Else body** When the program contains a else body, the else edge is not captured in the CFG (as a NOOP) which causes a missing branch on the CFG of the UniiR.
-
-- **Fixed inacuracies when terminating CFG branches** Previously for return statements and HasVariables had unexpected outgoing edges which are being removed now. However, the return still keeps connected to following code whichb are in the same scope(body) which are dead-code.
-
-
-- **Fixed CFG inacuracy when handling If statements with no Else body** When the program contains a else body, the else edge is not captured in the CFG (as a NOOP) which causes a missing branch on the CFG of the UniiR.
-
-- **Fixed inacuracies when terminating CFG branches** Previously for return statements and HasVariables had unexpected outgoing edges which are being removed now. However, the return still keeps connected to following code whichb are in the same scope(body) which are dead-code.
+- **Fixed CFG inaccuracies**: Fixed issues when handling If statements with no Else body where the else edge was not captured in the CFG (as a NOOP) causing a missing branch on the CFG of the UniiR. Also fixed inaccuracies when terminating CFG branches where return statements and HasVariables had unexpected outgoing edges which are now being removed. However, the return still keeps connected to following code which are in the same scope(body) which are dead-code.
 
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
