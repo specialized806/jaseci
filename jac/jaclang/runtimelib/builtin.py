@@ -86,25 +86,43 @@ def allroots() -> list[Jac.Root]:
 
 def _jac_graph_json(file: Optional[str] = None) -> str:
     """Get the graph in json string."""
-    processed: list[Root | NodeArchetype] = []
+    visited_nodes: set = set()
+    connections: set = set()
     nodes: list[dict] = []
     edges: list[dict] = []
-    working_set: list[tuple] = []
-
     root = Jac.root()
+
+    # Collect all connections manually to get proper edge information
+    def collect_connections(current_node_arch, visited):
+        if current_node_arch in visited:
+            return
+        visited.add(current_node_arch)
+
+        current_anchor = current_node_arch.__jac__
+        for edge_anchor in current_anchor.edges:
+            # if edge_anchor.target and edge_anchor.archetype:
+            target_arch = edge_anchor.target.archetype
+            # Only add connection if it's an outgoing edge from current node
+            if edge_anchor.source == current_anchor:
+                connections.add(
+                    (current_node_arch, target_arch, edge_anchor.archetype)
+                )
+            collect_connections(target_arch, visited)
+
+    collect_connections(root, visited_nodes)
+
+    # Create nodes list from visited nodes
     nodes.append({"id": id(root), "label": "root"})
+    for node_arch in visited_nodes:
+        if node_arch != root:  # Don't duplicate root
+            nodes.append({"id": id(node_arch), "label": repr(node_arch)})
 
-    processed.append(root)
-    working_set = [(root, ref) for ref in Jac.refs(root)]
+    # Create edges list with labels from connections
+    for source_node, target_node, edge_arch in connections:
+        edges.append(
+            {"from": id(source_node), "to": id(target_node), "label": repr(edge_arch)}
+        )
 
-    while working_set:
-        start, end = working_set.pop(0)
-        edges.append({"from": id(start), "to": id(end)})
-        nodes.append({"id": id(end), "label": repr(end)})
-        processed.append(end)
-        for ref in Jac.refs(end):
-            if ref not in processed:
-                working_set.append((end, ref))
     output = json.dumps(
         {
             "version": "1.0",
