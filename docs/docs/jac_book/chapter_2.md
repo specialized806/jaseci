@@ -22,6 +22,42 @@ with entry {
 
 A **literal** is a fixed value you write directly in your code, like "Alice" or 95. Jac uses common literals like *string*, *integer*, *float*, and *boolean*. It also introduces a special kind of literal called an **architype** (node, edge, and walker), which was briefly discussed in the prvious chapter.We will explore architypes in more detail later in chapter 9.
 
+Jac supports both local and global variables. Local variables are defined within a block and are not accessible outside it, while global variables can be accessed anywhere in the code.
+
+### Local Variables
+```jac
+def add_numbers(a: int, b: int) -> int {
+    result: int = a + b;  # Local variable
+    return result;
+}
+with entry {
+    sum = add_numbers(5, 10);
+    print(f"Sum: {sum}");
+}
+```
+<br />
+
+### Global Variables
+Sometimes, you may need a variable that can be accessed from anywhere in your program. These are called global variables. In Jac, you can declare them using the `glob` keyword.
+Global variables are most often used for defining constants, like configuration settings or version numbers, that need to be available throughout your code.
+
+
+```jac
+glob school_name: str = "Jac High School";
+glob passing_grade: int = 60;
+glob honor_threshold: float = 3.5;
+
+def get_school_info() -> str {
+    :g: school_name; # Accessing global variable
+    return f"Welcome to {school_name}";
+}
+
+with entry {
+    print(get_school_info());
+    print(f"Honor threshold is {honor_threshold}");
+}
+```
+<br />
 
 ### Integers
 An integer is a whole number (without a decimal point). In Jac, you declare integers using the `int` type.
