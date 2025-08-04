@@ -561,4 +561,4 @@ Start thinking about problems that involve connected data, as these are the area
 
 ---
 
-*Ready to start your Object-Spatial Programming journey? Let's get your environment set up and build your first Jac application!*
+*Ready to start your Object-Spatial Programming journey? Let's get to know Variables, Types, and Basic Syntax next!*
