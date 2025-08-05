@@ -149,24 +149,32 @@ class Collection(Generic[T]):
     @classmethod
     def apply_partial_indexes(cls, type: Type) -> None:
         """Apply Partial Indexes."""
-        indexes: list[Index] = getattr(type, "__jac_indexes__", [])
-        # constraints_new: list[str] = getattr(type, "__jac_indexes__", [])
-        if indexes:
-            idxs = [
-                IndexModel(
-                    apply_prefix("architype.", index["key"]),
-                    **{
-                        **(constraints := index.get("constraints", {})),
-                        "unique": True,  # TODO: need more fixes for this
-                        "partialFilterExpression": {
-                            **constraints.get("partialFilterExpression", {}),
-                            "name": type.__name__,
-                        },
-                    },
-                )
-                for index in indexes
-            ]
-            cls.collection().create_indexes(idxs)
+        constraints: list[dict] = getattr(type, "__constraints__", [])
+        if constraints:
+            partial_indexes = []
+            for constraint in constraints:
+                if "unique" in constraint:
+                    partial_index = IndexModel(constraint["unique"], unique=True)
+                partial_indexes.append(partial_index)
+            cls.collection().create_indexes(partial_indexes)
+        # original implementation
+        # indexes: list[Index] = getattr(type, "__jac_indexes__", [])
+        # if indexes:
+        #     idxs = [
+        #         IndexModel(
+        #             apply_prefix("architype.", index["key"]),
+        #             **{
+        #                 **(constraints := index.get("constraints", {})),
+        #                 "unique": True,  # TODO: need more fixes for this
+        #                 "partialFilterExpression": {
+        #                     **constraints.get("partialFilterExpression", {}),
+        #                     "name": type.__name__,
+        #                 },
+        #             },
+        #         )
+        #         for index in indexes
+        #     ]
+        #     cls.collection().create_indexes(idxs)
 
     @classmethod
     def __document__(cls, doc: Mapping[str, Any]) -> T:
