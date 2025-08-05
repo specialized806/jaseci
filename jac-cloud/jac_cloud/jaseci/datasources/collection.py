@@ -150,12 +150,14 @@ class Collection(Generic[T]):
     def apply_partial_indexes(cls, type: Type) -> None:
         """Apply Partial Indexes."""
         indexes: list[Index] = getattr(type, "__jac_indexes__", [])
+        # constraints_new: list[str] = getattr(type, "__jac_indexes__", [])
         if indexes:
             idxs = [
                 IndexModel(
                     apply_prefix("architype.", index["key"]),
                     **{
                         **(constraints := index.get("constraints", {})),
+                        "unique": True,  # TODO: need more fixes for this
                         "partialFilterExpression": {
                             **constraints.get("partialFilterExpression", {}),
                             "name": type.__name__,
