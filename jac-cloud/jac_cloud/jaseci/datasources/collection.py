@@ -58,6 +58,7 @@ T = TypeVar("T")
 Index = TypedDict(
     "Index", {"key": _IndexKeyHint, "constraints": NotRequired[dict[str, Any]]}
 )
+# index key hint can be in the form {"id": 1},{"id": 1}
 
 
 def apply_prefix(prefix: str, keys: _IndexKeyHint) -> _IndexKeyHint:
