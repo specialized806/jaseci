@@ -60,22 +60,31 @@ def collect_node_connections(
     current_node: NodeAnchor,
     visited_nodes: set,
     connections: set,
+    is_anchors_required: bool = True,
 ) -> None:
     """Nodes and edges representing the graph are collected in visited_nodes and connections."""
-    if current_node not in visited_nodes:
-        visited_nodes.add(current_node)
+    current_node_item = current_node if is_anchors_required else current_node.archetype
+    if current_node_item not in visited_nodes:
+        visited_nodes.add(current_node_item)
         edges = current_node.edges
         for edge_ in edges:
             target = edge_.target
-            if target:
+
+            if target and target.archetype != current_node.archetype:
                 connections.add(
                     (
                         current_node.archetype,
                         target.archetype,
-                        edge_.__class__.__name__,
+                        (
+                            edge_.__class__.__name__
+                            if is_anchors_required
+                            else edge_.archetype
+                        ),
                     )
                 )
-                collect_node_connections(target, visited_nodes, connections)
+                collect_node_connections(
+                    target, visited_nodes, connections, is_anchors_required
+                )
 
 
 def traverse_graph(

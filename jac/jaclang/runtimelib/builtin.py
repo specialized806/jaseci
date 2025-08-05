@@ -7,8 +7,9 @@ from abc import abstractmethod
 from enum import Enum
 from typing import ClassVar, Optional, override
 
-from jaclang.runtimelib.constructs import Archetype, NodeArchetype, Root
+from jaclang.runtimelib.constructs import Archetype, NodeArchetype
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
+from jaclang.runtimelib.utils import collect_node_connections
 
 
 class AccessLevelEnum(Enum):
@@ -92,24 +93,9 @@ def _jac_graph_json(file: Optional[str] = None) -> str:
     edges: list[dict] = []
     root = Jac.root()
 
-    # Collect all connections manually to get proper edge information
-    def collect_connections(current_node_arch, visited):
-        if current_node_arch in visited:
-            return
-        visited.add(current_node_arch)
-
-        current_anchor = current_node_arch.__jac__
-        for edge_anchor in current_anchor.edges:
-            # if edge_anchor.target and edge_anchor.archetype:
-            target_arch = edge_anchor.target.archetype
-            # Only add connection if it's an outgoing edge from current node
-            if edge_anchor.source == current_anchor:
-                connections.add(
-                    (current_node_arch, target_arch, edge_anchor.archetype)
-                )
-            collect_connections(target_arch, visited)
-
-    collect_connections(root, visited_nodes)
+    collect_node_connections(
+        root.__jac__, visited_nodes, connections, is_anchors_required=False
+    )
 
     # Create nodes list from visited nodes
     nodes.append({"id": id(root), "label": "root"})
