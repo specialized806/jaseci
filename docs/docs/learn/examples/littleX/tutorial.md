@@ -1,3 +1,4 @@
+# Tutorial
 # Build Your First Social Media App with Jaseci
 
 You'll build **LittleX**, a Twitter-like application, in just 200 lines of code. This tutorial guides you through each step, from installation to deployment.
@@ -183,7 +184,7 @@ This creates a "Follow" connection between users.
 
 ### 3. Walkers: Make Things Happen
 
-**Walkers** move through your graph and perform actions. They're what make your app interactive.
+**Walkers** move through your graph and perform actions. They make your app interactive.
 
 **Simple Example:**
 ```jac
@@ -318,11 +319,12 @@ Your frontend is ready!
 
 1. **Open your browser** to: [`http://localhost:5173`](http://localhost:5173)
 
-2. **Test these features**:
-   - Create an account
-   - Post a message
-   - Follow someone
-   - Check your feed
+2. **Test these features**
+
+    - Create an account
+    - Post a message
+    - Follow someone
+    - Check your feed
 
 If everything works, you've successfully built a social media platform!
 
@@ -392,13 +394,13 @@ Ready to add more features? Try implementing:
 
 ## What You've Accomplished
 
-Congratulations! You've built a complete social media application. You now understand:
+You've built a complete social media application. You now understand:
 
 - **Nodes** for storing data
 - **Edges** for connecting information
 - **Walkers** for creating functionality
 
-Jaseci's graph-based approach makes it ideal for social networks where relationships between data are essential.
+Jaseci's graph-based approach works well for social networks where relationships between data are essential.
 
 ---
 
