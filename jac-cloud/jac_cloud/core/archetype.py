@@ -54,7 +54,7 @@ from pymongo import ASCENDING, DeleteMany, DeleteOne, InsertOne, UpdateMany, Upd
 from pymongo.client_session import ClientSession
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..jaseci.datasources import Collection as BaseCollection, ScheduleRedis
+from ..jaseci.datasources import Collection as BaseCollection, Index, ScheduleRedis
 from ..jaseci.utils import logger
 
 MANUAL_SAVE = getenv("MANUAL_SAVE")
@@ -1063,7 +1063,7 @@ class BaseArchetype:
 
     __jac_classes__: dict[str, type["BaseArchetype"]]
     __jac_hintings__: dict[str, type]
-    __constraints__: dict
+    __constraints__: Iterable[Index] = []
     # __jac_indexes__: Iterable[Index] = []
 
     __jac__: Anchor
