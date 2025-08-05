@@ -151,21 +151,20 @@ class Collection(Generic[T]):
         """Apply Partial Indexes."""
         indexes: list[Index] = getattr(type, "__jac_indexes__", [])
         if indexes:
-            cls.collection().create_indexes(
-                [
-                    IndexModel(
-                        apply_prefix("architype.", index["key"]),
-                        **{
-                            **(constraints := index.get("constraints", {})),
-                            "partialFilterExpression": {
-                                **constraints.get("partialFilterExpression", {}),
-                                "name": type.__name__,
-                            },
+            idxs = [
+                IndexModel(
+                    apply_prefix("architype.", index["key"]),
+                    **{
+                        **(constraints := index.get("constraints", {})),
+                        "partialFilterExpression": {
+                            **constraints.get("partialFilterExpression", {}),
+                            "name": type.__name__,
                         },
-                    )
-                    for index in indexes
-                ]
-            )
+                    },
+                )
+                for index in indexes
+            ]
+            cls.collection().create_indexes(idxs)
 
     @classmethod
     def __document__(cls, doc: Mapping[str, Any]) -> T:
