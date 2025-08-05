@@ -1,5 +1,5 @@
 <div style="text-align: center; margin-bottom: 30px;">
-    <img src="./assets/jac-lens/jac-lens-logo.png" alt="Jac Lens Logo" style="width: 120px; height: auto; margin-bottom: 15px;">
+    <!-- <img src="./assets/jac-lens/jac-lens-logo.png" alt="Jac Lens Logo" style="width: 120px; height: auto; margin-bottom: 15px;"> -->
     <h1 style="color: orange; font-weight: bold; margin: 0;">Jac Lens</h1>
     <h2 style="color: white; font-weight: 300; font-size: 1.2em; margin-top: 5px; margin-bottom: 0; opacity: 0.8;">Manage your jac cloud data at ease</h2>
 </div>
@@ -83,7 +83,7 @@ walker get_attached_nodes {
             selected_node = &self.node_id;
             attached_nodes = [selected_node-->];
             report attached_nodes;
-        }        
+        }
     }
 }
 
@@ -92,7 +92,7 @@ walker update_node_data {
     has node_data: dict = {};
     can update_node_data with `root entry {
         selected_node = &self.node_id;
-        selected_node.__dict__.update(self.node_data);           
+        selected_node.__dict__.update(self.node_data);
         report selected_node;
     }
 }
@@ -200,7 +200,7 @@ Jac Lens automatically manages your sessions:
     - Ensure your credentials are valid
     - Host url doesn't have trailing slash
     - Check that your server is running and accessible
-    
+
 
 ??? failure "Graph Not Loading"
     - Confirm you have the required walkers installed
@@ -249,4 +249,4 @@ If you encounter issues not covered here:
 
     [Jac Playground](jac_playground.md){ .md-button .md-button--primary }
 
-</div> 
+</div>
