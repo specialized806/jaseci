@@ -1192,6 +1192,7 @@ class WalkerArchetype(BaseArchetype, _WalkerArchetype):
             from jac_cloud.plugin.implementation.api import populate_apis
 
             Jac.make_archetype(cls)
+            WalkerAnchor.Collection.apply_partial_indexes(cls)
             populate_apis(cls)
 
 
