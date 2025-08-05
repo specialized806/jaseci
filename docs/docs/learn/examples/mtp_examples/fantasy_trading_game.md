@@ -134,18 +134,18 @@ with entry {
     # Generate characters using AI functions
     player = make_player();
     npc = make_random_npc();
-    
+
     # Register characters for transactions
     person_record[player.name] = player;
     person_record[npc.name] = npc;
-    
+
     history = [];
-    
+
     while True {
         # AI agent generates response with state
         chat = chat_with_player(player, npc, history);
         history.append(chat);
-        
+
         # Display game state
         for p in [player, npc] {
             print(p.name, ":  $", p.money);
@@ -153,7 +153,7 @@ with entry {
                 print("  ", i.name, ":  $", i.price);
             }
         }
-        
+
         # Show NPC response and get player input
         print("\n[[npc]] >> ", chat.message);
         inp = input("\n[[Player input]] >> ");
