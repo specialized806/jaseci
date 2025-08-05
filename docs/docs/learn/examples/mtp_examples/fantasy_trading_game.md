@@ -11,6 +11,19 @@ A trading game with:
 - Persistent conversation history
 - Context-aware decision making
 
+## <span style="color: orange">Prerequisites
+
+Before starting, install the required dependencies:
+
+```bash
+pip install mtllm
+```
+
+Set up your OpenAI API key:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
 ## <span style="color: orange">Step 1: Define Data Structures
 
 Start by defining objects that represent your game world:
@@ -169,6 +182,37 @@ The game loop:
 4. Accumulates conversation history for persistent context
 5. Displays current game state after each interaction
 
+## <span style="color: orange">AI Functions vs AI Agents
+
+### <span style="color: orange">AI Functions (Stateless)
+
+AI-integrated functions that don't maintain persistent state:
+- `make_player()` and `make_random_npc()` - Generate characters but don't remember
+- These are AI-powered utilities, not agents
+
+### <span style="color: orange">AI Agents (Stateful)
+
+AI systems that maintain persistent state across interactions:
+- `chat_with_player()` with `chat_history` parameter - Remembers conversation context
+- Builds understanding over multiple turns
+- Can reference previous interactions
+
+## <span style="color: orange">Key Concepts
+
+### <span style="color: orange">Tool Integration
+
+The AI agent can access application functions through tools:
+- The `chat_with_player` AI agent can call `make_transaction`
+- The AI extracts parameters from natural language
+- Tool results are incorporated into responses
+
+### <span style="color: orange">State Management
+
+The AI agent maintains state through:
+- Structured data objects (`Person`, `InventoryItem`)
+- Conversation history (`Chat` objects)
+- Global registries (`person_record`)
+
 ## <span style="color: orange">Running the Tutorial
 
 1. Install dependencies: `pip install mtllm`
@@ -193,3 +237,7 @@ my decades of mining. I have a pristine Moonstone Amulet that glows with
 inner light for 75 gold pieces, and a rare Dwarven Pickaxe forged by my
 grandfather for 120 gold. What catches your interest, friend?
 ```
+
+## <span style="color: orange">Summary
+
+This tutorial demonstrates building AI agents with persistent state alongside AI-powered functions. The `chat_with_player` agent maintains conversation history and can execute trades through tool integration, while character generation functions provide stateless AI capabilities. The structured datatypes serve as a vocabulary for communicating game concepts to the AI, enabling natural language interactions that result in functional game mechanics.
