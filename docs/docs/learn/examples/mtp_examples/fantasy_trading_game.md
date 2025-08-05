@@ -1,22 +1,19 @@
-# <span style="color: orange">Fantasy Trading Game Tutorial
+# <span style="color: orange">Building AI Agents: Fantasy Trading Game
 
-This tutorial demonstrates how to build an interactive fantasy RPG trading game using Jac and MTLLM. The game showcases AI-powered character generation, intelligent conversations, and a dynamic trading system where players can negotiate and complete transactions with NPCs.
+This tutorial shows how to build AI agents with persistent state that can conduct conversations, execute trades, and maintain context across interactions. You'll also learn to integrate AI functions for character generation and dialogue.
 
-## <span style="color: orange">Overview
+## <span style="color: orange">What You'll Build
 
-The Fantasy Trading Game is an interactive text-based RPG that demonstrates several advanced MTLLM features:
+A trading game with:
+- AI-powered character generation functions
+- AI agents that maintain conversation state
+- Trading transaction system
+- Persistent conversation history
+- Context-aware decision making
 
-- **AI Character Generation**: Both player and NPC characters are dynamically created using LLMs
-- **Intelligent NPCs**: Non-player characters with unique personalities that can engage in conversations
-- **Trading System**: A complete economic system with inventory management and transactions
-- **ReAct Conversations**: NPCs that can reason about situations and take actions like making trades
-- **Persistent Game State**: Character stats and inventories that persist throughout the game session
+## <span style="color: orange">Step 1: Define Data Structures
 
-## <span style="color: orange">Game Architecture
-
-### <span style="color: orange">Core Data Structures
-
-The game is built around three main objects that represent the game world:
+Start by defining objects that represent your game world:
 
 ```jac
 obj InventoryItem {
@@ -39,9 +36,14 @@ obj Chat {
 }
 ```
 
-**InventoryItem** represents tradeable objects with names and prices. **Person** represents both player and NPC characters with attributes, money, and inventories. **Chat** stores conversation history to maintain context across dialogue turns.
+These structures define:
+- **InventoryItem**: Tradeable objects with name and price
+- **Person**: Character data including stats, money, and items
+- **Chat**: Message history for conversation context
 
-### <span style="color: orange">LLM Configuration
+## <span style="color: orange">Step 2: Configure the AI Model
+
+Set up your LLM for AI operations:
 
 ```jac
 import from mtllm.llms {OpenAI}
@@ -49,56 +51,30 @@ import from mtllm.llms {OpenAI}
 glob llm = OpenAI(model_name="gpt-4o");
 ```
 
-The game uses OpenAI's GPT-4o model for all AI-powered features. You can easily switch to other models like Ollama for local inference.
+## <span style="color: orange">Step 3: Create AI-Powered Character Generation
 
-## <span style="color: orange">Key Features
-
-### <span style="color: orange">AI Character Generation
-
-Characters are generated entirely by the LLM using simple function definitions:
+Build AI-integrated functions that generate game characters:
 
 ```jac
-"""
-Generates the player character for a fantasy RPG game.
-"""
-def make_player() -> Person
-    by llm();
+def make_player() -> Person by llm();
 
-
-"""
-Generates a random npc person with a name, age, favourite pet and hobby.
-The person should be a fantasy character, like an elf, dwarf, orc, etc.
-"""
-def make_random_npc() -> Person
-    by llm();
+def make_random_npc() -> Person by llm();
 ```
 
-The LLM automatically creates diverse fantasy characters with:
-- Fantasy race characteristics (elves, dwarves, orcs, etc.)
-- Unique names and personalities
-- Age-appropriate backgrounds and hobbies
-- Starting money and themed inventory items
-- Rich character descriptions
+These AI functions generate characters with appropriate attributes, starting money, and themed inventory items.
 
-### <span style="color: orange">Transaction System
+## <span style="color: orange">Step 4: Implement Game Logic
 
-The economic core of the game is handled by a comprehensive transaction function:
+Create functions for core game mechanics:
 
 ```jac
-"""
-Makes a transaction between buyer and seller for the specified item.
-Returns true if successful, false otherwise. The price is optional,
-if not provided, the item's price is used (if they negotiate to a different price that should be given here
-otherwiwse the price is optional and None will be used as a default parameter.
-"""
 def make_transaction(buyer_name: str, seller_name: str, item_name: str, price: int| None = None) -> bool {
     buyer = person_record[buyer_name];
     seller = person_record[seller_name];
 
-    # Find the item in seller's inventory
+    # Find item in seller's inventory
     item_to_buy = None;
     item_index = -1;
-
     for i in range(len(seller.inventory)) {
         if seller.inventory[i].name.lower() == item_name.lower() {
             item_to_buy = seller.inventory[i];
@@ -109,85 +85,76 @@ def make_transaction(buyer_name: str, seller_name: str, item_name: str, price: i
 
     price = price or item_to_buy.price;
 
-    # Check if item exists and buyer has enough money
+    # Validate transaction
     if not item_to_buy or buyer.money < price {
         return False;
     }
 
-    # Transfer item and money
+    # Execute transfer
     buyer.money -= price;
     seller.money += price;
     buyer.inventory.append(item_to_buy);
     seller.inventory.pop(item_index);
-
     return True;
 }
 ```
 
-This function handles:
-- **Item Discovery**: Searches the seller's inventory for requested items
-- **Price Negotiation**: Supports custom prices different from the item's default price
-- **Validation**: Ensures the item exists and the buyer has sufficient funds
-- **State Transfer**: Moves money and items between characters atomically
+This function:
+1. Locates the item in the seller's inventory
+2. Validates the buyer has sufficient funds
+3. Transfers money and items between characters
 
-### <span style="color: orange">Intelligent Conversations with ReAct
+## <span style="color: orange">Step 5: Build Conversational AI Agent
 
-The conversation system uses the ReAct (Reasoning and Acting) methodology:
+Create an AI agent that maintains state and can take actions:
 
 ```jac
-"""
-Generates the next line of dialogue from the given NPC in an ongoing
-conversation with the player. If no chat history is provided, generates
-the NPC's initial greeting. The NPC's response should reflect their
-personality, background, and any prior context from the chat history.
-
-Before making a transaction, the NPC confirm with the player and after
-they said yes, the transaction is made. Make sure the NPC doesn't give
-an item way way less than its price, but they can negotiate a bit.
-"""
 def chat_with_player(player: Person, npc: Person, chat_history: list[Chat]) -> Chat
     by llm(method="ReAct", tools=[make_transaction]);
 ```
 
-ReAct enables NPCs to:
-- **Think**: Reason about the conversation context and their goals
-- **Act**: Use tools like `make_transaction` when appropriate
-- **Observe**: Process the results of their actions
-- **Respond**: Generate contextually appropriate dialogue
+This is an AI agent because it:
+- **Maintains State**: Uses `chat_history` to remember previous interactions
+- **Reasons**: Thinks about the conversation context using ReAct method
+- **Acts**: Can use tools like `make_transaction` when appropriate
+- **Persists Context**: Builds understanding across multiple conversation turns
 
-This creates NPCs that can:
-- Remember previous conversations
-- Evaluate trade proposals realistically
+The agent capabilities:
+- Remember previous conversations through persistent `chat_history`
+- Execute trades when agreements are reached
 - Negotiate prices within reasonable bounds
-- Make strategic decisions about when to trade
-- Stay in character while being helpful
+- Stay in character while being functional
 
-## <span style="color: orange">Game Flow
+## <span style="color: orange">Step 6: Implement the Game Loop
 
-### <span style="color: orange">Initialization and Main Loop
+Connect all components in the main execution:
 
 ```jac
 with entry {
-    # Generate AI-powered characters
+    # Generate characters using AI functions
     player = make_player();
     npc = make_random_npc();
-
+    
+    # Register characters for transactions
     person_record[player.name] = player;
     person_record[npc.name] = npc;
-
+    
     history = [];
+    
     while True {
+        # AI agent generates response with state
         chat = chat_with_player(player, npc, history);
         history.append(chat);
-
-        # Display current game state
+        
+        # Display game state
         for p in [player, npc] {
             print(p.name, ":  $", p.money);
             for i in p.inventory {
                 print("  ", i.name, ":  $", i.price);
             }
         }
-
+        
+        # Show NPC response and get player input
         print("\n[[npc]] >> ", chat.message);
         inp = input("\n[[Player input]] >> ");
         history.append(Chat(person=player.name, message=inp));
@@ -195,41 +162,23 @@ with entry {
 }
 ```
 
-The game follows this pattern:
-1. **Character Creation**: Generate unique player and NPC using AI
-2. **Registration**: Store characters in global registry for transactions
-3. **Game Loop**: Alternate between NPC responses and player input
-4. **State Display**: Show current money and inventory after each interaction
-5. **History Tracking**: Maintain conversation context for realistic dialogue
+The game loop:
+1. Uses AI functions to generate characters (stateless)
+2. Registers characters for transaction system
+3. Uses the AI agent for NPC responses (stateful - maintains conversation history)
+4. Accumulates conversation history for persistent context
+5. Displays current game state after each interaction
 
-## <span style="color: orange">Advanced MTLLM Features
+## <span style="color: orange">Running the Tutorial
 
-### <span style="color: orange">Tool Integration
+1. Install dependencies: `pip install mtllm`
+2. Configure OpenAI API key
+3. Run: `jac run fantasy_trading_game.jac`
+4. Interact with the AI agent through natural language
 
-The game demonstrates how LLMs can seamlessly integrate with application logic through tools:
+➡️ [Complete Source Code](https://github.com/jaseci-labs/jaseci/blob/main/jac-mtllm/examples/fantasy_trading_game.jac)
 
-- NPCs can invoke `make_transaction` when trade discussions reach agreement
-- The LLM automatically handles tool parameter extraction from natural language
-- Tool results are incorporated into the conversation flow naturally
-
-### <span style="color: orange">Dynamic Content Generation
-
-Every aspect of the game world is dynamically generated:
-- **Character Personalities**: Unique traits and speech patterns
-- **Item Creation**: Contextually appropriate inventory items
-- **Dialogue Generation**: Responses that feel natural and engaging
-
-## <span style="color: orange">Running the Game
-
-To play the Fantasy Trading Game:
-
-1. **Prerequisites**: Install `pip install mtllm` and configure your OpenAI API key
-2. **Launch**: Run `jac run fantasy_trading_game.jac`
-    ➡️ [View the Game File on GitHub](https://github.com/jaseci-labs/jaseci/blob/main/jac-mtllm/examples/fantasy_trading_game.jac)
-3. **Play**: Engage with the AI-generated NPC through natural language
-4. **Trade**: Negotiate prices and complete transactions organically
-
-## <span style="color: orange">Example Gameplay
+## <span style="color: orange">Example Interaction
 
 ```
 [[Npc]] >> Greetings, traveler! I am Thornwick the Wise, an ancient dwarf
