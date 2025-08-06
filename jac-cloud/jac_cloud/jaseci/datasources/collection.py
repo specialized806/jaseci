@@ -55,9 +55,13 @@ from ..utils import logger
 
 T = TypeVar("T")
 
-Index = TypedDict(
-    "Index", {"key": _IndexKeyHint, "constraints": NotRequired[dict[str, Any]]}
-)
+
+class Constraints(TypedDict):
+    """Class for applying constraints to mongodb indexes."""
+
+    unique: NotRequired[list[tuple[str]]]
+
+
 # index key hint can be in the form {"id": 1},{"id": 1}
 
 
@@ -149,12 +153,15 @@ class Collection(Generic[T]):
     @classmethod
     def apply_partial_indexes(cls, type: Type) -> None:
         """Apply Partial Indexes."""
-        constraints: list[dict] = getattr(type, "__constraints__", [])
-        if constraints:
+        constraints = cast(Constraints, getattr(type, "__constraints__", {}))
+        unique_fields_list: list[tuple[str]] = constraints.get("unique", [])
+        if len(unique_fields_list) != 0:
             partial_indexes = []
-            for constraint in constraints:
-                if "unique" in constraint:
-                    partial_index = IndexModel(constraint["unique"], unique=True)
+            for unique_field in unique_fields_list:
+                indexed_fields = []
+                for field in unique_field:
+                    indexed_fields.append((field, 1))
+                partial_index = IndexModel(indexed_fields, unique=True)
                 partial_indexes.append(partial_index)
             cls.collection().create_indexes(partial_indexes)
         # original implementation
