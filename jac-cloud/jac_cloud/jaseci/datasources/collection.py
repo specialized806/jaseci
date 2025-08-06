@@ -1,5 +1,6 @@
 """Collection Abstract."""
 
+from dataclasses import dataclass, field
 from os import getenv
 from typing import (
     Any,
@@ -7,13 +8,14 @@ from typing import (
     Generator,
     Generic,
     Iterable,
+    List,
     Mapping,
-    NotRequired,
+    Tuple,
     Type,
     TypeVar,
-    TypedDict,
     cast,
 )
+
 
 from bson import ObjectId
 
@@ -56,13 +58,11 @@ from ..utils import logger
 T = TypeVar("T")
 
 
-class Constraints(TypedDict):
-    """Class for applying constraints to mongodb indexes."""
+@dataclass
+class Constraints:
+    """Class to define constraints for indexes."""
 
-    unique: NotRequired[list[tuple[str]]]
-
-
-# index key hint can be in the form {"id": 1},{"id": 1}
+    unique: List[Tuple[str]] = field(default_factory=list)
 
 
 def apply_prefix(prefix: str, keys: _IndexKeyHint) -> _IndexKeyHint:
@@ -154,13 +154,13 @@ class Collection(Generic[T]):
     def apply_partial_indexes(cls, type: Type) -> None:
         """Apply Partial Indexes."""
         constraints = cast(Constraints, getattr(type, "__constraints__", {}))
-        unique_fields_list: list[tuple[str]] = constraints.get("unique", [])
+        unique_fields_list: list[tuple[str]] = constraints.unique
         if len(unique_fields_list) != 0:
             partial_indexes = []
             for unique_field in unique_fields_list:
                 indexed_fields = []
-                for field in unique_field:
-                    indexed_fields.append((field, 1))
+                for field_name in unique_field:
+                    indexed_fields.append((field_name, 1))
                 partial_index = IndexModel(indexed_fields, unique=True)
                 partial_indexes.append(partial_index)
             cls.collection().create_indexes(partial_indexes)
