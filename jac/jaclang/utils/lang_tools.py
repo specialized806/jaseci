@@ -8,6 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import PyastBuildPass
+from jaclang.compiler.passes.main.cfg_build_pass import cfg_dot_from_file
 from jaclang.compiler.passes.tool.doc_ir_gen_pass import DocIRGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
@@ -242,6 +243,12 @@ class AstTool:
                     return out
                 case "ast.":
                     return ir.printgraph()
+                case "cfg.":
+                    if file_name.endswith(".jac"):
+                        return cfg_dot_from_file(file_name)
+                    else:
+                        return "CFG can only be generated from .jac files."
+
                 case "unparse":
                     return ir.unparse()
                 case "pyast":
