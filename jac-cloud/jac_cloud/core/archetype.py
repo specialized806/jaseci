@@ -56,7 +56,6 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 
 from ..jaseci.datasources import (
     Collection as BaseCollection,
-    Constraints,
     ScheduleRedis,
 )
 from ..jaseci.utils import logger
@@ -1067,7 +1066,11 @@ class BaseArchetype:
 
     __jac_classes__: dict[str, type["BaseArchetype"]]
     __jac_hintings__: dict[str, type]
-    __constraints__: Constraints = Constraints()
+    # __constraints__: type
+
+    class __Constraints__:
+        unique: list[tuple[str]]
+
     # __jac_indexes__: Iterable[Index] = []
 
     __jac__: Anchor
