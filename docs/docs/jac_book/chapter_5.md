@@ -84,6 +84,7 @@ Next we replace the OpenAI import with that of the MTLLM package
 ```jac
 import from mtllm { Model }
 glob llm = Model(model_name="gpt-4.1-mini");
+
 ```
 <br />
 Instead of writing the function ourselves, we simply declare the function signature and use the `by` keyword to indicate that this function should be handled by the AI model referenced by `llm()`. The MTLLM framework will automatically generate the appropriate prompt based on the function signature.

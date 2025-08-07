@@ -19,7 +19,7 @@ First, we will create a single, generic `calculator` function. Instead of perfor
 
 ```jac
 # This function takes two numbers and another function as input.
-// The `callable` type annotation indicates that `operation` is expected to be a function.
+# The `callable` type annotation indicates that `operation` is expected to be a function.
 def calculator(a: float, b: float, operation: callable) -> float {
     return operation(a, b);
 }
@@ -29,7 +29,7 @@ def calculator(a: float, b: float, operation: callable) -> float {
 Next, we can define our basic arithmetic operations as standalone functions.
 
 ```jac
-// These are the individual operations we can pass to our main calculator function.
+# These are the individual operations we can pass to our main calculator function.
 def add(a: float, b: float) -> float {
     return a + b;
 }
@@ -53,7 +53,7 @@ Now, we can create a dictionary using `dict` keyword that maps a string (like "a
 
 
 ```jac
-// A global dictionary to map operation names to their corresponding functions.
+# A global dictionary to map operation names to their corresponding functions.
 glob operations: dict[str, callable] = {
     "add": add,
     "subtract": subtract,
@@ -67,17 +67,17 @@ Finally, let's put it all together. Our main execution block can now use the cal
 
 ``` jac
 
-// Main entry point for the program
+# Main entry point for the program
 with entry {
     a: float = 10.0;
     b: float = 5.0;
 
-    // To test other operations, simply change this string.
+    # To test other operations, simply change this string.
     operation_name: str = "add";
 
-    // Check if the requested operation exists in our dictionary.
+    # Check if the requested operation exists in our dictionary.
     if operation_name in operations {
-        // Look up the function in the dictionary and pass it to the calculator.
+        # Look up the function in the dictionary and pass it to the calculator.
         selected_operation_func = operations[operation_name];
         result: float = calculator(a, b, selected_operation_func);
         print(f"Result of {operation_name}({a}, {b}) = {result}");
