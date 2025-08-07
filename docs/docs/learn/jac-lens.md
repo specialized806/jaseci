@@ -12,7 +12,7 @@ Jac Lens is a powerful Progressive Web App (PWA) that provides an intuitive visu
 
 ### 1. Access the Application
 
-- **URL**: https://jac-lens.netlify.app/
+- **URL**: https://jaclens.jaseci.org/
 - **Browser**: Chrome recommended for optimal experience
 - **Installation**: Follow browser prompts to install as a Progressive Web App (PWA)
 
