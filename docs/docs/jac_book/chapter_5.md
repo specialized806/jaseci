@@ -478,4 +478,6 @@ with entry {
 
 ---
 
+If you are interested in learning more about MTLLM, check out [ Quickstart to MTLLM ](../learn/jac-mtllm/with_llm.md)
+
 *Ready to learn about imports and modular programming? Continue to [Chapter 6: Imports System and File Operations](chapter_6.md)!*
