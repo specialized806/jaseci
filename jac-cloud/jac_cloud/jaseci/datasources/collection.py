@@ -39,7 +39,6 @@ from pymongo.collection import Collection as PyMongoCollection
 from pymongo.command_cursor import CommandCursor
 from pymongo.cursor import Cursor
 from pymongo.database import Database
-from pymongo.operations import _IndexKeyHint
 from pymongo.results import (
     BulkWriteResult,
     DeleteResult,
@@ -54,25 +53,26 @@ from ..utils import logger
 
 T = TypeVar("T")
 
-
-def apply_prefix(prefix: str, keys: _IndexKeyHint) -> _IndexKeyHint:
-    """Apply prefix for every key."""
-    match keys:
-        case str():
-            return f"{prefix}{keys}"
-        case list() | set() | tuple():
-            return [
-                (
-                    f"{prefix}{key}"
-                    if isinstance(key, str)
-                    else (f"{prefix}{key[0]}", key[1])
-                )
-                for key in keys
-            ]
-        case dict():
-            return {f"{prefix}{key}": value for key, value in keys.items()}
-        case _:
-            return keys
+# TODO:need this function in future for partial indexing
+# from pymongo.operations import _IndexKeyHint
+# def apply_prefix(prefix: str, keys: _IndexKeyHint) -> _IndexKeyHint:
+#     """Apply prefix for every key."""
+#     match keys:
+#         case str():
+#             return f"{prefix}{keys}"
+#         case list() | set() | tuple():
+#             return [
+#                 (
+#                     f"{prefix}{key}"
+#                     if isinstance(key, str)
+#                     else (f"{prefix}{key[0]}", key[1])
+#                 )
+#                 for key in keys
+#             ]
+#         case dict():
+#             return {f"{prefix}{key}": value for key, value in keys.items()}
+#         case _:
+#             return keys
 
 
 class Collection(Generic[T]):
