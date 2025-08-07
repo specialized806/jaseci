@@ -4,21 +4,21 @@ This module provides a LLM class that abstracts LiteLLM and offers
 enhanced functionality and interface for language model operations.
 """
 
-import inspect
-from types import MethodType
-from typing import Callable, Generator, get_type_hints
+# flake8: noqa: E402
+
+import os
+from typing import Generator
+
+from mtllm.mtir import MTIR
+
+# This will prevent LiteLLM from fetching pricing information from
+# the bellow URL every time we import the litellm and use a cached
+# local json file. Maybe we we should conditionally enable this.
+# https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 from .llm_connector import LLMConnector
-from .types import (
-    CompletionRequest,
-    CompletionResult,
-    Media,
-    Message,
-    MessageRole,
-    MessageType,
-    Text,
-    Tool,
-)
+from .types import CompletionResult
 
 SYSTEM_PERSONA = """\
 This is a task you must complete by returning only the output.
@@ -68,114 +68,29 @@ class Model:
         self.llm_connector.call_params = kwargs
         return self
 
-    def invoke(self, caller: Callable, args: dict[str | int, object]) -> object:
+    def invoke(self, mtir: MTIR) -> object:
         """Invoke the LLM with the given caller and arguments."""
-        # Prepare the tools for the LLM call.
-        tools = [
-            Tool(func) for func in self.llm_connector.call_params.get("tools", [])  # type: ignore
-        ]
-
-        # Construct the input information from the arguments.
-        param_names = list(inspect.signature(caller).parameters.keys())
-        inputs_detail: list[str] = []
-        media_inputs: list[Media] = []
-
-        for key, value in args.items():
-            if isinstance(value, Media):
-                media_inputs.append(value)
-                continue
-
-            if isinstance(key, str):
-                inputs_detail.append(f"{key} = {value}")
-            else:
-                # TODO: Handle *args, **kwargs properly.
-                if key < len(param_names):
-                    inputs_detail.append(f"{param_names[key]} = {value}")
-                else:
-                    inputs_detail.append(f"arg = {value}")
-        incl_info = self.llm_connector.call_params.get("incl_info")
-        if incl_info and isinstance(incl_info, dict):
-            for key, value in incl_info.items():
-                if isinstance(value, Media):
-                    media_inputs.append(value)
-                else:
-                    inputs_detail.append(f"{key} = {value}")
-
-        if isinstance(caller, MethodType):
-            inputs_detail.insert(0, f"self = {caller.__self__}")
-
-        # Prepare the messages for the LLM call.
-        messages: list[MessageType] = [
-            Message(
-                role=MessageRole.SYSTEM,
-                content=SYSTEM_PERSONA + (INSTRUCTION_TOOL if tools else ""),
-            ),
-            Message(
-                role=MessageRole.USER,
-                content=[
-                    Text(
-                        Tool.get_func_description(caller)
-                        + "\n\n"
-                        + "\n".join(inputs_detail)
-                    ),
-                    *media_inputs,
-                ],
-            ),
-        ]
-
-        # Prepare return type.
-        return_type = get_type_hints(caller).get("return")
-        is_streaming = bool(self.llm_connector.call_params.pop("stream", False))
-
-        if is_streaming:
-            if return_type is not str:
-                raise RuntimeError(
-                    "Streaming responses are only supported for str return types."
-                )
-            if tools:
-                raise RuntimeError(
-                    "Streaming responses are not supported with tool calls yet."
-                )
-
-        # Prepare the llm call request.
-        req = CompletionRequest(
-            messages=messages,
-            tools=tools,
-            resp_type=return_type,
-            stream=is_streaming,
-            params={},
-        )
-
-        # TODO: Support mockllm for mocktesting.
-        # Invoke streaming request, this will result in a generator that the caller
-        # should either do .next() or .__iter__() by calling `for tok in resp: ...`
-        if req.stream:
-            if req.tools:
-                raise RuntimeError(
-                    "Streaming responses are not supported with tool calls yet."
-                )
-            return self._completion_streaming(req)
+        if mtir.stream:
+            return self._completion_streaming(mtir)
 
         # Invoke the LLM and handle tool calls.
         while True:
-            resp = self._completion_no_streaming(req)
+            resp = self._completion_no_streaming(mtir)
             if resp.tool_calls:
                 for tool_call in resp.tool_calls:
                     if tool_call.is_finish_call():
                         return tool_call.get_output()
                     else:
-                        req.add_message(tool_call())
+                        mtir.add_message(tool_call())
             else:
                 break
 
         return resp.output
 
-    def _completion_no_streaming(self, req: CompletionRequest) -> CompletionResult:
+    def _completion_no_streaming(self, mtir: MTIR) -> CompletionResult:
         """Perform a completion request with the LLM."""
-        return self.llm_connector.dispatch_no_streaming(req)
+        return self.llm_connector.dispatch_no_streaming(mtir)
 
-    def _completion_streaming(
-        self, req: CompletionRequest
-    ) -> Generator[str, None, None]:
+    def _completion_streaming(self, mtir: MTIR) -> Generator[str, None, None]:
         """Perform a streaming completion request with the LLM."""
-        return self.llm_connector.dispatch_streaming(req)
+        return self.llm_connector.dispatch_streaming(mtir)

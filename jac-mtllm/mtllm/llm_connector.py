@@ -21,16 +21,15 @@ from typing import Generator, override
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 import litellm
-from litellm import CustomStreamWrapper
 from litellm._logging import _disable_debugging
 
-from openai import OpenAI, Stream
+from openai import OpenAI
+
+from .mtir import MTIR
 
 from .types import (
-    CompletionRequest,
     CompletionResult,
     LiteLLMMessage,
-    Message,
     MockToolCall,
     ToolCall,
 )
@@ -60,7 +59,7 @@ class LLMConnector(ABC):
             return LiteLLMConnector(True, model_name, **kwargs)
         return LiteLLMConnector(False, model_name, **kwargs)
 
-    def make_model_params(self, req: CompletionRequest) -> dict:
+    def make_model_params(self, mtir: MTIR) -> dict:
         """Prepare the parameters for the LLM call."""
         params = {
             "model": self.model_name,
@@ -70,9 +69,9 @@ class LLMConnector(ABC):
                 or self.config.get("api_base")
             ),
             "api_key": self.config.get("api_key"),
-            "messages": req.get_msg_list(),
-            "tools": req.get_tool_list() or None,
-            "response_format": req.get_output_schema(),
+            "messages": mtir.get_msg_list(),
+            "tools": mtir.get_tool_list() or None,
+            "response_format": mtir.get_output_schema(),
             "temperature": self.call_params.get("temperature", 0.7),
             "max_tokens": self.call_params.get("max_tokens"),
             # "top_k": self.call_params.get("top_k", 50),
@@ -88,12 +87,12 @@ class LLMConnector(ABC):
             print(message)
 
     @abstractmethod
-    def dispatch_no_streaming(self, req: CompletionRequest) -> CompletionResult:
+    def dispatch_no_streaming(self, mtir: MTIR) -> CompletionResult:
         """Dispatch the LLM call without streaming."""
         raise NotImplementedError()
 
     @abstractmethod
-    def dispatch_streaming(self, req: CompletionRequest) -> Generator[str, None, None]:
+    def dispatch_streaming(self, mtir: MTIR) -> Generator[str, None, None]:
         """Dispatch the LLM call with streaming."""
         raise NotImplementedError()
 
@@ -107,7 +106,7 @@ class MockLLMConnector(LLMConnector):
     """LLM Connector for a mock LLM service that simulates responses."""
 
     @override
-    def dispatch_no_streaming(self, req: CompletionRequest) -> CompletionResult:
+    def dispatch_no_streaming(self, mtir: MTIR) -> CompletionResult:
         """Dispatch the mock LLM call with the given request."""
         output = self.config["outputs"].pop(0)  # type: ignore
 
@@ -128,10 +127,10 @@ class MockLLMConnector(LLMConnector):
         )
 
     @override
-    def dispatch_streaming(self, req: CompletionRequest) -> Generator[str, None, None]:
+    def dispatch_streaming(self, mtir: MTIR) -> Generator[str, None, None]:
         """Dispatch the mock LLM call with the given request."""
         output = self.config["outputs"].pop(0)  # type: ignore
-        if req.stream:
+        if mtir.stream:
             while output:
                 chunk_len = random.randint(3, 10)
                 yield output[:chunk_len]  # Simulate token chunk
@@ -158,10 +157,10 @@ class LiteLLMConnector(LLMConnector):
         _disable_debugging()
 
     @override
-    def dispatch_no_streaming(self, req: CompletionRequest) -> CompletionResult:
+    def dispatch_no_streaming(self, mtir: MTIR) -> CompletionResult:
         """Dispatch the LLM call without streaming."""
         # Construct the parameters for the LLM call
-        params = self.make_model_params(req)
+        params = self.make_model_params(mtir)
 
         # Call the LiteLLM API
         self.log_info(f"Calling LLM: {self.model_name} with params:\n{params}")
@@ -179,15 +178,15 @@ class LiteLLMConnector(LLMConnector):
         #
         # TODO: Handle stream output (type ignoring stream response)
         message: LiteLLMMessage = response.choices[0].message  # type: ignore
-        req.add_message(message)
+        mtir.add_message(message)
 
         output_content: str = message.content  # type: ignore
         self.log_info(f"LLM call completed with response:\n{output_content}")
-        output_value = req.parse_response(output_content)
+        output_value = mtir.parse_response(output_content)
 
         tool_calls: list[ToolCall] = []
         for tool_call in message.tool_calls or []:  # type: ignore
-            if tool := req.get_tool(tool_call["function"]["name"]):
+            if tool := mtir.get_tool(tool_call["function"]["name"]):
                 args_json = json.loads(tool_call["function"]["arguments"])
                 args = tool.parse_arguments(args_json)
                 tool_calls.append(
@@ -204,10 +203,10 @@ class LiteLLMConnector(LLMConnector):
         )
 
     @override
-    def dispatch_streaming(self, req: CompletionRequest) -> Generator[str, None, None]:
+    def dispatch_streaming(self, mtir: MTIR) -> Generator[str, None, None]:
         """Dispatch the LLM call with streaming."""
         # Construct the parameters for the LLM call
-        params = self.make_model_params(req)
+        params = self.make_model_params(mtir)
 
         # Call the LiteLLM API
         self.log_info(f"Calling LLM: {self.model_name} with params:\n{params}")

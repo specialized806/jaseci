@@ -41,9 +41,10 @@ nav:
       - 19. Performance Optimization: "jac_book/chapter_19.md"
       - 20. Python to Jac Migration: "jac_book/chapter_20.md"
     - Programming 'by' AI:
-        - "learn/jac-mtllm/with_llm.md"
+        - What is MTP: "learn/jac-mtllm/with_llm.md"
         - Quick-start: "learn/jac-mtllm/quickstart.md"
         - How to use MTP: "learn/jac-mtllm/usage.md"
+        - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
         - Using Multimodal models: "learn/jac-mtllm/multimodality.md"
         - Build your own MTLLM plugin: "learn/jac-mtllm/creating_mtllm_plugins.md"
         - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
@@ -103,6 +104,7 @@ nav:
             - "internals/symbol_tables/resolution.md"
           - UniIR Nodes: "internals/uniir_node.md"
         - Runtime Plugin Interface: "internals/jac_plugins.md"
+        - main py plugin Interface: "internals/plugin_documentation.md"
       - Planning Specs and Docs:
         - Language Ref Roadmap: "internals/planning_specs/ref_roadmap.md"
         - Archetype Lifecycle Enhancement Roadmap: "internals/planning_specs/spawn_life_cycle.md"
