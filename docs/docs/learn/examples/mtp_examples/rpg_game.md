@@ -15,6 +15,17 @@ This tutorial covers building an AI-driven RPG level generator using Jaclang's `
 
 ## <span style="color: orange">Prerequisites
 
+Required dependencies:
+
+```bash
+pip install mtllm
+```
+
+OpenAI API key configuration:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
 - Basic knowledge of [Jaclang syntax](/jac_book/)
 - Familiarity with game development concepts (optional)
 
