@@ -95,7 +95,7 @@ with contextlib.redirect_stdout(stdout_buf:=JsIO(CB_STDOUT)), \
                 graph_json = '{"nodes": [], "edges": []}'
         else:
             graph_json = '{"nodes": [], "edges": []}'
-        debugger.cb_graph(fix_duplicate_graph_json(graph_json))
+        debugger.cb_graph(graph_json)
 
     except DebuggerTerminated:
         print("Debug session ended by user.")

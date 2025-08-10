@@ -89,25 +89,25 @@ def _jac_graph_json(file: Optional[str] = None) -> str:
     """Get the graph in json string."""
     visited_nodes: set = set()
     connections: set = set()
+    edge_ids: set = set()
     nodes: list[dict] = []
     edges: list[dict] = []
     root = Jac.root()
 
-    collect_node_connections(
-        root.__jac__, visited_nodes, connections, is_anchors_required=False
-    )
+    collect_node_connections(root, visited_nodes, connections, edge_ids)
 
     # Create nodes list from visited nodes
     nodes.append({"id": id(root), "label": "root"})
     for node_arch in visited_nodes:
-        if node_arch != root:  # Don't duplicate root
+        if node_arch != root:
             nodes.append({"id": id(node_arch), "label": repr(node_arch)})
 
     # Create edges list with labels from connections
-    for source_node, target_node, edge_arch in connections:
-        edges.append(
-            {"from": id(source_node), "to": id(target_node), "label": repr(edge_arch)}
-        )
+    for _, source_node, target_node, edge_arch in connections:
+        edge_data = {"from": str(id(source_node)), "to": str(id(target_node))}
+        if repr(edge_arch) != "GenericEdge()":
+            edge_data["label"] = repr(edge_arch)
+        edges.append(edge_data)
 
     output = json.dumps(
         {

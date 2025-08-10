@@ -11,7 +11,7 @@ from typing import Callable, Iterator, TYPE_CHECKING
 import jaclang.compiler.unitree as uni
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import NodeAnchor, NodeArchetype
+    from jaclang.runtimelib.constructs import NodeArchetype
 
 
 def read_file_with_encoding(file_path: str) -> str:
@@ -57,33 +57,31 @@ def sys_path_context(path: str) -> Iterator[None]:
 
 
 def collect_node_connections(
-    current_node: NodeAnchor,
+    current_node: NodeArchetype,
     visited_nodes: set,
     connections: set,
-    is_anchors_required: bool = True,
+    edge_ids: set,
 ) -> None:
     """Nodes and edges representing the graph are collected in visited_nodes and connections."""
-    current_node_item = current_node if is_anchors_required else current_node.archetype
-    if current_node_item not in visited_nodes:
-        visited_nodes.add(current_node_item)
-        edges = current_node.edges
+    if current_node not in visited_nodes:
+        visited_nodes.add(current_node)
+        edges = current_node.__jac__.edges
         for edge_ in edges:
+            if edge_.id in edge_ids:
+                continue
+            edge_ids.add(edge_.id)
             target = edge_.target
-
-            if target and target.archetype != current_node.archetype:
+            if target:
                 connections.add(
                     (
-                        current_node.archetype,
+                        edge_.id,
+                        edge_.source.archetype,
                         target.archetype,
-                        (
-                            edge_.__class__.__name__
-                            if is_anchors_required
-                            else edge_.archetype
-                        ),
+                        edge_.archetype,
                     )
                 )
                 collect_node_connections(
-                    target, visited_nodes, connections, is_anchors_required
+                    target.archetype, visited_nodes, connections, edge_ids
                 )
 
 

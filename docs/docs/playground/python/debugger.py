@@ -107,7 +107,7 @@ class Debugger(bdb.Bdb):
     def _send_graph(self) -> None:
         try:
             graph_str = self.runeval("printgraph(format='json')")
-            self.cb_graph(fix_duplicate_graph_json(graph_str))
+            self.cb_graph(graph_str)
         except Exception as e:
             print(f"[Debugger] Error sending graph: {e}")
         self.set_trace()

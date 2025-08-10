@@ -235,7 +235,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
-            '[label="inner_node(main=5, sub=2)"];',
+            '[label="inner_node(main=5, sub=2)"fillcolor="#FFDEAD"];',
             stdout_value,
         )
 
