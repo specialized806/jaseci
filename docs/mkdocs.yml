@@ -9,6 +9,7 @@ nav:
     - Tour of Jac/Jaseci: "learn/introduction.md"
     - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
     - Jac Playground: "learn/jac_playground.md"
+    - Jac Lens: "learn/jac-lens.md"
     - Learn By Example:
       - LittleX (your own twitter):
         - "learn/examples/littleX/tutorial.md"
@@ -41,12 +42,14 @@ nav:
       - 19. Performance Optimization: "jac_book/chapter_19.md"
       - 20. Python to Jac Migration: "jac_book/chapter_20.md"
     - Programming 'by' AI:
-        - "learn/jac-mtllm/with_llm.md"
+        - What is MTP: "learn/jac-mtllm/with_llm.md"
         - Quick-start: "learn/jac-mtllm/quickstart.md"
         - How to use MTP: "learn/jac-mtllm/usage.md"
+        - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
         - Using Multimodal models: "learn/jac-mtllm/multimodality.md"
         - Build your own MTLLM plugin: "learn/jac-mtllm/creating_mtllm_plugins.md"
         - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
+        - LiteLLM Proxy Server: "learn/jac-mtllm/litellm_proxy.md"
     - Scale-Native Programming:
       - "learn/jac-cloud/introduction.md"
       - "learn/jac-cloud/quickstart.md"
@@ -61,6 +64,7 @@ nav:
         - "learn/jac-cloud/webhook.md"
       - Operations:
         - "learn/jac-cloud/deployment.md"
+        - "learn/jac-cloud/utilities.md"
     - Tooling:
       - "learn/tools/cli.md"
     - Specifications:
@@ -101,8 +105,10 @@ nav:
             - "internals/symbol_tables/resolution.md"
           - UniIR Nodes: "internals/uniir_node.md"
         - Runtime Plugin Interface: "internals/jac_plugins.md"
+        - main py plugin Interface: "internals/plugin_documentation.md"
       - Planning Specs and Docs:
         - Language Ref Roadmap: "internals/planning_specs/ref_roadmap.md"
+        - Archetype Lifecycle Enhancement Roadmap: "internals/planning_specs/spawn_life_cycle.md"
         - Error System: "internals/planning_specs/error_system.md"
         - Formatter System: "internals/planning_specs/formatter_system.md"
         - Native Type System:
@@ -207,6 +213,7 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js
   - js/jac.monarch.js
   - js/run-code.js
+  - js/feedback.js
 
 plugins:
   - search

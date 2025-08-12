@@ -31,7 +31,7 @@ def by(model: Model) -> Callable:
             mtir = MTIR.factory(
                 caller=caller,
                 args=invoke_args,
-                call_params=model.call_params,
+                call_params=model.llm_connector.call_params,
             )
             return JacMachine.call_llm(model, mtir)
 

@@ -11,8 +11,16 @@ Transform any Jac application into a cloud API server with a single command:
 jac serve main.jac
 
 # With custom host and port (optional)
-jac serve main.jac --host 0.0.0.0 --port 8080
+jac serve main.jac --host 0.0.0.0 --port 8080 --reload
 ```
+
+## Development Mode
+- `--reload`
+    - Enable auto-reload. Uvicorn supports two versions of auto-reloading behavior enabled by this option. Default: `False`.
+- `--watch path/to/dir1,path/to/dir2`
+    - Select which path/s (comma separated) to watch for changes for auto-reload. Requires `--reload` to work. Defaults to main jac directory
+
+---
 
 Once started, your API will be available at:
 
@@ -66,7 +74,7 @@ walker my_walker {
 | `methods` | `list[str]` | Allowed HTTP methods: `"get"`, `"post"`, `"put"`, `"delete"`, etc. | `["post"]` |
 | `as_query` | `str \| list[str]` | Fields to treat as query parameters. Use `"*"` for all fields | `[]` |
 | `auth` | `bool` | Whether endpoint requires authentication | `true` |
-| `path` | `str` | Additional path after auto-generated path | N/A |
+| `path` | `str` | If it starts with `/`, it will be the complete path. Otherwise, it will be prefixed with `/walker` (for walkers) or /`webhook/walker` (for webhooks). If not specified, it defaults to the walker's name with its respective prefix. | N/A |
 | `private` | `bool` | Skip walker in auto-generation | `false` |
 
 ### Advanced Settings
@@ -81,11 +89,18 @@ walker my_walker {
 
 | **Setting** | **Type** | **Description** | **Default** |
 |-------------|----------|-----------------|-------------|
-| `tags` | `list[str]` | API tags for grouping in Swagger UI | `None` |
+| `response_model` | `Any` | Type for response serialization and validation | `None` |
+| `tags` | `list[str \| Enum]` | API tags for grouping in Swagger UI | `None` |
+| `status_code` | `int` | Default response status code | `None` |
 | `summary` | `str` | Brief endpoint description | `None` |
 | `description` | `str` | Detailed endpoint description (supports Markdown) | `None` |
-| `status_code` | `int` | Default response status code | `None` |
+| `response_description` | `str` | Description for the default response | `"Successful Response"` |
+| `responses` | `dict[int \| str, dict]` | Additional responses that could be returned | `None` |
 | `deprecated` | `bool` | Mark endpoint as deprecated | `None` |
+| `include_in_schema` | `bool` | Include endpoint in generated OpenAPI schema | `True` |
+| `response_class` | `Type[Response]` | Response class to use for this endpoint | `JSONResponse` |
+| `name` | `str` | Internal name for the path operation | `None` |
+| `openapi_extra` | `dict[str, Any]` | Extra metadata for OpenAPI schema | `None` |
 
 ## Examples for Beginners
 
@@ -269,3 +284,17 @@ Now that you understand the basics, explore these features:
 - [Webhook Integration](webhook.md) - Create API integrations
 - [Environment Variables](env_vars.md) - Configure your application
 - [Logging & Monitoring](logging.md) - Track application performance
+
+## Edge Case: Manually Creating Walker Endpoints
+
+While not recommended, as you typically shouldn't change your API specifications in this manner, Jac Cloud does support manually creating walker endpoints.
+This allows for advanced customization if absolutely necessary, but generally, you should rely on the automatic generation and configuration via **specs**.
+
+Example Code snippet:
+
+```
+type("NameOfYourWalker", (_.Walker,), {
+    "__specs__": your_specs_class,
+    ... annotations / additional fields ...
+})
+```
