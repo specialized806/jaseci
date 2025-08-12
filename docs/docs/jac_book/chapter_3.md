@@ -259,9 +259,9 @@ with entry {
 
 The list comprehension syntax in Jac is similar to Python:
 ```[expression for item in iterable if condition]``` where,
-`expression` is the value to include in the new list, 
-`item` is the variable representing each element in the original collection, 
-`iterable` is the collection being processed, and 
+`expression` is the value to include in the new list,
+`item` is the variable representing each element in the original collection,
+`iterable` is the collection being processed, and
 `condition` is an optional filter.
 
 Now, what if you wanted to apply a curve by adding 5 points to every score? A comprehension makes this simple too.

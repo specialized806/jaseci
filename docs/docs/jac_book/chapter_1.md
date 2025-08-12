@@ -511,7 +511,7 @@ with entry {
 
     # 2. Create an instance of our walker, telling it to compare against Alice
     finder = FindCommonInterests(target_person=alice[0]);
-    
+
     # 3. Send the walker to visit each of Alice's friends
     for friend in alice_friends {
         friend spawn finder;
