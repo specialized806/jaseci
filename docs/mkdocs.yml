@@ -10,6 +10,7 @@ nav:
     - Installation: "learn/installation.md"
     - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
     - Jac Playground: "learn/jac_playground.md"
+    - Jac Lens: "learn/jac-lens.md"
     - Learn By Example:
       - LittleX (your own twitter):
         - "learn/examples/littleX/tutorial.md"
@@ -48,6 +49,8 @@ nav:
         - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
         - Using Multimodal models: "learn/jac-mtllm/multimodality.md"
         - Build your own MTLLM plugin: "learn/jac-mtllm/creating_mtllm_plugins.md"
+        - Python MTLLM Interface: "learn/jac-mtllm/python_integration.md"
+        - LiteLLM Proxy Server: "learn/jac-mtllm/litellm_proxy.md"
     - Scale-Native Programming:
       - "learn/jac-cloud/introduction.md"
       - "learn/jac-cloud/quickstart.md"
