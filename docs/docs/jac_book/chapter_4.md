@@ -265,7 +265,7 @@ As your programs grow, you'll often need to add cross-cutting functionality—li
 A decorator is a function that takes another function as an argument, adds some functionality, and returns a new function.
 
 
-Consider the following example of a simple decorator that adds pre- and post-processing logic to a function. 
+Consider the following example of a simple decorator that adds pre- and post-processing logic to a function.
 
 The decorator function call `decorator_name` takes a function `func` as an argument and wraps it in a new function `wrapper` that adds additional behavior before and after calling the original function. The decorator returns the `wrapper` function, which is then used to replace the original function when the decorator is applied.
 
