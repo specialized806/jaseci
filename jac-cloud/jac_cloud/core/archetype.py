@@ -553,24 +553,6 @@ class BaseAnchor:
         elif Jac.check_connect_access(self):  # type: ignore[arg-type]
             self.update(bulk_write, True)
 
-    def apply(self, session: ClientSession | None = None) -> BulkWrite:
-        """Save Anchor."""
-        bulk_write = BulkWrite()
-
-        self.build_query(bulk_write)
-
-        if bulk_write.has_operations:
-            if session:
-                bulk_write.execute(session)
-            else:
-                with (
-                    BaseCollection.get_session() as session,
-                    session.start_transaction(),
-                ):
-                    bulk_write.execute(session)
-
-        return bulk_write
-
     def insert(
         self,
         bulk_write: BulkWrite,
