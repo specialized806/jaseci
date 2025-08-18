@@ -14,6 +14,7 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 - **Fixed CFG inaccuracies**: Fixed issues when handling If statements with no Else body where the else edge was not captured in the CFG (as a NOOP) causing a missing branch on the CFG of the UniiR. Also fixed inaccuracies when terminating CFG branches where return statements and HasVariables had unexpected outgoing edges which are now being removed. However, the return still keeps connected to following code which are in the same scope(body) which are dead-code.
 
+- **CFG print tool for CLI**: The CFG for a given program can be printed as a dot graph by running `jac tool ir cfg. filename.jac` CLI command.
 
 ## jaclang 0.8.4 / jac-cloud 0.2.4 / mtllm 0.3.9
 
