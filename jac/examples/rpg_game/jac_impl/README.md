@@ -27,7 +27,7 @@ git checkout main
 
 ## 📦 Install Dependencies
 
-Make sure you have **Python 3.9+** installed. Then:
+Make sure you have **Python 3.12+** installed. Then:
 
 ```bash
 # Create and activate a virtual environment (recommended)
@@ -50,7 +50,7 @@ pip install pygame jac-lang mtllm
 
 ### For OpenAI (default model: `gpt-4o`)
 
-1. Open your **terminal** (PowerShell on Windows, Terminal on macOS/Linux).
+1. Open your **terminal** (PowerShell/Git Bash on Windows, Terminal on macOS/Linux).
 2. In the terminal, type this command and press Enter:
    ```powershell
    $env:OPENAI_API_KEY = "sk-your_openai_api_key"
