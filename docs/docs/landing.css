@@ -2046,7 +2046,7 @@ body {
     .affiliations-logos {
         gap: 30px;
     }
-    
+
     .affiliation-logo {
         width: 260px;
         height: 150px;
@@ -2062,12 +2062,12 @@ body {
     .affiliations-logos {
         gap: 20px;
     }
-    
+
     .affiliation-logo {
         width: 240px;
         height: 140px;
     }
-    
+
     .affiliation-item {
         max-width: 300px;
         padding: 18px;
@@ -2085,12 +2085,12 @@ body {
         width: 280px;
         height: 160px;
     }
-    
+
     .affiliation-item {
         max-width: 350px;
         width: 100%;
     }
-    
+
     .affiliations-title {
         font-size: 24px;
     }
