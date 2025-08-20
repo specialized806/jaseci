@@ -1,6 +1,6 @@
 # Jac Programming Language Keyword Reference
 
- Keywords are special reserved words that have a specific meaning and purpose in the language and cannot be used as identifiers for variables, functions, or other objects.
+ Keywords are special reserved words that have a specific meaning and purpose in the language and cannot be used as identifiers for variables, functions, or other objects. In Jac, all the keywords that exist in Python can also be used.
 
 ---
 
@@ -116,7 +116,7 @@ These keywords facilitate the integration of AI and Large Language Models (LLMs)
 | Keyword | Description |
 | --- | --- |
 | `sem` | Associates a natural language "semantic string" with a code element for AI interpretation. |
-| `by llm` | Indicates a function's implementation will be provided by an LLM. |
+| [`by`](https://www.jac-lang.org/learn/jac-mtllm/usage/) | Defers a task to an LLM instead of providing a manual implementation. |
 
 ---
 
