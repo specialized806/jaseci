@@ -34,12 +34,12 @@ Here's what you'll build - just **200 lines of code** for a full social media pl
 
 === "LittleX.jac"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:125"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:1:119"
     ```
 
 === "LittleX.impl.jac"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:121"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:1:119"
     ```
 
 === "LittleX.test.jac"
