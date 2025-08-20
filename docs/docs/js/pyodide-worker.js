@@ -32,7 +32,7 @@ except Exception as e:
 
 // Worker code
 self.onmessage = async (event) => {
-    const { type, code } = event.data;
+    const { type, code, value } = event.data;
 
     if (type === "init") {
         importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js");
@@ -40,10 +40,34 @@ self.onmessage = async (event) => {
         await loadPythonResources(pyodide);
         await pyodide.runPythonAsync(`
 from jaclang.cli.cli import run
+from js import postMessage
+import time
+import builtins
+
+def pyodide_input(prompt=""):
+    prompt_str = str(prompt)
+
+    import json
+    message = json.dumps({"type": "input_request", "prompt": prompt_str})
+    postMessage(message)
+
+    while not hasattr(builtins, "input_value"):
+        time.sleep(0.05)
+    val = builtins.input_value
+    del builtins.input_value
+    return val
+
+builtins.input = pyodide_input
         `);
         self.postMessage({ type: "ready" });
         return;
     }
+    if (type === "input_response") {
+    console.log("Input received:", value);
+    pyodide.runPython(`import builtins; builtins.input_value = ${JSON.stringify(value)}`);
+    return;
+}
+
 
     if (!pyodide) {
         return;

@@ -28,13 +28,27 @@ function initPyodideWorker() {
 function runJacCodeInWorker(code) {
     return new Promise(async (resolve, reject) => {
         await initPyodideWorker();
-        const handleMessage = (event) => {
-            if (event.data.type === "result") {
+        const handleMessage = async (event) => {
+            let message;
+            if (typeof event.data === "string") {
+                message = JSON.parse(event.data);
+            } else {
+                message = event.data;
+            }
+
+            if (message.type === "result") {
                 pyodideWorker.removeEventListener("message", handleMessage);
-                resolve(event.data.output);
-            } else if (event.data.type === "error") {
+                resolve(message.output);
+            } else if (message.type === "input_request") {
+                console.log("Input requested");
+                const userInput = prompt(message.prompt || "Enter input:");
+                pyodideWorker.postMessage({
+                    type: "input_response",
+                    value: userInput
+                });
+            } else if (message.type === "error") {
                 pyodideWorker.removeEventListener("message", handleMessage);
-                reject(event.data.error);
+                reject(message.error);
             }
         };
         pyodideWorker.addEventListener("message", handleMessage);
