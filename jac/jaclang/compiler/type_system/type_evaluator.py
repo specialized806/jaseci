@@ -70,9 +70,12 @@ class TypeEvaluator:
             return node.name_spec.type
 
         cls_type = types.ClassType(
-            class_name=node.name_spec.sym_name,
-            symbol_table=node,
-            # TODO: Resolve the base class expression and pass them here.
+            types.ClassType.ClassDetailsShared(
+                class_name=node.name_spec.sym_name,
+                symbol_table=node,
+                # TODO: Resolve the base class expression and pass them here.
+            ),
+            flags=types.TypeFlags.Instantiable,
         )
 
         # Cache the type, pyright is doing invalidateTypeCacheIfCanceled()
@@ -120,7 +123,28 @@ class TypeEvaluator:
     def assign_type(self, src_type: TypeBase, dest_type: TypeBase) -> bool:
         """Assign the source type to the destination type."""
         # FIXME: This logic is not valid, just here as a stub.
+        if types.TypeCategory.Unknown in (src_type.category, dest_type.category):
+            return True
+
+        if src_type == dest_type:
+            return True
+
+        if dest_type.is_class_instance() and src_type.is_class_instance():
+            assert isinstance(dest_type, types.ClassType)
+            assert isinstance(src_type, types.ClassType)
+            return self._assign_class(src_type, dest_type)
+
+        # FIXME: This is temporary.
         return src_type == dest_type
+
+
+    def _assign_class(self, src_type: types.ClassType, dest_type: types.ClassType) -> bool:
+        """Assign the source class type to the destination class type."""
+        if src_type.shared == dest_type.shared:
+            return True
+
+        # TODO: Search base classes and everything else pyright is doing.
+        return False
 
     def _prefetch_types(self) -> "PrefetchedTypes":
         """Return the prefetched types for the type evaluator."""
@@ -171,23 +195,17 @@ class TypeEvaluator:
                         annotation_type = self.get_type_of_expression(
                             node.parent.type_tag.tag
                         )
-                        # FIXME:
-                        # In pyright types.ts there is a flag enum `export const enum TypeFlags {`
-                        # That defines a class type can be instantiated or instance of the same type
-                        # and call convertToInstance() to create an instance type of the type.
-                        #
-                        # example:
-                        #   foo = 42  # <-- Here type of foo is `int` class
-                        #   foo = int # <-- Here type of foo is `type[int]`, for pyright it's `int`
-                        #                   that can be instanciated.
-                        #
-                        #  foo: int = 42
-                        #       ^^^------- Here the type of the expression `int` is `type[int]`
-                        #                  So we need to call convertToInstance().
-                        return annotation_type
+                        return self._convert_to_instance(annotation_type)
 
                     else:  # Assignment without a type annotation.
                         return None  # No explicit type declaration.
+
+            case uni.HasVar():
+                if node.type_tag is not None:
+                    annotation_type = self.get_type_of_expression(node.type_tag.tag)
+                    return self._convert_to_instance(annotation_type)
+                else:
+                    return None  # No explicit type declaration.
 
             # TODO: Implement for functions, parameters, explicit type
             # annotations in assignment etc.
@@ -209,8 +227,60 @@ class TypeEvaluator:
             case uni.Int():
                 return self.get_type_of_int(expr)
 
+            case uni.AtomTrailer():
+                # NOTE: Pyright is using CFG to figure out the member type by narrowing the base
+                # type and filtering the members. We're not doing that anytime sooner.
+                base_type = self.get_type_of_expression(expr.target)
+                if expr.is_attr:  # <expr>.member
+                    assert isinstance(expr.right, uni.Name)
+                    if base_type.is_instantiable_class():
+                        assert isinstance(base_type, types.ClassType)
+                        return self._lookup_class_member_type(base_type, expr.right.value)
+                    elif base_type.is_class_instance():
+                        assert isinstance(base_type, types.ClassType)
+                        return self._lookup_object_member_type(base_type, expr.right.value)
+
+                elif expr.is_null_ok:  # <expr>?.member
+                    pass
+                else:  # <expr>[<expr>]
+                    pass
+
             case uni.Name():
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
                     return self.get_type_of_symbol(symbol)
+
             # TODO: More expressions.
+        return types.UnknownType()
+
+    def _convert_to_instance(self, jtype: TypeBase) -> TypeBase:
+        """Convert a class type to an instance type."""
+        # TODO: Grep pyright "Handle type[x] as a special case." They handle `type[x]` as a special case:
+        #
+        # foo: int = 42;       # <-- Here `int` is instantiable class and, become instance after this method.
+        # foo: type[int] = int # <-- Here `type[int]`, this should be `int` that's instantiable.
+        #
+        if jtype.is_instantiable_class():
+            assert isinstance(jtype, types.ClassType)
+            return jtype.clone_as_instance()
+        return jtype
+
+    def _lookup_class_member_type(self, base_type: types.ClassType, member: str) -> TypeBase:
+        """Lookup the class member type."""
+        assert self.prefetch.int_class is not None
+        # FIXME: Pyright's way: Implement class member iterator (based on mro and the multiple inheritance)
+        # return the first found member from the iterator.
+
+        # NOTE: This is a simple implementation to make it work and more robust implementation will
+        # be done in a future PR.
+        if sym := base_type.lookup_member_symbol(member):
+            return self.get_type_of_expression(sym.decl)
+        return types.UnknownType()
+
+    def _lookup_object_member_type(self, base_type: types.ClassType, member: str) -> TypeBase:
+        """Lookup the object member type."""
+        assert self.prefetch.int_class is not None
+        if base_type.is_class_instance():
+            assert isinstance(base_type, types.ClassType)
+            # TODO: We need to implement Member lookup flags and set SkipInstanceMember to 0.
+            return self._lookup_class_member_type(base_type, member)
         return types.UnknownType()
