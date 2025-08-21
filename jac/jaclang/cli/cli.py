@@ -284,7 +284,8 @@ def analyze(file_path: str) -> None:
     without executing the code. Useful for catching errors early in development.
 
     Args:
-        filename: Path to the .jac file to typecheck
+        file_path: Path to the .jac file to typecheck
+
     Examples:
         jac analyze main.jac
     """
