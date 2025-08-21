@@ -404,13 +404,4 @@ Jaseci's graph-based approach works well for social networks where relationships
 
 ---
 
-## Next Steps
-
-Ready to build more? Explore these resources:
-
-- [**Jaseci Documentation**](https://jac-lang.org/) - Complete guides and references
-- [**Full LittleX Guide**](full_guide.md) - Advanced features and enterprise patterns
-
-You're ready to build your own graph-based applications!
-
 > **Happy coding with Jaseci!** 🚀
