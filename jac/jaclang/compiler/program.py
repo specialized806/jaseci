@@ -112,7 +112,7 @@ class JacProgram:
         # TODO: Create a compilation options class and put the bellow
         # options in it.
         no_cgen: bool = False,
-        type_check: bool = True,
+        type_check: bool = False,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         keep_str = use_str or read_file_with_encoding(file_path)
