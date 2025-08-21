@@ -4,7 +4,7 @@ A sample RPG game built in the [Jac language](https://github.com/jaseci-labs/jas
 
 ---
 
-## 📂 Clone Only the Required Folder
+## Clone Only the Required Folder
 This game lives inside the `jac/examples/rpg_game/jac_impl` directory of the Jaseci repository.  
 We’ll use **Git sparse-checkout** so you only clone this folder.
 
