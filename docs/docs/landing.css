@@ -1992,7 +1992,7 @@ body {
 .affiliations-logos {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     gap: 40px;
     flex-wrap: wrap;
 }
