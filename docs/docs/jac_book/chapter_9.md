@@ -199,7 +199,7 @@ Here’s the code for our mood function:
 ```jac
 import from mtllm { Model }
 
-# Configure the LLM 
+# Configure the LLM
 glob npc_model = Model(model_name="gpt-4.1-mini");
 
 """Adjusts the tone or personality of the shop keeper npc depending on weather/time."""
