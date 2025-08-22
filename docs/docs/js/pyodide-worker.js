@@ -130,8 +130,6 @@ except Exception as e:
 # Restore original streams
 sys.stdout = original_stdout
 sys.stderr = original_stderr
-
-"Execution completed"
         `);
         self.postMessage({ type: "execution_complete" });
     } catch (error) {

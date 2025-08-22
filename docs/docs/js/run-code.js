@@ -11,6 +11,7 @@ const initializedBlocks = new WeakSet();
 function initPyodideWorker() {
     if (pyodideWorker) return pyodideInitPromise;
     if (pyodideInitPromise) return pyodideInitPromise;
+    
     const DATA_CAP = 4096;
     sab = new SharedArrayBuffer(8 + DATA_CAP);
     ctrl = new Int32Array(sab, 0, 2);
@@ -50,14 +51,11 @@ function runJacCodeInWorker(code) {
                 document.dispatchEvent(event);
             } else if (message.type === "execution_complete") {
                 pyodideWorker.removeEventListener("message", handleMessage);
-                resolve(""); // Empty string since output is already streamed
+                resolve("");
             } else if (message.type === "input_request") {
                 console.log("Input requested");
-                // const s = prompt(message.prompt || "Enter input:") ?? "";
-                // I need to add a delay here
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                const s = "5";
-
+                const s = prompt(message.prompt || "Enter input:") ?? "";
+                
                 const enc = new TextEncoder();
                 const bytes = enc.encode(s);
                 const n = Math.min(bytes.length, dataBytes.length);
