@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import ClassVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jaclang.compiler.unitree import UniScopeNode as SymbolTable, Symbol
+    from jaclang.compiler.unitree import Symbol, UniScopeNode as SymbolTable
 
 
 class TypeCategory(IntEnum):
@@ -86,20 +86,21 @@ class TypeBase(ABC):
         return UnknownType()
 
     def is_instantiable(self) -> bool:
-        """Returns whether the type is instantiable."""
+        """Return whether the type is instantiable."""
         return bool(self.flags & TypeFlags.Instantiable)
 
     def is_instance(self) -> bool:
-        """Returns whether the type is an instance."""
+        """Return whether the type is an instance."""
         return bool(self.flags & TypeFlags.Instance)
 
     def is_instantiable_class(self) -> bool:
-        """Returns whether the class can be instantiated."""
+        """Return whether the class can be instantiated."""
         return (self.category == TypeCategory.Class) and self.is_instantiable()
 
     def is_class_instance(self) -> bool:
-        """Returns whether the class is an instance."""
+        """Return whether the class is an instance."""
         return (self.category == TypeCategory.Class) and self.is_instance()
+
 
 class UnboundType(TypeBase):
     """Represents a type that is not bound to a specific value or context."""
@@ -154,8 +155,16 @@ class ClassType(TypeBase):
 
         The shared detail of classes will points to the same instance across multiple clones
         of the same class. This is needed when we do `==` between two classes, if they have the
-        same shared object, that means they both are the same class (with different context)."""
-        def __init__(self, class_name: str, symbol_table: SymbolTable, base_classes: list[TypeBase] | None = None) -> None:
+        same shared object, that means they both are the same class (with different context).
+        """
+
+        def __init__(
+            self,
+            class_name: str,
+            symbol_table: SymbolTable,
+            base_classes: list[TypeBase] | None = None,
+        ) -> None:
+            """Initialize obviously."""
             self.class_name = class_name
             self.symbol_table = symbol_table
             self.base_classes = base_classes or []
@@ -168,7 +177,6 @@ class ClassType(TypeBase):
         """Initialize the class type."""
         super().__init__(flags=flags)
         self.shared = shared
-
 
     def clone_as_instance(self) -> "ClassType":
         """Clone this class type as an instance type."""
@@ -212,7 +220,7 @@ class FunctionType(TypeBase):
         func_name: str,
         return_type: TypeBase | None = None,
         parameters: list[Parameter] | None = None,
-        flags: TypeFlags = TypeFlags.Null
+        flags: TypeFlags = TypeFlags.Null,
     ) -> None:
         """Initialize obviously."""
         super().__init__(flags=flags)
