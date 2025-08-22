@@ -58,10 +58,7 @@ class TypeEvaluator:
     # Pyright equivalent function name = getEffectiveTypeOfSymbol.
     def get_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
         """Return the effective type of the symbol."""
-        decl_type = self._get_declared_type_of_symbol(symbol)
-        if decl_type is not None:
-            return decl_type
-        return self._get_inferred_type_of_symbol(symbol)
+        return self._get_type_of_symbol(symbol)
 
     def get_type_of_class(self, node: uni.Archetype) -> TypeBase:
         """Return the effective type of the class."""
@@ -137,8 +134,9 @@ class TypeEvaluator:
         # FIXME: This is temporary.
         return src_type == dest_type
 
-
-    def _assign_class(self, src_type: types.ClassType, dest_type: types.ClassType) -> bool:
+    def _assign_class(
+        self, src_type: types.ClassType, dest_type: types.ClassType
+    ) -> bool:
         """Assign the source class type to the destination class type."""
         if src_type.shared == dest_type.shared:
             return True
@@ -152,17 +150,17 @@ class TypeEvaluator:
             # TODO: Pyright first try load NoneType from typeshed and if it cannot
             # then it set to unknown type.
             none_type_class=types.UnknownType(),
-            # object_class=
-            # type_class=
+            object_class=self._get_builtin_type("object"),
+            type_class=self._get_builtin_type("type"),
             # union_type_class=
             # awaitable_class=
             # function_class=
             # method_class=
-            # tuple_class=
-            # bool_class=
+            tuple_class=self._get_builtin_type("tuple"),
+            bool_class=self._get_builtin_type("bool"),
             int_class=self._get_builtin_type("int"),
             str_class=self._get_builtin_type("str"),
-            # dict_class=
+            dict_class=self._get_builtin_type("dict"),
             # module_type_class=
             # typed_dict_class=
             # typed_dict_private_class=
@@ -180,7 +178,12 @@ class TypeEvaluator:
     # This function is a combination of the bellow pyright functions.
     #  - getDeclaredTypeOfSymbol
     #  - getTypeForDeclaration
-    def _get_declared_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase | None:
+    #
+    # Implementation Note:
+    # Pyright is actually have some duplicate logic for handling declared
+    # type and inferred type, we're going to unify them (if it's required
+    # in the future, we can refactor this).
+    def _get_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
         """Return the declared type of the symbol."""
         node = symbol.decl.name_of
         match node:
@@ -198,22 +201,19 @@ class TypeEvaluator:
                         return self._convert_to_instance(annotation_type)
 
                     else:  # Assignment without a type annotation.
-                        return None  # No explicit type declaration.
+                        if node.parent.value is not None:
+                            return self.get_type_of_expression(node.parent.value)
 
             case uni.HasVar():
                 if node.type_tag is not None:
                     annotation_type = self.get_type_of_expression(node.type_tag.tag)
                     return self._convert_to_instance(annotation_type)
                 else:
-                    return None  # No explicit type declaration.
+                    if node.value is not None:
+                        return self.get_type_of_expression(node.value)
 
             # TODO: Implement for functions, parameters, explicit type
             # annotations in assignment etc.
-        return None
-
-    def _get_inferred_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
-        """Return the inferred type of the symbol."""
-        # TODO: Eval the expression to get the inferred type and return.
         return types.UnknownType()
 
     # Pyright equivalent function name = getTypeOfExpressionCore();
@@ -222,10 +222,10 @@ class TypeEvaluator:
         match expr:
 
             case uni.String() | uni.MultiString():
-                return self.get_type_of_string(expr)
+                return self._convert_to_instance(self.get_type_of_string(expr))
 
             case uni.Int():
-                return self.get_type_of_int(expr)
+                return self._convert_to_instance(self.get_type_of_int(expr))
 
             case uni.AtomTrailer():
                 # NOTE: Pyright is using CFG to figure out the member type by narrowing the base
@@ -235,15 +235,19 @@ class TypeEvaluator:
                     assert isinstance(expr.right, uni.Name)
                     if base_type.is_instantiable_class():
                         assert isinstance(base_type, types.ClassType)
-                        return self._lookup_class_member_type(base_type, expr.right.value)
+                        return self._lookup_class_member_type(
+                            base_type, expr.right.value
+                        )
                     elif base_type.is_class_instance():
                         assert isinstance(base_type, types.ClassType)
-                        return self._lookup_object_member_type(base_type, expr.right.value)
+                        return self._lookup_object_member_type(
+                            base_type, expr.right.value
+                        )
 
                 elif expr.is_null_ok:  # <expr>?.member
-                    pass
+                    pass  # TODO:
                 else:  # <expr>[<expr>]
-                    pass
+                    pass  # TODO:
 
             case uni.Name():
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
@@ -264,7 +268,9 @@ class TypeEvaluator:
             return jtype.clone_as_instance()
         return jtype
 
-    def _lookup_class_member_type(self, base_type: types.ClassType, member: str) -> TypeBase:
+    def _lookup_class_member_type(
+        self, base_type: types.ClassType, member: str
+    ) -> TypeBase:
         """Lookup the class member type."""
         assert self.prefetch.int_class is not None
         # FIXME: Pyright's way: Implement class member iterator (based on mro and the multiple inheritance)
@@ -273,10 +279,12 @@ class TypeEvaluator:
         # NOTE: This is a simple implementation to make it work and more robust implementation will
         # be done in a future PR.
         if sym := base_type.lookup_member_symbol(member):
-            return self.get_type_of_expression(sym.decl)
+            return self.get_type_of_symbol(sym)
         return types.UnknownType()
 
-    def _lookup_object_member_type(self, base_type: types.ClassType, member: str) -> TypeBase:
+    def _lookup_object_member_type(
+        self, base_type: types.ClassType, member: str
+    ) -> TypeBase:
         """Lookup the object member type."""
         assert self.prefetch.int_class is not None
         if base_type.is_class_instance():
