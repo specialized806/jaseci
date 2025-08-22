@@ -33,19 +33,160 @@ We've included several example applications to help you get started:
 A basic calculator demonstrating form handling and user interaction:
 
 ```jac
---8<-- "learn/tools/examples/simple_calculator.jac"
+import streamlit as st;
+
+def simple_calculator() {
+    st.title("🧮 Simple Calculator");
+    st.write("A basic calculator built with Jac and Streamlit");
+
+    # Create two columns for inputs
+    columns = st.columns(2);
+    col1 = columns[0];
+    col2 = columns[1];
+
+    with col1 {
+        num1 = st.number_input("First number:", value=0.0);
+    }
+
+    with col2 {
+        num2 = st.number_input("Second number:", value=0.0);
+    }
+
+    # Operation selection
+    operation = st.selectbox(
+        "Choose operation:",
+        ["Add", "Subtract", "Multiply", "Divide"]
+    );
+
+    # Calculate result
+    if st.button("Calculate") {
+        if operation == "Add" {
+            result = num1 + num2;
+        } elif operation == "Subtract" {
+            result = num1 - num2;
+        } elif operation == "Multiply" {
+            result = num1 * num2;
+        } elif operation == "Divide" {
+            if num2 != 0 {
+                result = num1 / num2;
+            } else {
+                st.error("Cannot divide by zero!");
+                return;
+            }
+        }
+
+        st.success("Result: " + str(result));
+
+        # Add to history
+        if "history" not in st.session_state {
+            st.session_state.history = [];
+        }
+
+        st.session_state.history.append(
+            str(num1) + " " + operation.lower() + " " + str(num2) + " = " + str(result)
+        );
+    }
+
+    # Show calculation history
+    if "history" in st.session_state and st.session_state.history {
+        st.subheader("📝 History");
+        for calc in st.session_state.history {
+            st.write("• " + calc);
+        }
+
+        if st.button("Clear History") {
+            st.session_state.history = [];
+            st.rerun();
+        }
+    }
+}
+
+with entry {
+    simple_calculator();
+}
+```
+
+Run this example with:
+```bash
+jac streamlit simple_calculator.jac
 ```
 
 #### Todo App
 A todo application showcasing session state management:
 
 ```jac
---8<-- "learn/tools/examples/todo_app.jac"
+import streamlit as st;
+
+def todo_app() {
+    st.title("📋 Todo App");
+    st.write("A simple todo application built with Jac and Streamlit");
+
+    # Initialize session state
+    if "todos" not in st.session_state {
+        st.session_state.todos = [];
+    }
+
+    # Add new todo
+    with st.form("add_todo") {
+        new_todo = st.text_input("Add a new todo:");
+
+        if st.form_submit_button("Add Todo") and new_todo {
+            st.session_state.todos.append(new_todo);
+            st.success("Todo added!");
+        }
+    }
+
+    # Display todos
+    if st.session_state.todos {
+        st.subheader("📝 Your Todos");
+
+        todos_to_remove = [];
+
+        for todo in st.session_state.todos {
+            columns = st.columns([4, 1]);
+
+            with columns[0] {
+                st.write("• " + todo);
+            }
+
+            with columns[1] {
+                if st.button("Remove", key=todo) {
+                    todos_to_remove.append(todo);
+                }
+            }
+        }
+
+        # Remove completed todos
+        for todo in todos_to_remove {
+            st.session_state.todos.remove(todo);
+        }
+
+        if todos_to_remove {
+            st.rerun();
+        }
+
+        # Clear all button
+        if st.button("Clear All") {
+            st.session_state.todos = [];
+            st.rerun();
+        }
+    } else {
+        st.info("No todos yet! Add one above.");
+    }
+
+    # Show count
+    if st.session_state.todos {
+        st.write("Total todos: " + str(len(st.session_state.todos)));
+    }
+}
+
+with entry {
+    todo_app();
+}
 ```
 
-You can run these examples with:
+Run this example with:
 ```bash
-jac streamlit simple_calculator.jac
 jac streamlit todo_app.jac
 ```
 
