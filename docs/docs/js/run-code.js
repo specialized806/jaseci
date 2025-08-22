@@ -42,9 +42,15 @@ function runJacCodeInWorker(code) {
                 message = event.data;
             }
 
-            if (message.type === "result") {
+            if (message.type === "streaming_output") {
+                // Handle real-time output streaming
+                const event = new CustomEvent('jacOutputUpdate', { 
+                    detail: { output: message.output, stream: message.stream } 
+                });
+                document.dispatchEvent(event);
+            } else if (message.type === "execution_complete") {
                 pyodideWorker.removeEventListener("message", handleMessage);
-                resolve(message.output);
+                resolve(""); // Empty string since output is already streamed
             } else if (message.type === "input_request") {
                 console.log("Input requested");
                 // const s = prompt(message.prompt || "Enter input:") ?? "";
@@ -157,19 +163,30 @@ async function setupCodeBlock(div) {
 
     runButton.addEventListener("click", async () => {
         outputBlock.style.display = "block";
+        outputBlock.textContent = ""; // Clear previous output
 
         if (!pyodideReady) {
             outputBlock.textContent = "Loading Jac runner...";
             await initPyodideWorker();
+            outputBlock.textContent = ""; // Clear loading message
         }
 
-        outputBlock.textContent = "Running...";
+        // Listen for streaming output updates
+        const outputHandler = (event) => {
+            const { output, stream } = event.detail;
+            outputBlock.textContent += output;
+            outputBlock.scrollTop = outputBlock.scrollHeight; // Auto-scroll to bottom
+        };
+        
+        document.addEventListener('jacOutputUpdate', outputHandler);
+
         try {
             const codeToRun = editor.getValue();
-            const result = await runJacCodeInWorker(codeToRun);
-            outputBlock.textContent = `Output:\n${result}`;
+            await runJacCodeInWorker(codeToRun);
         } catch (error) {
-            outputBlock.textContent = `Error:\n${error}`;
+            outputBlock.textContent += `\nError: ${error}`;
+        } finally {
+            document.removeEventListener('jacOutputUpdate', outputHandler);
         }
     });
 }
