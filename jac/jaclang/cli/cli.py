@@ -321,6 +321,24 @@ def lsp() -> None:
 
 
 @cmd_registry.register
+def lsp_dev() -> None:
+    """Run Experimental Jac Language Server Protocol (Developer Mode).
+
+    Starts the experimental Jac Language Server V2 with enhanced features
+    for development and testing. Used by editor extensions in developer mode.
+
+    Args:
+        This command takes no parameters.
+
+    Examples:
+        jac lsp2
+    """
+    from jaclang.langserve.dev_server import run_lang_server
+
+    run_lang_server()
+
+
+@cmd_registry.register
 def enter(
     filename: str,
     entrypoint: str,
