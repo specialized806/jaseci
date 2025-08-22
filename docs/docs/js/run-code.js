@@ -3,12 +3,18 @@ let pyodideReady = false;
 let pyodideInitPromise = null;
 let monacoLoaded = false;
 let monacoLoadPromise = null;
+let sab = null;
+let sharedInts = null;
 const initializedBlocks = new WeakSet();
 
 // Initialize Pyodide Worker
 function initPyodideWorker() {
     if (pyodideWorker) return pyodideInitPromise;
     if (pyodideInitPromise) return pyodideInitPromise;
+    const DATA_CAP = 4096;
+    sab = new SharedArrayBuffer(8 + DATA_CAP);
+    ctrl = new Int32Array(sab, 0, 2);
+    dataBytes = new Uint8Array(sab, 8); 
 
     pyodideWorker = new Worker("/js/pyodide-worker.js");
     pyodideInitPromise = new Promise((resolve, reject) => {
@@ -20,7 +26,7 @@ function initPyodideWorker() {
         };
         pyodideWorker.onerror = (e) => reject(e);
     });
-    pyodideWorker.postMessage({ type: "init" });
+    pyodideWorker.postMessage({ type: "init", sab });
     return pyodideInitPromise;
 }
 
@@ -41,11 +47,20 @@ function runJacCodeInWorker(code) {
                 resolve(message.output);
             } else if (message.type === "input_request") {
                 console.log("Input requested");
-                const userInput = prompt(message.prompt || "Enter input:");
-                pyodideWorker.postMessage({
-                    type: "input_response",
-                    value: userInput
-                });
+                // const s = prompt(message.prompt || "Enter input:") ?? "";
+                // I need to add a delay here
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const s = "5";
+
+                const enc = new TextEncoder();
+                const bytes = enc.encode(s);
+                const n = Math.min(bytes.length, dataBytes.length);
+                dataBytes.set(bytes.subarray(0, n), 0);
+
+                Atomics.store(ctrl, 1, n);
+                Atomics.store(ctrl, 0, 1);
+                Atomics.notify(ctrl, 0, 1);
+
             } else if (message.type === "error") {
                 pyodideWorker.removeEventListener("message", handleMessage);
                 reject(message.error);

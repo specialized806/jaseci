@@ -1,4 +1,5 @@
 let pyodide = null;
+var sharedInts = null;
 
 // Functions to load Pyodide and its jaclang
 async function readFileAsBytes(fileName) {
@@ -32,17 +33,23 @@ except Exception as e:
 
 // Worker code
 self.onmessage = async (event) => {
-    const { type, code, value } = event.data;
+    const { type, code, value, sab } = event.data;
 
     if (type === "init") {
+        sabRef = sab;
+        self.shared_buf = sabRef;
+
         importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js");
         pyodide = await loadPyodide();
         await loadPythonResources(pyodide);
         await pyodide.runPythonAsync(`
 from jaclang.cli.cli import run
-from js import postMessage
-import time
+from js import postMessage, Atomics, Int32Array, Uint8Array, shared_buf
 import builtins
+
+ctrl = Int32Array.new(shared_buf)
+data = Uint8Array.new(shared_buf, 8)
+FLAG, LEN = 0, 1
 
 def pyodide_input(prompt=""):
     prompt_str = str(prompt)
@@ -51,11 +58,14 @@ def pyodide_input(prompt=""):
     message = json.dumps({"type": "input_request", "prompt": prompt_str})
     postMessage(message)
 
-    while not hasattr(builtins, "input_value"):
-        time.sleep(0.05)
-    val = builtins.input_value
-    del builtins.input_value
-    return val
+    Atomics.wait(ctrl, FLAG, 0)
+
+    n = ctrl[LEN]
+    b = bytes(data.subarray(0, n).to_py())
+    s = b.decode("utf-8", errors="replace")
+
+    Atomics.store(ctrl, FLAG, 0)
+    return s
 
 builtins.input = pyodide_input
         `);
@@ -63,11 +73,11 @@ builtins.input = pyodide_input
         return;
     }
     if (type === "input_response") {
-    console.log("Input received:", value);
-    pyodide.runPython(`import builtins; builtins.input_value = ${JSON.stringify(value)}`);
-    return;
-}
-
+        console.log("Input received:", value);
+        pyodide.runPython(`import builtins; builtins.input_value = ${JSON.stringify(value)}`);
+        Atomics.notify(sharedInts, 0, 1);
+        return;
+    }
 
     if (!pyodide) {
         return;
