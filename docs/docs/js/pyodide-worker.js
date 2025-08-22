@@ -56,18 +56,18 @@ FLAG, LEN = 0, 1
 class StreamingOutput:
     def __init__(self, stream_type="stdout"):
         self.stream_type = stream_type
-    
+
     def write(self, text):
         if text:
             import json
             message = json.dumps({
-                "type": "streaming_output", 
+                "type": "streaming_output",
                 "output": text,
                 "stream": self.stream_type
             })
             postMessage(message)
         return len(text)
-    
+
     def flush(self):
         pass
 

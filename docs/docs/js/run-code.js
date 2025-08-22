@@ -11,11 +11,11 @@ const initializedBlocks = new WeakSet();
 function initPyodideWorker() {
     if (pyodideWorker) return pyodideInitPromise;
     if (pyodideInitPromise) return pyodideInitPromise;
-    
+
     const DATA_CAP = 4096;
     sab = new SharedArrayBuffer(8 + DATA_CAP);
     ctrl = new Int32Array(sab, 0, 2);
-    dataBytes = new Uint8Array(sab, 8); 
+    dataBytes = new Uint8Array(sab, 8);
 
     pyodideWorker = new Worker("/js/pyodide-worker.js");
     pyodideInitPromise = new Promise((resolve, reject) => {
@@ -45,8 +45,8 @@ function runJacCodeInWorker(code, inputHandler) {
 
             if (message.type === "streaming_output") {
                 // Handle real-time output streaming
-                const event = new CustomEvent('jacOutputUpdate', { 
-                    detail: { output: message.output, stream: message.stream } 
+                const event = new CustomEvent('jacOutputUpdate', {
+                    detail: { output: message.output, stream: message.stream }
                 });
                 document.dispatchEvent(event);
             } else if (message.type === "execution_complete") {
@@ -56,7 +56,7 @@ function runJacCodeInWorker(code, inputHandler) {
                 console.log("Input requested");
                 try {
                     const userInput = await inputHandler(message.prompt || "Enter input:");
-                    
+
                     const enc = new TextEncoder();
                     const bytes = enc.encode(userInput);
                     const n = Math.min(bytes.length, dataBytes.length);
@@ -241,7 +241,7 @@ async function setupCodeBlock(div) {
             outputBlock.textContent += output;
             outputBlock.scrollTop = outputBlock.scrollHeight;
         };
-        
+
         document.addEventListener('jacOutputUpdate', outputHandler);
 
         try {
