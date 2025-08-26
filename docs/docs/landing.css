@@ -2094,7 +2094,7 @@ body {
     .affiliations-title {
         font-size: 24px;
     }
-} 
+}
 */
 
 .affiliations-section {
@@ -2155,11 +2155,11 @@ body {
     .affiliations-logos {
         gap: 40px;
     }
-    
+
     .affiliation-logo {
         height: 32px;
     }
-    
+
     .affiliation-text {
         font-size: 11px;
         max-width: 100px;
