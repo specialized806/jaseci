@@ -4,7 +4,6 @@ let pyodideInitPromise = null;
 let monacoLoaded = false;
 let monacoLoadPromise = null;
 let sab = null;
-let sharedInts = null;
 const initializedBlocks = new WeakSet();
 
 // Initialize Pyodide Worker

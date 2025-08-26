@@ -1,5 +1,4 @@
 let pyodide = null;
-var sharedInts = null;
 
 // Functions to load Pyodide and its jaclang
 async function readFileAsBytes(fileName) {
@@ -90,12 +89,6 @@ def pyodide_input(prompt=""):
 builtins.input = pyodide_input
         `);
         self.postMessage({ type: "ready" });
-        return;
-    }
-    if (type === "input_response") {
-        console.log("Input received:", value);
-        pyodide.runPython(`import builtins; builtins.input_value = ${JSON.stringify(value)}`);
-        Atomics.notify(sharedInts, 0, 1);
         return;
     }
 
