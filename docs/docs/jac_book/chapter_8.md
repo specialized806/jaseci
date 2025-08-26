@@ -15,9 +15,9 @@ In Python, the entry point of a program is typically defined by the `if __name__
 Jac's `with entry` block serves a similar purpose but has a deeper, more powerful meaning. It isn't just starting a script, it is your moment of entry into a persistent, spatial environment. Think of it as opening the door to a workshop. When your program starts, this workshop is not empty; it contains a single, special starting point: the `root` node. We're entering the root of a global graph structure that we can build upon and traverse.
 
 ![With Entry](../assets/examples/jac_book/with_entry.png){ width=350px }
-#/ caption
+
 `with entry` marks your entry point into the program's graph. This graph initially contains only the root node, which serves as the anchor for everything you will build.
-#/
+
 
 Everything you create and connect within this graph space can be persisted, traversed, and reasoned about spatially.
 
@@ -36,9 +36,7 @@ with entry {
 <br />
 
 ![With Entry](../assets/examples/jac_book/node1.png){ width=350px }
-#/ caption
-Adding a node to the graph.
-#/
+
 
 Here, we define a node using the `node` keyword, which is similar to defining a class in traditional OOP. The `has` keyword declares properties for the node, and we create an instance of this node within the `with entry` block.
 
@@ -62,9 +60,6 @@ with entry {
 <br />
 
 ![With Entry](../assets/examples/jac_book/node2.png){ width=350px }
-#/ caption
-Adding a node to the graph.
-#/
 
 
 ### Building out the rest of the Graph
@@ -113,9 +108,6 @@ with entry {
 <br />
 
 ![With Entry](../assets/examples/jac_book/node3.png){ width=350px }
-#/ caption
-Filling out the graph with nodes and edges.
-#/
 
 ## From "Data to Computation" to "Computation to Data"
 ---
