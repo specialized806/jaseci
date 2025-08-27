@@ -2099,14 +2099,13 @@ body {
 
 .affiliations-section {
     text-align: center;
-    margin: 40px 0;
-    padding: 30px 20px;
+    padding: 40px 20px;
     background: #1a1a1a;
     border-radius: 12px;
 }
 
 .affiliations-description {
-    font-size: 18px;
+    font-size: 14px;
     color: #ffffff;
     margin-bottom: 30px;
     font-weight: 600;
@@ -2131,14 +2130,8 @@ body {
 .affiliation-logo {
     height: 100px;
     width: auto;
-    filter: grayscale(100%) brightness(0.8);
-    transition: all 0.3s ease;
 }
 
-.affiliation-logo:hover {
-    filter: grayscale(0%) brightness(1);
-    transform: scale(1.05);
-}
 
 .affiliation-text {
     font-size: 12px;
@@ -2157,7 +2150,7 @@ body {
     }
 
     .affiliation-logo {
-        height: 32px;
+        height: 70px;
     }
 
     .affiliation-text {
