@@ -60,21 +60,8 @@ class TypeCheckerPassTests(TestCase):
         """, program.errors_had[0].pretty_print())
 
     def test_import_symbol_type_infer(self) -> None:
-        src = """
-        import math as alias;
-        with entry {
-
-          # math module imports sys so it has the symbol
-          # we're not using math.pi since it's a Final[float]
-          # and we haven't implemented generic types yet.
-          m = alias;
-
-          i: int = m.sys.prefix; # <-- Error
-          s: str = m.sys.prefix; # <-- Ok
-        }
-        """
         program = JacProgram()
-        mod = program.compile("main.jac", use_str=src)
+        mod = program.compile(self.fixture_abs_path("import_symbol_type_infer.jac"))
         TypeCheckPass(ir_in=mod, prog=program)
         self.assertEqual(len(program.errors_had), 1)
         self._assert_error_pretty_found("""
