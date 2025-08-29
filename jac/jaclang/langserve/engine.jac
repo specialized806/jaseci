@@ -22,7 +22,7 @@ import utils;
 """Handles Jac module, semantic manager, and alert management."""
 class ModuleManager {
     """Initialize ModuleManager."""
-    def init(self: ModuleManager, program: JacProgram, sem_managers: <>dict) -> None {
+    def init(self: ModuleManager, program: JacProgram, sem_managers: dict) -> None {
         self.program = program;
         self.sem_managers = sem_managers;
     }
@@ -62,8 +62,8 @@ class JacLangServer(JacProgram , LanguageServer) {
         LanguageServer.init(self, 'jac-lsp', 'v0.1');
         JacProgram.init(self);
         self.executor = ThreadPoolExecutor();
-        self.tasks: <>dict[(str, asyncio.Task)] = {};
-        self.sem_managers: <>dict[(str, SemTokManager)] = {};
+        self.tasks: dict[(str, asyncio.Task)] = {};
+        self.sem_managers: dict[(str, SemTokManager)] = {};
         self.module_manager = ModuleManager(self, self.sem_managers);
     }
 
@@ -109,7 +109,7 @@ class JacLangServer(JacProgram , LanguageServer) {
             build = self.compile(use_str=document.source, file_path=file_path);
             self.update_modules(file_path, build, need=False);
             self.publish_diagnostics(
-                uris.from_fs_path(file_path),
+                file_path,
                 utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
             );
             build_errors =
@@ -333,7 +333,7 @@ class JacLangServer(JacProgram , LanguageServer) {
     }
 
     """Return formatted jac."""
-    def formatted_jac(self: JacLangServer, file_path: str) -> <>list[lspt.TextEdit] {
+    def formatted_jac(self: JacLangServer, file_path: str) -> list[lspt.TextEdit] {
         try {
             document = self.workspace.get_text_document(file_path);
             formatted_text =
@@ -393,22 +393,22 @@ class JacLangServer(JacProgram , LanguageServer) {
     }
 
     """Extract meaningful information from the AST node."""
-    def get_node_info(self: JacLangServer, <>node: uni.AstSymbolNode) -> Optional[str] {
+    def get_node_info(self: JacLangServer, sym_node: uni.AstSymbolNode) -> Optional[str] {
         try {
-            if isinstance(<>node, uni.NameAtom) {
-                <>node = <>node.name_of;
+            if isinstance(sym_node, uni.NameAtom) {
+                sym_node = sym_node.name_of;
             }
-            access = (<>node.sym.access.value + ' ') if <>node.sym else None;
+            access = (sym_node.sym.access.value + ' ') if sym_node.sym else None;
             node_info =
-                f"'('{access if access else ''}{<>node.sym_category.value}') '{<>node.sym_name}";
-            if <>node.name_spec.clean_type {
-                node_info += f"': '{<>node.name_spec.clean_type}";
+                f"'('{access if access else ''}{sym_node.sym_category.value}') '{sym_node.sym_name}";
+            if sym_node.name_spec.clean_type {
+                node_info += f"': '{sym_node.name_spec.clean_type}";
             }
-            if isinstance(<>node, uni.AstDocNode) and <>node.doc  {
-                node_info += f"'\n'{<>node.doc.value}";
+            if isinstance(sym_node, uni.AstDocNode) and sym_node.doc  {
+                node_info += f"'\n'{sym_node.doc.value}";
             }
-            if isinstance(<>node, uni.Ability) and <>node.signature  {
-                node_info += f"'\n'{<>node.signature.unparse()}";
+            if isinstance(sym_node, uni.Ability) and sym_node.signature  {
+                node_info += f"'\n'{sym_node.signature.unparse()}";
             }
         } except AttributeError as e {
             self.log_warning(f"'Attribute error when accessing node attributes: '{e}");
@@ -417,7 +417,7 @@ class JacLangServer(JacProgram , LanguageServer) {
     }
 
     """Return document symbols for a file."""
-    def get_outline(self: JacLangServer, file_path: str) -> <>list[lspt.DocumentSymbol] {
+    def get_outline(self: JacLangServer, file_path: str) -> list[lspt.DocumentSymbol] {
         file_path_fs = file_path.removeprefix('file://');
         document = self.workspace.get_text_document(file_path_fs);
         file_path = document.path;
@@ -548,7 +548,7 @@ class JacLangServer(JacProgram , LanguageServer) {
         self: JacLangServer,
         file_path: str,
         position: lspt.Position
-    ) -> <>list[lspt.Location] {
+    ) -> list[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
         document = self.workspace.get_text_document(file_path_fs);
         file_path = document.path;
@@ -566,11 +566,11 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
-            list_of_references: <>list[lspt.Location] =
+            list_of_references: list[lspt.Location] =
                 [ lspt.Location(
-                    uri=uris.from_fs_path(<>node.loc.mod_path),
-                    range=utils.create_range(<>node.loc)
-                ) for <>node in node_selected.sym.uses ];
+                    uri=uris.from_fs_path(cur_node.loc.mod_path),
+                    range=utils.create_range(cur_node.loc)
+                ) for cur_node in node_selected.sym.uses ];
             return list_of_references;
         }
         return [];
@@ -600,12 +600,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         }
         node_selected = sem_mgr.static_sem_tokens[index1][3];
         if node_selected and node_selected.sym  {
-            changes: <>dict[(str, <>list[lspt.TextEdit])] = {};
-            for <>node in [*node_selected.sym.uses, node_selected.sym.defn[0]] {
-                key = uris.from_fs_path(<>node.loc.mod_path);
+            changes: dict[(str, list[lspt.TextEdit])] = {};
+            for node in [*node_selected.sym.uses, node_selected.sym.defn[0]] {
+                key = uris.from_fs_path(node.loc.mod_path);
                 new_edit =
                     lspt.TextEdit(
-                        range=utils.create_range(<>node.loc),
+                        range=utils.create_range(node.loc),
                         new_text=new_name
                     );
                 utils.add_unique_text_edit(changes, key, new_edit);
