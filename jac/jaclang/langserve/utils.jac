@@ -75,7 +75,7 @@ def debounce(<>wait: float) -> Callable[[T], Callable[(..., Awaitable[None])]] {
 
 
 """Iterate through symbol table."""
-def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> <>list[UniScopeNode] {
+def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> list[UniScopeNode] {
     sym_tabs = [sym_tab]
     if not (isinstance(sym_tab, uni.Module) and sym_tab.loc.mod_path != file_path )
     else []
@@ -135,7 +135,7 @@ def position_within_node(<>node: uni.UniNode, line: int, character: int) -> bool
 
 
 """Find index."""
-def find_index(sem_tokens: <>list[int], line: int, char: int) -> Optional[int] {
+def find_index(sem_tokens: list[int], line: int, char: int) -> Optional[int] {
     index = None;
     token_start_list = [ get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5) ];
     for (i, j) in enumerate(token_start_list) {
@@ -148,7 +148,7 @@ def find_index(sem_tokens: <>list[int], line: int, char: int) -> Optional[int] {
 
 
 """Recursively collect symbols from the AST."""
-def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[lspt.DocumentSymbol] {
+def get_symbols_for_outline(<>node: UniScopeNode) -> list[lspt.DocumentSymbol] {
     symbols = [];
     for (key, item) in <>node.names_in_scope.items() {
         if key in dir(builtins)
@@ -255,12 +255,6 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind {
     if sub_tab == SymbolType.IMPL
     else lspt.CompletionItemKind.Variable
 
-
-
-
-
-
-
     ;
 }
 
@@ -269,9 +263,9 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind {
 def collect_all_symbols_in_scope(
     sym_tab: UniScopeNode,
     up_tree: bool = True
-) -> <>list[lspt.CompletionItem] {
+) -> list[lspt.CompletionItem] {
     symbols = [];
-    visited = <>set();
+    visited = set();
     current_tab : Optional[UniScopeNode] = sym_tab;
     while current_tab is not None and current_tab not in visited  {
         visited.add(current_tab);
@@ -295,8 +289,8 @@ def collect_all_symbols_in_scope(
 
 
 """Return all child tab's as completion items."""
-def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[lspt.CompletionItem] {
-    symbols : <>list[lspt.CompletionItem] = [];
+def collect_child_tabs(sym_tab: UniScopeNode) -> list[lspt.CompletionItem] {
+    symbols : list[lspt.CompletionItem] = [];
     for tab in sym_tab.kid_scope {
         if tab.scope_name not in [ i.label for i in symbols ] {
             symbols.append(
@@ -312,7 +306,7 @@ def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[lspt.CompletionItem] {
 
 
 """Parse text and return a list of symbols."""
-def parse_symbol_path(text: str, dot_position: int) -> <>list[str] {
+def parse_symbol_path(text: str, dot_position: int) -> list[str] {
     text = text[ : dot_position ][ : -1 ].strip();
     valid_character_pattern = re.compile('[a-zA-Z0-9_]');
     reversed_text = text[ : : -1 ];
@@ -342,8 +336,8 @@ def parse_symbol_path(text: str, dot_position: int) -> <>list[str] {
 """Return the starting position of a token."""
 def get_token_start(
     token_index: (int | None),
-    sem_tokens: <>list[int]
-) -> <>tuple[int, int, int] {
+    sem_tokens: list[int]
+) -> tuple[int, int, int] {
     if token_index is None or token_index >= len(sem_tokens)  {
         return (0, 0, 0);
     }
@@ -382,8 +376,8 @@ def find_surrounding_tokens(
     change_start_char: int,
     change_end_line: int,
     change_end_char: int,
-    sem_tokens: <>list[int]
-) -> <>tuple[(int | None), (int | None), bool] {
+    sem_tokens: list[int]
+) -> tuple[(int | None), (int | None), bool] {
     prev_token_index = None;
     next_token_index = None;
     inside_tok = False;
@@ -422,8 +416,8 @@ def find_surrounding_tokens(
 """Get the line of code, and the first non-space character index."""
 def get_line_of_code(
     line_number: int,
-    lines: <>list[str]
-) -> Optional[<>tuple[(str, int)]] {
+    lines: list[str]
+) -> Optional[tuple[(str, int)]] {
     if 0 <= line_number < len(lines) {
         line = lines[line_number].rstrip('\n');
         first_non_space = (len(line) - len(line.lstrip()));
@@ -439,7 +433,7 @@ def get_line_of_code(
 
 """Add a new text edit to the changes dictionary if it is unique."""
 def add_unique_text_edit(
-    changes: <>dict[(str, <>list[lspt.TextEdit])],
+    changes: dict[(str, list[lspt.TextEdit])],
     key: str,
     new_edit: lspt.TextEdit
 ) -> None {

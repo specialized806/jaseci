@@ -67,18 +67,6 @@ class JacLangServer(JacProgram , LanguageServer) {
         self.module_manager = ModuleManager(self, self.sem_managers);
     }
 
-    """Return diagnostics for all files as a dict {uri: diagnostics}."""
-    @ property
-    def diagnostics(self: JacLangServer, ) -> dict[str, list] {
-        result = {};
-        for file_path in self.mod.hub {
-            uri = uris.from_fs_path(file_path);
-            result[uri] =
-                utils.gen_diagnostics(uri, self.errors_had, self.warnings_had);
-        }
-        return result;
-    }
-
     """Remove errors and warnings for a specific file from the lists."""
     def _clear_alerts_for_file(self: JacLangServer, file_path: str) -> None {
         self.module_manager.clear_alerts_for_file(file_path);
@@ -104,16 +92,18 @@ class JacLangServer(JacProgram , LanguageServer) {
     def quick_check(self: JacLangServer, file_path: str) -> bool {
         try {
             document = self.workspace.get_text_document(file_path);
-            file_path = document.path;
-            self._clear_alerts_for_file(document.path);
-            build = self.compile(use_str=document.source, file_path=file_path);
-            self.update_modules(file_path, build, need=False);
+            fs_path = document.path;
+
+            self._clear_alerts_for_file(fs_path);
+            build = self.compile(use_str=document.source, file_path=fs_path);
+            self.update_modules(fs_path, build, need=False);
+            # to display diagnostics, it needs URI starts with "file://"
             self.publish_diagnostics(
                 file_path,
-                utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
+                utils.gen_diagnostics(fs_path, self.errors_had, self.warnings_had)
             );
             build_errors =
-                [ e for e in self.errors_had if e.loc.mod_path == file_path];
+                [ e for e in self.errors_had if e.loc.mod_path == fs_path];
             return len(build_errors) == 0;
         } except Exception as e {
             self.log_error(f"'Error during syntax check: '{e}");
@@ -129,30 +119,30 @@ class JacLangServer(JacProgram , LanguageServer) {
     ) -> bool {
         try {
             start_time = time.time();
-            file_path_fs = file_path.removeprefix('file://');
             document = self.workspace.get_text_document(file_path);
-            file_path = document.path;
-            self._clear_alerts_for_file(document.path);
-            build = self.build(use_str=document.source, file_path=document.path);
-            self.update_modules(file_path, build);
+            fs_path = document.path;
+            self._clear_alerts_for_file(fs_path);
+            build = self.build(use_str=document.source, file_path=fs_path,type_check=True);
+            self.update_modules(fs_path, build);
             if build.annexable_by {
                 return self.deep_check(
                     uris.from_fs_path(build.annexable_by),
-                    annex_view=file_path
+                    annex_view=fs_path
                 );
             }
             self.publish_diagnostics(
-                annex_view if annex_view else file_path,
+                # to display diagnostic , it need URI starts with "file://"
+                uris.from_fs_path(annex_view) if annex_view else uris.from_fs_path(fs_path) ,
                 utils.gen_diagnostics(
-                    annex_view if annex_view else file_path,
+                    annex_view if annex_view else fs_path,
                     self.errors_had,
                     self.warnings_had
                 )
             );
             if annex_view {
                 self.publish_diagnostics(
-                    file_path,
-                    utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
+                    uris.from_fs_path(fs_path) ,
+                    utils.gen_diagnostics(fs_path, self.errors_had, self.warnings_had)
                 );
             }
             self.log_py(
@@ -364,13 +354,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         file_path: str,
         position: lspt.Position
     ) -> Optional[lspt.Hover] {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path_fs);
-        file_path = document.path;
-        if file_path not in self.mod.hub {
+        fs_path = uris.to_fs_path(file_path);
+
+        if fs_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path);
+        sem_mgr = self.sem_managers.get(fs_path);
         if not sem_mgr {
             return None;
         }
@@ -418,11 +407,9 @@ class JacLangServer(JacProgram , LanguageServer) {
 
     """Return document symbols for a file."""
     def get_outline(self: JacLangServer, file_path: str) -> list[lspt.DocumentSymbol] {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path_fs);
-        file_path = document.path;
-        if file_path in self.mod.hub
-        and (root_node := self.mod.hub[file_path].sym_tab)
+        fs_path = uris.to_fs_path(file_path);
+        if fs_path in self.mod.hub
+        and (root_node := self.mod.hub[fs_path].sym_tab)
          {
             return utils.get_symbols_for_outline(root_node);
         }
@@ -435,13 +422,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         file_path: str,
         position: lspt.Position
     ) -> Optional[lspt.Location] {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path_fs);
-        file_path = document.path;
-        if file_path not in self.mod.hub {
+        fs_path = uris.to_fs_path(file_path);
+
+        if fs_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path);
+        sem_mgr = self.sem_managers.get(fs_path);
         if not sem_mgr {
             return None;
         }
@@ -549,13 +535,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         file_path: str,
         position: lspt.Position
     ) -> list[lspt.Location] {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path_fs);
-        file_path = document.path;
-        if file_path not in self.mod.hub {
+        fs_path = uris.to_fs_path(file_path);
+
+        if fs_path not in self.mod.hub {
             return [];
         }
-        sem_mgr = self.sem_managers.get(file_path);
+        sem_mgr = self.sem_managers.get(fs_path);
         if not sem_mgr {
             return [];
         }
@@ -583,13 +568,11 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position,
         new_name: str
     ) -> Optional[lspt.WorkspaceEdit] {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path_fs);
-        file_path = document.path;
-        if file_path not in self.mod.hub {
+        fs_path = uris.to_fs_path(file_path);
+        if fs_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path);
+        sem_mgr = self.sem_managers.get(fs_path);
         if not sem_mgr {
             return None;
         }
@@ -617,9 +600,8 @@ class JacLangServer(JacProgram , LanguageServer) {
 
     """Return semantic tokens for a file."""
     def get_semantic_tokens(self: JacLangServer, file_path: str) -> lspt.SemanticTokens {
-        file_path_fs = file_path.removeprefix('file://');
-        document = self.workspace.get_text_document(file_path);
-        sem_mgr = self.sem_managers.get(document.path);
+        fs_path = uris.to_fs_path(file_path);
+        sem_mgr = self.sem_managers.get(fs_path);
         if not sem_mgr {
             return lspt.SemanticTokens(data=[]);
         }
