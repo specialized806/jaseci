@@ -50,8 +50,6 @@ class TestJacLangServer(TestCase):
 
     def test_member_access_type_inferred_server(self) -> None:
         """Test that the server doesn't run if there is a syntax error."""
-        from icecream import ic
-
         lsp = JacLangServer()
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
