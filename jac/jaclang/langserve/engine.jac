@@ -34,7 +34,6 @@ class ModuleManager {
         build: uni.Module,
         update_annexed: bool = True
     ) -> None {
-        file_path = file_path.removeprefix('file://');
         self.program.mod.hub[file_path] = build;
         if update_annexed {
             self.sem_managers[file_path] = SemTokManager(ir=build);
@@ -81,13 +80,12 @@ class JacLangServer(JacProgram , LanguageServer) {
     }
 
     """Remove errors and warnings for a specific file from the lists."""
-    def _clear_alerts_for_file(self: JacLangServer, file_path_fs: str) -> None {
-        self.module_manager.clear_alerts_for_file(file_path_fs);
+    def _clear_alerts_for_file(self: JacLangServer, file_path: str) -> None {
+        self.module_manager.clear_alerts_for_file(file_path);
     }
 
     """Get IR for a file path."""
     def get_ir(self: JacLangServer, file_path: str) -> Optional[uni.Module] {
-        file_path = file_path.removeprefix('file://');
         return self.mod.hub.get(file_path);
     }
 
@@ -105,17 +103,17 @@ class JacLangServer(JacProgram , LanguageServer) {
     """Rebuild a file (syntax only)."""
     def quick_check(self: JacLangServer, file_path: str) -> bool {
         try {
-            file_path_fs = file_path.removeprefix('file://');
             document = self.workspace.get_text_document(file_path);
+            file_path = document.path;
             self._clear_alerts_for_file(document.path);
-            build = self.compile(use_str=document.source, file_path=document.path);
-            self.update_modules(file_path_fs, build, need=False);
+            build = self.compile(use_str=document.source, file_path=file_path);
+            self.update_modules(file_path, build, need=False);
             self.publish_diagnostics(
                 file_path,
                 utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
             );
             build_errors =
-                [ e for e in self.errors_had if e.loc.mod_path == file_path_fs ];
+                [ e for e in self.errors_had if e.loc.mod_path == file_path];
             return len(build_errors) == 0;
         } except Exception as e {
             self.log_error(f"'Error during syntax check: '{e}");
@@ -133,9 +131,10 @@ class JacLangServer(JacProgram , LanguageServer) {
             start_time = time.time();
             file_path_fs = file_path.removeprefix('file://');
             document = self.workspace.get_text_document(file_path);
+            file_path = document.path;
             self._clear_alerts_for_file(document.path);
             build = self.build(use_str=document.source, file_path=document.path);
-            self.update_modules(file_path_fs, build);
+            self.update_modules(file_path, build);
             if build.annexable_by {
                 return self.deep_check(
                     uris.from_fs_path(build.annexable_by),
@@ -205,7 +204,7 @@ class JacLangServer(JacProgram , LanguageServer) {
     ) -> lspt.CompletionList {
         try {
             document = self.workspace.get_text_document(file_path);
-            mod_ir = self.get_ir(file_path);
+            mod_ir = self.get_ir(document.path);
             if not mod_ir {
                 return lspt.CompletionList(is_incomplete=False, items=[]);
             }
@@ -366,10 +365,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position
     ) -> Optional[lspt.Hover] {
         file_path_fs = file_path.removeprefix('file://');
-        if file_path_fs not in self.mod.hub {
+        document = self.workspace.get_text_document(file_path_fs);
+        file_path = document.path;
+        if file_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path_fs);
+        sem_mgr = self.sem_managers.get(file_path);
         if not sem_mgr {
             return None;
         }
@@ -418,8 +419,10 @@ class JacLangServer(JacProgram , LanguageServer) {
     """Return document symbols for a file."""
     def get_outline(self: JacLangServer, file_path: str) -> <>list[lspt.DocumentSymbol] {
         file_path_fs = file_path.removeprefix('file://');
-        if file_path_fs in self.mod.hub
-        and (root_node := self.mod.hub[file_path_fs].sym_tab)
+        document = self.workspace.get_text_document(file_path_fs);
+        file_path = document.path;
+        if file_path in self.mod.hub
+        and (root_node := self.mod.hub[file_path].sym_tab)
          {
             return utils.get_symbols_for_outline(root_node);
         }
@@ -433,10 +436,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position
     ) -> Optional[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
-        if file_path_fs not in self.mod.hub {
+        document = self.workspace.get_text_document(file_path_fs);
+        file_path = document.path;
+        if file_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path_fs);
+        sem_mgr = self.sem_managers.get(file_path);
         if not sem_mgr {
             return None;
         }
@@ -545,10 +550,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position
     ) -> <>list[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
-        if file_path_fs not in self.mod.hub {
+        document = self.workspace.get_text_document(file_path_fs);
+        file_path = document.path;
+        if file_path not in self.mod.hub {
             return [];
         }
-        sem_mgr = self.sem_managers.get(file_path_fs);
+        sem_mgr = self.sem_managers.get(file_path);
         if not sem_mgr {
             return [];
         }
@@ -577,10 +584,12 @@ class JacLangServer(JacProgram , LanguageServer) {
         new_name: str
     ) -> Optional[lspt.WorkspaceEdit] {
         file_path_fs = file_path.removeprefix('file://');
-        if file_path_fs not in self.mod.hub {
+        document = self.workspace.get_text_document(file_path_fs);
+        file_path = document.path;
+        if file_path not in self.mod.hub {
             return None;
         }
-        sem_mgr = self.sem_managers.get(file_path_fs);
+        sem_mgr = self.sem_managers.get(file_path);
         if not sem_mgr {
             return None;
         }
@@ -609,7 +618,8 @@ class JacLangServer(JacProgram , LanguageServer) {
     """Return semantic tokens for a file."""
     def get_semantic_tokens(self: JacLangServer, file_path: str) -> lspt.SemanticTokens {
         file_path_fs = file_path.removeprefix('file://');
-        sem_mgr = self.sem_managers.get(file_path_fs);
+        document = self.workspace.get_text_document(file_path);
+        sem_mgr = self.sem_managers.get(document.path);
         if not sem_mgr {
             return lspt.SemanticTokens(data=[]);
         }
