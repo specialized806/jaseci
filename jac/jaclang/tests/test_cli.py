@@ -412,6 +412,8 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("def my_print(x: object) -> None", stdout_value)
+        self.assertIn("class MyClass {", stdout_value)
+        self.assertIn('"""Print function."""', stdout_value)
 
     def test_caching_issue(self) -> None:
         """Test for Caching Issue."""
