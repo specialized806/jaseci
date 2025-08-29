@@ -74,7 +74,7 @@ class JacLangServer(JacProgram , LanguageServer) {
         for file_path in self.mod.hub {
             uri = uris.from_fs_path(file_path);
             result[uri] =
-                utils.gen_diagnostics(uri, self.errors_had, self.warnings_had);
+                utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had);
         }
         return result;
     }
@@ -134,7 +134,7 @@ class JacLangServer(JacProgram , LanguageServer) {
             document = self.workspace.get_text_document(file_path);
             fs_path = document.path;
             self._clear_alerts_for_file(fs_path);
-            build = self.build(use_str=document.source, file_path=fs_path,type_check=True);
+            build = self.build(use_str=document.source, file_path=fs_path);
             self.update_modules(fs_path, build);
             if build.annexable_by {
                 return self.deep_check(
