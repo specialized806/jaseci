@@ -188,7 +188,7 @@ class PyastGenPass(UniPass):
         )
 
     def needs_mtllm(self) -> None:
-        """Ensure MTLLM is imported only once."""
+        """Ensure byLLM is imported only once."""
         self._add_preamble_once(
             self.needs_mtllm.__name__,
             ast3.Import(

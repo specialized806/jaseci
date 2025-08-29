@@ -1,21 +1,21 @@
-name: Run tests for jac-mtllm
+name: Run tests for jac-byllm
 
 on:
   pull_request:
     paths:
-      - "jac-mtllm/**"
+      - "jac-byllm/**"
   push:
     branches:
       - main
     paths:
-      - "jac-mtllm/**"
+      - "jac-byllm/**"
 
 jobs:
-  test-mtllm:
+  test-byllm:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jac-mtllm
+        working-directory: jac-byllm
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -30,7 +30,7 @@ jobs:
         python -m pip install --upgrade pip
         cd ../jac
         pip install -e .
-        cd ../jac-mtllm
+        cd ../jac-byllm
         pip install -e .
         pip install pytest opencv-python-headless pillow
 

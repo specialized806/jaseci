@@ -1,21 +1,21 @@
-name: Linting and Pre-commit checks for jac-mtllm
+name: Linting and Pre-commit checks for jac-byllm
 
 on:
   pull_request:
     paths:
-      - "jac-mtllm/**"
+      - "jac-byllm/**"
   push:
     branches:
       - main
     paths:
-      - "jac-mtllm/**"
+      - "jac-byllm/**"
 
 jobs:
-  pre-commit-mtllm:
+  pre-commit-byllm:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: jac-mtllm
+        working-directory: jac-byllm
     steps:
     - name: Check out code
       uses: actions/checkout@v2
