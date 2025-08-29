@@ -4665,7 +4665,7 @@ class String(Literal):
 
     def unparse(self) -> str:
         super().unparse()
-        return repr(self.value)
+        return self.value
 
 
 class Bool(Literal):

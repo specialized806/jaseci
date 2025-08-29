@@ -975,7 +975,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 token_type = f"{value_type.__name__.upper()}"
 
             if value_type == str:
-                value = node.value
+                raw_repr = repr(node.value)
+                quote = "'" if raw_repr.startswith("'") else '"'
+                value = f"{quote}{raw_repr[1:-1]}{quote}"
             else:
                 value = str(node.value)
             return type_mapping[value_type](
@@ -2421,7 +2423,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
 
     def convert_to_doc(self, string: uni.String) -> None:
         """Convert a string to a docstring."""
-        string.value = f'"""{string.value}"""'
+        string.value = f'"""{string.value[1:-1]}"""'
 
     def aug_op_map(self, tok_dict: dict, op: uni.Token) -> str:
         """aug_mapper."""
