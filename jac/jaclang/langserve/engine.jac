@@ -69,7 +69,7 @@ class JacLangServer(JacProgram , LanguageServer) {
 
     """Return diagnostics for all files as a dict {uri: diagnostics}."""
     @ property
-    def diagnostics(self: JacLangServer, ) -> <>dict[str, <>list] {
+    def diagnostics(self: JacLangServer, ) -> dict[str, list] {
         result = {};
         for file_path in self.mod.hub {
             uri = uris.from_fs_path(file_path);
@@ -109,7 +109,7 @@ class JacLangServer(JacProgram , LanguageServer) {
             build = self.compile(use_str=document.source, file_path=file_path);
             self.update_modules(file_path, build, need=False);
             self.publish_diagnostics(
-                file_path,
+                uris.from_fs_path(file_path),
                 utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had)
             );
             build_errors =
