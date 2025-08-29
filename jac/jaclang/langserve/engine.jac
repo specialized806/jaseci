@@ -67,6 +67,18 @@ class JacLangServer(JacProgram , LanguageServer) {
         self.module_manager = ModuleManager(self, self.sem_managers);
     }
 
+    """Return diagnostics for all files as a dict {uri: diagnostics}."""
+    @ property
+    def diagnostics(self: JacLangServer, ) -> dict[str, list] {
+        result = {};
+        for file_path in self.mod.hub {
+            uri = uris.from_fs_path(file_path);
+            result[uri] =
+                utils.gen_diagnostics(uri, self.errors_had, self.warnings_had);
+        }
+        return result;
+    }
+
     """Remove errors and warnings for a specific file from the lists."""
     def _clear_alerts_for_file(self: JacLangServer, file_path: str) -> None {
         self.module_manager.clear_alerts_for_file(file_path);
