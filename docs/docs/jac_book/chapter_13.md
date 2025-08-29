@@ -25,7 +25,7 @@ This is a lot of extra work just to make your application remember things.
 
 ## What is Automatic Persistence?
 
-Jac is designed to make this process effortless. When you run your Jac program as a service (using the jac serve command with a database connected), persistence becomes an automatic feature of the language.
+Jac is designed to make this process effortless. When you run your Jac program as a service (using the jac serve command, persistence becomes an automatic feature of the language.
 
 !!! warning "Persistence Requirements"
     - **Database Backend**: Persistence requires `jac serve` with a configured database
