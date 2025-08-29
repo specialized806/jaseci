@@ -13,7 +13,7 @@ To run a specific test:
 """
 
 
-import from mtllm { Model }
+import from byllm { Model }
 
 glob llm = Model(
     model_name="gpt-4o-mini",
