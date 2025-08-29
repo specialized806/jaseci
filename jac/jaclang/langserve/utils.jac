@@ -234,28 +234,30 @@ def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind {
 
 """Map the symbol node to an lspt.CompletionItemKind."""
 def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind {
-    return lspt.CompletionItemKind.Function
-    if sub_tab in [SymbolType.ABILITY, SymbolType.TEST]
-    else lspt.CompletionItemKind.Class
-    if sub_tab in [SymbolType.OBJECT_ARCH,
-    SymbolType.NODE_ARCH,
-    SymbolType.EDGE_ARCH,
-    SymbolType.WALKER_ARCH]
-    else lspt.CompletionItemKind.Module
-    if sub_tab == SymbolType.MODULE
-    else lspt.CompletionItemKind.Enum
-    if sub_tab == SymbolType.ENUM_ARCH
-    else lspt.CompletionItemKind.Field
-    if sub_tab == SymbolType.HAS_VAR
-    else lspt.CompletionItemKind.Method
-    if sub_tab == SymbolType.METHOD
-    else lspt.CompletionItemKind.EnumMember
-    if sub_tab == SymbolType.ENUM_MEMBER
-    else lspt.CompletionItemKind.Interface
-    if sub_tab == SymbolType.IMPL
-    else lspt.CompletionItemKind.Variable
-
-    ;
+    return (
+        lspt.CompletionItemKind.Function
+        if sub_tab in [SymbolType.ABILITY, SymbolType.TEST]
+        else lspt.CompletionItemKind.Class
+        if sub_tab in [
+            SymbolType.OBJECT_ARCH,
+            SymbolType.NODE_ARCH,
+            SymbolType.EDGE_ARCH,
+            SymbolType.WALKER_ARCH
+        ]
+        else lspt.CompletionItemKind.Module
+        if sub_tab == SymbolType.MODULE
+        else lspt.CompletionItemKind.Enum
+        if sub_tab == SymbolType.ENUM_ARCH
+        else lspt.CompletionItemKind.Field
+        if sub_tab == SymbolType.HAS_VAR
+        else lspt.CompletionItemKind.Method
+        if sub_tab == SymbolType.METHOD
+        else lspt.CompletionItemKind.EnumMember
+        if sub_tab == SymbolType.ENUM_MEMBER
+        else lspt.CompletionItemKind.Interface
+        if sub_tab == SymbolType.IMPL
+        else lspt.CompletionItemKind.Variable
+    );
 }
 
 
