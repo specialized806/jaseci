@@ -1,3 +1,45 @@
 \chapter{Introduction}
 
 Welcome!! Wow, I'm so proud of you. You're, actually reading a book!?!? In this day and age?!?! Well, you're in for a treat. This book will guide you through the Jac programming language and help you understand how to use it to build amazing applications in the age of AI.
+
+To get a feel for Jac, here is a tiny example that computes the area of a circle using both a function and an object-oriented approach:
+
+\begin{jacblock}[caption={A tiny Jac program: circle area via function and class}]
+import math;
+
+glob RAD = 5;
+
+def calculate_area(radius: float) -> float {
+    return math.pi * radius * radius;
+}
+
+enum ShapeType {
+    CIRCLE = "Circle",
+    UNKNOWN = "Unknown"
+}
+
+obj Shape {
+    has shape_type: ShapeType;
+    def area -> float abs;
+}
+
+obj Circle(Shape) {
+    def init(radius: float) {
+        super.init(ShapeType.CIRCLE);
+        self.radius = radius;
+    }
+
+    override def area -> float {
+        return math.pi * self.radius * self.radius;
+    }
+}
+
+with entry {
+    c = Circle(RAD);
+}
+
+with entry:__main__ {
+    print(f"Area via function: {calculate_area(RAD)}");
+    print(f"Area via class: {c.area()}");
+}
+\end{jacblock}

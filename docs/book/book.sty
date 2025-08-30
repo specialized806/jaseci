@@ -137,6 +137,11 @@ keywordstyle={\color{black}},%                         and format them in black
 
 \newcommand{\shellout}[1]{\par\begin{minipage}{\linewidth}\lstinputlisting[language=shell,numbers=none]{assets/shell/#1}\end{minipage}\par}
 
+% Inline Jac code block environment
+\lstnewenvironment{jacblock}[1][]
+{\renewcommand{\lstlistingname}{Jac Code}\lstset{language=jac, #1}}
+{}
+
 %----------------------------------- NERD ALERT BOX  ------------------------------
 \usepackage[many]{tcolorbox}
 \usepackage{wrapfig}
