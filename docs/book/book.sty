@@ -9,6 +9,8 @@
 \usepackage{subcaption}
 \usepackage[font={footnotesize, it}]{caption}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
 \usepackage{longtable}
 \usepackage[export]{adjustbox}
 \usepackage{grffile}
@@ -110,7 +112,7 @@ keywordstyle={\color{black}},%                         and format them in black
     postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
     backgroundcolor=\color{gray!10},
     captionpos=t,
-    basicstyle=\upshape\ttfamily,      % the size of the fonts that are used for the code
+    basicstyle=\scriptsize\upshape\ttfamily, % set code font to tiny monospace
      numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
     numbersep=10pt,                   % how far the line-numbers are from the code
     numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
@@ -149,7 +151,7 @@ keywordstyle={\color{black}},%                         and format them in black
 \newcounter{nerd}
 \newtcolorbox[use counter=nerd]
   {nerd}[1][]
-  {title=Nerd Alert~\thetcbcounter~\emph{\footnotesize (time to let your eyes glaze over)},
+  {title=Nerd Alert~\thetcbcounter,
    left=0pt,
    right=0pt,
    fonttitle=\bfseries,

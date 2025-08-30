@@ -1,7 +1,235 @@
 \chapter{Jac Supersets Python Natively}
-\section{Jac is Transpiled, kinda...}
+\section{Jac is Transpiled (...and compiled)}
+Jac is a superset of Python: its grammar strictly extends Python's grammar, adding higher-level constructs and object–spatial features while preserving Python's semantics. ``Superset'' here does not every valid Python source file is also a valid Jac source file; instead, it means Jac provides the full expressivity of Python and then adds more. Practically speaking, you can write everything you could in Python, plus idiomatic Jac features, and the resulting program behaves as a native Python program at runtime.
+
+Conceptually, Jac plays a similar role to how TypeScript or CoffeeScript relates to JavaScript: as TypeScript or CoffeeScript is JavaScript with wings, Jac is Python with wings.
+
+
+
+\begin{figure}[t]
+    \centering
+    \begin{tikzpicture}[node distance=10mm and 12mm, >=Latex, font=\footnotesize]
+        % styles
+        \tikzstyle{proc}=[rectangle, rounded corners=2pt, draw=black, fill=blue!6, minimum width=28mm, minimum height=8mm, align=center]
+        \tikzstyle{data}=[rectangle, draw=black, fill=green!6, minimum width=28mm, minimum height=8mm, align=center]
+        \tikzstyle{note}=[rectangle, draw=black, fill=orange!10, minimum width=30mm, minimum height=8mm, align=center]
+
+        % nodes
+        \node[data] (src) {Jac Source};
+        \node[proc, below=of src] (jacast) {Parse to\\Jac AST};
+        \node[note, below=of jacast] (pre) {High level\\analysis and\\optimization (optional)};
+        \node[proc, right=of pre] (pyast) {Transpile to\\Python AST\\(+ runtime hooks)};
+        \node[proc, above=of pyast] (bytecode) {CPython compiler\\to bytecode};
+        \node[note, right=of bytecode] (post) {Low level\\analysis and\\optimization (optional)};
+        \node[data, below=of post] (out) {Execute / Package};
+
+        % edges
+        \draw[->] (src) -- (jacast);
+        \draw[->] (jacast) -- (pre);
+        \draw[->] (pre) -- (pyast);
+        \draw[->] (pyast) -- (bytecode);
+        \draw[->] (bytecode) -- (post);
+        \draw[->] (post) -- (out);
+    \end{tikzpicture}
+    \caption[]{Compilation pipeline from Jac to native Python execution.}
+    \label{fig:jac-pipeline}
+\end{figure}
+
+As shown in Figure~\ref{fig:jac-pipeline}, under the hood, the compilation pipeline works like this:
+
+\begin{itemize}
+    \item Jac source is parsed into a Jac-specific AST.
+    \item That AST is mechanically transpiled into a pure Python AST with well-defined callbacks into the Jac execution library for Jac-only semantics.
+    \item The Python AST is then compiled to CPython bytecode using Python's internal compiler pipeline.
+    \item The resulting bytecode is passed back to the Jac compiler for optional post-processing and metadata attachment before execution or packaging.
+\end{itemize}
+
+
+
+The consequence is powerful: you can reason about Jac as a natively Pythonic language. You get Python's ecosystem, tooling, and predictable runtime model, while writing in a language that raises the level of abstraction for architecture, dataflow, and object–spatial programming.
+
+Here's a tiny Jac example:
+
+\begin{jacblock}
+can foo() -> str {
+    return "Hello";
+}
+
+obj vehicle {
+    has name: str = "Car";
+}
+enum Size {
+    Small=1, Medium=2, Large=3
+}
+
+with entry {
+    car = vehicle();
+    print(foo());
+    print(car.name);
+    print(Size.Medium.value);
+}
+\end{jacblock}
+
+The Jac compiler will transpile this into a pure Python module (with calls into the Jac runtime for Jac-specific semantics). A very rough Python shape might look like the following (greatly simplified for readability):
+
+\begin{lstlisting}[language=Python]
+from enum import Enum
+
+def foo() -> str:
+    return "Hello"
+
+class vehicle:
+    def __init__(self) -> None:
+        self.name: str = "Car"
+
+class Size(Enum):
+    Small = 1; Medium = 2; Large = 3
+
+if __name__ == "__main__":
+    car = vehicle()
+    print(foo())
+    print(car.name)
+    print(Size.Medium.value)
+\end{lstlisting}
+
+\begin{nerd}
+\textbf{Under the hood}\quad Jac's transpiler maintains a one-to-one mapping from Jac AST nodes to Python AST nodes wherever possible. Where Jac introduces new semantics, the transpiler emits calls into a compact Jac execution library. The Python AST is compiled using the same CPython compiler that compiles ordinary Python, yielding standard bytecode that the Python VM executes. Because the compiler still holds references to that bytecode, it can attach metadata (for tooling, debugging, or optimization) before handing off to the runtime. This architecture is why Jac feels native in Python ecosystems.
+\end{nerd}
+
 \section{Jac and Python are Friends (no need to choose)}
+Jac and Python interoperate seamlessly. Unlike languages that bolt on a foreign function interface, Jac is natively Python: the output is pure Python modules with a thin, principled runtime library. That means:
+
+\begin{itemize}
+    \item You can import Python modules from Jac with familiar syntax.
+    \item You can embed native Python blocks directly inside Jac files for specialized needs.
+    \item You can emit pure Python from any Jac program and import it from Python code without glue.
+    \item Library elements that the Jac transpiler would generate (e.g., decorators and helper classes) are regular Python artifacts you can author and use directly in Python where appropriate.
+\end{itemize}
+
 \subsection{Jac in your Python Codebase}
+There are two common ways to bring Jac into an existing Python project:
+
+\begin{enumerate}
+    \item \textbf{Precompile and import}: Build your Jac modules once, producing Python packages. Your Python code just imports them like any other module.
+    \item \textbf{On-demand loading}: Use the Jac toolchain/runtime to load Jac sources at import time. This is useful during development and for plugin-like architectures.
+\end{enumerate}
+
+Either way, what you import is an ordinary Python module. Functions, classes, and constants defined in Jac appear as Python callables and types.
+
+\begin{lstlisting}[language=Python]
+# Pretend myapp/math_utils.jac was built to myapp/math_utils.py
+from myapp import math_utils
+
+print(math_utils.foo())  # calls a Jac-declared function, now a Python def
+\end{lstlisting}
+
+Because Jac emits standard Python with light runtime hooks, Python tooling (linters, type checkers, debuggers) continues to work.
+
 \subsection{Python in your Jac Codebase}
+From Jac, importing Python is straightforward. Jac preserves Python's mental model for imports while adding a few ergonomic forms.
+
+\textbf{Import and include Python modules:}
+
+\begin{jacblock}
+include os;
+import datetime as dt;
+import from math { sqrt as square_root, log };
+
+with entry {
+    for i in range(int(square_root(dt.datetime.now().year))) {
+        print(getcwd(), square_root(i), int(log(i + 1)));
+    }
+}
+\end{jacblock}
+
+\textbf{Inline Python when you really need it:}
+
+\begin{jacblock}
+with entry { print("hello "); }
+
+::py::
+def foo():
+    print("world")
+
+foo()
+::py::
+\end{jacblock}
+
+Inline Python blocks are parsed as native Python and run in the same module context, giving you direct access to the entire Python ecosystem without leaving your Jac file.
+
 \section{Jac as a Python Library}
+Jac's runtime library provides the small set of primitives needed to realize Jac-specific semantics on top of Python's execution model. The transpiler calls into this library for features that do not exist in vanilla Python, while everything else compiles down to ordinary Python constructs. This design has a few important consequences:
+
+\begin{itemize}
+    \item \textbf{Stability}: The boundary between your code and the runtime is explicit and versioned.
+    \item \textbf{Observability}: Because the output is plain Python, you can profile, trace, and debug with standard Python tools.
+    \item \textbf{Composability}: You can author or override certain helpers in pure Python when advanced use cases call for it.
+\end{itemize}
+
+You can also ask the toolchain to emit pure Python for any Jac project, allowing you to package and distribute modules to Python-only consumers while retaining Jac sources for authoring.
+
 \section{A Well Organized Codebase}
+Jac encourages clean separation between interfaces and implementations. You declare the shape of your module (functions, objects, enums, tests) once, and you may provide the bodies elsewhere. This is similar in spirit to ``header files'' in other ecosystems, but without manual include wiring—the compiler discovers implementation bodies automatically when you follow conventions.
+
+\subsection*{Separate interface and implementation}
+\begin{jacblock}
+can foo() -> str;
+obj vehicle;
+enum Size;
+test check_vehicle;
+
+// implementations can live in the same file or elsewhere
+impl foo() -> str { return "Hello"; }
+impl vehicle { has name: str = "Car"; }
+impl Size { Small=1, Medium=2, Large=3 }
+\end{jacblock}
+
+\subsection*{Keep implementations beside or under modules}
+Three project layouts are common and supported:
+
+\textbf{1) Same file as the declarations}
+
+Simple modules can keep declarations and bodies together for local readability.
+
+\textbf{2) Sibling ``.impl.jac'' and ``.test.jac'' files}
+
+\begin{lstlisting}[language=shell]
+base/
+├── main.jac
+├── main.impl.jac
+└── main.test.jac
+\end{lstlisting}
+
+The compiler automatically discovers these sibling files. No extra imports are required.
+
+\textbf{3) Dedicated ``.impl/'' and ``.test/'' folders}
+
+\begin{lstlisting}[language=shell]
+base/
+├── main.jac
+├── main.impl/
+│   ├── foo.impl.jac
+│   ├── vehicle.impl.jac
+│   └── size.impl.jac
+└── main.test/
+    └── check_vehicle.test.jac
+\end{lstlisting}
+
+This layout scales well for large codebases. You can even place all implementations across the project under a single top-level directory (for example, \texttt{src/impl/}) while keeping your public interfaces minimal and readable.
+
+\subsection*{Why this matters}
+\begin{itemize}
+    \item \textbf{Interface clarity}: Readers see what a module exposes without implementation noise.
+    \item \textbf{Team velocity}: Different contributors can implement features without touching interface files.
+    \item \textbf{Test hygiene}: Tests live beside modules but away from interfaces.
+    \item \textbf{Refactoring safety}: Changing implementations rarely changes consumer-facing interfaces.
+\end{itemize}
+
+\subsection*{A quick checklist}
+\begin{itemize}
+    \item Declare public functions, objects, enums, and tests in your \texttt{.jac} module.
+    \item Place bodies in \texttt{.impl.jac} siblings or an \texttt{.impl/} folder.
+    \item Keep tests in \texttt{.test.jac} files or a \texttt{.test/} folder.
+    \item Import Python libraries directly from Jac where helpful; prefer Jac idioms elsewhere.
+    \item Emit pure Python when distributing to Python-only consumers.
+\end{itemize}
