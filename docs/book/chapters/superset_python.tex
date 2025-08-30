@@ -18,7 +18,8 @@ Conceptually, Jac plays a similar role to how TypeScript or CoffeeScript relates
         \node[data] (src) {Jac Source};
         \node[proc, below=of src] (jacast) {Parse to\\Jac AST};
         \node[note, below=of jacast] (pre) {High level\\analysis and\\optimization (optional)};
-        \node[proc, right=of pre] (pyast) {Transpile to\\Python AST\\(+ runtime hooks)};
+        \node[proc, right=of jacast] (pyast) {Transpile to\\Python AST\\(+ runtime hooks)};
+        \node[data, below=of pyast] (pyprint) {Generate Python\\Source Code (optional)};
         \node[proc, above=of pyast] (bytecode) {CPython compiler\\to bytecode};
         \node[note, right=of bytecode] (post) {Low level\\analysis and\\optimization (optional)};
         \node[data, below=of post] (out) {Execute / Package};
@@ -28,6 +29,7 @@ Conceptually, Jac plays a similar role to how TypeScript or CoffeeScript relates
         \draw[->] (jacast) -- (pre);
         \draw[->] (pre) -- (pyast);
         \draw[->] (pyast) -- (bytecode);
+        \draw[->, dashed] (pyast) -- (pyprint);
         \draw[->] (bytecode) -- (post);
         \draw[->] (post) -- (out);
     \end{tikzpicture}
@@ -39,9 +41,12 @@ As shown in Figure~\ref{fig:jac-pipeline}, under the hood, the compilation pipel
 
 \begin{itemize}
     \item Jac source is parsed into a Jac-specific AST.
-    \item That AST is mechanically transpiled into a pure Python AST with well-defined callbacks into the Jac execution library for Jac-only semantics.
-    \item The Python AST is then compiled to CPython bytecode using Python's internal compiler pipeline.
-    \item The resulting bytecode is passed back to the Jac compiler for optional post-processing and metadata attachment before execution or packaging.
+    \item Optional high-level analysis and optimization passes run over the Jac AST.
+    \item The Jac AST is mechanically transpiled into a pure Python AST, with well-defined callbacks into the Jac runtime for Jac-only semantics.
+    \item Optional code generation is performed to produce Python source code.
+    \item The Python AST is compiled to CPython bytecode using Python's internal compiler pipeline.
+    \item Optional low-level analysis/optimization and metadata attachment are applied to the resulting bytecode/module artifacts.
+    \item The resulting artifact is executed directly or packaged like ordinary Python code.
 \end{itemize}
 
 
@@ -51,13 +56,14 @@ The consequence is powerful: you can reason about Jac as a natively Pythonic lan
 Here's a tiny Jac example:
 
 \begin{jacblock}
-can foo() -> str {
+def foo() -> str {
     return "Hello";
 }
 
 obj vehicle {
     has name: str = "Car";
 }
+
 enum Size {
     Small=1, Medium=2, Large=3
 }
@@ -97,76 +103,27 @@ if __name__ == "__main__":
 \end{nerd}
 
 \section{Jac and Python are Friends (no need to choose)}
-Jac and Python interoperate seamlessly. Unlike languages that bolt on a foreign function interface, Jac is natively Python: the output is pure Python modules with a thin, principled runtime library. That means:
+Jac and Python interoperate seamlessly. Unlike languages that bolt on a foreign function interface, Jac is natively Python: the output is pure Python modules with a thin, principled runtime library written in pure Python with a small set of primitives needed to realize Jac-specific semantics. That means:
 
 \begin{itemize}
+    \item You can import Jac modules from Python with familiar syntax.
     \item You can import Python modules from Jac with familiar syntax.
     \item You can embed native Python blocks directly inside Jac files for specialized needs.
     \item You can emit pure Python from any Jac program and import it from Python code without glue.
-    \item Library elements that the Jac transpiler would generate (e.g., decorators and helper classes) are regular Python artifacts you can author and use directly in Python where appropriate.
+    \item Library elements that the Jac transpiler would generate (e.g., decorators and helper classes) are regular Python artifacts you can use directly in any Python code. (That is if for some reason you wanted to avoid using Jac's language syntax but still wanted to use Jac's semantics as a python library.)
 \end{itemize}
 
 \subsection{Jac in your Python Codebase}
-There are two common ways to bring Jac into an existing Python project:
 
-\begin{enumerate}
-    \item \textbf{Precompile and import}: Build your Jac modules once, producing Python packages. Your Python code just imports them like any other module.
-    \item \textbf{On-demand loading}: Use the Jac toolchain/runtime to load Jac sources at import time. This is useful during development and for plugin-like architectures.
-\end{enumerate}
-
-Either way, what you import is an ordinary Python module. Functions, classes, and constants defined in Jac appear as Python callables and types.
-
-\begin{lstlisting}[language=Python]
-# Pretend myapp/math_utils.jac was built to myapp/math_utils.py
-from myapp import math_utils
-
-print(math_utils.foo())  # calls a Jac-declared function, now a Python def
-\end{lstlisting}
-
-Because Jac emits standard Python with light runtime hooks, Python tooling (linters, type checkers, debuggers) continues to work.
 
 \subsection{Python in your Jac Codebase}
-From Jac, importing Python is straightforward. Jac preserves Python's mental model for imports while adding a few ergonomic forms.
 
-\textbf{Import and include Python modules:}
-
-\begin{jacblock}
-include os;
-import datetime as dt;
-import from math { sqrt as square_root, log };
-
-with entry {
-    for i in range(int(square_root(dt.datetime.now().year))) {
-        print(getcwd(), square_root(i), int(log(i + 1)));
-    }
-}
-\end{jacblock}
-
-\textbf{Inline Python when you really need it:}
-
-\begin{jacblock}
-with entry { print("hello "); }
-
-::py::
-def foo():
-    print("world")
-
-foo()
-::py::
-\end{jacblock}
-
-Inline Python blocks are parsed as native Python and run in the same module context, giving you direct access to the entire Python ecosystem without leaving your Jac file.
 
 \section{Jac as a Python Library}
-Jac's runtime library provides the small set of primitives needed to realize Jac-specific semantics on top of Python's execution model. The transpiler calls into this library for features that do not exist in vanilla Python, while everything else compiles down to ordinary Python constructs. This design has a few important consequences:
 
-\begin{itemize}
-    \item \textbf{Stability}: The boundary between your code and the runtime is explicit and versioned.
-    \item \textbf{Observability}: Because the output is plain Python, you can profile, trace, and debug with standard Python tools.
-    \item \textbf{Composability}: You can author or override certain helpers in pure Python when advanced use cases call for it.
-\end{itemize}
 
-You can also ask the toolchain to emit pure Python for any Jac project, allowing you to package and distribute modules to Python-only consumers while retaining Jac sources for authoring.
+\section{Inlining Python code inside Jac code}
+
 
 \section{A Well Organized Codebase}
 Jac encourages clean separation between interfaces and implementations. You declare the shape of your module (functions, objects, enums, tests) once, and you may provide the bodies elsewhere. This is similar in spirit to ``header files'' in other ecosystems, but without manual include wiring—the compiler discovers implementation bodies automatically when you follow conventions.
