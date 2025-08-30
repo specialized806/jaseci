@@ -16,7 +16,7 @@
 *.mtc4
 *.mtc5
 *.mtc6
-*.mtc7
+*.mtc*
 *.out
 *.pdf
 *.tdn
