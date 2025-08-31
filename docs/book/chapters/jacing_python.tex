@@ -250,6 +250,7 @@ impl Day {
 
 While not the focus of this basics chapter, Jac also provides object–spatial abilities with `can`, which execute in response to spatial events (e.g., walker entry/exit on nodes). We'll revisit this paradigm in later chapters.
 
+
 \section{Loops, Conditionals, and Lambdas}
 
 \paragraph{Conditionals}
@@ -344,6 +345,47 @@ Formatted string literals are fully supported, including format specs.
 name = "Alice"; score = 92.5;
 msg = f"Hello, {name}. Score={score:.1f}";
 \end{jacblock}
+
+\section{Concurrency with \texttt{flow} and \texttt{wait}}
+
+Jac offers a simple, expression-level concurrency model using the `flow` and `wait` keywords. These integrate naturally into expressions (see precedence in this chapter’s expression section) and map directly to Python’s standard `concurrent.futures` thread pool APIs.
+
+\paragraph{Basics}
+
+\begin{itemize}
+    \item `flow <expr>`: schedule evaluation of `<expr>` on a background thread and return a task handle.
+    \item `wait <expr>`: block until the task completes and return its result (propagates exceptions).
+\end{itemize}
+
+\begin{jacblock}
+def compute(x: int) -> int { return x * x; }
+
+with entry {
+    # Fire-and-join
+    t1 = flow compute(10);
+    r1 = wait t1;          # => 100
+
+    # Parallel map pattern
+    nums   = [1, 2, 3, 4, 5];
+    tasks  = [flow compute(n) for n in nums];
+    results = [wait t for t in tasks];
+    print(results);        # => [1, 4, 9, 16, 25]
+}
+\end{jacblock}
+
+`flow`/`wait` compose with other expressions and work anywhere an expression is valid, including inside comprehensions and argument lists.
+
+\paragraph{Under the hood}
+
+`flow` submits the expression as a callable to a shared `ThreadPoolExecutor` and returns a `Future`-like handle; `wait` calls the underlying future’s `.result()` to retrieve the value. This design makes Jac’s concurrency predictable and Python-native:
+
+\begin{itemize}
+    \item Uses `concurrent.futures.ThreadPoolExecutor` under the hood.
+    \item `wait` mirrors `Future.result()`, propagating exceptions raised in the worker.
+    \item Best for I/O-bound or mixed workloads; CPU-bound speedups are subject to Python’s GIL like ordinary threads.
+\end{itemize}
+
+You can freely mix `flow`/`wait` with asynchronous functions (`async def` and `await`) when appropriate; `flow` is thread-based, while `await` is event-loop based.
 
 \section{Comprehensions}
 
