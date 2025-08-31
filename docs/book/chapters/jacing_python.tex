@@ -93,6 +93,29 @@ with entry:__main__ {
 }
 \end{jacblock}
 
+\paragraph{Entry blocks inside class/object bodies}
+
+The same rule applies inside archetype bodies (\texttt{obj}, \texttt{node}, \texttt{edge}, \texttt{walker}, and \texttt{class}): any free-floating statements must also live in a `with entry { ... }` block rather than appearing bare.
+
+\begin{jacblock}
+obj Registry {
+    static def register() -> None {
+        // ... registration logic ...
+    }
+
+    with entry {
+        // executed when the module defines this object
+        Registry.register();
+    }
+}
+
+class Legacy {
+    with entry {
+        print("Legacy class loaded");
+    }
+}
+\end{jacblock}
+
 \section{Functions, Classes, and Enums}
 
 Jac supports traditional functions, Python-like classes via the `obj` archetype, and enumerations. Signatures are explicit and type-annotated.
@@ -318,6 +341,68 @@ gen  = (x*x for x in range(10));
 \end{jacblock}
 
 Comprehensions naturally compose with lambdas and function calls, and they work well within object–spatial code when iterating over collections of nodes/edges.
+
+\subsection{Filter comprehensions (Jac extension)}
+
+Filter comprehensions provide a concise, chainable way to select elements from any collection-like expression. Predicates are boolean expressions evaluated against each element.
+
+\begin{itemize}
+    \item Syntax: `collection(?predicate1, predicate2, ...)`
+    \item Each predicate must evaluate to `True` for the element to be kept
+\end{itemize}
+
+\begin{jacblock}
+import random;
+
+obj TestObj {
+    has x: int = random.randint(0, 15),
+        y: int = random.randint(0, 15),
+        z: int = random.randint(0, 15);
+}
+
+with entry {
+    random.seed(42);
+    apple = [];
+    for i=0 to i<100 by i+=1  {
+        apple.append(TestObj());
+    }
+
+    // keep only items with 0 <= x <= 15 (always true in this example)
+    print(apple(?x >= 0, x <= 15) == apple);
+}
+\end{jacblock}
+
+Notes:
+\begin{itemize}
+    \item Multiple predicates are combined with logical AND
+    \item Works on any atomic chain result: lists, edge refs, call results, etc.
+\end{itemize}
+
+\subsection{Assign comprehensions (Jac extension)}
+
+Assign (bulk-assign) comprehensions apply field assignments to each element of a collection in-place and return the same collection reference. Useful for concise bulk updates.
+
+\begin{itemize}
+    \item Syntax: `collection(=field1=value1, field2=value2, ...)`
+    \item Applies to every element in the target collection
+    \item Supports chaining with subsequent operations
+\end{itemize}
+
+\begin{jacblock}
+obj MyObj {
+    has apple: int = 0,
+        banana: int = 0;
+}
+
+with entry {
+    x = MyObj();
+    y = MyObj();
+    mvar = [x, y](=apple=5, banana=7);
+    print(mvar);
+}
+\end{jacblock}
+
+The comprehension returns the (mutated) collection, enabling patterns like filtering then assigning, or vice versa, in a single readable chain.
 
 \section{Tests}
 

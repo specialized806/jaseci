@@ -3,7 +3,7 @@
 Special comprehensions provide concise, chainable operations on collections. Two common forms are filtering and bulk-setting fields across all elements.
 
 - **Filter comprehension**: Selects elements that satisfy all predicates.
-  - Syntax: `collection(predicate1, predicate2, ...)`
+  - Syntax: `collection(?predicate1, predicate2, ...)`
   - Predicates are boolean expressions evaluated against each element (you can reference fields directly, e.g., `x`, or with `?x`).
   - Returns a new collection containing only matching elements, preserving order.
 
