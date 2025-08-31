@@ -1,4 +1,4 @@
-"""byLLM Package - MTLLM Deprocation."""
+"""byLLM Package - MTLLM Deprecation."""
 
 import warnings
 
