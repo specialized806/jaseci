@@ -1,5 +1,355 @@
 \chapter{From Python-ic to Jac-tastic: The Basics of Jac}
+
+Coming from the previous chapter where we saw how Jac cleanly supersets Python and compiles to native Python, this chapter focuses on what it feels like to write everyday Jac. We walk through modules, definitions, control flow, and core expressions with side-by-side intuitions for Python developers.
+
 \section{What a Jac Module Looks Like}
+
+A minimal Jac module uses familiar Pythonic elements with a few clear syntactic conventions (braces for blocks, semicolons to terminate statements), plus Jac's entry block for top-level execution.
+
+\begin{jacblock}
+"""An optional module docstring"""
+
+import math;
+import datetime as dt;
+import from typing { Optional, Tuple };
+include os.path;
+
+def circle_area(r: float) -> float {
+    return math.pi * r * r;
+}
+
+obj Person {
+    has name: str = "Alice";
+}
+
+enum Size { Small=1, Medium=2, Large=3 }
+
+with entry {
+    who = Person();
+    print(f"Hello, {who.name}! Today is {dt.datetime.now().date()}");
+    print(circle_area(3.0));
+}
+\end{jacblock}
+
 \subsection{Whitespace and Comments}
+
+Jac uses braces to delimit blocks and semicolons to terminate statements. Indentation is for readability, not structure. Two comment forms are supported:
+
+\begin{itemize}
+    \item Line comments start with `#` and continue to end of line
+    \item Block comments are delimited with `#*` and `*#`
+\end{itemize}
+
+\begin{jacblock}
+# This is a line comment
+#*
+This is a block comment
+spanning multiple lines
+*#
+
+with entry {
+    if 1 < 2 {
+        print("yes");  # trailing comment
+    }
+}
+\end{jacblock}
+
+Modules may optionally begin with a top-level string literal which acts like a module docstring and is preserved through compilation.
+
 \subsection{Import and Include Statements}
-\subsection{Functions, Classes, and Enums}
+
+Imports mirror Python with a couple of ergonomic enhancements. You can import whole modules, alias them, selectively import symbols with braces, or \emph{include} all public names into the current scope.
+
+\begin{jacblock}
+// whole-module and aliased imports
+import math;
+import datetime as dt;
+
+// selective imports with braces (from one module)
+import from typing { Optional, Tuple };
+import from math { sqrt as square_root };
+
+// include-style import (bring public names into scope)
+include os.path;
+
+// relative selective import ("from ..pkg import {...}")
+import from ..utils { helper };
+\end{jacblock}
+
+Jac automatically resolves whether a target is a Jac or Python module and uses the right importer. The brace form avoids ambiguities of comma-heavy import lists, and `include` behaves like Python's `from target import *`, while still cooperating with tooling.
+
+\subsection{Entry blocks as the module's runnable code}
+
+Instead of free-floating top-level statements, Jac uses `with entry { ... }` blocks to declare executable code that should run when the module is executed or imported-as-main. You may define multiple entry blocks; they execute from top to bottom.
+
+\begin{jacblock}
+with entry {
+    print("Booting module...");
+}
+
+with entry:__main__ {
+    // Named entry point; helpful for clarity and tooling
+    print("Running as a script");
+}
+\end{jacblock}
+
+\section{Functions, Classes, and Enums}
+
+Jac supports traditional functions, Python-like classes via the `obj` archetype, and enumerations. Signatures are explicit and type-annotated.
+
+\paragraph{Functions}
+
+\begin{jacblock}
+def distance(x1: float, y1: float, x2: float, y2: float) -> float {
+    return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5;
+}
+\end{jacblock}
+
+\paragraph{Objects (classes)}
+
+Use `obj` to define classes; fields are declared with `has` and typed. Methods use `def`. Access control modifiers `:priv`, `:protect`, and `:pub` are available, and `static` methods work as you'd expect.
+
+\begin{jacblock}
+obj Calculator {
+    has scale: float = 1.0;
+
+    def :pub add(a: float, b: float) -> float {
+        return a + b;
+    }
+
+    static def mul(a: float, b: float) -> float {
+        return a * b;
+    }
+}
+\end{jacblock}
+
+\paragraph{Traditional classes}
+
+If you want familiar Python class semantics without Jac's field machinery, use `class`. You typically initialize attributes in an explicit constructor and manage methods exactly like in Python.
+
+\begin{jacblock}
+class Counter {
+    def __init__(start: int = 0) {
+        self.value = start;
+    }
+
+    def inc() -> None { self.value += 1; }
+
+    def read() -> int { return self.value; }
+}
+\end{jacblock}
+
+This mirrors traditional Python classes: no automatic field generation, no synthesized constructor beyond what you write, and full control over attribute creation and invariants.
+
+\paragraph{`obj` has dataclass-like semantics}
+
+By contrast, `obj` favors declarative data modeling. Fields declared with `has` carry types and defaults; Jac synthesizes the usual constructor and comparison/representation behavior. During the Python AST emission phase, an `obj` is lowered to a Python class decorated like a `dataclasses.dataclass`, with annotated attributes and default values.
+
+\begin{jacblock}
+obj Person {
+    has name: str = "Alice";
+    has age: int = 0;
+
+    def label() -> str { return f"{self.name} ({self.age})"; }
+}
+\end{jacblock}
+
+An illustrative Python shape of the generated class (simplified):
+
+\begin{lstlisting}[language=Python]
+from dataclasses import dataclass
+
+@dataclass
+class Person:
+    name: str = "Alice"
+    age: int = 0
+
+    def label(self) -> str:
+        return f"{self.name} ({self.age})"
+\end{lstlisting}
+
+Notes:
+\begin{itemize}
+    \item `has` fields become annotated attributes with defaults; Jac emits the appropriate dataclass decorator in the Python AST.
+    \item Instance methods in `obj` are regular methods; `static def` lowers to `@staticmethod`.
+    \item Choose `class` when you want raw Python-class control; choose `obj` when you want concise, dataclass-style data modeling with stronger type intent.
+\end{itemize}
+
+Abstract declarations use `abs` and can be implemented later (often in `impl` blocks or subclasses):
+
+\begin{jacblock}
+obj Shape {
+    def area() -> float abs;
+}
+
+obj Rectangle(Shape) {
+    has width: float;
+    has height: float;
+
+    def area() -> float { return self.width * self.height; }
+}
+\end{jacblock}
+
+\paragraph{Enumerations}
+
+Enumerations behave like Python's `enum.Enum`, with simple declarations and optional implementation blocks for behavior.
+
+\begin{jacblock}
+enum Color { RED=1, GREEN=2, BLUE }
+
+enum Day;
+
+impl Day {
+    MON=1, TUE=2, WED=3, THU=4, FRI=5, SAT=6, SUN=7,
+
+    def is_weekend(self) -> bool { return self in [Day.SAT, Day.SUN]; }
+}
+\end{jacblock}
+
+\paragraph{A note on abilities}
+
+While not the focus of this basics chapter, Jac also provides object–spatial abilities with `can`, which execute in response to spatial events (e.g., walker entry/exit on nodes). We'll revisit this paradigm in later chapters.
+
+\section{Loops, Conditionals, and Lambdas}
+
+\paragraph{Conditionals}
+
+Jac uses Pythonic boolean operators with explicit blocks.
+
+\begin{jacblock}
+if score >= 90 {
+    grade = "A";
+} elif score >= 80 {
+    grade = "B";
+} else {
+    grade = "C";
+}
+\end{jacblock}
+
+\paragraph{For-in and for-to-by loops}
+
+Iterate over iterables using `for x in xs { ... }`, or use the explicit counter form `for init to condition by increment { ... }`.
+
+\begin{jacblock}
+for ch in "abc" { print(ch); }
+
+for i in range(3) {
+    print(i);  // 0,1,2
+}
+
+for i=0 to i<3 by i+=1 {
+    print(i);
+}
+\end{jacblock}
+
+Asynchronous iteration mirrors Python:
+
+\begin{jacblock}
+async for item in stream {
+    await consume(item);
+}
+\end{jacblock}
+
+\paragraph{Lambdas}
+
+Lambdas are single-expression, typed, and great for functional-style helpers.
+
+\begin{jacblock}
+square = lambda x: int : x * x;
+combine = lambda a: int, b: int : a + b;
+
+nums = [1, 2, 3, 4, 5];
+evens = filter(lambda x: int : x % 2 == 0, nums);
+\end{jacblock}
+
+\section{Operators and Expressions}
+
+Jac's expression grammar extends Python's with a few extras. The high-level precedence is conditional > lambda > concurrency (flow/wait) > walrus > pipes > bitwise > logical/compare > arithmetic > connect > atom.
+
+\paragraph{Assignments and annotations}
+
+You can use `let` for declaration, annotate with types, and use walrus `:=` for named expressions.
+
+\begin{jacblock}
+let count: int = 0;
+ratio: float = total / max(count, 1);
+
+if (n := len(items)) > 0 {
+    avg = sum(items) / n;
+}
+\end{jacblock}
+
+\paragraph{Logical and comparison operators}
+
+Use `and`, `or`, `not`, `in`, `not in`, `is`, and `is not`, with chained comparisons supported.
+
+\begin{jacblock}
+ok = (0 <= x <= 10) and (item in allowed);
+\end{jacblock}
+
+\paragraph{Pipe operators}
+
+Pipe an expression forward or backward through call sites using `|>` and `<|`.
+
+\begin{jacblock}
+result = data |> normalize |> transform |> summarize;
+final  = render <| format <| result;
+\end{jacblock}
+
+\paragraph{F-strings}
+
+Formatted string literals are fully supported, including format specs.
+
+\begin{jacblock}
+name = "Alice"; score = 92.5;
+msg = f"Hello, {name}. Score={score:.1f}";
+\end{jacblock}
+
+\section{Comprehensions}
+
+Jac supports Python-style list, set, dict, and generator comprehensions, with optional `if` filters and multiple `for` clauses.
+
+\begin{jacblock}
+nums = [1, 2, 3, 4, 5];
+sq   = [x*x for x in nums];
+ev   = {x for x in nums if x % 2 == 0};
+mp   = {x: x*x for x in nums if x > 2};
+gen  = (x*x for x in range(10));
+\end{jacblock}
+
+Comprehensions naturally compose with lambdas and function calls, and they work well within object–spatial code when iterating over collections of nodes/edges.
+
+\section{Tests}
+
+Tests are first-class with the `test` keyword. A test is a named (or anonymous) code block. Use assertions and helper code as usual.
+
+\begin{jacblock}
+test math_basics {
+    assert (2 + 2) == 4;
+    assert len([1,2,3]) == 3;
+}
+
+test {  // anonymous test
+    x = [i for i in range(3)];
+    assert x == [0,1,2];
+}
+\end{jacblock}
+
+\section{Inlining Python}
+
+For specialized needs, embed native Python directly using `::py::`. The code shares the module's namespace and runs as ordinary Python.
+
+\begin{jacblock}
+with entry {
+    print("hello ");
+}
+
+::py::
+def foo():
+    print("world")
+
+foo()
+::py::
+\end{jacblock}
+
+Inline Python is ideal for leveraging the broader Python ecosystem, quick interop, or incremental migration of existing Python into Jac.
