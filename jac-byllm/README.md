@@ -1,16 +1,16 @@
-<p align="center">
-  <img src="../docs/docs/assets/byLLM Logo.png" height="100"/>
-</p>
-<h1 align="center">byLLM</h1>
+<div align="center">
+    <img src="../docs/docs/assets/byLLM_name_logo.png" height="150"
 
-<p align="center">
-  <a href="https://www.jac-lang.org/learn/jac-byllm/with_llm/">About byLLM</a> |
-  <a href="https://www.jac-lang.org/learn/jac-byllm/quickstart/">Get started</a> |
-  <a href="https://www.jac-lang.org/learn/jac-byllm/usage/">Usage docs</a> |
-  <a href="https://arxiv.org/abs/2405.08965">Research Paper</a>
-</p>
+  [About byLLM] | [Get started] | [Usage docs] | [Research Paper]
+</div>
 
-# AI-Integrated Programming Abstrations
+[About byLLM]: https://www.jac-lang.org/learn/jac-byllm/with_llm/
+[Get started]: https://www.jac-lang.org/learn/jac-byllm/quickstart/
+[Usage docs]: https://www.jac-lang.org/learn/jac-byllm/usage/
+[Research Paper]: https://arxiv.org/abs/2405.08965
+
+# byLLM : Language Abstrations for AI-Integrated Programming.
+> Prompt No More!
 
 [![PyPI version](https://img.shields.io/pypi/v/byllm.svg)](https://pypi.org/project/byllm/) [![tests](https://github.com/jaseci-labs/jaseci/actions/workflows/test-jaseci.yml/badge.svg?branch=main)](https://github.com/jaseci-labs/jaseci/actions/workflows/test-jaseci.yml)
 
