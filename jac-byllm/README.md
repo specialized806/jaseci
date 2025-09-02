@@ -1,23 +1,14 @@
 <p align="center">
-<table border="0">
-<tr>
-<td><img src="../docs/docs/assets/byLLM Logo.png" height="100"></td>
-<td><div style="font-size: 80px; font-weight: bold;">byLLM</div></td>
-</tr>
-</table>
+  <img src="docs/docs/assets/byLLM Logo.png" height="100"/>
 </p>
+<h1 align="center">byLLM</h1>
 
 <p align="center">
-    <a href="https://www.jac-lang.org/learn/jac-byllm/with_llm/">About byLLM</a> |
-    <a href="https://www.jac-lang.org/learn/jac-byllm/quickstart/">Get started</a> |
-    <a href="https://www.jac-lang.org/learn/jac-byllm/usage/">Usage docs</a> |
-    <a href="https://arxiv.org/abs/2405.08965">Research Paper</a>
+  <a href="https://www.jac-lang.org/learn/jac-byllm/with_llm/">About byLLM</a> |
+  <a href="https://www.jac-lang.org/learn/jac-byllm/quickstart/">Get started</a> |
+  <a href="https://www.jac-lang.org/learn/jac-byllm/usage/">Usage docs</a> |
+  <a href="https://arxiv.org/abs/2405.08965">Research Paper</a>
 </p>
-
-[About byLLM]: https://www.jac-lang.org/learn/jac-byllm/with_llm/
-[Get started]: https://www.jac-lang.org/learn/jac-byllm/quickstart/
-[Usage docs]: https://www.jac-lang.org/learn/jac-byllm/usage/
-[Research Paper]: https://arxiv.org/abs/2405.08965
 
 # AI-Integrated Programming Abstrations
 
