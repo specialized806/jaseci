@@ -2400,7 +2400,11 @@ class PyastGenPass(UniPass):
                     self.sync(
                         ast3.Attribute(
                             value=cast(ast3.expr, node.target.gen.py_ast[0]),
-                            attr=(node.right.sym_name),
+                            attr=(
+                                (node.right.sym_name)[2:]
+                                if node.right.sym_name.startswith("<>")
+                                else node.right.sym_name
+                            ),
                             ctx=cast(ast3.expr_context, node.right.py_ctx_func()),
                         )
                     )
