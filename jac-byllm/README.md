@@ -121,24 +121,31 @@ Areas we actively seek contributions:
 - ✨ New examples and tutorials
 - 🧪 Test cases and benchmarks
 
-Please see our [Contributing Guide](https://github.com/jaseci-labs/jaseci/blob/main/CONTRIBUTING.md) for detailed instructions.
+Please see our [Contributing Guide](https://www.jac-lang.org/internals/contrib/) for detailed instructions.
 
 If you find a bug or have a feature request, please [open an issue](https://github.com/jaseci-labs/jaseci/issues/new/choose).
 
 ## Community
 
 Join our vibrant community:
-- [Discord Server](https://discord.gg/jaseci) - Chat with the team and community
-- [Jaseci Forum](https://forum.jaseci.org) - Discuss ideas and get help
-- [Twitter](https://twitter.com/jaseci_ai) - Stay updated with latest news
+- [Discord Server](https://discord.gg/6j3QNdtcN6) - Chat with the team and community
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ### Third-Party Dependencies
 
 byLLM integrates with various LLM providers (OpenAI, Anthropic, Google, etc.) through LiteLLM.
+
+## Cite our research
+
+
+> Jayanaka L. Dantanarayana, Yiping Kang, Kugesan Sivasothynathan, Christopher Clarke, Baichuan Li, Savini
+Kashmira, Krisztian Flautner, Lingjia Tang, and Jason Mars. 2025. MTP: A Meaning-Typed Language Ab-
+straction for AI-Integrated Programming. Proc. ACM Program. Lang. 9, OOPSLA2, Article 314 (October 2025),
+29 pages. https://doi.org/10.1145/3763092
+
 
 ## Jaseci Contributors
 
