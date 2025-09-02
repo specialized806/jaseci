@@ -10,6 +10,7 @@ import jaclang.compiler.unitree as uni;
 import from jaclang { JacMachineInterface as Jac }
 import from jaclang.compiler.constant {SymbolType}
 import from jaclang.compiler.program { JacProgram }
+import from jaclang.compiler.type_system.types{ ClassType}
 import from jaclang.compiler.unitree { UniScopeNode }
 import from sem_manager { SemTokManager }
 import from jaclang.vendor.pygls { uris }
@@ -405,6 +406,9 @@ class JacLangServer(JacProgram , LanguageServer) {
                 f"'('{access if access else ''}{sym_node.sym_category.value}') '{sym_node.sym_name}";
             if sym_node.name_spec.clean_type {
                 node_info += f"': '{sym_node.name_spec.clean_type}";
+            }
+            if isinstance(sym_node,uni.AstSymbolNode) and isinstance(sym_node.name_spec.type,ClassType) {
+                node_info += f"': '{sym_node.name_spec.type.shared.class_name}";
             }
             if isinstance(sym_node, uni.AstDocNode) and sym_node.doc  {
                 node_info += f"'\n'{sym_node.doc.value}";
