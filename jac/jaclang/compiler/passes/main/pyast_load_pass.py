@@ -286,7 +286,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 for param in body_stmt.signature.params:
                     if param.name.value == "self" and param.type_tag:
-                        param.type_tag.tag = name
+                        param.type_tag.tag.value = name.value
         doc = (
             body[0].expr
             if isinstance(body[0], uni.ExprStmt)
