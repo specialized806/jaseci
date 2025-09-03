@@ -92,6 +92,20 @@ class TypeCheckerPassTests(TestCase):
           ^^^^^^^^^^^^^^
         """, program.errors_had[0].pretty_print())
 
+    def test_binary_op(self) -> None:
+        program = JacProgram()
+        mod = program.compile(self.fixture_abs_path("checker_binary_op.jac"))
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 2)
+        self._assert_error_pretty_found("""
+            r2: A = a + a;  # <-- Error
+            ^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+        self._assert_error_pretty_found("""
+            r4: str = (a+a) * B(); # <-- Error
+            ^^^^^^^^^^^^^^^^^^^^^
+        """, program.errors_had[1].pretty_print())
+
     def _assert_error_pretty_found(self, needle: str, haystack: str) -> None:
         for line in [line.strip() for line in needle.splitlines() if line.strip()]:
             self.assertIn(line, haystack, f"Expected line '{line}' not found in:\n{haystack}")
