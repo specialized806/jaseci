@@ -1,3 +1,7 @@
+import pygame
+
+pygame.init()
+
 class SimpleClass:
     def __init__(self, name: str, age: int) -> None:
         self.name = name
