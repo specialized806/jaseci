@@ -124,9 +124,11 @@ Once the `id_token` is obtained, call the callback endpoint provided by JAC Clou
 $GET {backendURL}/sso/${provider}/register/callback?id_token=${id_token}
 ```
 
-##### cURL Example
+##### cURL Example for apple with id_token
 ```bash
-curl "${backendURL}/sso/${provider}/register/callback?id_token=${id_token}"
+curl -X 'GET' \
+  'http://localhost:8000/sso/apple/register/callback?id_token=eyJraWQiOiJFNnE4M1JCMTVuIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL2FwcGxlaWQuYXBwbGUuY29tIiwiYXVkIjoibGlmZS50b2J1IiwiZXhwIjoxNzU2NTYxOTg0LCJpYXQiOjE3NTY0NzU1ODQsInN1YiI6IjAwMDkwNC5hMTI5MDJmMzA1ZGE0ZWY1ODE5MGVmN2VjMGQ3ODE1OS4xMzU3IiwiY19oYXNoIjoiQksxdTdBYmlua2RsMUlBWUVISWp2dyIsImVtYWlsIjoicWM5N2s3Mm5mN0Bwcml2YXRlcmVsYXkuYXBwbGVpZC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNfcHJpdmF0ZV9lbWFpbCI6dHJ1ZSwiYXV0aF90aW1lIjoxNzU2NDc1NTg0LCJub25jZV9zdXBwb3J0ZWQiOnRydWV9.iC_vnj2Ar268Z2IW0Ums1gr6OT0UFZocUFJaU_X1S9fudnd_pmIvgOgnlYO8Y7_P134xzjyrHV2-sB_APjZluaUNid7dUkLu7FaCEjU4GReuXlav9Ek9pZfV0FY0D2wqEJhMZ2EcQfgBJbthSewlbbwIeEF4OTHOPB3Pfw8jVJxEMseJ6glxOL0UHC7jRAJNsyYePG2ld1o66UMiFpOaIuuoTjJmigaPA4Mwe1Tiu_ZtGPONd9TEZo7xCXP_c2E68Rh9dLZcqULXAot58l71XEJJok63SQfGMfolR-ibCRAbWvqfe-ZFYYuxVIplva1MnLmiwuPCsb76nUxn0nNa5Q' \
+  -H 'accept: application/json'
 ```
 
 #### Supported Providers
