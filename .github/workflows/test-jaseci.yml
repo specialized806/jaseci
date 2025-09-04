@@ -44,6 +44,7 @@ jobs:
         pip install -e jac/support/plugins/streamlit
         pip install pytest
         pip install pytest-asyncio
+        pip install pygame
 
     - name: Set environment for testing
       run: |
