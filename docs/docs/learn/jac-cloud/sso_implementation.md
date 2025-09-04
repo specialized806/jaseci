@@ -117,11 +117,11 @@ In your frontend application (Web App, Android, or iOS), use the relevant librar
 
 #### 3. Call the Callback Endpoint
 
-Once the `id_token` is obtained, call the callback endpoint provided by JAC Cloud:
+Once the `id_token` is obtained, call the callback endpoint provided by JAC Cloud
 
 ##### Endpoint Format
 ```
-${backendURL}/sso/${provider}/register/callback?id_token=${id_token}
+$GET {backendURL}/sso/${provider}/register/callback?id_token=${id_token}
 ```
 
 ##### cURL Example
