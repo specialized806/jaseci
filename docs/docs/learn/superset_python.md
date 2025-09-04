@@ -16,23 +16,23 @@ Essentially, Jac is to Python what TypeScript is to JavaScript: a powerful super
 A simple Jac module with archetypes, functions, and an entrypoint...
 
 ```jac
-1 def foo() -> str { 
-2     return "Hello"; 
-3 } 
-4  
-5 obj vehicle { 
-6     has name: str = "Car"; 
-7 } 
-8  
-9 enum Size { 
-10    Small=1, Medium=2, Large=3 
-11 } 
-12  
-13 with entry { 
-14    car = vehicle(); 
-15    print(foo()); 
-16    print(car.name); 
-17    print(Size.Medium.value); 
+1 def foo() -> str {
+2     return "Hello";
+3 }
+4
+5 obj vehicle {
+6     has name: str = "Car";
+7 }
+8
+9 enum Size {
+10    Small=1, Medium=2, Large=3
+11 }
+12
+13 with entry {
+14    car = vehicle();
+15    print(foo());
+16    print(car.name);
+17    print(Size.Medium.value);
 18 }
 ```
 
@@ -40,22 +40,22 @@ A simple Jac module with archetypes, functions, and an entrypoint...
 
 ```python
 # Simplified Python equivalent
-1 from enum import Enum 
-2  
-3 def foo() -> str: 
-4     return "Hello" 
-5  
-6 class vehicle: 
-7     def __init__(self) -> None: 
-8         self.name: str = "Car" 
-9  
-10 class Size(Enum): 
-11    Small = 1; Medium = 2; Large = 3 
-12  
-13 if __name__ == "__main__": 
-14    car = vehicle() 
-15    print(foo()) 
-16    print(car.name) 
+1 from enum import Enum
+2
+3 def foo() -> str:
+4     return "Hello"
+5
+6 class vehicle:
+7     def __init__(self) -> None:
+8         self.name: str = "Car"
+9
+10 class Size(Enum):
+11    Small = 1; Medium = 2; Large = 3
+12
+13 if __name__ == "__main__":
+14    car = vehicle()
+15    print(foo())
+16    print(car.name)
 17    print(Size.Medium.value)
 ```
 
@@ -114,20 +114,20 @@ The integration goes even deeper, allowing you to choose the adoption strategy t
 You can leverage Jac's powerful object-spatial programming model (nodes, edges, walkers) directly in your `.py` files without writing any Jac syntax. This is perfect for incrementally adopting Jac's architectural patterns.
 
 ```python
-1 from jaclang import JacMachineInterface as _ 
-2 from jaclang.runtimelib.archetype import NodeArchetype, WalkerArchetype 
-3  
-4 class Person(NodeArchetype): 
-5     name: str 
-6  
-7 class Greeter(WalkerArchetype): 
-8     @_.entry 
-9     def start(self, n: Person): 
-10        print(f"Hello, {n.name}!") 
-11  
-12 if __name__ == "__main__": 
-13    alice = Person(name="Alice") 
-14    walker = Greeter() 
+1 from jaclang import JacMachineInterface as _
+2 from jaclang.runtimelib.archetype import NodeArchetype, WalkerArchetype
+3
+4 class Person(NodeArchetype):
+5     name: str
+6
+7 class Greeter(WalkerArchetype):
+8     @_.entry
+9     def start(self, n: Person):
+10        print(f"Hello, {n.name}!")
+11
+12 if __name__ == "__main__":
+13    alice = Person(name="Alice")
+14    walker = Greeter()
 15    _.spawn(walker, alice)
 ```
 
@@ -137,15 +137,15 @@ For situations where you need Python-specific syntax or want to gradually migrat
 
 
 ```jac
-1 with entry { 
-2     print("hello "); 
-3 } 
-4  
-5 ::py:: 
-6 def foo(): 
-7     print("world") 
-8  
-9 foo() 
+1 with entry {
+2     print("hello ");
+3 }
+4
+5 ::py::
+6 def foo():
+7     print("world")
+8
+9 foo()
 10 ::py::
 ```
 
