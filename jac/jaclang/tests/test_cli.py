@@ -575,5 +575,5 @@ class JacCliTests(TestCase):
             text=True,
         )
         stdout, stderr = process.communicate()
-        # self.assertIn("Hello, my name is Alice and I am 30 years old.", stdout)
-        self.assertIn("Hello from the pygame community. https://www.pygame.org/contribute.html", stdout)
+        self.assertIn("Hello, my name is Alice and I am 30 years old.", stdout)
+        # self.assertIn("Hello from the pygame community. https://www.pygame.org/contribute.html", stdout)

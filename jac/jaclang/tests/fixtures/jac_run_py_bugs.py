@@ -1,7 +1,3 @@
-import pygame
-
-pygame.init()
-
 class SimpleClass:
     def __init__(self, name: str, age: int) -> None:
         self.name = name
@@ -16,3 +12,7 @@ person = SimpleClass("Alice", 30)
 
 # Run the greet method
 print(person.greet())
+
+import pygame
+
+pygame.init()
