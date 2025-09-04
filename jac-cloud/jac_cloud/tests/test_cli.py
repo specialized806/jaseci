@@ -7,8 +7,8 @@ import time
 from jaclang.utils.test import TestCase
 
 
-class JacCliTests(TestCase):
-    """Test pass module."""
+class JacCloudCliTests(TestCase):
+    """Test Jac-cloud cli module."""
 
     def setUp(self) -> None:
         """Set up test."""
@@ -44,6 +44,7 @@ class JacCliTests(TestCase):
             bufsize=1
         )
         time.sleep(2)
+        os.killpg(serve.pid, signal.SIGTERM)
         try:
             serve_out, _= serve.communicate(timeout=10)
         except subprocess.TimeoutExpired:
