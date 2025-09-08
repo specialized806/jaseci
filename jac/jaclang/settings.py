@@ -24,6 +24,9 @@ class Settings:
     # Formatter configuration
     max_line_length: int = 88
 
+    # pytorch configuration
+    pytorch_fix: bool = False
+
     # LSP configuration
     lsp_debug: bool = False
 

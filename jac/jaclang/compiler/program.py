@@ -22,6 +22,7 @@ from jaclang.compiler.passes.main import (
     PyJacAstLinkPass,
     PyastBuildPass,
     PyastGenPass,
+    PytorchFixPass,
     SemDefMatchPass,
     SymTabBuildPass,
     SymTabLinkPass,
@@ -34,6 +35,7 @@ from jaclang.compiler.passes.tool import (
     JacFormatPass,
 )
 from jaclang.runtimelib.utils import read_file_with_encoding
+from jaclang.settings import settings
 from jaclang.utils.log import logging
 
 
@@ -56,6 +58,9 @@ py_code_gen = [
     PyBytecodeGenPass,
 ]
 format_sched = [FuseCommentsPass, DocIRGenPass, JacFormatPass]
+
+if settings.pytorch_fix:
+    py_code_gen.insert(1, PytorchFixPass)
 
 
 class JacProgram:
