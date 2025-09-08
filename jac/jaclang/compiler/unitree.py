@@ -809,7 +809,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 
     @property
     def sym_name(self) -> str:
-        return self._sym_name[2:] if self._sym_name.startswith("<>") else self._sym_name
+        return self._sym_name
 
     @property
     def sym_category(self) -> SymbolType:
