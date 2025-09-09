@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.type_system import types
 
 if TYPE_CHECKING:
@@ -411,6 +412,16 @@ class TypeEvaluator:
                 # TODO: Check if it has a `__call__` method if it's not a function type.
 
             case uni.Name():
+
+                # NOTE: For self's type pyright is getting the first parameter of a method and
+                # the name can be anything not just self, however we don't have the first parameter
+                # and self is a keyword, we need to do it in this way.
+                if (
+                    (expr.name == Tok.KW_SELF.value)
+                    and (func := expr.parent_of_type(uni.Ability))
+                    and (cls := func.parent_of_type(uni.Archetype))
+                ):
+                    return self.get_type_of_class(cls).clone_as_instance()
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
                     return self.get_type_of_symbol(symbol)
 
