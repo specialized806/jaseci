@@ -107,8 +107,6 @@ walker GeniusAgent {
 with entry {
     examples = [
         "Create a Python calculator with basic math operations",
-        "Add error handling for invalid input",
-        "Write unit tests for the calculator"
     ];
     for i in range(len(examples)) {
         print(f"\n📝 Demo {i+1}: {examples[i]}");
