@@ -29,6 +29,7 @@ def get_jac_search_paths(base_path: Optional[str] = None) -> list[str]:
             paths.append(user_dir)
     return list(dict.fromkeys(filter(None, paths)))
 
+
 # TODO: need to be removed once python modules are fully supported in jac
 def get_py_search_paths(base_path: Optional[str] = None) -> list[str]:
     """Construct a list of paths to search for Python modules."""
