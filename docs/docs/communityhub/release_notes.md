@@ -8,6 +8,15 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 - **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.
 
+- **Diagnostics System (TypeChecker Pass)**: Added typechecker diagnostics with detailed error reporting and source highlights.
+Supported cases include:
+  - Explicit type annotation checks in assignments.
+  - Type inference validation for assignments.
+  - Member access type resolution and inference.
+  - Import and function call expression checks.
+
+  Diagnostics now appear in the Jac VS Code extension (VSCE), providing real-time feedback during editing.
+
 ## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0
 
 - **Jac Cloud Hot Reload**: Introduced the ability to enable development mode like uvicorn by adding `--reload` in `jac serve`. This supports targetting specific directories by using `--watch path/to/dir1,path/to/dir2` (comma separated).
