@@ -30,6 +30,15 @@ def get_jac_search_paths(base_path: Optional[str] = None) -> list[str]:
     return list(dict.fromkeys(filter(None, paths)))
 
 
+def get_py_search_paths(base_path: Optional[str] = None) -> list[str]:
+    """Construct a list of paths to search for Jac modules."""
+    paths = []
+    if base_path:
+        paths.append(base_path)
+    paths.append(os.getcwd())
+    return list(dict.fromkeys(filter(None, paths)))
+
+
 def _candidate_from(base: str, parts: list[str]) -> Optional[Tuple[str, str]]:
     candidate = os.path.join(base, *parts)
     if os.path.isdir(candidate):
