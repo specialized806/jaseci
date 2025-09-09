@@ -31,7 +31,7 @@ def get_jac_search_paths(base_path: Optional[str] = None) -> list[str]:
 
 
 def get_py_search_paths(base_path: Optional[str] = None) -> list[str]:
-    """Construct a list of paths to search for Jac modules."""
+    """Construct a list of paths to search for Python modules."""
     paths = []
     if base_path:
         paths.append(base_path)
