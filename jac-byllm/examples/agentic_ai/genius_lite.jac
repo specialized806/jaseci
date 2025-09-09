@@ -44,34 +44,34 @@ def validate_code(code: str, task: Task) -> str by llm(method="Reason");
 # Simple genius agent
 node GeniusAgent {
     has results: list[CodeResult] = [];
-    
+
     def process_request(request: str) -> str {
         print(f"🤖 Processing: {request}");
-        
+
         # Create task plan
         tasks = create_plan(request);
         print(f"📋 Created {len(tasks)} tasks");
-        
+
         self.results = [];
-        
+
         # Execute each task
         for task in tasks {
             print(f"⚡ Working on: {task.name}");
-            
+
             try {
                 code = generate_solution(task);
                 feedback = validate_code(code, task);
-                
+
                 result = CodeResult(
                     task_name=task.name,
                     code=code,
                     status="success",
                     feedback=feedback
                 );
-                
+
                 self.results.append(result);
                 print(f"✅ Completed: {task.name}");
-                
+
             } except Exception as e {
                 result = CodeResult(
                     task_name=task.name,
@@ -83,17 +83,17 @@ node GeniusAgent {
                 print(f"❌ Failed: {task.name}");
             }
         }
-        
+
         return self.format_summary();
     }
-    
+
     def format_summary() -> str {
         output = f"🎯 Summary ({len(self.results)} tasks):\n\n";
-        
+
         for result in self.results {
             status_icon = "✅" if result.status == "success" else "❌";
             output += f"{status_icon} {result.task_name}\n";
-            
+
             if result.code and len(result.code) > 0 {
                 # Show first 150 chars of code
                 code_preview = result.code[:150];
@@ -102,17 +102,17 @@ node GeniusAgent {
                 }
                 output += f"   Code: {code_preview}\n";
             }
-            
+
             if result.feedback {
                 output += f"   Feedback: {result.feedback[:100]}...\n";
             }
-            
+
             output += "\n";
         }
-        
+
         return output;
     }
-    
+
     def get_code(task_name: str) -> str {
         for result in self.results {
             if result.task_name == task_name and result.code {
@@ -121,7 +121,7 @@ node GeniusAgent {
         }
         return f"No code found for task: {task_name}";
     }
-    
+
     def save_code(task_name: str, filename: str) -> bool {
         for result in self.results {
             if result.task_name == task_name and result.code {
@@ -140,22 +140,22 @@ node GeniusAgent {
     }
 }
 
-# Demo helper function  
+# Demo helper function
 def run_demo(agent: GeniusAgent) {
     examples = [
         "Create a Python calculator with basic math operations",
-        "Add error handling for invalid input", 
+        "Add error handling for invalid input",
         "Write unit tests for the calculator"
     ];
-    
+
     for i in range(len(examples)) {
         example = examples[i];
         print(f"\n📝 Demo {i+1}: {example}");
         print("-" * 50);
-        
+
         result = agent.process_request(example);
         print(result);
-        
+
         # Show full code for first example
         if i == 1 and agent.results {
             print("🔍 Full Solution:");
@@ -169,18 +169,18 @@ with entry {
     print("🚀 Genius Lite - AI Coding Assistant");
     print("Simple, structured code generation with validation");
     print("=" * 50);
-    
+
     agent = GeniusAgent();
-    
+
     # Run the demo
     run_demo(agent);
-    
+
     # Example of saving generated code
     if agent.results {
         first_task = agent.results[0].task_name;
         agent.save_code(first_task, "generated_calculator.py");
     }
-    
+
     print("\n🎉 Genius Lite Demo Complete!");
     print("💡 Features: Task planning, code generation, validation, file operations");
 }
