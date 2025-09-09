@@ -40,26 +40,34 @@ node TaskNode {
     has code: str = "";
     has feedback: str = "";
     has status: str = "pending";
+    has result: CodeResult = CodeResult();
 
-    def run() {
+    def process_task() {
         print(f"⚡ Working on: {self.task.name}");
         self.code = generate_solution(self.task);
         self.feedback = validate_code(self.code, self.task);
         self.status = "success" if self.feedback else "failed";
         print(f"✅ Completed: {self.task.name}");
+        
+        # Create result
+        self.result.task_name = self.task.name;
+        self.result.code = self.code;
+        self.result.status = self.status;
+        self.result.feedback = self.feedback;
     }
 }
 
 node SummaryNode {
     has results: list[CodeResult] = [];
-    def show() {
+
+    def show_summary() {
         output = f"🎯 Summary ({len(self.results)} tasks):\n\n";
         for result in self.results {
             status_icon = "✅" if result.status == "success" else "❌";
             output += f"{status_icon} {result.task_name}\n";
             if result.code and len(result.code) > 0 {
-                code_preview = result.code[:150];
-                if len(result.code) > 150 {
+                code_preview = result.code[:300];
+                if len(result.code) > 300 {
                     code_preview += "...";
                 }
                 output += f"   Code: {code_preview}\n";
@@ -78,6 +86,7 @@ walker GeniusAgent {
     has request: str;
     has tasks: list[Task] = [];
     has results: list[CodeResult] = [];
+    has current_task_index: int = 0;
 
     can start with `root entry {
         print("🚀 Genius Lite - AI Coding Assistant");
@@ -85,34 +94,58 @@ walker GeniusAgent {
         print("=" * 50);
         self.tasks = create_plan(self.request);
         print(f"📋 Created {len(self.tasks)} tasks");
-        for task in self.tasks {
-            task_node = TaskNode();
-            task_node.task = task;
-            task_node.run();
+        
+        if len(self.tasks) > 0 {
+            # Create task nodes and connect them
+            task_nodes = [];
+            for task in self.tasks {
+                task_node = TaskNode();
+                task_node.task = task;
+                task_nodes.append(task_node);
+            }
             
-            result = CodeResult();
-            result.task_name = task_node.task.name;
-            result.code = task_node.code;
-            result.status = task_node.status;
-            result.feedback = task_node.feedback;
-            self.results.append(result);
+            # Connect nodes in sequence
+            for i in range(len(task_nodes) - 1) {
+                task_nodes[i] ++> task_nodes[i + 1];
+            }
+            
+            # Connect last task node to summary
+            summary_node = SummaryNode();
+            summary_node.results = self.results;
+            task_nodes[-1] ++> summary_node;
+            
+            # Start traversal from first task
+            visit task_nodes[0];
+        } else {
+            print("No tasks created, ending execution");
         }
-        summary = SummaryNode();
-        summary.results = self.results;
-        summary.show();
+    }
+
+    can process_task with TaskNode entry {
+        # Let the node handle its own processing
+        here.process_task();
+
+        # Collect result from node and add to walker's results
+        self.results.append(here.result);
+        
+        # Continue to next node
+        visit [-->];
+    }
+
+    can show_summary with SummaryNode entry {
+        # Pass results to the summary node
+        here.results = self.results;
+        # Let the node handle its own summary display
+        here.show_summary();
     }
 }
 
 # Main execution
 with entry {
-    examples = [
-        "Create a Python calculator with basic math operations",
-    ];
-    for i in range(len(examples)) {
-        print(f"\n📝 Demo {i+1}: {examples[i]}");
-        print("-" * 50);
-        agent = GeniusAgent(request=examples[i]) spawn root;
-    }
+    user_request = "Create a Python calculator with basic math operations";
+    print(f"📝 Demo: {user_request}");
+    print("-" * 50);
+    agent = GeniusAgent(request=user_request) spawn root;
     print("\n🎉 Genius Lite Demo Complete!");
     print("💡 Features: Task planning, code generation, validation");
 }
