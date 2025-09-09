@@ -17,6 +17,7 @@ Supported cases include:
 
   Diagnostics now appear in the Jac VS Code extension (VSCE), providing real-time feedback during editing.
 
+- **Windows LSP Improvements**: Fixed an issue where outdated syntax and type errors persisted on Windows. Now, only current errors are displayed
 ## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0
 
 - **Jac Cloud Hot Reload**: Introduced the ability to enable development mode like uvicorn by adding `--reload` in `jac serve`. This supports targetting specific directories by using `--watch path/to/dir1,path/to/dir2` (comma separated).
