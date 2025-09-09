@@ -1,3 +1,5 @@
+from jaclang.tests.fixtures.jac_run_py_import import MyModule
+
 class SimpleClass:
     def __init__(self, name: str, age: int) -> None:
         self.name = name
@@ -13,6 +15,4 @@ person = SimpleClass("Alice", 30)
 # Run the greet method
 print(person.greet())
 
-import pygame
-
-pygame.init()
+MyModule.init()
