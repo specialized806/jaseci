@@ -468,7 +468,7 @@ class TypeEvaluator:
                     isinstance(caller_type, types.ClassType)
                     and caller_type.is_instantiable_class()
                 ):
-                    return caller_type.clone_as_instance() or types.UnknownType()
+                    return caller_type.clone_as_instance()
                 # TODO: Check if it has a `__call__` method if it's not a function type.
 
             case uni.Name():

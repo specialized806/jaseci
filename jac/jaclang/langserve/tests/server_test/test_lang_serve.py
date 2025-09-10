@@ -16,7 +16,6 @@ from lsprotocol.types import (
 from jaclang.langserve.tests.server_test.utils import (
     create_temp_jac_file,
     get_code,
-    get_jac_file_path,
     get_simple_code,
     create_ls_with_workspace,  # new helper
 )
@@ -25,8 +24,6 @@ from jaclang.vendor.pygls.workspace import Workspace
 from jaclang import JacMachineInterface as _
 from jaclang.langserve.engine import JacLangServer
 from jaclang.langserve.server import did_open, did_save, did_change, formatting
-
-JAC_FILE = get_jac_file_path()
 
 
 class TestLangServe:
