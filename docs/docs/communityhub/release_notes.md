@@ -7,6 +7,7 @@ This document provides a summary of new features, improvements, and bug fixes in
 ## jaclang 0.8.6 / jac-cloud 0.2.6 / byllm 0.4.1
 
 - **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.
+- **Consistent Jac Code Execution**: Fixed an issue allowing Jac code to be executed both as a standalone program and as an application. Running `jac run` now executes the `main()` function, while `jac serve` launches the application without invoking `main()`.
 
 ## jaclang 0.8.5 / jac-cloud 0.2.5 / mtllm 0.4.0
 
