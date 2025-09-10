@@ -134,16 +134,20 @@ class TestLoader(TestCase):
         """Test importing Python files using Jac import system."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        os.chdir(os.path.dirname(self.fixture_abs_path("jac_import_py_files.py")))
-        Jac.set_base_path(self.fixture_abs_path("jac_import_py_files.py"))
-        print(Jac.base_path_dir)
-        JacMachineInterface.attach_program(
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(os.path.dirname(self.fixture_abs_path("jac_import_py_files.py")))
+            Jac.set_base_path(self.fixture_abs_path("jac_import_py_files.py"))
+            print(Jac.base_path_dir)
+            JacMachineInterface.attach_program(
             program:=JacProgram(),
-        )
-        Jac.jac_import("jac_import_py_files", base_path=self.fixture_abs_path("jac_import_py_files.py"), lng="py")
-        cli.run(self.fixture_abs_path("jac_import_py_files.py"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("This is main test file for jac import of python files", stdout_value)
-        self.assertIn("python_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
-        self.assertIn("jac_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
+            )
+            Jac.jac_import("jac_import_py_files", base_path=self.fixture_abs_path("jac_import_py_files.py"), lng="py")
+            cli.run(self.fixture_abs_path("jac_import_py_files.py"))
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue()
+            self.assertIn("This is main test file for jac import of python files", stdout_value)
+            self.assertIn("python_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
+            self.assertIn("jac_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
+        finally:
+            os.chdir(original_cwd)
