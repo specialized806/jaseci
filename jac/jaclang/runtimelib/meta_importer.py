@@ -9,6 +9,7 @@ from typing import Optional, Sequence
 
 from jaclang.runtimelib.machine import JacMachine as Jac
 from jaclang.runtimelib.machine import JacMachineInterface
+from jaclang.settings import settings
 from jaclang.utils.module_resolver import get_jac_search_paths, get_py_search_paths
 
 
@@ -51,7 +52,10 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
         # TODO: We can remove it once python modules are fully supported in jac
         if path is None:
-            paths_to_search = get_py_search_paths()
+            if settings.full_pypackage_jacimport:
+                paths_to_search = get_jac_search_paths()
+            else:
+                paths_to_search = get_py_search_paths()
             for search_path in paths_to_search:
                 candidate_path = os.path.join(search_path, *module_path_parts)
                 # Check for directory package
