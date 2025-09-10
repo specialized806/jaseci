@@ -137,9 +137,8 @@ class JacLangServer(JacProgram , LanguageServer) {
             start_time = time.time();
             document = self.workspace.get_text_document(file_path);
             fs_path = document.path;
-
             self._clear_alerts_for_file(fs_path);
-            build = self.compile(use_str=document.source, file_path=fs_path, type_check=True);
+            build = self.build(file_path=fs_path, type_check=True);
             self.update_modules(fs_path, build);
             if build.annexable_by {
                 return self.deep_check(
