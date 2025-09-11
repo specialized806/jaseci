@@ -425,6 +425,7 @@ class JacCliTests(TestCase):
         self.assertIn("def foo(a: int) -> None:", stdout_value)
         self.assertIn("x = lambda a, b: b + a", stdout_value)
         self.assertIn("def visit_city(self, c: City) -> None:", stdout_value)
+        self.assertIn("sorted(users, key=lambda x: x['email'], reverse=True)", stdout_value)
 
     def test_caching_issue(self) -> None:
         """Test for Caching Issue."""
