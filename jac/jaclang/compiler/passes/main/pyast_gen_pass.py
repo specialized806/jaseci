@@ -2123,6 +2123,10 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
+        # Python lambda expressions don't support type annotations
+        if node.signature:
+            self._remove_lambda_param_annotations(node.signature)
+
         node.gen.py_ast = [
             self.sync(
                 ast3.Lambda(
@@ -2143,6 +2147,11 @@ class PyastGenPass(UniPass):
                 )
             )
         ]
+
+    def _remove_lambda_param_annotations(self, signature: uni.FuncSignature) -> None:
+        for param in signature.params:
+            if param.gen.py_ast and isinstance(param.gen.py_ast[0], ast3.arg):
+                param.gen.py_ast[0].annotation = None
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         op_cls = UNARY_OP_MAP.get(node.op.name)

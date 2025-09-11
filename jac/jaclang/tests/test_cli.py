@@ -403,6 +403,17 @@ class JacCliTests(TestCase):
         self.assertIn("class MyClass {", stdout_value)
         self.assertIn('"""Print function."""', stdout_value)
 
+    def test_lambda_arg_annotation(self) -> None:
+        """Test for lambda argument annotation."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.jac2py(f"{self.fixture_abs_path('../../tests/fixtures/lambda_arg_annotation.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("x = lambda a, b: b + a", stdout_value)
+        self.assertIn("y = lambda: 567", stdout_value)
+        self.assertIn("f = lambda x: 'even' if x % 2 == 0 else 'odd'", stdout_value)
+
     def test_caching_issue(self) -> None:
         """Test for Caching Issue."""
         test_file = self.fixture_abs_path("test_caching_issue.jac")
