@@ -60,7 +60,7 @@ py_code_gen = [
 format_sched = [FuseCommentsPass, DocIRGenPass, JacFormatPass]
 
 if settings.pytorch_fix:
-    py_code_gen.insert(1, PytorchFixPass)
+    py_code_gen.insert(0, PytorchFixPass)
 
 
 class JacProgram:
