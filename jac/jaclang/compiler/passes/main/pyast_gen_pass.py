@@ -1002,7 +1002,8 @@ class PyastGenPass(UniPass):
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if (abl := node.find_parent_of_type(uni.Ability))
+            if (abl := node.parent)
+            and isinstance(abl, uni.Ability)
             and abl.is_method
             and not node.is_static
             and not node.is_in_py_class
