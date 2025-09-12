@@ -70,45 +70,93 @@ class PytorchFixPass(UniPass):
         """Exit if statement."""
         a0 = node.body[0]
         b0 = node.else_body.body[0]
-        assert isinstance(a0, uni.Assignment) and isinstance(b0, uni.Assignment)
-        lhs = self.check_same_lhs(a0, b0)
-        func_name = uni.Name(
-            orig_src=node.loc.orig_src,
-            name=Tok.NAME,
-            value="torch",
-            line=0,
-            end_line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-        )
-        attr_name = uni.Name(
-            orig_src=node.loc.orig_src,
-            name=Tok.NAME,
-            value="where",
-            line=0,
-            end_line=0,
-            col_start=0,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-        )
-        target = uni.AtomTrailer(
-            target=func_name,
-            right=attr_name,
-            is_attr=True,
-            is_null_ok=False,
-            kid=[func_name, attr_name],
-        )
-        call = uni.FuncCall(
-            target=target,
-            params=[node.condition, cast(uni.Expr, a0.value), cast(uni.Expr, b0.value)],
-            genai_call=None,
-            kid=[target, node.condition, a0, b0],
-        )
-        new_node = uni.Assignment(
-            target=[lhs], value=call, type_tag=None, kid=[lhs, call]
-        )
-        node.parent.kid[node.parent.kid.index(node)] = new_node
-        new_node.parent = node.parent
+
+        if isinstance(a0, uni.Assignment) and isinstance(b0, uni.Assignment):
+            lhs = self.check_same_lhs(a0, b0)
+            func_name = uni.Name(
+                orig_src=node.loc.orig_src,
+                name=Tok.NAME,
+                value="torch",
+                line=0,
+                end_line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+            )
+            attr_name = uni.Name(
+                orig_src=node.loc.orig_src,
+                name=Tok.NAME,
+                value="where",
+                line=0,
+                end_line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+            )
+            target = uni.AtomTrailer(
+                target=func_name,
+                right=attr_name,
+                is_attr=True,
+                is_null_ok=False,
+                kid=[func_name, attr_name],
+            )
+            call = uni.FuncCall(
+                target=target,
+                params=[
+                    node.condition,
+                    cast(uni.Expr, a0.value),
+                    cast(uni.Expr, b0.value),
+                ],
+                genai_call=None,
+                kid=[target, node.condition, a0, b0],
+            )
+            new_node = uni.Assignment(
+                target=[lhs], value=call, type_tag=None, kid=[lhs, call]
+            )
+            node.parent.kid[node.parent.kid.index(node)] = new_node
+            new_node.parent = node.parent
+
+        elif isinstance(a0, uni.ReturnStmt) and isinstance(b0, uni.ReturnStmt):
+            aexpr, bexpr = a0.expr, b0.expr
+            if aexpr is None or bexpr is None:
+                return
+            func_name = uni.Name(
+                orig_src=node.loc.orig_src,
+                name=Tok.NAME,
+                value="torch",
+                line=0,
+                end_line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+            )
+            attr_name = uni.Name(
+                orig_src=node.loc.orig_src,
+                name=Tok.NAME,
+                value="where",
+                line=0,
+                end_line=0,
+                col_start=0,
+                col_end=0,
+                pos_start=0,
+                pos_end=0,
+            )
+            target = uni.AtomTrailer(
+                target=func_name,
+                right=attr_name,
+                is_attr=True,
+                is_null_ok=False,
+                kid=[func_name, attr_name],
+            )
+            call = uni.FuncCall(
+                target=target,
+                params=[node.condition, cast(uni.Expr, aexpr), cast(uni.Expr, bexpr)],
+                genai_call=None,
+                kid=[target, node.condition, a0, b0],
+            )
+            new_node = uni.ReturnStmt(expr=call, kid=[call])
+            node.parent.kid[node.parent.kid.index(node)] = new_node
+            new_node.parent = node.parent
