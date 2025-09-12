@@ -21,7 +21,7 @@ with entry {
 """Check syntax on change."""
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None {
-    await ls.launch_deep_check(params.text_document.uri, delay=0.0);
+    await ls.launch_deep_check(params.text_document.uri, delay=0.001);
     ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
 }
 
