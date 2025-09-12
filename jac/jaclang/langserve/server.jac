@@ -30,7 +30,6 @@ async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) ->
 @server.feature(lspt.TEXT_DOCUMENT_DID_SAVE)
 async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None {
     file_path = params.text_document.uri;
-    # Use shorter delays for save operations
     quick_check_passed = await ls.launch_quick_check(file_path, delay=0.1);
     if not quick_check_passed {
         return;
@@ -47,7 +46,6 @@ async def did_change(
     params: lspt.DidChangeTextDocumentParams
 ) -> None {
     file_path = params.text_document.uri;
-    import logging;
     try {
         document = ls.workspace.get_text_document(file_path);
         lines = document.source.splitlines();
@@ -58,12 +56,12 @@ async def did_change(
             ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
         }
     } except Exception as e {
-        logging.warning(f" 'Failed to update semantic tokens: ' {e} ");
+        ls.log_py.warning(f" 'Failed to update semantic tokens: ' {e} ");
     }
-    logging.info(f" 'Launching debounced quick check for ' {file_path} ");
+    ls.log_py.info(f" 'Launching debounced quick check for ' {file_path} ");
     quick_check_passed = await ls.launch_quick_check(file_path, delay=0.5);
     if quick_check_passed {
-        logging.info(
+        ls.log_py.info(
             f" 'Quick check passed, launching debounced deep check for ' {file_path} "
         );
         await ls.launch_deep_check(file_path, delay=1.0);
