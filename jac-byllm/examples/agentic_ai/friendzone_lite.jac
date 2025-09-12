@@ -37,7 +37,7 @@ sem Response.terminate_conversation = "True if the user asked to terminate the c
 
 """ Update and extract memory details based on user input and context."""
 def update_memory_details(
-    image: Image, 
+    image: Image,
     utterance: str = "",
     summary: str = "",
     when: str = "",
@@ -98,7 +98,7 @@ walker update_session {
         here.terminate_conversation = response.terminate_conversation;
         self.terminate_conversation = response.terminate_conversation;
         here.conversation = here.conversation + [{"role": "user", "content": self.utterance}] + [{"role": "assistant", "content": response.follow_up_questions}];
-        
+
         if response.show_summary {
             if response.terminate_conversation {
                 print("🤖 Assistant: " + response.follow_up_questions);
@@ -126,4 +126,4 @@ with entry {
         utterance = input("👤 You: ");
         walker_obj = root spawn update_session(utterance=utterance, image_url=image_url);
     }
-} 
+}
