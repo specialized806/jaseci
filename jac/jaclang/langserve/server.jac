@@ -56,12 +56,12 @@ async def did_change(
             ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
         }
     } except Exception as e {
-        ls.log_py.warning(f" 'Failed to update semantic tokens: ' {e} ");
+        ls.log_py(f" 'Failed to update semantic tokens: ' {e} ");
     }
-    ls.log_py.info(f" 'Launching debounced quick check for ' {file_path} ");
+    ls.log_py(f" 'Launching debounced quick check for ' {file_path} ");
     quick_check_passed = await ls.launch_quick_check(file_path, delay=0.5);
     if quick_check_passed {
-        ls.log_py.info(
+        ls.log_py(
             f" 'Quick check passed, launching debounced deep check for ' {file_path} "
         );
         await ls.launch_deep_check(file_path, delay=1.0);
