@@ -149,10 +149,13 @@ class TypeEvaluator:
                 mod.parent_scope = self.builtins_module
         return mod
 
-    def get_type_of_module(self, node: uni.ModulePath) -> types.ModuleType:
+    def get_type_of_module(self, node: uni.ModulePath) -> types.TypeBase:
         """Return the effective type of the module."""
         if node.name_spec.type is not None:
             return cast(types.ModuleType, node.name_spec.type)
+        if not Path(node.resolve_relative_path()).exists():
+            node.name_spec.type = types.UnknownType()
+            return node.name_spec.type
 
         mod: uni.Module = self._import_module_from_path(node.resolve_relative_path())
         mod_type = types.ModuleType(
@@ -206,6 +209,11 @@ class TypeEvaluator:
             # import from mod { item }
             else:
                 mod_type = self.get_type_of_module(import_node.from_loc)
+                if not isinstance(mod_type, types.ModuleType):
+                    node.name_spec.type = types.UnknownType()
+                    # TODO: Add diagnostic that from_loc is not accessible.
+                    # Eg: 'Import "scipy" could not be resolved'
+                    return node.name_spec.type
                 if sym := mod_type.symbol_table.lookup(node.name.value, deep=True):
                     node.name.sym = sym
                     if node.alias:
@@ -496,13 +504,19 @@ class TypeEvaluator:
                     and caller_type.is_instantiable_class()
                 ):
                     return caller_type.clone_as_instance()
-                # TODO: Check if it has a `__call__` method if it's not a function type.
+                if caller_type.is_class_instance():
+                    magic_call_ret = self.get_type_of_magic_method_call(
+                        caller_type, "__call__"
+                    )
+                    if magic_call_ret:
+                        return magic_call_ret
 
             case uni.BinaryExpr():
                 return operations.get_type_of_binary_operation(self, expr)
 
             case uni.Name():
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
+                    expr.sym = symbol
                     return self.get_type_of_symbol(symbol)
 
             # TODO: More expressions.
