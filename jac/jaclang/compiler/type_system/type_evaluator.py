@@ -412,20 +412,29 @@ class TypeEvaluator:
                 # TODO: Check if it has a `__call__` method if it's not a function type.
 
             case uni.Name():
-
                 # NOTE: For self's type pyright is getting the first parameter of a method and
                 # the name can be anything not just self, however we don't have the first parameter
                 # and self is a keyword, we need to do it in this way.
-                if (
-                    (expr.name == Tok.KW_SELF.value)
-                    and (func := expr.parent_of_type(uni.Ability))
-                    and (cls := func.parent_of_type(uni.Archetype))
-                ):
-                    return self.get_type_of_class(cls).clone_as_instance()
+                if expr.name == Tok.KW_SELF.value:
+                    return self._get_type_of_self(expr)
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
                     return self.get_type_of_symbol(symbol)
 
             # TODO: More expressions.
+        return types.UnknownType()
+
+    def _get_type_of_self(self, node: uni.Name) -> TypeBase:
+        """Return the effective type of self."""
+        assert node.name == Tok.KW_SELF.value
+        func: uni.Ability | None = None
+        if (impl := node.find_parent_of_type(uni.ImplDef)) and (
+            isinstance(impl.decl_link, uni.Ability)
+        ):
+            func = impl.decl_link
+        else:
+            func = node.find_parent_of_type(uni.Ability)
+        if func and (cls := func.find_parent_of_type(uni.Archetype)):
+            return self.get_type_of_class(cls).clone_as_instance()
         return types.UnknownType()
 
     def _convert_to_instance(self, jtype: TypeBase) -> TypeBase:
