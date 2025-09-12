@@ -74,7 +74,6 @@ walker task_manager {
     def route_to_node(utterance: str) -> RoutingNodes by llm();
     can execute with `root entry {
         routed_node_name = self.route_to_node(self.utterance);
-        print("******* Routed to: ", routed_node_name, " *******");
 
         if routed_node_name == RoutingNodes.TASK_HANDLING {
             routed_node = here ++> TaskHandling();
