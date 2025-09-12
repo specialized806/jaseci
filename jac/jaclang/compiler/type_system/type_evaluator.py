@@ -16,6 +16,7 @@ from jaclang.compiler.type_system import types
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
+from . import operations
 from .type_utils import ClassMember
 from .types import TypeBase
 
@@ -44,6 +45,21 @@ class PrefetchedTypes:
     template_class: TypeBase | None = None
 
 
+@dataclass
+class SymbolResolutionStackEntry:
+    """Represents a single entry in the symbol resolution stack."""
+
+    symbol: uni.Symbol
+
+    # Initially true, it's set to false if a recursion
+    # is detected.
+    is_result_valid: bool = True
+
+    # Some limited forms of recursion are allowed. In these
+    # cases, a partially-constructed type can be registered.
+    partial_type: TypeBase | None = None
+
+
 class TypeEvaluator:
     """Type evaluator for JacLang."""
 
@@ -58,14 +74,55 @@ class TypeEvaluator:
         in some place then it will not be available in the evaluator, So we
         are prefetching the builtins at the constructor level once.
         """
+        self.symbol_resolution_stack: list[SymbolResolutionStackEntry] = []
         self.builtins_module = builtins_module
         self.program = program
         self.prefetch = self._prefetch_types()
 
+    # -------------------------------------------------------------------------
+    # Symbol resolution stack
+    # -------------------------------------------------------------------------
+
+    def get_index_of_symbol_resolution(self, symbol: uni.Symbol) -> int | None:
+        """Get the index of a symbol in the resolution stack."""
+        for i, entry in enumerate(self.symbol_resolution_stack):
+            if entry.symbol == symbol:
+                return i
+        return None
+
+    def push_symbol_resolution(self, symbol: uni.Symbol) -> bool:
+        """
+        Push a symbol onto the resolution stack.
+
+        Return False if recursion detected and in that case it won't push the symbol.
+        """
+        idx = self.get_index_of_symbol_resolution(symbol)
+        if idx is not None:
+            # Mark all of the entries between these two as invalid.
+            for i in range(idx, len(self.symbol_resolution_stack)):
+                entry = self.symbol_resolution_stack[i]
+                entry.is_result_valid = False
+            return False
+        self.symbol_resolution_stack.append(SymbolResolutionStackEntry(symbol=symbol))
+        return True
+
+    def pop_symbol_resolution(self, symbol: uni.Symbol) -> bool:
+        """Pop a symbol from the resolution stack."""
+        popped_entry = self.symbol_resolution_stack.pop()
+        assert popped_entry.symbol == symbol
+        return popped_entry.is_result_valid
+
     # Pyright equivalent function name = getEffectiveTypeOfSymbol.
     def get_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
         """Return the effective type of the symbol."""
-        return self._get_type_of_symbol(symbol)
+        if self.push_symbol_resolution(symbol):
+            try:
+                return self._get_type_of_symbol(symbol)
+            finally:
+                self.pop_symbol_resolution(symbol)
+
+        # If we reached here that means we have a cyclic symbolic reference.
+        return types.UnknownType()
 
     # NOTE: This function doesn't exists in pyright, however it exists as a helper function
     # for the following functions.
@@ -178,6 +235,31 @@ class TypeEvaluator:
         node.name_spec.type = cls_type
         return cls_type
 
+    def get_type_of_ability(self, node: uni.Ability) -> TypeBase:
+        """Return the effective type of an ability."""
+        if node.name_spec.type is not None:
+            return node.name_spec.type
+
+        if not isinstance(node.signature, uni.FuncSignature):
+            node.name_spec.type = types.UnknownType()
+            return node.name_spec.type
+
+        if not isinstance(node.signature.return_type, uni.Expr):
+            node.name_spec.type = types.UnknownType()
+            return node.name_spec.type
+
+        return_type = self._convert_to_instance(
+            self.get_type_of_expression(node.signature.return_type)
+        )
+        func_type = types.FunctionType(
+            func_name=node.name_spec.sym_name,
+            return_type=return_type,
+            parameters=[],  # TODO:
+        )
+
+        node.name_spec.type = func_type
+        return func_type
+
     def get_type_of_string(self, node: uni.String | uni.MultiString) -> TypeBase:
         """Return the effective type of the string."""
         # FIXME: Strings are a type of LiteralString type:
@@ -235,6 +317,29 @@ class TypeEvaluator:
 
         # FIXME: This is temporary.
         return src_type == dest_type
+
+    # TODO: This should take an argument list as parameter.
+    def get_type_of_magic_method_call(
+        self, obj_type: TypeBase, method_name: str
+    ) -> TypeBase | None:
+        """Return the effective return type of a magic method call."""
+        if obj_type.category == types.TypeCategory.Class:
+            # TODO: getTypeOfBoundMember() <-- Implement this if needed, for the simple case
+            # we'll directly call member lookup.
+            #
+            # WE'RE DAVIATING FROM PYRIGHT FOR THIS METHOD HEAVILY HOWEVER THIS CAN BE RE-WRITTEN IF NEEDED.
+            #
+            assert isinstance(obj_type, types.ClassType)  # <-- To make typecheck happy.
+            if member := self._lookup_class_member(obj_type, method_name):
+                member_ty = self.get_type_of_symbol(member.symbol)
+                if isinstance(member_ty, types.FunctionType):
+                    return member_ty.return_type
+                # If we reached here, magic method is not a function.
+                # 1. recursively check __call__() on the type, TODO
+                # 2. if any or unknown, return getUnknownTypeForCallable() TODO
+                # 3. return undefined.
+                return None
+        return None
 
     def _assign_class(
         self, src_type: types.ClassType, dest_type: types.ClassType
@@ -297,6 +402,9 @@ class TypeEvaluator:
 
             case uni.Archetype():
                 return self.get_type_of_class(node)
+
+            case uni.Ability():
+                return self.get_type_of_ability(node)
 
             # This actually defined in the function getTypeForDeclaration();
             # Pyright has DeclarationType.Variable.
@@ -375,6 +483,23 @@ class TypeEvaluator:
 
                 else:  # <expr>[<expr>]
                     pass  # TODO:
+
+            case uni.AtomUnit():
+                return self.get_type_of_expression(expr.value)
+
+            case uni.FuncCall():
+                caller_type = self.get_type_of_expression(expr.target)
+                if isinstance(caller_type, types.FunctionType):
+                    return caller_type.return_type or types.UnknownType()
+                if (
+                    isinstance(caller_type, types.ClassType)
+                    and caller_type.is_instantiable_class()
+                ):
+                    return caller_type.clone_as_instance()
+                # TODO: Check if it has a `__call__` method if it's not a function type.
+
+            case uni.BinaryExpr():
+                return operations.get_type_of_binary_operation(self, expr)
 
             case uni.Name():
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):

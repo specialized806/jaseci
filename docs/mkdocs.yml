@@ -9,6 +9,7 @@ nav:
     - Tour of Jac/Jaseci: "learn/introduction.md"
     - Installation: "learn/installation.md"
     - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
+    - Native Superset of Python: "learn/superset_python.md"
     - Jac Playground: "learn/jac_playground.md"
     - Learn By Example:
       - LittleX (your own twitter):
@@ -56,6 +57,7 @@ nav:
         - "learn/jac-cloud/permission.md"
         - "learn/jac-cloud/logging.md"
         - "learn/jac-cloud/env_vars.md"
+        - "learn/jac-cloud/sso_implementation.md"
       - Real-time & Async:
         - "learn/jac-cloud/websocket.md"
         - "learn/jac-cloud/scheduler.md"
@@ -126,6 +128,8 @@ nav:
 
   - Jac Playground:
     - Playground: "/playground/"
+
+  - Jac GPT: "https://jac-gpt.jaseci.org"
 
 theme:
   logo: "assets/logo.png"
