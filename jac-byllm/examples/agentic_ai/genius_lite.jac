@@ -48,7 +48,7 @@ node TaskNode {
         self.feedback = validate_code(self.code, self.task);
         self.status = "success" if self.feedback else "failed";
         print(f"✅ Completed: {self.task.name}");
-        
+
         # Create result
         self.result.task_name = self.task.name;
         self.result.code = self.code;
@@ -94,7 +94,7 @@ walker GeniusAgent {
         print("=" * 50);
         self.tasks = create_plan(self.request);
         print(f"📋 Created {len(self.tasks)} tasks");
-        
+
         if len(self.tasks) > 0 {
             # Create task nodes and connect them
             task_nodes = [];
@@ -103,17 +103,17 @@ walker GeniusAgent {
                 task_node.task = task;
                 task_nodes.append(task_node);
             }
-            
+
             # Connect nodes in sequence
             for i in range(len(task_nodes) - 1) {
                 task_nodes[i] ++> task_nodes[i + 1];
             }
-            
+
             # Connect last task node to summary
             summary_node = SummaryNode();
             summary_node.results = self.results;
             task_nodes[-1] ++> summary_node;
-            
+
             # Start traversal from first task
             visit task_nodes[0];
         } else {
@@ -127,7 +127,7 @@ walker GeniusAgent {
 
         # Collect result from node and add to walker's results
         self.results.append(here.result);
-        
+
         # Continue to next node
         visit [-->];
     }
