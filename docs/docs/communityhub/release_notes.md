@@ -4,6 +4,31 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Unreleased)
 
+- **Fix `jac run same_name_of_jac.py`**- there was a bug which only runs jac file if both jac and python files were having same name. It was fixed so that developers run python files which has same name as jac with `jac run` command. (Ex: `jac run example.jac`, `jac run example.py`)
+- **Fix `jac run pythonfile.py` bugs**: Few bugs such as `init` is not found, `SubTag` ast node issue, are fixed. So that developers can run `jac run` of python files without these issues.
+- **Fix `lambda self injection in abilities`**: Removed unintended `self` parameter in lambdas declared inside abilities/methods.
+- **Fix `jac2py lambda annotations`**: Stripped type annotations from lambda parameters during jac2py conversion to ensure valid Python output while keeping them in Jac AST for type checking.
+
+- **TypeChecker Diagnostics**: Introduced type checking capabilities to catch errors early and improve code quality! The new type checker pass provides static analysis including:
+  - **Type Annotation Validation**: Checks explicit type annotations in variable assignments for type mismatches
+  - **Type Inference**: Simple type inference for assignments with validation against declared types
+  - **Member Access Type Checking**: Type checking for member access patterns (e.g., `obj.field.subfield`)
+  - **Import Symbol Type Checking**: Type inference for imported symbols (Basic support)
+  - **Function Call Return Type Validation**: Return type checking for function calls (parameter validation not yet supported)
+  - **Magic Method Support**: Type checking for special methods like `__call__`, `__add__`, `__mul__`
+  - **Binary Operation Type Checking**: Operator type validation with simple custom operator support
+  - **Class Instantiation**: Type checking for class constructor calls and member access
+  - **Cyclic Symbol Detection**: Detection of self-referencing variable assignments
+  - **Missing Import Detection**: Detection of imports from non-existent modules
+
+  Type errors now appear in the Jac VS Code extension (VSCE) with error highlighting during editing.
+
+- **VSCE Semantic Token Refresh Optimization**: Introduced a debounce mechanism for semantic token refresh in the Jac Language Server, significantly improving editor responsiveness:
+  - Reduces redundant deep checks during rapid file changes
+  - Optimizes semantic token updates for smoother editing experience
+
+- **Windows LSP Improvements**: Fixed an issue where outdated syntax and type errors persisted on Windows. Now, only current errors are displayed
+
 ## jaclang 0.8.6 / jac-cloud 0.2.6 / byllm 0.4.1
 
 - **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.

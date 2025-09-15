@@ -16,6 +16,7 @@ from jaclang.compiler.type_system import types
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
+from . import operations
 from .type_utils import ClassMember
 from .types import TypeBase
 
@@ -148,10 +149,13 @@ class TypeEvaluator:
                 mod.parent_scope = self.builtins_module
         return mod
 
-    def get_type_of_module(self, node: uni.ModulePath) -> types.ModuleType:
+    def get_type_of_module(self, node: uni.ModulePath) -> types.TypeBase:
         """Return the effective type of the module."""
         if node.name_spec.type is not None:
             return cast(types.ModuleType, node.name_spec.type)
+        if not Path(node.resolve_relative_path()).exists():
+            node.name_spec.type = types.UnknownType()
+            return node.name_spec.type
 
         mod: uni.Module = self._import_module_from_path(node.resolve_relative_path())
         mod_type = types.ModuleType(
@@ -205,6 +209,11 @@ class TypeEvaluator:
             # import from mod { item }
             else:
                 mod_type = self.get_type_of_module(import_node.from_loc)
+                if not isinstance(mod_type, types.ModuleType):
+                    node.name_spec.type = types.UnknownType()
+                    # TODO: Add diagnostic that from_loc is not accessible.
+                    # Eg: 'Import "scipy" could not be resolved'
+                    return node.name_spec.type
                 if sym := mod_type.symbol_table.lookup(node.name.value, deep=True):
                     node.name.sym = sym
                     if node.alias:
@@ -316,6 +325,29 @@ class TypeEvaluator:
 
         # FIXME: This is temporary.
         return src_type == dest_type
+
+    # TODO: This should take an argument list as parameter.
+    def get_type_of_magic_method_call(
+        self, obj_type: TypeBase, method_name: str
+    ) -> TypeBase | None:
+        """Return the effective return type of a magic method call."""
+        if obj_type.category == types.TypeCategory.Class:
+            # TODO: getTypeOfBoundMember() <-- Implement this if needed, for the simple case
+            # we'll directly call member lookup.
+            #
+            # WE'RE DAVIATING FROM PYRIGHT FOR THIS METHOD HEAVILY HOWEVER THIS CAN BE RE-WRITTEN IF NEEDED.
+            #
+            assert isinstance(obj_type, types.ClassType)  # <-- To make typecheck happy.
+            if member := self._lookup_class_member(obj_type, method_name):
+                member_ty = self.get_type_of_symbol(member.symbol)
+                if isinstance(member_ty, types.FunctionType):
+                    return member_ty.return_type
+                # If we reached here, magic method is not a function.
+                # 1. recursively check __call__() on the type, TODO
+                # 2. if any or unknown, return getUnknownTypeForCallable() TODO
+                # 3. return undefined.
+                return None
+        return None
 
     def _assign_class(
         self, src_type: types.ClassType, dest_type: types.ClassType
@@ -460,14 +492,31 @@ class TypeEvaluator:
                 else:  # <expr>[<expr>]
                     pass  # TODO:
 
+            case uni.AtomUnit():
+                return self.get_type_of_expression(expr.value)
+
             case uni.FuncCall():
                 caller_type = self.get_type_of_expression(expr.target)
                 if isinstance(caller_type, types.FunctionType):
                     return caller_type.return_type or types.UnknownType()
-                # TODO: Check if it has a `__call__` method if it's not a function type.
+                if (
+                    isinstance(caller_type, types.ClassType)
+                    and caller_type.is_instantiable_class()
+                ):
+                    return caller_type.clone_as_instance()
+                if caller_type.is_class_instance():
+                    magic_call_ret = self.get_type_of_magic_method_call(
+                        caller_type, "__call__"
+                    )
+                    if magic_call_ret:
+                        return magic_call_ret
+
+            case uni.BinaryExpr():
+                return operations.get_type_of_binary_operation(self, expr)
 
             case uni.Name():
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
+                    expr.sym = symbol
                     return self.get_type_of_symbol(symbol)
 
             # TODO: More expressions.
