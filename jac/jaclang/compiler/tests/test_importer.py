@@ -134,11 +134,11 @@ class TestLoader(TestCase):
         """Test importing Python files using Jac import system."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
+        os.environ["JAC_PYFILE_JACIMPORT"] = "True"
         original_cwd = os.getcwd()
         try:
             os.chdir(os.path.dirname(self.fixture_abs_path("jac_import_py_files.py")))
             Jac.set_base_path(self.fixture_abs_path("jac_import_py_files.py"))
-            print(Jac.base_path_dir)
             JacMachineInterface.attach_program(
             program:=JacProgram(),
             )
