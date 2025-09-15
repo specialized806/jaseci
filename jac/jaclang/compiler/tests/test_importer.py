@@ -9,6 +9,7 @@ from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachineInterface
 from jaclang.utils.test import TestCase
+from jaclang.settings import settings
 
 
 class TestLoader(TestCase):
@@ -134,7 +135,8 @@ class TestLoader(TestCase):
         """Test importing Python files using Jac import system."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        os.environ["JAC_PYFILE_JACIMPORT"] = "True"
+        os.environ["JACLANG_PYFILE_JACIMPORT"] = "True"
+        settings.load_env_vars()
         original_cwd = os.getcwd()
         try:
             os.chdir(os.path.dirname(self.fixture_abs_path("jac_import_py_files.py")))
