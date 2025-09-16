@@ -135,7 +135,7 @@ class TestLoader(TestCase):
         """Test importing Python files using Jac import system."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        os.environ["JACLANG_PYFILE_JACIMPORT"] = "True"
+        os.environ["JAC_PYFILE_RAISE"] = "True"
         settings.load_env_vars()
         original_cwd = os.getcwd()
         try:
@@ -151,7 +151,7 @@ class TestLoader(TestCase):
             self.assertIn("This is main test file for jac import of python files", stdout_value)
             self.assertIn("python_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
             self.assertIn("jac_module <jaclang.compiler.unitree.Module object", str(program.mod.hub))
-            os.environ["JACLANG_PYFILE_JACIMPORT"] = "false"
+            os.environ["JAC_PYFILE_RAISE"] = "false"
             settings.load_env_vars()
             os.chdir(os.path.dirname(self.fixture_abs_path("jac_import_py_files.py")))
             Jac.set_base_path(self.fixture_abs_path("jac_import_py_files.py"))

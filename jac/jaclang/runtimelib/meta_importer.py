@@ -51,8 +51,8 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                 )
 
         # TODO: We can remove it once python modules are fully supported in jac
-        if path is None and settings.pyfile_jacimport:
-            if settings.full_pypackage_jacimport:
+        if path is None and settings.pyfile_raise:
+            if settings.pyfile_raise_full:
                 paths_to_search = get_jac_search_paths()
             else:
                 paths_to_search = get_py_search_paths()
