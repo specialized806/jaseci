@@ -5,9 +5,11 @@ This document provides a summary of new features, improvements, and bug fixes in
 ## jaclang 0.8.8 / jac-cloud 0.2.8 / byllm 0.4.3 (Unreleased)
 
 - **Jac Import of Python Files**: This upgrade allows Python files in the current working directory to be imported using the Jac import system by running `export JAC_PYFILE_JACIMPORT=true`. To extend Jac import functionality to all Python files, including those in site-packages, developers can enable it by running `export JAC_FULL_PYPACKAGE_JACIMPORT=true`.
+- **Consistent Jac Code Execution**: Fixed an issue allowing Jac code to be executed both as a standalone program and as an application. Running `jac run` now executes the `main()` function, while `jac serve` launches the application without invoking `main()`.
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Latest Release)
 
+- **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.
 - **Fix `jac run same_name_of_jac.py`**- there was a bug which only runs jac file if both jac and python files were having same name. It was fixed so that developers run python files which has same name as jac with `jac run` command. (Ex: `jac run example.jac`, `jac run example.py`)
 - **Fix `jac run pythonfile.py` bugs**: Few bugs such as `init` is not found, `SubTag` ast node issue, are fixed. So that developers can run `jac run` of python files without these issues.
 - **Fix `lambda self injection in abilities`**: Removed unintended `self` parameter in lambdas declared inside abilities/methods.
