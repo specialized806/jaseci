@@ -772,6 +772,12 @@ class DocIRGenPass(UniPass):
     def exit_if_else_expr(self, node: uni.IfElseExpr) -> None:
         """Generate DocIR for conditional expressions."""
         parts: list[doc.DocType] = []
+        need_parens = not isinstance(node.parent, uni.AtomUnit)
+        need_indent = self.find_parent_of_type(node, uni.IfElseExpr)
+
+        if need_parens:
+            parts.append(self.text("("))
+            parts.append(self.line())
 
         for i in node.kid:
             if isinstance(i, uni.Expr):
@@ -784,7 +790,15 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         parts.pop()
+
+        if need_parens:
+            parts.append(self.line())
+            parts.append(self.text(")"))
+
         node.gen.doc_ir = self.group(self.concat(parts))
+
+        if need_indent:
+            node.gen.doc_ir = self.indent(node.gen.doc_ir)
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
         """Generate DocIR for boolean expressions (and/or)."""
@@ -1087,6 +1101,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.LPAREN:
                 parts.append(i.gen.doc_ir)
+                parts.append(self.line())
             elif isinstance(i, uni.Token) and i.name == Tok.RPAREN:
                 if not (
                     prev_item
@@ -1094,6 +1109,7 @@ class DocIRGenPass(UniPass):
                     and prev_item.name == Tok.LPAREN
                 ):
                     parts.pop()
+                parts.append(self.line())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             else:
