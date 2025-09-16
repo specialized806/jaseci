@@ -775,30 +775,39 @@ class DocIRGenPass(UniPass):
         need_parens = not isinstance(node.parent, uni.AtomUnit)
         need_indent = self.find_parent_of_type(node, uni.IfElseExpr)
 
-        if need_parens:
-            parts.append(self.text("("))
-            parts.append(self.line())
-
         for i in node.kid:
             if isinstance(i, uni.Expr):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
-            elif isinstance(i, uni.Token):
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         parts.pop()
 
-        if need_parens:
-            parts.append(self.line())
-            parts.append(self.text(")"))
-
         node.gen.doc_ir = self.group(self.concat(parts))
 
         if need_indent:
             node.gen.doc_ir = self.indent(node.gen.doc_ir)
+            
+        if need_parens:
+            # This is needed as indentation won't work for the first doc node if 
+            # it's not a line node
+            # check #2817
+            if isinstance(node.gen.doc_ir, doc.Indent):
+                assert isinstance(node.gen.doc_ir.contents, doc.Group)
+                assert isinstance(node.gen.doc_ir.contents.contents, doc.Concat)
+                node.gen.doc_ir.contents.contents.parts.insert(0, self.line())
+            
+            node.gen.doc_ir = self.group(
+                self.concat(
+                    [
+                        self.text("("),
+                        node.gen.doc_ir,
+                        self.line(),
+                        self.text(")"),
+                    ]
+                )
+            )        
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
         """Generate DocIR for boolean expressions (and/or)."""
@@ -810,6 +819,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
