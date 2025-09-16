@@ -4,7 +4,7 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 ## jaclang 0.8.8 / jac-cloud 0.2.8 / byllm 0.4.3 (Unreleased)
 
-- **Jac Import of Python Files**: This upgrade allows Python files in the current working directory to be imported using the Jac import system. To extend Jac import functionality to all Python files, including those in site-packages, developers can enable it by running `export full_pypackage_jacimport=true`.
+- **Jac Import of Python Files**: This upgrade allows Python files in the current working directory to be imported using the Jac import system by running `export JAC_PYFILE_JACIMPORT=true`. To extend Jac import functionality to all Python files, including those in site-packages, developers can enable it by running `export JAC_FULL_PYPACKAGE_JACIMPORT=true`.
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Latest Release)
 
