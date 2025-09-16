@@ -1964,7 +1964,7 @@ class FuncSignature(UniNode):
         return res
 
     def get_parameters(self) -> list[ParamVar]:
-        """Returns all parameters in the declared order."""
+        """Return all parameters in the declared order."""
         return self.posonly_params + self.params
 
     @property

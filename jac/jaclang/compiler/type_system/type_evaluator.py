@@ -8,14 +8,12 @@ PyrightReference:
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, cast, Callable
+from typing import Callable, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.type_system import types
-from jaclang.compiler.constant import Tokens as Tok
 
 if TYPE_CHECKING:
-    from jaclang.compiler.passes import UniPass
     from jaclang.compiler.program import JacProgram
 
 from . import operations
@@ -103,7 +101,9 @@ class TypeEvaluator:
         self.prefetch = self._prefetch_types()
         self.callback = callback
 
-    def add_diagnostic(self, node: uni.UniNode, message: str, warning: bool = False) -> None:
+    def add_diagnostic(
+        self, node: uni.UniNode, message: str, warning: bool = False
+    ) -> None:
         """Add a diagnostic message to the program."""
         self.callback(node, message, warning)
 
@@ -280,12 +280,13 @@ class TypeEvaluator:
             node.name_spec.type = types.UnknownType()
             return node.name_spec.type
 
+        return_type: TypeBase
         if isinstance(node.signature.return_type, uni.Expr):
-            return_type: TypeBase = self._convert_to_instance(
+            return_type = self._convert_to_instance(
                 self.get_type_of_expression(node.signature.return_type)
             )
         else:
-            return_type: TypeBase = types.UnknownType()
+            return_type = types.UnknownType()
 
         parameters: list[types.Parameter] = []
         for param in node.signature.get_parameters():
@@ -443,7 +444,6 @@ class TypeEvaluator:
     # in the future, we can refactor this).
     def _get_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
         """Return the declared type of the symbol."""
-
         node = symbol.decl.name_of
         match node:
             case uni.ModulePath():
@@ -601,8 +601,9 @@ class TypeEvaluator:
         self, expr: uni.FuncCall, func_type: types.FunctionType
     ) -> MatchArgsToParamsResult:
         """
-        Matches the arguments passed to a function to the corresponding parameters in that
-        function. This matching is done based on positions and keywords. Type evaluation and
+        Match arguments passed to a function to the corresponding parameters in that function.
+
+        This matching is done based on positions and keywords. Type evaluation and
         validation is left to the caller.
         This logic is based on PEP 3102: https://www.python.org/dev/peps/pep-3102/
         """
@@ -619,11 +620,11 @@ class TypeEvaluator:
                 arg_params[arg_expr] = param
             else:
                 argument_errors = True
-                self.add_diagnostic(expr, f"Too few positional arguments", warning=True)
+                self.add_diagnostic(expr, "Too few positional arguments", warning=True)
                 break
 
         if len(func_type.parameters) < len(expr.params):
-            self.add_diagnostic(expr, f"Too many positional arguments", warning=True)
+            self.add_diagnostic(expr, "Too many positional arguments", warning=True)
             argument_errors = True
 
         return MatchArgsToParamsResult(
@@ -632,10 +633,11 @@ class TypeEvaluator:
 
     def validate_call_args(self, expr: uni.FuncCall) -> TypeBase:
         """
-        Validates that the arguments can be assigned to the call's parameter
-        list, specializes the call based on arg types, and returns the
-        specialized type of the return value. If it detects an error along
-        the way, it emits a diagnostic and sets argumentErrors to true.
+        Validate that the arguments can be assigned to the call's parameter list.
+
+        Specializes the call based on arg types, and returns the specialized
+        type of the return value. If it detects an error along the way, it emits
+        a diagnostic and sets argumentErrors to true.
         """
         caller_type = self.get_type_of_expression(expr.target)
         if isinstance(caller_type, types.FunctionType):
