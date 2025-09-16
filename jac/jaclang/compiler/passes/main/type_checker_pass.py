@@ -60,9 +60,12 @@ class TypeCheckPass(UniPass):
             )
         return TypeCheckPass._EVALUATOR
 
-    def _add_diagnostic(self, node: uni.UniNode, message: str) -> None:
+    def _add_diagnostic(self, node: uni.UniNode, message: str, warning: bool) -> None:
         """Add a diagnostic message to the pass."""
-        self.log_error(message, node)
+        if warning:
+            self.log_warning(message, node)
+        else:
+            self.log_error(message, node)
 
     # --------------------------------------------------------------------------
     # Internal helper functions

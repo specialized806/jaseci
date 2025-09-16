@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast, Callable
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.type_system import types
+from jaclang.compiler.constant import Tokens as Tok
 
 if TYPE_CHECKING:
     from jaclang.compiler.passes import UniPass
@@ -22,7 +23,7 @@ from .type_utils import ClassMember
 from .types import TypeBase
 
 # The callback type definition for the diagnostic messages.
-DiagnosticCallback = Callable[[uni.UniNode, str], None]
+DiagnosticCallback = Callable[[uni.UniNode, str, bool], None]
 
 
 @dataclass
@@ -102,9 +103,9 @@ class TypeEvaluator:
         self.prefetch = self._prefetch_types()
         self.callback = callback
 
-    def add_diagnostic(self, node: uni.UniNode, message: str) -> None:
+    def add_diagnostic(self, node: uni.UniNode, message: str, warning: bool = False) -> None:
         """Add a diagnostic message to the program."""
-        self.callback(node, message)
+        self.callback(node, message, warning)
 
     # -------------------------------------------------------------------------
     # Symbol resolution stack
@@ -287,7 +288,6 @@ class TypeEvaluator:
             return_type: TypeBase = types.UnknownType()
 
         parameters: list[types.Parameter] = []
-
         for param in node.signature.get_parameters():
             # TODO: Set parameter category for *args, and **kwargs
             param_type: TypeBase | None = None
@@ -500,6 +500,8 @@ class TypeEvaluator:
             case uni.Int():
                 return self._convert_to_instance(self.get_type_of_int(expr))
 
+            # TODO: Handle literal float, bool, complex, list, set, dict, tuple.
+
             case uni.AtomTrailer():
                 # NOTE: Pyright is using CFG to figure out the member type by narrowing the base
                 # type and filtering the members. We're not doing that anytime sooner.
@@ -610,18 +612,18 @@ class TypeEvaluator:
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # FIXME: This is a ad-hoc implementation to make it work for now. !
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        for idx, arg in enumerate(expr.params):
-            arg_expr = arg.value if isinstance(arg, uni.KWPair) else arg
-            if idx < len(func_type.parameters):
-                arg_params[arg_expr] = func_type.parameters[idx]
+        for idx, param in enumerate(func_type.parameters):
+            if idx < len(expr.params):
+                arg = expr.params[idx]
+                arg_expr = arg.value if isinstance(arg, uni.KWPair) else arg
+                arg_params[arg_expr] = param
             else:
-                arg_params[arg_expr] = None
                 argument_errors = True
-                self.add_diagnostic(arg, f"Too many positional arguments")
+                self.add_diagnostic(expr, f"Too few positional arguments", warning=True)
                 break
 
-        if len(arg_params) < len(expr.params):
-            self.add_diagnostic(expr, f"Too few positional arguments")
+        if len(func_type.parameters) < len(expr.params):
+            self.add_diagnostic(expr, f"Too many positional arguments", warning=True)
             argument_errors = True
 
         return MatchArgsToParamsResult(
@@ -672,4 +674,7 @@ class TypeEvaluator:
                 self.add_diagnostic(
                     arg,
                     f"Cannot assign {arg_type} to parameter '{param.name}' of type {param.param_type}",
+                    # TODO: make the `class` architype `self` parameter working and change
+                    # the warning to error.
+                    warning=True,
                 )
