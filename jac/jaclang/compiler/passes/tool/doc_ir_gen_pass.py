@@ -353,7 +353,7 @@ class DocIRGenPass(UniPass):
                         *lhs_parts,
                         self.space(),
                         eq_tok,
-                        self.indent(self.concat([self.line(), rhs_concat])),
+                        self.indent(self.concat([self.space(), rhs_concat])),
                     ]
                 )
             )
