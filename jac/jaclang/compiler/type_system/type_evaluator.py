@@ -230,11 +230,14 @@ class TypeEvaluator:
         if node.name_spec.type is not None:
             return cast(types.ClassType, node.name_spec.type)
 
+        is_builtin_class = node.find_parent_of_type(uni.Module) == self.builtins_module
+
         cls_type = types.ClassType(
             types.ClassType.ClassDetailsShared(
                 class_name=node.name_spec.sym_name,
                 symbol_table=node,
                 # TODO: Resolve the base class expression and pass them here.
+                is_builtin_class=is_builtin_class,
             ),
             flags=types.TypeFlags.Instantiable,
         )
@@ -519,8 +522,13 @@ class TypeEvaluator:
                 # NOTE: For self's type pyright is getting the first parameter of a method and
                 # the name can be anything not just self, however we don't have the first parameter
                 # and self is a keyword, we need to do it in this way.
-                if expr.name == Tok.KW_SELF.value:
+                if (
+                    (expr.name == Tok.KW_SELF.value)
+                    and (fn := self._get_enclosing_function(expr))
+                    and (not fn.is_static)
+                ):
                     return self._get_type_of_self(expr)
+
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
                     expr.sym = symbol
                     return self.get_type_of_symbol(symbol)
@@ -528,16 +536,18 @@ class TypeEvaluator:
             # TODO: More expressions.
         return types.UnknownType()
 
-    def _get_type_of_self(self, node: uni.Name) -> TypeBase:
-        """Return the effective type of self."""
-        assert node.name == Tok.KW_SELF.value
-        func: uni.Ability | None = None
+    def _get_enclosing_function(self, node: uni.UniNode) -> uni.Ability | None:
+        """Get the enclosing function (ability) of the given node."""
         if (impl := node.find_parent_of_type(uni.ImplDef)) and (
             isinstance(impl.decl_link, uni.Ability)
         ):
-            func = impl.decl_link
-        else:
-            func = node.find_parent_of_type(uni.Ability)
+            return impl.decl_link
+        return node.find_parent_of_type(uni.Ability)
+
+    def _get_type_of_self(self, node: uni.Name) -> TypeBase:
+        """Return the effective type of self."""
+        assert node.name == Tok.KW_SELF.value
+        func = self._get_enclosing_function(node)
         if func and (cls := func.find_parent_of_type(uni.Archetype)):
             return self.get_type_of_class(cls).clone_as_instance()
         return types.UnknownType()
