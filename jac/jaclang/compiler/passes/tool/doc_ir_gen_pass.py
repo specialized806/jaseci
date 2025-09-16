@@ -198,7 +198,7 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-            elif isinstance(node.body, Sequence) and i in node.body:
+            elif i in node.body:
                 if not in_body:
                     body_parts.append(self.hard_line())
                 if (prev_item and type(prev_item) is not type(i)) or (
@@ -239,7 +239,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 if not isinstance(node.signature, uni.FuncSignature):
                     parts.append(self.space())
-            elif isinstance(node.body, Sequence) and i in node.body:
+            elif i in node.body:
                 if not in_body:
                     parts.pop()
                     body_parts.append(self.hard_line())
@@ -365,7 +365,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -387,7 +387,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -408,7 +408,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -581,7 +581,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -599,7 +599,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -617,7 +617,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -635,7 +635,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -653,7 +653,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -671,7 +671,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -727,7 +727,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
         for i in node.kid:
-            if isinstance(node.body, Sequence) and self.is_within(i, node.body):
+            if self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts)))
                     parts.append(self.hard_line())
@@ -1014,7 +1014,7 @@ class DocIRGenPass(UniPass):
             elif isinstance(i, uni.Token) and i.name == Tok.COLON:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
-            elif isinstance(node.body, Sequence) and i in node.body:
+            elif i in node.body:
                 if not in_body:
                     parts.pop()
                     body_parts.append(self.hard_line())
@@ -1389,7 +1389,7 @@ class DocIRGenPass(UniPass):
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
                 in_body = True
-                if in_body and isinstance(node.body, Sequence) and i == node.body[-1]:
+                if in_body and i == node.body[-1]:
                     in_body = False
                     body_parts.pop()
                     parts.append(self.indent(self.concat(body_parts)))
