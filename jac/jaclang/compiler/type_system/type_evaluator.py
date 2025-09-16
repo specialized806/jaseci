@@ -288,7 +288,7 @@ class TypeEvaluator:
 
         parameters: list[types.Parameter] = []
 
-        for param in node.signature.params:
+        for param in node.signature.get_parameters():
             # TODO: Set parameter category for *args, and **kwargs
             param_type: TypeBase | None = None
             if param.type_tag:

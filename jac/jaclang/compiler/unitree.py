@@ -1974,6 +1974,10 @@ class FuncSignature(UniNode):
         self.set_kids(nodes=new_kid)
         return res
 
+    def get_parameters(self) -> list[ParamVar]:
+        """Returns all parameters in the declared order."""
+        return self.posonly_params + self.params
+
     @property
     def is_static(self) -> bool:
         return (isinstance(self.parent, Ability) and self.parent.is_static) or (
