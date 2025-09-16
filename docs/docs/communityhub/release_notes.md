@@ -4,12 +4,12 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 ## jaclang 0.8.8 / jac-cloud 0.2.8 / byllm 0.4.3 (Unreleased)
 
-- **Fix `jac run same_name_of_jac.py`**- there was a bug which only runs jac file if both jac and python files were having same name. It was fixed so that developers run python files which has same name as jac with `jac run` command. (Ex: `jac run example.jac`, `jac run example.py`)
-- **Fix `jac run pythonfile.py` bugs**: Few bugs such as `init` is not found, `SubTag` ast node issue, are fixed. So that developers can run `jac run` of python files without these issues.
 - **Jac Import of Python Files**: This upgrade allows Python files in the current working directory to be imported using the Jac import system. To extend Jac import functionality to all Python files, including those in site-packages, developers can enable it by running `export full_pypackage_jacimport=true`.
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Latest Release)
 
+- **Fix `jac run same_name_of_jac.py`**- there was a bug which only runs jac file if both jac and python files were having same name. It was fixed so that developers run python files which has same name as jac with `jac run` command. (Ex: `jac run example.jac`, `jac run example.py`)
+- **Fix `jac run pythonfile.py` bugs**: Few bugs such as `init` is not found, `SubTag` ast node issue, are fixed. So that developers can run `jac run` of python files without these issues.
 - **Fix `lambda self injection in abilities`**: Removed unintended `self` parameter in lambdas declared inside abilities/methods.
 - **Fix `jac2py lambda annotations`**: Stripped type annotations from lambda parameters during jac2py conversion to ensure valid Python output while keeping them in Jac AST for type checking.
 - **byLLM Feature Methods as Tools**: byLLM now supports adding methods of classes as tools for the llm using such as `tools=[ToolHolder.tool]`
