@@ -605,8 +605,27 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=None,
             ).ir_out.unparse()
-        self.assertIn("isinstance( <>obj: object , class_or_tuple: _ClassInfo)", output)
-        self.assertIn("len(<>obj: Sized, astt: Any, z: int, j: str, a: Any = 90)", output)
+        self.assertIn(
+            "def isinstance(\n"
+            "    <>obj: object,\n"
+            "    class_or_tuple: _ClassInfo,\n"
+            "    <>obj: object,\n"
+            "    class_or_tuple: _ClassInfo\n"
+            ") -> bool {\n"
+            "    ...;\n"
+            "}", output)
+        self.assertIn(
+            "def len(\n"
+            "    <>obj: Sized,\n"
+            "    astt: Any,\n"
+            "    <>obj: Sized,\n"
+            "    astt: Any,\n"
+            "    z: int,\n"
+            "    j: str,\n"
+            "    a: Any = 90\n"
+            ") -> int {\n"
+            "    ...;\n"
+            "}", output)
 
     def test_refs_target(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -1397,7 +1416,7 @@ class JacLanguageTests(TestCase):
             test_content = "Hello, 世界! 🌍 Testing UTF-8 encoding."
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1410,7 +1429,7 @@ class JacLanguageTests(TestCase):
             test_content = "Hello, 世界! UTF-16 encoding test."
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1423,7 +1442,7 @@ class JacLanguageTests(TestCase):
             test_content = "Hello, UTF-8 BOM test! 🚀"
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1450,9 +1469,9 @@ class JacLanguageTests(TestCase):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             binary_data = bytes([0xFF, 0xFE, 0x00, 0x48, 0x65, 0x6C, 0x6C, 0x6F])
             f.write(binary_data)
-            f.flush()  
+            f.flush()
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertIsInstance(result, str)
@@ -1465,15 +1484,15 @@ class JacLanguageTests(TestCase):
         with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as f:
             test_content = (
                 "Special chars: åäö ñ ü ç é\n"
-                "Symbols: ©®™ §¶†‡•\n" 
+                "Symbols: ©®™ §¶†‡•\n"
                 "Math: ∑∏∫√±≤≥≠\n"
                 "Arrows: ←→↑↓↔\n"
                 "Emoji: 😀😍🎉🔥💯\n"
             )
             f.write(test_content)
-            f.flush()  
+            f.flush()
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
 
