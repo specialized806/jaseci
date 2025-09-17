@@ -1,7 +1,3 @@
-# Redirecting...
+# Welcome
 
-<script>
-    window.location.href = '/learn/introduction/';
-</script>
-
-You should be redirected to the introduction page automatically. If not, [click here](/learn/introduction/).
+This page redirects to the introduction.
