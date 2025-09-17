@@ -524,7 +524,7 @@ class TypeEvaluator:
                 # and self is a keyword, we need to do it in this way.
                 if (
                     (expr.name == Tok.KW_SELF.value)
-                    and (fn := self._get_enclosing_function(expr))
+                    and (fn := self._get_enclosing_method(expr))
                     and (not fn.is_static)
                 ):
                     return self._get_type_of_self(expr)
@@ -536,6 +536,10 @@ class TypeEvaluator:
             # TODO: More expressions.
         return types.UnknownType()
 
+    # -----------------------------------------------------------------------------
+    # Helper functions
+    # -----------------------------------------------------------------------------
+
     def _get_enclosing_function(self, node: uni.UniNode) -> uni.Ability | None:
         """Get the enclosing function (ability) of the given node."""
         if (impl := node.find_parent_of_type(uni.ImplDef)) and (
@@ -544,12 +548,23 @@ class TypeEvaluator:
             return impl.decl_link
         return node.find_parent_of_type(uni.Ability)
 
+    def _get_enclosing_method(self, node: uni.UniNode) -> uni.Ability | None:
+        """Get the enclosing method (ability) of the given node."""
+        enclosing_fn = self._get_enclosing_function(node)
+        while enclosing_fn and (not enclosing_fn.is_method):
+            enclosing_fn = self._get_enclosing_function(enclosing_fn)
+        if enclosing_fn and enclosing_fn.is_method:
+            return enclosing_fn
+        return None
+
     def _get_type_of_self(self, node: uni.Name) -> TypeBase:
         """Return the effective type of self."""
-        assert node.name == Tok.KW_SELF.value
-        func = self._get_enclosing_function(node)
-        if func and (cls := func.find_parent_of_type(uni.Archetype)):
-            return self.get_type_of_class(cls).clone_as_instance()
+        if method := self._get_enclosing_method(node):
+            cls = method.method_owner
+            if isinstance(cls, uni.Archetype):
+                return self.get_type_of_class(cls).clone_as_instance()
+            if isinstance(cls, uni.Enum):
+                pass  # TODO: Implement type from enum.
         return types.UnknownType()
 
     def _convert_to_instance(self, jtype: TypeBase) -> TypeBase:
