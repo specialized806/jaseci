@@ -59,10 +59,8 @@ class JacFormatPass(Transform[uni.Module, uni.Module]):
             if (
                 "\n" not in flat_contents_str
                 and len(flat_contents_str) <= width_remaining
-            ):
-                return flat_contents_str
-            elif (
-                "\n" in flat_contents_str 
+            ) or (
+                "\n" in flat_contents_str
                 and len(flat_contents_str.splitlines()[0]) <= width_remaining
             ):
                 return flat_contents_str

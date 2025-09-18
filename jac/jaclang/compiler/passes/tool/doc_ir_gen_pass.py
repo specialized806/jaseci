@@ -328,7 +328,6 @@ class DocIRGenPass(UniPass):
         rhs_parts: list[doc.DocType] = []
         eq_tok: Optional[doc.DocType] = None
         seen_eq = False
-        subtag_found = False
 
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_LET:
@@ -340,8 +339,6 @@ class DocIRGenPass(UniPass):
             elif seen_eq:
                 rhs_parts.append(i.gen.doc_ir)
             else:
-                if isinstance(i, uni.SubTag):
-                    subtag_found = True
                 if i == node.aug_op:
                     lhs_parts.append(self.space())
                 lhs_parts.append(i.gen.doc_ir)
@@ -350,22 +347,29 @@ class DocIRGenPass(UniPass):
 
         if eq_tok is not None:
             rhs_concat = self.concat(rhs_parts)
-            flat_contents = self.concat([
-                *lhs_parts,
-                self.space(),
-                eq_tok,
-                self.indent(self.concat([self.space(), self.group(rhs_concat, True)])),
-            ])
-            break_contents = self.concat([
-                *lhs_parts,
-                self.space(),
-                eq_tok,
-                self.indent(self.concat([self.line(), self.group(rhs_concat, True)])),
-            ])
+            flat_contents = self.concat(
+                [
+                    *lhs_parts,
+                    self.space(),
+                    eq_tok,
+                    self.indent(
+                        self.concat([self.space(), self.group(rhs_concat, True)])
+                    ),
+                ]
+            )
+            break_contents = self.concat(
+                [
+                    *lhs_parts,
+                    self.space(),
+                    eq_tok,
+                    self.indent(
+                        self.concat([self.line(), self.group(rhs_concat, True)])
+                    ),
+                ]
+            )
             node.gen.doc_ir = self.group(
                 self.if_break(
-                    flat_contents = flat_contents,
-                    break_contents = break_contents
+                    flat_contents=flat_contents, break_contents=break_contents
                 )
             )
         else:
@@ -523,12 +527,14 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
-        broke = self.concat([
-            parts[0],
-            self.indent(self.concat([self.hard_line(), *parts[1:-1]])),
-            self.hard_line(),
-            parts[-1],
-        ])
+        broke = self.concat(
+            [
+                parts[0],
+                self.indent(self.concat([self.hard_line(), *parts[1:-1]])),
+                self.hard_line(),
+                parts[-1],
+            ]
+        )
         node.gen.doc_ir = self.group(self.if_break(broke, not_broke))
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
@@ -714,12 +720,14 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
-        broke = self.concat([
-            parts[0],
-            self.indent(self.concat([self.hard_line(), *parts[1:-1]])),
-            self.hard_line(),
-            parts[-1],
-        ])
+        broke = self.concat(
+            [
+                parts[0],
+                self.indent(self.concat([self.hard_line(), *parts[1:-1]])),
+                self.hard_line(),
+                parts[-1],
+            ]
+        )
         node.gen.doc_ir = self.group(self.if_break(broke, not_broke))
 
     def exit_multi_string(self, node: uni.MultiString) -> None:
@@ -819,7 +827,7 @@ class DocIRGenPass(UniPass):
                         self.text(")"),
                     ]
                 )
-            )        
+            )
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
         """Generate DocIR for boolean expressions (and/or)."""
