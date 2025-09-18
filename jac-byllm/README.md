@@ -9,8 +9,7 @@
 [Usage docs]: https://www.jac-lang.org/learn/jac-byllm/usage/
 [Research Paper]: https://arxiv.org/abs/2405.08965
 
-# byLLM : Language Abstrations for AI-Integrated Programming.
-> Prompt No More!
+# byLLM : Less Prompting! More Coding!
 
 [![PyPI version](https://img.shields.io/pypi/v/byllm.svg)](https://pypi.org/project/byllm/) [![tests](https://github.com/jaseci-labs/jaseci/actions/workflows/test-jaseci.yml/badge.svg?branch=main)](https://github.com/jaseci-labs/jaseci/actions/workflows/test-jaseci.yml)
 
