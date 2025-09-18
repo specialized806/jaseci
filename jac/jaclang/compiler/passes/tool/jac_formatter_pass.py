@@ -61,6 +61,11 @@ class JacFormatPass(Transform[uni.Module, uni.Module]):
                 and len(flat_contents_str) <= width_remaining
             ):
                 return flat_contents_str
+            elif (
+                "\n" in flat_contents_str 
+                and len(flat_contents_str.splitlines()[0]) <= width_remaining
+            ):
+                return flat_contents_str
             else:
                 full_width_for_broken_content = self.MAX_LINE_LENGTH - (
                     indent_level * self.indent_size
