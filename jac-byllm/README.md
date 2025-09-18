@@ -41,7 +41,7 @@ with entry {
 
 This simple piece of code replaces traditional prompt engineering without introducing additional complexity.
 
-## Power Types with LLMs
+## Power of Types with LLMs
 
 Consider a program that detects the personality type of a historical figure from their name. This can eb built in a way that LLM picks from an enum and the output strictly adhere this type.
 
@@ -71,9 +71,9 @@ Even if we are elimination prompt engineering entierly, we allow specific ways t
 ```python
 """Represents the personal record of a person"""
 obj Person {
-    has name;
-    has dob;
-    has ssn;
+    has name: str;
+    has dob: str;
+    has ssn: str;
 }
 
 sem Person.name = "Full name of the person";
