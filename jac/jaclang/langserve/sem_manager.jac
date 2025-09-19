@@ -23,7 +23,6 @@ class SemTokManager {
         (prev_line, prev_col)= (0, 0);
         for nd in ir._in_mod_nodes {
             if isinstance(nd, uni.NameAtom) and nd.sem_token {
-                print(f"Generating sem token for {nd.sym_name} at {nd.loc}");
                 (line, col_start, col_end)= (( nd.loc.first_line - 1 ),
                 ( nd.loc.col_start - 1 ), ( nd.loc.col_end - 1 ));
                 length= ( col_end - col_start );

@@ -3,7 +3,7 @@
 import io
 import os
 import sys
-import sysconfig
+import pytest
 import tempfile
 import subprocess
 from pathlib import Path
@@ -731,21 +731,22 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.pp())
 
-    # def test_inherit_baseclass_sym(self) -> None:
-    #     """Basic test for symtable support for inheritance."""
-    #     mypass = JacProgram().compile(
-    #         self.examples_abs_path("guess_game/guess_game3.jac")
-    #     )
-    #     table = None
-    #     for i in mypass.sym_tab.kid_scope:
-    #         if i.scope_name == "GuessTheNumberGame":
-    #             for j in i.kid_scope:
-    #                 if j.scope_name == "play":
-    #                     table = j
-    #                     break
-    #             break
-    #     self.assertIsNotNone(table)
-    #     self.assertIsNotNone(table.lookup("attempts"))
+    @pytest.mark.xfail(reason="TODO: Support symtable for inheritance")
+    def test_inherit_baseclass_sym(self) -> None:
+        """Basic test for symtable support for inheritance."""
+        mypass = JacProgram().compile(
+            self.examples_abs_path("guess_game/guess_game3.jac")
+        )
+        table = None
+        for i in mypass.sym_tab.kid_scope:
+            if i.scope_name == "GuessTheNumberGame":
+                for j in i.kid_scope:
+                    if j.scope_name == "play":
+                        table = j
+                        break
+                break
+        self.assertIsNotNone(table)
+        self.assertIsNotNone(table.lookup("attempts"))
 
     def test_edge_expr_not_type(self) -> None:
         """Test importing python."""
