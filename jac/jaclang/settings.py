@@ -25,7 +25,7 @@ class Settings:
     max_line_length: int = 88
 
     # pytorch configuration
-    predynamo_pass: bool = True
+    predynamo_pass: bool = False
 
     # LSP configuration
     lsp_debug: bool = False
