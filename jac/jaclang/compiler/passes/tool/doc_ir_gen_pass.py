@@ -346,30 +346,15 @@ class DocIRGenPass(UniPass):
                     lhs_parts.append(self.space())
 
         if eq_tok is not None:
-            rhs_concat = self.concat(rhs_parts)
-            flat_contents = self.concat(
-                [
-                    *lhs_parts,
-                    self.space(),
-                    eq_tok,
-                    self.indent(
-                        self.concat([self.space(), self.group(rhs_concat, True)])
-                    ),
-                ]
-            )
-            break_contents = self.concat(
-                [
-                    *lhs_parts,
-                    self.space(),
-                    eq_tok,
-                    self.indent(
-                        self.concat([self.line(), self.group(rhs_concat, True)])
-                    ),
-                ]
-            )
+            rhs_concat = self.group(self.concat(rhs_parts))
             node.gen.doc_ir = self.group(
-                self.if_break(
-                    flat_contents=flat_contents, break_contents=break_contents
+                self.concat(
+                    [
+                        *lhs_parts,
+                        self.space(),
+                        eq_tok,
+                        self.concat([self.space(), rhs_concat]),
+                    ]
                 )
             )
         else:
@@ -735,7 +720,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(self.indent(self.concat(parts)))
 
     def exit_set_val(self, node: uni.SetVal) -> None:
         """Generate DocIR for set values."""
@@ -796,7 +781,6 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for conditional expressions."""
         parts: list[doc.DocType] = []
         need_parens = not isinstance(node.parent, uni.AtomUnit)
-        need_indent = self.find_parent_of_type(node, uni.IfElseExpr)
 
         parts.append(self.hard_line())
         for i in node.kid:
@@ -804,26 +788,22 @@ class DocIRGenPass(UniPass):
                 parts.append(self.group(i.gen.doc_ir))
                 parts.append(self.line())  # Potential break
             elif isinstance(i, uni.Token):
-                parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
-                parts.append(self.line())
+                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())
         parts.pop()
-        parts.append(self.hard_line())
 
         node.gen.doc_ir = self.group(self.concat(parts))
-
-        if need_indent:
-            node.gen.doc_ir = self.indent(node.gen.doc_ir)
 
         if need_parens:
             node.gen.doc_ir = self.group(
                 self.concat(
                     [
                         self.text("("),
-                        node.gen.doc_ir,
+                        self.indent(self.concat([node.gen.doc_ir])),
+                        self.hard_line(),
                         self.text(")"),
                     ]
                 )
@@ -1145,7 +1125,16 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
             prev_item = i
         parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(
+            self.concat(
+                [
+                    parts[0],
+                    self.indent(self.concat(parts[1:-1])),
+                    self.tight_line(),
+                    parts[-1],
+                ]
+            )
+        )
 
     def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
         """Generate DocIR for expression as item nodes."""
