@@ -59,7 +59,7 @@ py_code_gen = [
 ]
 format_sched = [FuseCommentsPass, DocIRGenPass, JacFormatPass]
 
-if settings.pytorch_fix:
+if settings.predynamo_pass:
     py_code_gen.insert(0, PreDynamoPass)
 
 
