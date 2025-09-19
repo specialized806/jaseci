@@ -306,7 +306,7 @@ class UniScopeNode(UniNode):
         self.parent_scope = parent_scope
         self.kid_scope: list[UniScopeNode] = []
         self.names_in_scope: dict[str, Symbol] = {}
-        self.inherited_scope: list[InheritedSymbolTable] = []
+        # self.inherited_scope: list[InheritedSymbolTable] = []
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -322,10 +322,10 @@ class UniScopeNode(UniNode):
         """Lookup a variable in the symbol table."""
         if name in self.names_in_scope:
             return self.names_in_scope[name]
-        for i in self.inherited_scope:
-            found = i.lookup(name, deep=False)
-            if found:
-                return found
+        # for i in self.inherited_scope:
+        #     found = i.lookup(name, deep=False)
+        #     if found:
+        #         return found
         if deep and self.parent_scope:
             return self.parent_scope.lookup(name, deep)
         return None
@@ -369,9 +369,9 @@ class UniScopeNode(UniNode):
         for k in self.kid_scope:
             if k.scope_name == name:
                 return k
-        for k2 in self.inherited_scope:
-            if k2.base_symbol_table.scope_name == name:
-                return k2.base_symbol_table
+        # for k2 in self.inherited_scope:
+        #     if k2.base_symbol_table.scope_name == name:
+        #         return k2.base_symbol_table
         return None
 
     def link_kid_scope(self, key_node: UniScopeNode) -> UniScopeNode:
@@ -489,21 +489,21 @@ class UniScopeNode(UniNode):
 
             fix(node)
 
-    def inherit_baseclasses_sym(self, node: Archetype | Enum) -> None:
-        """Inherit base classes symbol tables."""
-        if node.base_classes:
-            for base_cls in node.base_classes:
-                if (
-                    isinstance(base_cls, AstSymbolNode)
-                    and (found := self.use_lookup(base_cls))
-                    and found
-                ):
-                    found_tab = found.decl.sym_tab
-                    inher_sym_tab = InheritedSymbolTable(
-                        base_symbol_table=found_tab, load_all_symbols=True, symbols=[]
-                    )
-                    self.inherited_scope.append(inher_sym_tab)
-                    base_cls.name_spec.name_of = found.decl.name_of
+    # def inherit_baseclasses_sym(self, node: Archetype | Enum) -> None:
+    #     """Inherit base classes symbol tables."""
+    #     if node.base_classes:
+    #         for base_cls in node.base_classes:
+    #             if (
+    #                 isinstance(base_cls, AstSymbolNode)
+    #                 and (found := self.use_lookup(base_cls))
+    #                 and found
+    #             ):
+    #                 found_tab = found.decl.sym_tab
+    #                 inher_sym_tab = InheritedSymbolTable(
+    #                     base_symbol_table=found_tab, load_all_symbols=True, symbols=[]
+    #                 )
+    #                 self.inherited_scope.append(inher_sym_tab)
+    #                 base_cls.name_spec.name_of = found.decl.name_of
 
     def sym_pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""
@@ -521,29 +521,29 @@ class UniScopeNode(UniNode):
         return out
 
 
-class InheritedSymbolTable:
-    """Inherited symbol table."""
+# class InheritedSymbolTable:
+#     """Inherited symbol table."""
 
-    def __init__(
-        self,
-        base_symbol_table: UniScopeNode,
-        load_all_symbols: bool = False,  # This is needed for python imports
-        symbols: Optional[list[str]] = None,
-    ) -> None:
-        """Initialize."""
-        self.base_symbol_table: UniScopeNode = base_symbol_table
-        self.load_all_symbols: bool = load_all_symbols
-        self.symbols: list[str] = symbols if symbols else []
+#     def __init__(
+#         self,
+#         base_symbol_table: UniScopeNode,
+#         load_all_symbols: bool = False,  # This is needed for python imports
+#         symbols: Optional[list[str]] = None,
+#     ) -> None:
+#         """Initialize."""
+#         self.base_symbol_table: UniScopeNode = base_symbol_table
+#         self.load_all_symbols: bool = load_all_symbols
+#         self.symbols: list[str] = symbols if symbols else []
 
-    def lookup(self, name: str, deep: bool = False) -> Optional[Symbol]:
-        """Lookup a variable in the symbol table."""
-        if self.load_all_symbols:
-            return self.base_symbol_table.lookup(name, deep)
-        else:
-            if name in self.symbols:
-                return self.base_symbol_table.lookup(name, deep)
-            else:
-                return None
+#     def lookup(self, name: str, deep: bool = False) -> Optional[Symbol]:
+#         """Lookup a variable in the symbol table."""
+#         if self.load_all_symbols:
+#             return self.base_symbol_table.lookup(name, deep)
+#         else:
+#             if name in self.symbols:
+#                 return self.base_symbol_table.lookup(name, deep)
+#             else:
+#                 return None
 
 
 class AstSymbolNode(UniNode):

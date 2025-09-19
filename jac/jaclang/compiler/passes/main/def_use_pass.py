@@ -30,7 +30,7 @@ class DefUsePass(UniPass):
     """Jac Ast build pass."""
 
     def enter_archetype(self, node: uni.Archetype) -> None:
-        node.sym_tab.inherit_baseclasses_sym(node)
+        # node.sym_tab.inherit_baseclasses_sym(node)
 
         def inform_from_walker(node: uni.UniNode) -> None:
             for i in (
@@ -47,8 +47,8 @@ class DefUsePass(UniPass):
                 if isinstance(i.body, uni.ImplDef):
                     inform_from_walker(i.body)
 
-    def enter_enum(self, node: uni.Enum) -> None:
-        node.sym_tab.inherit_baseclasses_sym(node)
+    # def enter_enum(self, node: uni.Enum) -> None:
+    #     node.sym_tab.inherit_baseclasses_sym(node)
 
     def enter_type_ref(self, node: uni.TypeRef) -> None:
         node.sym_tab.use_lookup(node)

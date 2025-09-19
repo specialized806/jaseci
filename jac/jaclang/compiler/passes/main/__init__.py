@@ -4,7 +4,7 @@ from ..transform import Alert, Transform  # noqa: I100
 from .annex_pass import JacAnnexPass  # noqa: I100
 from .binder_pass import BinderPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass, UniPass  # noqa: I100
-from .sym_tab_link_pass import SymTabLinkPass  # noqa: I100
+# from .sym_tab_link_pass import SymTabLinkPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .sem_def_match_pass import SemDefMatchPass  # noqa: I100
 from .import_pass import JacImportDepsPass  # noqa: I100
@@ -15,7 +15,7 @@ from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .cfg_build_pass import CFGBuildPass  # noqa: I100
 from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
-from .inheritance_pass import InheritancePass  # noqa: I100
+# from .inheritance_pass import InheritancePass  # noqa: I100
 
 
 __all__ = [
@@ -28,7 +28,7 @@ __all__ = [
     "BinderPass",
     "TypeCheckPass",
     "SymTabBuildPass",
-    "SymTabLinkPass",
+    # "SymTabLinkPass",
     "DeclImplMatchPass",
     "DefUsePass",
     "SemDefMatchPass",
@@ -37,5 +37,5 @@ __all__ = [
     "PyBytecodeGenPass",
     "CFGBuildPass",
     "PyJacAstLinkPass",
-    "InheritancePass",
+    # "InheritancePass",
 ]
