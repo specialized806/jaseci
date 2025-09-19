@@ -14,7 +14,7 @@ from jaclang.compiler.unitree import Token
 T = TypeVar("T", bound=ast3.AST)
 
 
-class PytorchFixPass(UniPass):
+class PreDynamoPass(UniPass):
     """Fix PyTorch specific issues in the AST."""
 
     def enter_node(self, node: uni.UniNode) -> None:

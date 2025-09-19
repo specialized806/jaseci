@@ -18,11 +18,11 @@ from jaclang.compiler.passes.main import (
     InheritancePass,
     JacAnnexPass,
     JacImportDepsPass,
+    PreDynamoPass,
     PyBytecodeGenPass,
     PyJacAstLinkPass,
     PyastBuildPass,
     PyastGenPass,
-    PytorchFixPass,
     SemDefMatchPass,
     SymTabBuildPass,
     SymTabLinkPass,
@@ -60,7 +60,7 @@ py_code_gen = [
 format_sched = [FuseCommentsPass, DocIRGenPass, JacFormatPass]
 
 if settings.pytorch_fix:
-    py_code_gen.insert(0, PytorchFixPass)
+    py_code_gen.insert(0, PreDynamoPass)
 
 
 class JacProgram:
