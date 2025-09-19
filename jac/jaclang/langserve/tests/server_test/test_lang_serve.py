@@ -162,8 +162,6 @@ class TestLangServe:
         )
 
         await did_save(ls, params)
-        sem_tokens = ls.get_semantic_tokens(uri)
-        print('ilasessaa>> ',len(sem_tokens.data))
         diagnostics = ls.diagnostics.get(uri, [])
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 0
