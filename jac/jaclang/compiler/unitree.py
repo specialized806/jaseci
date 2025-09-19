@@ -1941,14 +1941,20 @@ class FuncSignature(UniNode):
 
     def __init__(
         self,
-        params: Sequence[ParamVar] | None,
-        return_type: Optional[Expr],
         posonly_params: Sequence[ParamVar],
+        params: Sequence[ParamVar] | None,
+        varargs: Optional[ParamVar],
+        kwonlyargs: Sequence[ParamVar],
+        kwargs: Optional[ParamVar],
+        return_type: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        self.params: list[ParamVar] = list(params) if params else []
-        self.return_type = return_type
         self.posonly_params: list[ParamVar] = list(posonly_params)
+        self.params: list[ParamVar] = list(params) if params else []
+        self.varargs = varargs
+        self.kwonlyargs: list[ParamVar] = list(kwonlyargs)
+        self.kwargs = kwargs
+        self.return_type = return_type
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:

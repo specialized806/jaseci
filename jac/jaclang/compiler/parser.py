@@ -856,18 +856,77 @@ class JacParser(Transform[uni.Source, uni.Module]):
             # Otherwise, parse the traditional parameter list form
             else:
                 self.consume_token(Tok.LPAREN)
-                params = self.match(list)
+                all_params = self.match(list)
+                posonly_params :list[uni.ParamVar]=[]
+                params :list[uni.ParamVar]=[]
+                varargs :list[uni.ParamVar]=[]
+                kwonlyargs :list[uni.ParamVar]=[]
+                kwargs :list[uni.ParamVar]=[]
+                
+                cur_state = 'posonly' if any(
+                    isinstance(i, uni.Token) and i.name == Tok.DIV for i in all_params
+                ) else 'positional'
+                i = 0
+                while i < len(all_params):
+                    cur_nd = all_params[i]
+                    if isinstance(cur_nd, uni.ParamVar):
+                        if cur_nd.unpack and cur_nd.unpack == Tok.STAR_MUL:
+                            cur_state = 'varargs'
+                        elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
+                            cur_state = 'kwargs'
+                        if cur_state == 'positional':
+                            params.append(cur_nd)
+                        elif cur_state == 'posonly':
+                            posonly_params.append(cur_nd)
+                        # TODO: handle the varargs properly
+                        elif cur_state == 'varargs':
+                            varargs.append(cur_nd)
+                        elif cur_state == 'keyword_only':
+                            kwonlyargs.append(cur_nd)
+                        # TODO: handle the kwargs properly
+                        elif cur_state == 'kwargs':
+                            kwargs.append(cur_nd)
+                        else:
+                            raise self.ice()
+                    elif isinstance(cur_nd, uni.Token):
+                        if cur_nd.name == Tok.DIV:
+                            #TODO :make me robust error handling
+                            if cur_state in ['varargs', 'kwargs']:
+                                self.parse_ref.log_error(
+                                    "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
+                                    node_override=cur_nd,
+                                )
+                            cur_state = 'positional'
+                        elif cur_nd.name == Tok.STAR_MUL:
+                            #TODO :make me robust error handling
+                            if cur_state == 'kwargs':
+                                self.parse_ref.log_error(
+                                    "Invalid syntax in function parameters: '*' cannot appear after '**'.",
+                                    node_override=cur_nd,
+                                )
+                            cur_state = 'keyword_only'
+                        elif cur_nd.name == Tok.COMMA:
+                            i += 1
+                            continue
+                        else:
+                            raise self.ice()
+                    else:
+                        raise self.ice()
+                    i += 1
+
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=(
-                        self.extract_from_list(params, uni.ParamVar) if params else []
-                    ),
+                    posonly_params=posonly_params,
+                    params=params,
+                    varargs=varargs,
+                    kwonlyargs=kwonlyargs,
+                    kwargs=kwargs,
                     return_type=return_spec,
-                    posonly_params=[],
                     kid=self.flat_cur_nodes,
                 )
+
 
         def func_decl_params(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
@@ -876,11 +935,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             return self.cur_nodes
 
-        def param_var(self, _: None) -> uni.ParamVar:
+        def param_var(self, _: None) -> uni.ParamVar|uni.Token:
             """Grammar rule.
 
-            param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+            param_var: (STAR_POW | STAR_MUL)? named_ref type_tag (EQ expression)?
+                    | DIV
+                    | STAR_MUL
             """
+            if len(self.cur_nodes) ==1 and (star_only := self.match_token(Tok.DIV) or self.match_token(Tok.STAR_MUL)):
+                return star_only
             star = self.match_token(Tok.STAR_POW) or self.match_token(Tok.STAR_MUL)
             name = self.consume(uni.Name)
             type_tag = self.consume(uni.SubTag)
