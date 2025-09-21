@@ -4,18 +4,15 @@ import ast as ast3
 from typing import Optional, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler import TOKEN_MAP
-from jaclang.compiler.constant import DELIM_MAP
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
-from jaclang.compiler.unitree import Token
 
 
 T = TypeVar("T", bound=ast3.AST)
 
 
 class PreDynamoPass(UniPass):
-    """Fix PyTorch specific issues in the AST."""
+    """Pre-Dynamo pass for PyTorch."""
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
@@ -25,20 +22,15 @@ class PreDynamoPass(UniPass):
         """Exit node."""
         super().exit_node(node)
 
-    def gen_token(
-        self, node: uni.UniNode, name: Tok, value: Optional[str] = None
-    ) -> Token:
-        """Generate token."""
-        value = (
-            value
-            if value
-            else (
-                DELIM_MAP[name]
-                if name in DELIM_MAP
-                else TOKEN_MAP[name.value] if name.value in TOKEN_MAP else name.value
-            )
-        )
-        return Token(
+    def copy_location(self, new_node: uni.UniNode, old_node: uni.UniNode) -> None:
+        """Copy location from old node to new node."""
+        if old_node.parent:
+            old_node.parent.kid[old_node.parent.kid.index(old_node)] = new_node
+        new_node.parent = old_node.parent
+
+    def gen_name(self, node: uni.UniNode, name: Tok, value: str) -> uni.Name:
+        """Generate Name."""
+        return uni.Name(
             name=name,
             value=value,
             orig_src=node.loc.orig_src,
@@ -69,81 +61,43 @@ class PreDynamoPass(UniPass):
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Exit if statement."""
         a0 = node.body[0]
-        b0 = node.else_body.body[0]
-
+        if node.else_body:
+            b0 = node.else_body.body[0]
+        else:
+            return
         if isinstance(a0, uni.Assignment) and isinstance(b0, uni.Assignment):
             lhs = self.check_same_lhs(a0, b0)
-            func_name = uni.Name(
-                orig_src=node.loc.orig_src,
-                name=Tok.NAME,
-                value="torch",
-                line=0,
-                end_line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-            )
-            attr_name = uni.Name(
-                orig_src=node.loc.orig_src,
-                name=Tok.NAME,
-                value="where",
-                line=0,
-                end_line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-            )
-            target = uni.AtomTrailer(
-                target=func_name,
-                right=attr_name,
-                is_attr=True,
-                is_null_ok=False,
-                kid=[func_name, attr_name],
-            )
-            call = uni.FuncCall(
-                target=target,
-                params=[
-                    node.condition,
-                    cast(uni.Expr, a0.value),
-                    cast(uni.Expr, b0.value),
-                ],
-                genai_call=None,
-                kid=[target, node.condition, a0, b0],
-            )
-            new_node = uni.Assignment(
-                target=[lhs], value=call, type_tag=None, kid=[lhs, call]
-            )
-            node.parent.kid[node.parent.kid.index(node)] = new_node
-            new_node.parent = node.parent
+            if lhs:
+                func_name = self.gen_name(node, Tok.NAME, "torch")
+                attr_name = self.gen_name(node, Tok.NAME, "where")
+                target = uni.AtomTrailer(
+                    target=func_name,
+                    right=attr_name,
+                    is_attr=True,
+                    is_null_ok=False,
+                    kid=[func_name, attr_name],
+                )
+                call = uni.FuncCall(
+                    target=target,
+                    params=[
+                        node.condition,
+                        cast(uni.Expr, a0.value),
+                        cast(uni.Expr, b0.value),
+                    ],
+                    genai_call=None,
+                    kid=[target, node.condition, a0, b0],
+                )
+                new_node = uni.Assignment(
+                    target=[lhs], value=call, type_tag=None, kid=[lhs, call]
+                )
+                self.copy_location(new_node, node)
 
         elif isinstance(a0, uni.ReturnStmt) and isinstance(b0, uni.ReturnStmt):
             aexpr, bexpr = a0.expr, b0.expr
             if aexpr is None or bexpr is None:
                 return
-            func_name = uni.Name(
-                orig_src=node.loc.orig_src,
-                name=Tok.NAME,
-                value="torch",
-                line=0,
-                end_line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-            )
-            attr_name = uni.Name(
-                orig_src=node.loc.orig_src,
-                name=Tok.NAME,
-                value="where",
-                line=0,
-                end_line=0,
-                col_start=0,
-                col_end=0,
-                pos_start=0,
-                pos_end=0,
-            )
+            func_name = self.gen_name(node, Tok.NAME, "torch")
+            attr_name = self.gen_name(node, Tok.NAME, "where")
             target = uni.AtomTrailer(
                 target=func_name,
                 right=attr_name,
@@ -158,5 +112,4 @@ class PreDynamoPass(UniPass):
                 kid=[target, node.condition, a0, b0],
             )
             new_node = uni.ReturnStmt(expr=call, kid=[call])
-            node.parent.kid[node.parent.kid.index(node)] = new_node
-            new_node.parent = node.parent
+            self.copy_location(new_node, node)
