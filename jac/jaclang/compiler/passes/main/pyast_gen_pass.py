@@ -1001,8 +1001,8 @@ class PyastGenPass(UniPass):
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         posonlyargs = [i.gen.py_ast[0] for i in node.posonly_params]
-        vararg = [i.gen.py_ast[0] for i in node.varargs][0] if node.varargs else None
-        kwarg = [i.gen.py_ast[0] for i in node.kwargs][0] if node.kwargs else None
+        vararg = node.varargs.gen.py_ast[0] if node.varargs else None
+        kwarg = node.kwargs.gen.py_ast[0] if node.kwargs else None
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
             if (abl := node.parent)
@@ -1012,7 +1012,11 @@ class PyastGenPass(UniPass):
             and not node.is_in_py_class
             else []
         )
-        params += [x.gen.py_ast[0] for x in node.params]
+        if posonlyargs:
+            posonlyargs = params + posonlyargs
+            params = [i.gen.py_ast[0] for i in node.params]
+        else:
+            params = params + [i.gen.py_ast[0] for i in node.params]
         defaults = []
         for i in [*node.posonly_params,*node.params]:
             if i.value:

@@ -855,22 +855,24 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 )
             # Otherwise, parse the traditional parameter list form
             else:
+                # print("Parsing func_decl")
                 self.consume_token(Tok.LPAREN)
                 all_params = self.match(list)
                 posonly_params :list[uni.ParamVar]=[]
                 params :list[uni.ParamVar]=[]
                 varargs :list[uni.ParamVar]=[]
                 kwonlyargs :list[uni.ParamVar]=[]
-                kwargs :list[uni.ParamVar]=[]
-                
-                cur_state = 'posonly' if any(
-                    isinstance(i, uni.Token) and i.name == Tok.DIV for i in all_params
-                ) else 'positional'
+                from typing import Optional
+                kwargs :Optional[uni.ParamVar]=None
+                if all_params:
+                    cur_state = 'posonly' if any(
+                        isinstance(i, uni.Token) and i.name == Tok.DIV for i in all_params
+                    ) else 'positional'
                 i = 0
-                while i < len(all_params):
+                while all_params and i < len(all_params):
                     cur_nd = all_params[i]
                     if isinstance(cur_nd, uni.ParamVar):
-                        if cur_nd.unpack and cur_nd.unpack == Tok.STAR_MUL:
+                        if cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_MUL:
                             cur_state = 'varargs'
                         elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
                             cur_state = 'kwargs'
@@ -881,11 +883,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         # TODO: handle the varargs properly
                         elif cur_state == 'varargs':
                             varargs.append(cur_nd)
+                            cur_state = 'keyword_only'
                         elif cur_state == 'keyword_only':
                             kwonlyargs.append(cur_nd)
                         # TODO: handle the kwargs properly
                         elif cur_state == 'kwargs':
-                            kwargs.append(cur_nd)
+                            kwargs = cur_nd
                         else:
                             raise self.ice()
                     elif isinstance(cur_nd, uni.Token):
@@ -913,19 +916,21 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     else:
                         raise self.ice()
                     i += 1
-
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
-                return uni.FuncSignature(
+                x= uni.FuncSignature(
                     posonly_params=posonly_params,
                     params=params,
-                    varargs=varargs,
+                    varargs=varargs[0] if varargs else None,
                     kwonlyargs=kwonlyargs,
-                    kwargs=kwargs,
+                    kwargs=kwargs if kwargs else None,
                     return_type=return_spec,
                     kid=self.flat_cur_nodes,
                 )
+                # print(x.pp())
+                # print(x.args_pp)
+                return x
 
 
         def func_decl_params(self, _: None) -> list[uni.UniNode]:

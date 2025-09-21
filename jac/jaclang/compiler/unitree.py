@@ -1957,6 +1957,24 @@ class FuncSignature(UniNode):
         self.return_type = return_type
         UniNode.__init__(self, kid=kid)
 
+    @property
+    def args_pp(self) -> str:
+        stem = f"----Function Parameters- ----\n"
+        # Convert each ParamVar to string
+        print("Positional-only parameters:")
+        stem += "\tposonly " + "\n\t\t".join(str(p.unparse()) for p in self.posonly_params) + "\n"
+        print("Positional or keyword parameters:")
+        stem += "\tparams " + "\n\t\t".join(str(p.unparse()) for p in self.params) + "\n"
+        print("Varargs parameter:")
+        stem += f"\tvarargs {self.varargs.unparse() if self.varargs else None}\n"
+        print("Keyword-only parameters:")
+        stem += "\tkwonlyargs " + "\n\t\t".join(str(p.unparse()) for p in self.kwonlyargs) + "\n"
+        print("Kwargs parameter:")
+        stem += f"\tkwargs {self.kwargs.unparse() if self.kwargs else None}\n"
+        print("Return type:")
+        return stem
+
+
     def normalize(self, deep: bool = False) -> bool:
         res = True
         is_lambda = self.parent and isinstance(self.parent, LambdaExpr)

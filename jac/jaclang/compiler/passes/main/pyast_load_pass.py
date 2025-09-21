@@ -2159,6 +2159,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             fs_params = valid_params
             return uni.FuncSignature(
                 params=fs_params,
+                varargs=vararg,
+                kwonlyargs=kwonlyargs,
+                kwargs=kwarg,
                 posonly_params=posonlyargs,
                 return_type=None,
                 kid=fs_params,
@@ -2167,6 +2170,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             return uni.FuncSignature(
                 params=[],
                 posonly_params=posonlyargs,
+                varargs=vararg,
+                kwonlyargs=kwonlyargs,
+                kwargs=kwarg,
                 return_type=None,
                 kid=[self.operator(Tok.LPAREN, "("), self.operator(Tok.RPAREN, ")")],
             )
