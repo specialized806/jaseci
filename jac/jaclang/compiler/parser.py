@@ -889,41 +889,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
             
             # Initial state determination
             cur_state = "positional"
-            for param in all_params or []:
+            for param in all_params:
                 if isinstance(param, uni.Token) and param.name == Tok.DIV:
                     cur_state = "posonly"
                     break
                     
-            # Process each parameter and update state accordingly
             for cur_nd in all_params:
-                if isinstance(cur_nd, uni.Token) and cur_nd.name == Tok.COMMA:
-                        continue
-                if isinstance(cur_nd, uni.Token):
-                    if cur_nd.name == Tok.DIV:
-                        # TODO: make me robust error handling
-                        if cur_state in ["varargs", "kwargs"]:
-                            self.parse_ref.log_error(
-                                "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
-                                node_override=cur_nd,
-                            )
-                        cur_state = "positional"
-                    elif cur_nd.name == Tok.STAR_MUL:
-                        # TODO: make me robust error handling
-                        if cur_state == "kwargs":
-                            self.parse_ref.log_error(
-                                "Invalid syntax in function parameters: '*' cannot appear after '**'.",
-                                node_override=cur_nd,
-                            )
-                        cur_state = "keyword_only"
-                    else:
-                        raise self.ice()
-                elif isinstance(cur_nd, uni.ParamVar):
-                    if cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_MUL:
-                        cur_state = "varargs"
-                    elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
-                        cur_state = "kwargs"
-                        
-                    # Assign parameter to appropriate category based on current state
+                cur_state = self._update_parameter_state(cur_nd, cur_state)
+                if isinstance(cur_nd, uni.ParamVar): 
                     if cur_state == "positional":
                         params.append(cur_nd)
                     elif cur_state == "posonly":
@@ -939,6 +912,32 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         raise self.ice()
                         
             return posonly_params, params, varargs, kwonlyargs, kwargs
+
+        def _update_parameter_state(self, cur_nd: uni.UniNode, cur_state: str) -> str:
+            if isinstance(cur_nd, uni.Token):
+                if cur_nd.name == Tok.DIV:
+                    if cur_state in ["keyword_only", "kwargs"]:
+                        self.parse_ref.log_error(
+                            "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
+                            node_override=cur_nd,
+                        )
+                    return "positional"
+                elif cur_nd.name == Tok.STAR_MUL:
+                    if cur_state == "kwargs":
+                        self.parse_ref.log_error(
+                            "Invalid syntax in function parameters: '*' cannot appear after '**'.",
+                            node_override=cur_nd,
+                        )
+                    return "keyword_only"
+                elif cur_nd.name == Tok.COMMA:
+                    return cur_state
+
+            elif isinstance(cur_nd, uni.ParamVar):
+                if cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_MUL:
+                    return "varargs"
+                elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
+                    return "kwargs"
+            return cur_state
 
         def func_decl_params(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
