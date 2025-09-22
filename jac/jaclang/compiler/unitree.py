@@ -1985,11 +1985,28 @@ class FuncSignature(UniNode):
                 res = res and prm.normalize(deep)
             res = res and self.return_type.normalize(deep) if self.return_type else res
         new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)] if not is_lambda else []
-        total_params = list(self.posonly_params) + list(self.params)
-        for idx, prm in enumerate(total_params):
-            new_kid.append(prm)
-            if idx < len(total_params) - 1:
+        if self.posonly_params:
+            for prm in self.posonly_params:
+                new_kid.append(prm)
                 new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(self.gen_token(Tok.DIV))
+            new_kid.append(self.gen_token(Tok.COMMA))
+        if self.params:
+            for prm in self.params:
+                new_kid.append(prm)
+                new_kid.append(self.gen_token(Tok.COMMA))
+        if self.varargs:
+            new_kid.append(self.varargs)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        elif self.kwonlyargs:
+            new_kid.append(self.gen_token(Tok.STAR_MUL))
+            new_kid.append(self.gen_token(Tok.COMMA))
+        for prm in self.kwonlyargs:
+                new_kid.append(prm)
+                new_kid.append(self.gen_token(Tok.COMMA))
+        if self.kwargs:
+            new_kid.append(self.kwargs)
+            new_kid.append(self.gen_token(Tok.COMMA))
         if not is_lambda:
             new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:

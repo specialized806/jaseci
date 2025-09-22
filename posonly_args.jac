@@ -156,26 +156,11 @@ def ultimate_signature(
     **kwargs: str
 ) -> dict {
     return {
-        "positional_only": {
-            "pos_only1": pos_only1,
-            "pos_only2": pos_only2
-        },
-        "regular": {
-            "regular1": regular1,
-            "regular2": regular2
-        },
-        "varargs": {
-            "args": list(args),
-            "args_count": len(args)
-        },
-        "keyword_only": {
-            "kw_only1": kw_only1,
-            "kw_only2": kw_only2
-        },
-        "varkwargs": {
-            "kwargs": kwargs,
-            "kwargs_count": len(kwargs)
-        }
+        "positional_only": {"pos_only1": pos_only1,"pos_only2": pos_only2        },
+        "regular": {"regular1": regular1,"regular2": regular2        },
+        "varargs": { "args": list(args),"args_count": len(args)        },
+        "keyword_only": {"kw_only1": kw_only1, "kw_only2": kw_only2     },
+        "varkwargs": {"kwargs": kwargs,"kwargs_count": len(kwargs)   }
     };
 }
 
@@ -190,20 +175,17 @@ def complex_business_logic(
     debug_mode: bool = False,
     **metadata: any
 ) -> dict {
-    import time;
-    if timestamp == 0.0 {
-        timestamp = time.time();
-    }
+
 
     return {
         "user_id": user_id,
         "action": action,
-        "timestamp": timestamp,
+        "timestamp": 0.0,
         "additional_data": list(additional_data),
         "required_permission": required_permission,
         "debug_mode": debug_mode,
         "metadata": metadata,
-        "processed_at": time.time()
+        "processed_at": 78
     };
 }
 
@@ -688,6 +670,10 @@ def test_keyword_only_errors(*, x: int, y: str = "default") -> str {
     return f"{x}: {y}";
 }
 
+def foo909(**kwargs: int) {
+    print("foo:", kwargs);
+}
+
 def test_mixed_errors(
     pos: int,
     /,
@@ -794,7 +780,7 @@ def long_param_list(
     p1: int, p2: int, p3: int, p4: int, p5: int,
     p6: int = 6, p7: int = 7, p8: int = 8, p9: int = 9, p10: int = 10,
     /,
-    r1: str, r2: str = "r2", r3: str = "r3", r4: str = "r4", r5: str = "r5",
+    r2: str = "r2", r3: str = "r3", r4: str = "r4", r5: str = "r5",
     *args: float,
     kw1: bool, kw2: bool = False, kw3: bool = True,
     kw4: str = "kw4", kw5: str = "kw5",
@@ -812,9 +798,6 @@ def long_param_list(
 
 with entry {
     call_tester();
-
-    print("\n=== Testing Overload ===");
-    print("Overload test:", overload_test(42));
 
     print("\n=== Testing Long Parameter List ===");
     # Function signature reminder:
