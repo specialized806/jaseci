@@ -855,67 +855,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 )
             # Otherwise, parse the traditional parameter list form
             else:
-                # print("Parsing func_decl")
                 self.consume_token(Tok.LPAREN)
                 all_params = self.match(list) or []
-                posonly_params = []
-                params = []
-                varargs = None
-                kwonlyargs = []
-                kwargs = None
-                cur_state = "positional"
-                for param in all_params or []:
-                    if isinstance(param, uni.Token) and param.name == Tok.DIV:
-                        cur_state = "posonly"
-                        break
-                i = 0
-                while all_params and i < len(all_params):
-                    cur_nd = all_params[i]
-                    if isinstance(cur_nd, uni.Token):
-                        if cur_nd.name == Tok.DIV:
-                            # TODO :make me robust error handling
-                            if cur_state in ["varargs", "kwargs"]:
-                                self.parse_ref.log_error(
-                                    "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
-                                    node_override=cur_nd,
-                                )
-                            cur_state = "positional"
-                        elif cur_nd.name == Tok.STAR_MUL:
-                            # TODO :make me robust error handling
-                            if cur_state == "kwargs":
-                                self.parse_ref.log_error(
-                                    "Invalid syntax in function parameters: '*' cannot appear after '**'.",
-                                    node_override=cur_nd,
-                                )
-                            cur_state = "keyword_only"
-                        elif cur_nd.name == Tok.COMMA:
-                            i += 1
-                            continue
-                        else:
-                            raise self.ice()
-                    elif isinstance(cur_nd, uni.ParamVar):
-                        if cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_MUL:
-                            cur_state = "varargs"
-                        elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
-                            cur_state = "kwargs"
-                    if isinstance(cur_nd, uni.ParamVar):
-                        if cur_state == "positional":
-                            params.append(cur_nd)
-                        elif cur_state == "posonly":
-                            posonly_params.append(cur_nd)
-                        # TODO: handle the varargs properly
-                        elif cur_state == "varargs":
-                            varargs = cur_nd
-                            cur_state = "keyword_only"
-                        elif cur_state == "keyword_only":
-                            kwonlyargs.append(cur_nd)
-                        # TODO: handle the kwargs properly
-                        elif cur_state == "kwargs":
-                            kwargs = cur_nd
-                        else:
-                            raise self.ice()
-
-                    i += 1
+                posonly_params, params, varargs, kwonlyargs, kwargs = self._parse_parameter_categories(all_params)
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
@@ -931,6 +873,72 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 # print(x.pp())
                 # print(x.args_pp)
                 return x
+
+        def _parse_parameter_categories(self, all_params: list[uni.UniNode]) -> tuple[
+            list[uni.ParamVar], 
+            list[uni.ParamVar], 
+            uni.ParamVar | None, 
+            list[uni.ParamVar], 
+            uni.ParamVar | None
+        ]:
+            posonly_params = []
+            params = []
+            varargs = None
+            kwonlyargs = []
+            kwargs = None
+            
+            # Initial state determination
+            cur_state = "positional"
+            for param in all_params or []:
+                if isinstance(param, uni.Token) and param.name == Tok.DIV:
+                    cur_state = "posonly"
+                    break
+                    
+            # Process each parameter and update state accordingly
+            for cur_nd in all_params:
+                if isinstance(cur_nd, uni.Token) and cur_nd.name == Tok.COMMA:
+                        continue
+                if isinstance(cur_nd, uni.Token):
+                    if cur_nd.name == Tok.DIV:
+                        # TODO: make me robust error handling
+                        if cur_state in ["varargs", "kwargs"]:
+                            self.parse_ref.log_error(
+                                "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
+                                node_override=cur_nd,
+                            )
+                        cur_state = "positional"
+                    elif cur_nd.name == Tok.STAR_MUL:
+                        # TODO: make me robust error handling
+                        if cur_state == "kwargs":
+                            self.parse_ref.log_error(
+                                "Invalid syntax in function parameters: '*' cannot appear after '**'.",
+                                node_override=cur_nd,
+                            )
+                        cur_state = "keyword_only"
+                    else:
+                        raise self.ice()
+                elif isinstance(cur_nd, uni.ParamVar):
+                    if cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_MUL:
+                        cur_state = "varargs"
+                    elif cur_nd.unpack and cur_nd.unpack.name == Tok.STAR_POW:
+                        cur_state = "kwargs"
+                        
+                    # Assign parameter to appropriate category based on current state
+                    if cur_state == "positional":
+                        params.append(cur_nd)
+                    elif cur_state == "posonly":
+                        posonly_params.append(cur_nd)
+                    elif cur_state == "varargs":
+                        varargs = cur_nd
+                        cur_state = "keyword_only"
+                    elif cur_state == "keyword_only":
+                        kwonlyargs.append(cur_nd)
+                    elif cur_state == "kwargs":
+                        kwargs = cur_nd
+                    else:
+                        raise self.ice()
+                        
+            return posonly_params, params, varargs, kwonlyargs, kwargs
 
         def func_decl_params(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.

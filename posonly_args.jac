@@ -95,7 +95,7 @@ def test_mixed(x: int, /, y: int, z: int = 10) -> int {
 }
 
 with entry {
-    print("Test 1:",test_posonly(1, "hello")); 
+    print("Test 1:",test_posonly(1, "hello"));
     print("Test 2:", test_posonly(2, "world", 2.71));
     print("Test 3:", test_mixed(5, 15));
     print("Test 4:", test_mixed(5, 15, 25));
@@ -121,15 +121,15 @@ def text_formatter(text: str) -> str {
     return f"[FORMATTED] {text}";
 }
 
-def f(x: int, y: int, /, 
-      p: int, s: int=90, * ,z: int= 90, **kwargs:int){ 
+def f(x: int, y: int, /,
+      p: int, s: int=90, * ,z: int= 90, **kwargs:int){
         print(f"x={x}, y={y}, p={p}, s={s}, z={z}, kwargs={kwargs}");
         return x + y + p + s + z + sum(kwargs.values());
 }
 
 with entry{
     print(f(1,2,3,s=4,q=23,z=5,extra=100) ); # should work
-    
+
     # Test simple functions instead of any complex expressions
     print("Testing simple functions:");
     print("Doubled value:", simple_doubler(21));
@@ -194,7 +194,7 @@ def complex_business_logic(
     if timestamp == 0.0 {
         timestamp = time.time();
     }
-    
+
     return {
         "user_id": user_id,
         "action": action,
@@ -219,14 +219,14 @@ def empty_vars(*args: str, **kwargs: int) -> dict {
 
 with entry {
     print("=== Comprehensive Signature Tests ===");
-    
+
     # Test ultimate signature with minimal args
     print("Ultimate minimal:", ultimate_signature(
         1,                    # pos_only1
         regular1=3.14,       # regular1 (required)
         kw_only1={"key": "value"}  # kw_only1 (required)
     ));
-    
+
     # Test ultimate signature with all parameters
     print("Ultimate full:", ultimate_signature(
         42,                   # pos_only1
@@ -239,7 +239,7 @@ with entry {
         meta1="value1",            # **kwargs
         meta2="value2"
     ));
-    
+
     # Test business logic function
     print("Business logic:", complex_business_logic(
         123,                         # user_id (pos-only)
@@ -251,7 +251,7 @@ with entry {
         session_id="abc123",        # **metadata
         client="web"
     ));
-    
+
     # Test edge cases
     print("Only separators:", only_separators(x=999));
     print("Empty vars (empty):", empty_vars());
@@ -305,7 +305,7 @@ with entry{
         ui = ['frontend'],
         power = 'high'
     ));
-    
+
     # Test ultimate signature with all parameters
     print("Ultimate full:", ultimate_signature(
         42,                   # pos_only1
@@ -399,21 +399,21 @@ def complex_defaults(
 
 with entry {
     print("=== Default Parameters Tests ===");
-    
+
     # Test with no arguments
     print("No args:", single_default());
     print("No args:", multiple_defaults());
     print("No args:", all_defaults());
-    
+
     # Test with some arguments
     print("One arg:", single_default(20));
     print("One arg:", multiple_defaults(5));
     print("Two args:", multiple_defaults(5, "custom"));
-    
+
     # Test mixed required/optional
     print("Required only:", mixed_required_default("test"));
     print("Both args:", mixed_required_default("test", 200));
-    
+
     # Test complex defaults
     print("Complex defaults:", complex_defaults());
     print("With name:", complex_defaults("John"));
@@ -547,7 +547,7 @@ def recursive_processor(
     if depth >= max_depth or not data {
         return {"depth": depth, "data": data, "context": context};
     }
-    
+
     processed_data = [];
     for item in data {
         if isinstance(item, list) {
@@ -567,7 +567,7 @@ def recursive_processor(
             }
         }
     }
-    
+
     return {
         "depth": depth,
         "original_length": len(data),
@@ -578,17 +578,17 @@ def recursive_processor(
 
 with entry {
     print("=== Edge Cases Tests ===");
-    
+
     # Test separator-only functions
     try {
         print("Only pos sep:", only_pos_sep());
     } except Exception as e {
         print(f"Error with only_pos_sep: {e}");
     }
-    
+
     print("Only kw sep:", only_kw_sep(x=42));
     print("Both seps:", both_seps_no_regular(1, b="test"));
-    
+
     # Test one of each type
     print("One of each:", one_of_each(
         1,                  # pos
@@ -597,17 +597,17 @@ with entry {
         kw=True,           # kw
         extra="data"       # **kwargs
     ));
-    
+
     # Test complex defaults
     print("Complex pos defaults (min):", complex_pos_defaults(42));
     print("Complex pos defaults (partial):", complex_pos_defaults(42, [4, 5, 6]));
     print("Complex pos defaults (all):", complex_pos_defaults(42, [7, 8], {"new": "dict"}, "custom"));
-    
+
     # Test many keyword-only
     print("Many kw-only (min):", many_keyword_only(param1=100));
     print("Many kw-only (some):", many_keyword_only(
-        param1=200, 
-        param2="custom", 
+        param1=200,
+        param2="custom",
         param4=False,
         param6={"test": "data"}
     ));
@@ -620,15 +620,15 @@ with entry {
         param6={"all": "custom"},
         param7="final"
     ));
-    
+
     # Test nested and factory functions
     inner_func = outer_function(999);
     print("Nested function result:", inner_func("nested_test", w=False));
     print("Nested with z:", inner_func("nested_test", 5.5, w=True));
-    
+
     add_func = function_factory("add");
     print("Factory add function:", add_func(10.5, 20.3));
-    
+
     complex_func = function_factory("complex");
     print("Factory complex function:", complex_func(
         42,
@@ -638,7 +638,7 @@ with entry {
         option1="value1",
         option2="value2"
     ));
-    
+
     # Test recursive function with simple doubler instead of lambda
     test_data = [1, [2, 3], [4, [5, 6]], 7];
     print("Recursive processor:", recursive_processor(
@@ -668,7 +668,7 @@ def test_param_validation(required: int, optional: str = "default") -> dict {
 
 with entry{
     print("=== Testing Valid Calls ===");
-    
+
     # Valid calls
     print("Valid minimal:", valid_minimal());
     print("Valid single param:", valid_single_param(42));
@@ -706,17 +706,17 @@ def test_mixed_errors(
 }
 
 # Function to test various calling patterns
-def call_tester() -> None {    
+def call_tester() -> None {
     # Valid positional-only calls
     print("Valid pos-only:", test_positional_only_errors(1, "test"));
-    
+
     # Valid keyword-only calls
     print("Valid kw-only:", test_keyword_only_errors(x=42));
     print("Valid kw-only (both):", test_keyword_only_errors(x=42, y="custom"));
     print("Valid kw-only (y only):", test_keyword_only_errors(y="custom", x=100));
     # with args
     print("Valid kw-only (with args):", test_keyword_only_errors(x=7, y="with args"));
-    
+
     # Valid mixed calls
     print("Valid mixed:", test_mixed_errors(
         1,              # pos
@@ -725,19 +725,19 @@ def call_tester() -> None {
         kw=True,       # kw
         extra="data"   # **kwargs
     ));
-    
+
     print("\n=== Testing Error Cases ===");
-    
+
     # Test error cases with try-catch
-    
+
     # Too many positional arguments
     try {
-        test_param_validation(1, "optional", "extra");  
+        test_param_validation(1, "optional", "extra");
         print("ERROR: Should have failed - too many args");
     } except Exception as e {
         print(f"Caught expected error - too many args: {type(e).__name__}");
     }
-    
+
     # Missing required argument
     try {
         test_param_validation();
@@ -745,7 +745,7 @@ def call_tester() -> None {
     } except Exception as e {
         print(f"Caught expected error - missing required: {type(e).__name__}");
     }
-    
+
     test_param_validation("not_an_int");
 
     # Positional-only called with keywords
@@ -755,7 +755,7 @@ def call_tester() -> None {
     } except Exception as e {
         print(f"Caught expected error - pos-only with keywords: {type(e).__name__}");
     }
-    
+
     # Keyword-only called positionally
     try {
         test_keyword_only_errors(42, "test");
@@ -769,7 +769,7 @@ def call_tester() -> None {
     } except Exception as e {
         print(f"Caught expected error - kw-only with positional: {type(e).__name__}");
     }
-    
+
     # Missing required keyword-only argument
     try {
         test_keyword_only_errors(y="test");  # missing required x
@@ -777,7 +777,7 @@ def call_tester() -> None {
     } except Exception as e {
         print(f"Caught expected error - missing required kw-only: {type(e).__name__}");
     }
-    
+
     # Test mixed function errors
     try {
         test_mixed_errors(1, "reg");  # missing required kw
@@ -785,7 +785,7 @@ def call_tester() -> None {
     } except Exception as e {
         print(f"Caught expected error - missing kw in mixed: {type(e).__name__}");
     }
-    
+
     try {
         test_mixed_errors(pos=1, reg="reg", kw=True);  # pos as keyword
         print("ERROR: Should have failed - pos-only as keyword");
@@ -827,43 +827,43 @@ def long_param_list(
 
 with entry {
     call_tester();
-    
+
     print("\n=== Testing Overload ===");
     print("Overload test:", overload_test(42));
-    
+
     print("\n=== Testing Long Parameter List ===");
     # Function signature reminder:
-    # long_param_list(p1, p2, p3, p4, p5, p6=6, p7=7, p8=8, p9=9, p10=10, /, 
-    #                 r1, r2="r2", r3="r3", r4="r4", r5="r5", *args, 
+    # long_param_list(p1, p2, p3, p4, p5, p6=6, p7=7, p8=8, p9=9, p10=10, /,
+    #                 r1, r2="r2", r3="r3", r4="r4", r5="r5", *args,
     #                 kw1, kw2=False, kw3=True, kw4="kw4", kw5="kw5", **kwargs)
-    
+
     result = long_param_list(
         # Positional-only parameters (before /)
         1, 2, 3, 4, 5,              # p1-p5 (required)
         6, 7,                       # p6, p7 (optional, overriding defaults)
         # p8, p9, p10 use defaults (8, 9, 10)
-        
+
         # Regular parameters (can be positional or keyword)
         "r1_value",                 # r1 (required)
         "r2_custom", "r3_custom",   # r2, r3 (overriding defaults)
         # r4, r5 use defaults ("r4", "r5")
-        
+
         # Variable positional arguments (*args)
         10.1, 20.2, 30.3,          # These go into *args as floats
-        
+
         # Keyword-only parameters (after *args)
         kw1=True,                   # kw1 (required keyword-only)
         kw2=True,                   # kw2 (overriding default False)
         # kw3 uses default (True)
         kw4="custom_kw4",           # kw4 (overriding default)
         # kw5 uses default ("kw5")
-        
+
         # Variable keyword arguments (**kwargs)
         extra1="value1",            # These go into **kwargs
         extra2="value2",
         extra3=100
     );
-    
+
     print("Long param result keys:", list(result.keys()));
     print("Total params:", result["total_params"]);
     print("Positional only:", result["positional_only"]);
@@ -898,9 +898,9 @@ def regular_plus_kwonly(normal: int, *, kw: str) -> str {
 }
 
 def regular_defaults_plus_kwonly(
-    normal: int = 5, 
-    *, 
-    kw_req: str, 
+    normal: int = 5,
+    *,
+    kw_req: str,
     kw_opt: bool = True
 ) -> dict {
     return {"normal": normal, "kw_req": kw_req, "kw_opt": kw_opt};
@@ -926,25 +926,25 @@ def complex_kwonly_mix(
 
 with entry {
     print("=== Keyword-Only Parameters Tests ===");
-    
+
     # Basic keyword-only
     print("Basic kwonly:", basic_kwonly(x=42));
     print("Multi kwonly:", multi_kwonly(a=1, b="test", c=3.14));
-    
+
     # With defaults
     print("Kwonly defaults (none):", kwonly_with_defaults());
     print("Kwonly defaults (one):", kwonly_with_defaults(x=20));
     print("Kwonly defaults (both):", kwonly_with_defaults(x=20, y="custom"));
-    
+
     # Mixed required/optional keyword-only
     print("Mixed kwonly:", mixed_kwonly_defaults(req="required"));
     print("Mixed kwonly (both):", mixed_kwonly_defaults(req="required", opt=200));
-    
+
     # Regular + keyword-only
     print("Reg+kwonly:", regular_plus_kwonly(10, kw="keyword"));
     print("Reg def+kwonly:", regular_defaults_plus_kwonly(kw_req="test"));
     print("Reg def+kwonly (all):", regular_defaults_plus_kwonly(15, kw_req="test", kw_opt=False));
-    
+
     # Complex combinations
     print("Complex mix:", complex_kwonly_mix(1, kw1=2.5));
     print("Complex mix (more):", complex_kwonly_mix(1, "custom", kw1=2.5, kw2=True, kw3=[1, 2, 3]));
@@ -953,31 +953,31 @@ with entry {
 # Test method signatures in objects
 obj Calculator {
     has value: float = 0.0;
-    
+
     # Simple method
     def get_value() -> float {
         return self.value;
     }
-    
+
     # Method with parameters
     def add(amount: float) -> float {
         self.value += amount;
         return self.value;
     }
-    
+
     # Method with defaults
     def multiply(factor: float = 2.0) -> float {
         self.value *= factor;
         return self.value;
     }
-    
+
     # Method with positional-only
     def set_value(new_value: float, /) -> None {
         print("Setting value to", new_value);
         print('self.value before:', self.value);
         self.value = new_value;
     }
-    
+
     # Method with keyword-only
     def complex_operation(*, operation: str, multiplier: float = 1.0) -> float {
         if operation == "square" {
@@ -987,7 +987,7 @@ obj Calculator {
         }
         return self.value;
     }
-    
+
     # Method with varargs
     def batch_add(*values: float) -> float {
         for val in values {
@@ -995,7 +995,7 @@ obj Calculator {
         }
         return self.value;
     }
-    
+
     # Method with kwargs
     def configure(**settings: any) -> dict {
         return {
@@ -1003,12 +1003,12 @@ obj Calculator {
             "settings": settings
         };
     }
-    
+
     # Static method
     static def utility_function(x: int, y: int = 10) -> int {
         return x + y;
     }
-    
+
     # Complex method signature
     def advanced_calc(
         base: float,
@@ -1019,17 +1019,17 @@ obj Calculator {
         **options: bool
     ) -> dict {
         result = self.value;
-        
+
         if operation == "add" {
             result += base;
         } elif operation == "multiply" {
             result *= base;
         }
-        
+
         for modifier in modifiers {
             result += modifier;
         }
-        
+
         return {
             "result": round(result, precision),
             "base": base,
@@ -1044,18 +1044,18 @@ obj Calculator {
 # Test walker methods
 walker FunctionTester {
     has test_count: int = 0;
-    
+
     # Walker method with various signatures
     def test_simple() -> None {
         self.test_count += 1;
         print(f"Test {self.test_count}: Simple method");
     }
-    
+
     def test_with_params(name: str, value: int = 0) -> str {
         self.test_count += 1;
         return f"Test {self.test_count}: {name} = {value}";
     }
-    
+
     def test_comprehensive(
         required: str,
         /,
@@ -1076,7 +1076,7 @@ walker FunctionTester {
             "kwargs": kwargs
         };
     }
-    
+
     # Ability with parameters
     can process_data with entry {
         print(f"Processing with {self.test_count} tests completed");
@@ -1085,26 +1085,26 @@ walker FunctionTester {
 
 with entry {
     print("=== Method Signatures Tests ===");
-    
+
     # Test object methods
     calc = Calculator();
     print("Initial value:", calc.get_value());
     print("After add:", calc.add(5.0));
     print("After multiply:", calc.multiply(3.0));
-    
+
     calc.set_value(10.0);
     print("After set_value:", calc.get_value());
-    
+
     print("Complex operation:", calc.complex_operation(operation="square", multiplier=0.5));
-    
+
     calc.set_value(1.0);
     print("Batch add:", calc.batch_add(1.0, 2.0, 3.0, 4.0));
-    
+
     print("Configure:", calc.configure(debug=True, precision=3, mode="advanced"));
-    
+
     print("Static method:", Calculator.utility_function(5));
     print("Static with both args:", Calculator.utility_function(5, 15));
-    
+
     calc.set_value(100.0);
     print("Advanced calc:", calc.advanced_calc(
         10.0,                    # base (pos-only)
@@ -1114,13 +1114,13 @@ with entry {
         debug=True,              # **options
         verbose=False
     ));
-    
+
     # Test walker methods
     tester = FunctionTester();
     tester.test_simple();
     print(tester.test_with_params("example"));
     print(tester.test_with_params("custom", 42));
-    
+
     print("Comprehensive test:", tester.test_comprehensive(
         "test_data",             # required (pos-only)
         20,                      # optional
@@ -1169,10 +1169,10 @@ def posonly_plus_regular_defaults(pos: int, /, reg: str = "default") -> str {
 }
 
 def complex_posonly_mix(
-    p1: int, 
-    p2: str, 
-    /, 
-    r1: float, 
+    p1: int,
+    p2: str,
+    /,
+    r1: float,
     r2: bool = True
 ) -> dict {
     return {"p1": p1, "p2": p2, "r1": r1, "r2": r2};
@@ -1180,12 +1180,12 @@ def complex_posonly_mix(
 
 with entry {
     print("=== Positional-Only Parameters Tests ===");
-    
+
     # Basic positional-only
     print("Basic posonly:", basic_posonly(42));
     print("Two posonly:", two_posonly(1, "test"));
     print("Three posonly:", three_posonly(10, 3.14, True));
-    
+
     # With defaults
     print("Posonly default (no args):", posonly_defaults());
     print("Posonly default (with arg):", posonly_defaults(5));
@@ -1195,7 +1195,7 @@ with entry {
     print("All defaults (one):", all_posonly_defaults(99));
     print("All defaults (two):", all_posonly_defaults(99, "world"));
     print("All defaults (all):", all_posonly_defaults(99, "world", 2.71));
-    
+
     # Mixed with regular
     print("Pos+reg:", posonly_plus_regular(1, "normal"));
     print("Pos+reg (default):", posonly_plus_regular_defaults(2));
@@ -1247,7 +1247,7 @@ def boolean_checker(value: any) -> bool {
     return bool(value);
 }
 
-with entry {  
+with entry {
     # Test simple functions instead of any complex expressions
     print("\n=== Testing Simple Functions ===");
     print("Math result:", simple_math_function(10, 20));
@@ -1336,7 +1336,7 @@ def complex_varargs(
 
 with entry {
     print("=== Variable Arguments Tests ===");
-    
+
     # *args tests
     print("Simple varargs (empty):", simple_varargs());
     print("Simple varargs (multiple):", simple_varargs(1, 2, 3, 4, 5));
@@ -1345,24 +1345,24 @@ with entry {
     print(varargs_with_defaults());
     print("Varargs with defaults:", varargs_with_defaults("Total", 1.1, 2.2, 3.3));
     print("Varargs defaults (no prefix):", varargs_with_defaults(4.4, 5.5));
-    
+
     # **kwargs tests
     print("Simple kwargs (empty):", simple_kwargs());
     print("Simple kwargs:", simple_kwargs(a=1, b=2, c=3));
     print("Kwargs with regular:", kwargs_with_regular("John", age=30, city="NYC"));
     print("Kwargs with defaults:", kwargs_with_defaults("Info", name="Jane", job="Dev"));
     print("Kwargs defaults (no prefix):", kwargs_with_defaults(color="red", size="large"));
-    
+
     # Both *args and **kwargs
     print("Args and kwargs:", args_and_kwargs(1, 2, 3, name="test", active="true"));
     print("Full signature:", full_signature("test", 20, 1.1, 2.2, debug="true", verbose="false"));
-    
+
     # Complex combinations
     print("Complex varargs:", complex_varargs(
-        100, 
-        "arg1", "arg2", 
-        kw_only=True, 
-        score=95.5, 
+        100,
+        "arg1", "arg2",
+        kw_only=True,
+        score=95.5,
         rating=4.8
     ));
 }
