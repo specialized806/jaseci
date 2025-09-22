@@ -22,11 +22,13 @@ class PreDynamoPass(UniPass):
         """Exit node."""
         super().exit_node(node)
 
-    def copy_location(self, new_node: uni.UniNode, old_node: uni.UniNode) -> None:
+    # def exit_module(self, node: uni.Module) -> None:
+    #     """Exit module."""
+    #     print("exiting module", node.unparse())
+
+    def replace_node(self, new_node: uni.UniNode, old_node: uni.UniNode) -> None:
         """Copy location from old node to new node."""
-        if old_node.parent:
-            old_node.parent.kid[old_node.parent.kid.index(old_node)] = new_node
-        new_node.parent = old_node.parent
+        pass
 
     def gen_name(self, node: uni.UniNode, name: Tok, value: str) -> uni.Name:
         """Generate Name."""
@@ -61,6 +63,7 @@ class PreDynamoPass(UniPass):
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Exit if statement."""
         a0 = node.body[0]
+        new_node = None
         if node.else_body:
             b0 = node.else_body.body[0]
         else:
@@ -90,7 +93,6 @@ class PreDynamoPass(UniPass):
                 new_node = uni.Assignment(
                     target=[lhs], value=call, type_tag=None, kid=[lhs, call]
                 )
-                self.copy_location(new_node, node)
 
         elif isinstance(a0, uni.ReturnStmt) and isinstance(b0, uni.ReturnStmt):
             aexpr, bexpr = a0.expr, b0.expr
@@ -112,4 +114,12 @@ class PreDynamoPass(UniPass):
                 kid=[target, node.condition, a0, b0],
             )
             new_node = uni.ReturnStmt(expr=call, kid=[call])
-            self.copy_location(new_node, node)
+        if new_node is not None:
+            new_node.parent = node.parent
+            if (
+                (parent := node.parent)
+                and hasattr(parent, "body")
+                and node in parent.body
+            ):
+                parent.body[parent.body.index(node)] = new_node
+                parent.kid[parent.kid.index(node)] = new_node
