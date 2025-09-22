@@ -18,7 +18,7 @@ with entry {
     print(arguments);
     print(
         """This is a long
-            line of code."""
+        line of code."""
     );
 }
 
