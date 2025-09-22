@@ -168,6 +168,7 @@ class ClassType(TypeBase):
             self.class_name = class_name
             self.symbol_table = symbol_table
             self.base_classes = base_classes or []
+            self.mro: list[ClassType] = []
 
     def __init__(
         self,
