@@ -1018,7 +1018,7 @@ class PyastGenPass(UniPass):
         else:
             params = params + [i.gen.py_ast[0] for i in node.params]
         defaults = []
-        for i in [*node.posonly_params,*node.params]:
+        for i in [*node.posonly_params, *node.params]:
             if i.value:
                 defaults.append(cast(ast3.expr, i.value.gen.py_ast[0]))
         kwonly_args = [i.gen.py_ast[0] for i in node.kwonlyargs]
