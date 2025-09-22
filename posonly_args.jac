@@ -707,17 +707,12 @@ def test_mixed_errors(
 
 # Function to test various calling patterns
 def call_tester() -> None {
-    # Valid positional-only calls
     print("Valid pos-only:", test_positional_only_errors(1, "test"));
-
-    # Valid keyword-only calls
     print("Valid kw-only:", test_keyword_only_errors(x=42));
     print("Valid kw-only (both):", test_keyword_only_errors(x=42, y="custom"));
     print("Valid kw-only (y only):", test_keyword_only_errors(y="custom", x=100));
-    # with args
     print("Valid kw-only (with args):", test_keyword_only_errors(x=7, y="with args"));
 
-    # Valid mixed calls
     print("Valid mixed:", test_mixed_errors(
         1,              # pos
         "regular",      # reg
@@ -728,7 +723,6 @@ def call_tester() -> None {
 
     print("\n=== Testing Error Cases ===");
 
-    # Test error cases with try-catch
 
     # Too many positional arguments
     try {
@@ -794,15 +788,6 @@ def call_tester() -> None {
     }
 }
 
-# Test function overloading scenarios (if supported)
-def overload_test(x: int) -> str {
-    return f"int version: {x}";
-}
-
-# This might cause issues if overloading isn't supported
-# def overload_test(x: str) -> str {
-#     return f"str version: {x}";
-# }
 
 # Test very long parameter lists
 def long_param_list(
