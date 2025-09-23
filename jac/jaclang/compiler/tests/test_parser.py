@@ -184,7 +184,7 @@ class TestLarkParser(TestCaseMicroSuite):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         prog = JacProgram()
-        prog.compile(self.lang_fixture_abs_path("params/param_syntax.jac"))
+        prog.compile(self.lang_fixture_abs_path("params/param_syntax_err.jac"))
         sys.stdout = sys.__stdout__
         self.assertEqual(len(prog.errors_had), 8)
 
