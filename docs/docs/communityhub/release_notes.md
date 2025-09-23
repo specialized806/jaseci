@@ -3,6 +3,7 @@
 This document provides a summary of new features, improvements, and bug fixes in each version of Jac and Jaseci. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](./breaking_changes.md) page.
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Unreleased)
+- **Run transformed pytorch codes**: With `export JAC_PREDYNAMO_PASS=true`, pytorch breaking if statements will be transformed into non breaking torch.where statements. It improves the efficiency of pytorch programs.
 
 ## jaclang 0.8.6 / jac-cloud 0.2.6 / byllm 0.4.1
 
