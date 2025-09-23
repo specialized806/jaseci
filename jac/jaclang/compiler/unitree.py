@@ -1958,30 +1958,18 @@ class FuncSignature(UniNode):
         UniNode.__init__(self, kid=kid)
 
     @property
+    # fmt: off
     def args_pp(self) -> str:
         arg_detail = "----Function Parameters- ----\n"
-        arg_detail += (
-            "\tposonly: "
-            + "\n\t\t".join(str(param.unparse()) for param in self.posonly_params)
-            + "\n"
-        )
-        arg_detail += (
-            "\tparams: "
-            + "\n\t\t".join(str(arg.unparse()) for arg in self.params)
-            + "\n"
-        )
+        arg_detail += f"\tposonly: {"\n\t\t".join(str(param.unparse()) for param in self.posonly_params)}\n"
+        arg_detail += f"\tparams:  {"\n\t\t".join(str(arg.unparse()) for arg in self.params)} \n"
         arg_detail += f"\tvarargs: {self.varargs.unparse() if self.varargs else None}\n"
-        arg_detail += (
-            "\tkwonlyargs: "
-            + "\n\t\t\t".join(
-                str(keyword_param.unparse()) for keyword_param in self.kwonlyargs
-            )
-            + "\n"
-        )
-        arg_detail += (
-            "\tkwargs: " + (self.kwargs.unparse() if self.kwargs else "None") + "\n"
-        )
+        arg_detail += f"\tkwonlyargs: {"\n\t\t\t".join(
+            str(keyword_param.unparse()) for keyword_param in self.kwonlyargs
+        )}\n"
+        arg_detail += f"\tkwargs: {self.kwargs.unparse() if self.kwargs else 'None'}\n"
         return arg_detail
+    # fmt: on
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
