@@ -514,11 +514,10 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("def greet2(**kwargs: Any)", output)
+        self.assertIn("def greet2( **kwargs: Any) {", output)
         self.assertEqual(output.count("with entry {"), 14)
         self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)
         self.assertIn("if not (x == y) {", output)
-        self.assertIn("def greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = { x : (x ** 2) for x in numbers };", output)
         self.assertIn(
             '\n\n"""Say hello"""\n@ my_decorator\n\n def say_hello() {', output
@@ -605,8 +604,8 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=None,
             ).ir_out.unparse()
-        self.assertIn("isinstance( <>obj: object , class_or_tuple: _ClassInfo)", output)
-        self.assertIn("len(<>obj: Sized, astt: Any, z: int, j: str, a: Any = 90)", output)
+        self.assertIn("isinstance( <>obj: object , class_or_tuple: _ClassInfo , /)", output)
+        self.assertIn("len(<>obj: Sized, astt: Any, /, z: int, j: str, a: Any = 90)", output)
 
     def test_refs_target(self) -> None:
         """Test py ast to Jac ast conversion output."""

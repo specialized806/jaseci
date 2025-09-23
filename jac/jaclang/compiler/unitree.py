@@ -2003,6 +2003,8 @@ class FuncSignature(UniNode):
         if self.kwargs:
             new_kid.append(self.kwargs)
             new_kid.append(self.gen_token(Tok.COMMA))
+        if new_kid and new_kid[-1].name == Tok.COMMA:
+            new_kid = new_kid[:-1]
         if not is_lambda:
             new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
