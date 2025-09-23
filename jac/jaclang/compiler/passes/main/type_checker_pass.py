@@ -14,6 +14,7 @@ import os
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import UniPass
+from jaclang.compiler.type_system import types as jtypes
 from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
 from jaclang.runtimelib.utils import read_file_with_encoding
 
@@ -36,16 +37,28 @@ class TypeCheckPass(UniPass):
     # Cache the builtins module once it parsed.
     _BUILTINS_MODULE: uni.Module | None = None
 
+    # REVIEW: Making the evaluator a static (singleton) variable to make sure only one
+    # instance is used across mulitple compilation units. This can also be attached to an
+    # attribute of JacProgram, however the evaluator is a temproary object that we dont
+    # want bound to the program for long term, Also the program is the one that will be
+    # dumped in the compiled bundle.
+    _EVALUATOR: TypeEvaluator | None = None
+
     def before_pass(self) -> None:
         """Initialize the checker pass."""
         self._load_builtins_stub_module()
         self._insert_builtin_symbols()
 
-        assert TypeCheckPass._BUILTINS_MODULE is not None
-        self.evaluator = TypeEvaluator(
-            builtins_module=TypeCheckPass._BUILTINS_MODULE,
-            program=self.prog,
-        )
+    @property
+    def evaluator(self) -> TypeEvaluator:
+        """Return the type evaluator."""
+        if TypeCheckPass._EVALUATOR is None:
+            assert TypeCheckPass._BUILTINS_MODULE is not None
+            TypeCheckPass._EVALUATOR = TypeEvaluator(
+                builtins_module=TypeCheckPass._BUILTINS_MODULE,
+                program=self.prog,
+            )
+        return TypeCheckPass._EVALUATOR
 
     # --------------------------------------------------------------------------
     # Internal helper functions
@@ -106,6 +119,16 @@ class TypeCheckPass(UniPass):
     # Ast walker hooks
     # --------------------------------------------------------------------------
 
+    def enter_ability(self, node: uni.Ability) -> None:
+        """Enter an ability node."""
+        # If the node has @staticmethod decorator, mark it as static method.
+        # this is needed since ast raised from python does not have this info.
+        for decor in node.decorators or []:
+            ty = self.evaluator.get_type_of_expression(decor)
+            if isinstance(ty, jtypes.ClassType) and ty.is_builtin("staticmethod"):
+                node.is_static = True
+                break
+
     def exit_assignment(self, node: uni.Assignment) -> None:
         """Pyright: Checker.visitAssignment(node: AssignmentNode): boolean."""
         # TODO: In pyright this logic is present at evaluateTypesForAssignmentStatement
@@ -125,4 +148,11 @@ class TypeCheckPass(UniPass):
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Handle the atom trailer node."""
+        self.evaluator.get_type_of_expression(node)
+
+    def exit_func_call(self, node: uni.FuncCall) -> None:
+        """Handle the function call node."""
+        # TODO:
+        # 1. Function Existence & Callable Validation
+        # 2. Argument Matching(count, types, names)
         self.evaluator.get_type_of_expression(node)

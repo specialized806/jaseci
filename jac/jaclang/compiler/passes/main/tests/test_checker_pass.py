@@ -28,6 +28,18 @@ class TypeCheckerPassTests(TestCase):
                  ^^^^^^^^^^^^^^^^^^^^^^
         """, program.errors_had[1].pretty_print())
 
+    def test_float_types(self) -> None:
+        program = JacProgram()
+        mod = program.compile(self.fixture_abs_path("checker_float.jac"))
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+            f: float = pi; # <-- OK
+            s: str = pi;   # <-- Error
+            ^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+
     def test_infer_type_of_assignment(self) -> None:
         program = JacProgram()
         mod = program.compile(self.fixture_abs_path("infer_type_assignment.jac"))
@@ -58,6 +70,22 @@ class TypeCheckerPassTests(TestCase):
           s = f.bar;
           ^^^^^^^^^
         """, program.errors_had[0].pretty_print())
+
+    def test_inherited_symbol(self) -> None:
+        program = JacProgram()
+        mod = program.compile(self.fixture_abs_path("checker_sym_inherit.jac"))
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 2)
+        self._assert_error_pretty_found("""
+          c.val = 42;     # <-- Ok
+          c.val = "str";  # <-- Error
+          ^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+        self._assert_error_pretty_found("""
+          l.name = "Simba";  # <-- Ok
+          l.name = 42;       # <-- Error
+          ^^^^^^^^^^^
+        """, program.errors_had[1].pretty_print())
 
     def test_import_symbol_type_infer(self) -> None:
         program = JacProgram()
@@ -91,6 +119,81 @@ class TypeCheckerPassTests(TestCase):
           s: str = foo();
           ^^^^^^^^^^^^^^
         """, program.errors_had[0].pretty_print())
+
+    def test_call_expr_magic(self) -> None:
+        path = self.fixture_abs_path("checker_magic_call.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+            b: Bar = fn()(); # <-- Ok
+            f: Foo = fn()(); # <-- Error
+            ^^^^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+    def test_self_type_inference(self) -> None:
+        path = self.fixture_abs_path("checker_self_type.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+          x: str = self.i; # <-- Error
+          ^^^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+    def test_binary_op(self) -> None:
+        program = JacProgram()
+        mod = program.compile(self.fixture_abs_path("checker_binary_op.jac"))
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 2)
+        self._assert_error_pretty_found("""
+            r2: A = a + a;  # <-- Error
+            ^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+        self._assert_error_pretty_found("""
+            r4: str = (a+a) * B(); # <-- Error
+            ^^^^^^^^^^^^^^^^^^^^^
+        """, program.errors_had[1].pretty_print())
+
+    def test_checker_call_expr_class(self) -> None:
+        path = self.fixture_abs_path("checker_call_expr_class.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+            inst.i = 'str'; # <-- Error
+            ^^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+    def test_checker_mod_path(self) -> None:
+        path = self.fixture_abs_path("checker_mod_path.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+            a:int = uni.Module; # <-- Error
+            ^^^^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+    def test_checker_import_missing_module(self) -> None:
+        path = self.fixture_abs_path("checker_import_missing_module.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 0)
+
+    def test_cyclic_symbol(self) -> None:
+        path = self.fixture_abs_path("checker_cyclic_symbol.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        # This will result in a stack overflow if not handled properly.
+        # So the fact that it has 0 errors means it passed.
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 0)
 
     def _assert_error_pretty_found(self, needle: str, haystack: str) -> None:
         for line in [line.strip() for line in needle.splitlines() if line.strip()]:

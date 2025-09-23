@@ -11,12 +11,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.type_system import types
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-from .type_utils import ClassMember
+from . import operations
+from .type_utils import ClassMember, compute_mro_linearization
 from .types import TypeBase
 
 
@@ -34,6 +36,7 @@ class PrefetchedTypes:
     tuple_class: TypeBase | None = None
     bool_class: TypeBase | None = None
     int_class: TypeBase | None = None
+    float_class: TypeBase | None = None
     str_class: TypeBase | None = None
     dict_class: TypeBase | None = None
     module_type_class: TypeBase | None = None
@@ -42,6 +45,21 @@ class PrefetchedTypes:
     supports_keys_and_get_item_class: TypeBase | None = None
     mapping_class: TypeBase | None = None
     template_class: TypeBase | None = None
+
+
+@dataclass
+class SymbolResolutionStackEntry:
+    """Represents a single entry in the symbol resolution stack."""
+
+    symbol: uni.Symbol
+
+    # Initially true, it's set to false if a recursion
+    # is detected.
+    is_result_valid: bool = True
+
+    # Some limited forms of recursion are allowed. In these
+    # cases, a partially-constructed type can be registered.
+    partial_type: TypeBase | None = None
 
 
 class TypeEvaluator:
@@ -58,14 +76,55 @@ class TypeEvaluator:
         in some place then it will not be available in the evaluator, So we
         are prefetching the builtins at the constructor level once.
         """
+        self.symbol_resolution_stack: list[SymbolResolutionStackEntry] = []
         self.builtins_module = builtins_module
         self.program = program
         self.prefetch = self._prefetch_types()
 
+    # -------------------------------------------------------------------------
+    # Symbol resolution stack
+    # -------------------------------------------------------------------------
+
+    def get_index_of_symbol_resolution(self, symbol: uni.Symbol) -> int | None:
+        """Get the index of a symbol in the resolution stack."""
+        for i, entry in enumerate(self.symbol_resolution_stack):
+            if entry.symbol == symbol:
+                return i
+        return None
+
+    def push_symbol_resolution(self, symbol: uni.Symbol) -> bool:
+        """
+        Push a symbol onto the resolution stack.
+
+        Return False if recursion detected and in that case it won't push the symbol.
+        """
+        idx = self.get_index_of_symbol_resolution(symbol)
+        if idx is not None:
+            # Mark all of the entries between these two as invalid.
+            for i in range(idx, len(self.symbol_resolution_stack)):
+                entry = self.symbol_resolution_stack[i]
+                entry.is_result_valid = False
+            return False
+        self.symbol_resolution_stack.append(SymbolResolutionStackEntry(symbol=symbol))
+        return True
+
+    def pop_symbol_resolution(self, symbol: uni.Symbol) -> bool:
+        """Pop a symbol from the resolution stack."""
+        popped_entry = self.symbol_resolution_stack.pop()
+        assert popped_entry.symbol == symbol
+        return popped_entry.is_result_valid
+
     # Pyright equivalent function name = getEffectiveTypeOfSymbol.
     def get_type_of_symbol(self, symbol: uni.Symbol) -> TypeBase:
         """Return the effective type of the symbol."""
-        return self._get_type_of_symbol(symbol)
+        if self.push_symbol_resolution(symbol):
+            try:
+                return self._get_type_of_symbol(symbol)
+            finally:
+                self.pop_symbol_resolution(symbol)
+
+        # If we reached here that means we have a cyclic symbolic reference.
+        return types.UnknownType()
 
     # NOTE: This function doesn't exists in pyright, however it exists as a helper function
     # for the following functions.
@@ -92,10 +151,13 @@ class TypeEvaluator:
                 mod.parent_scope = self.builtins_module
         return mod
 
-    def get_type_of_module(self, node: uni.ModulePath) -> types.ModuleType:
+    def get_type_of_module(self, node: uni.ModulePath) -> types.TypeBase:
         """Return the effective type of the module."""
         if node.name_spec.type is not None:
             return cast(types.ModuleType, node.name_spec.type)
+        if not Path(node.resolve_relative_path()).exists():
+            node.name_spec.type = types.UnknownType()
+            return node.name_spec.type
 
         mod: uni.Module = self._import_module_from_path(node.resolve_relative_path())
         mod_type = types.ModuleType(
@@ -149,6 +211,11 @@ class TypeEvaluator:
             # import from mod { item }
             else:
                 mod_type = self.get_type_of_module(import_node.from_loc)
+                if not isinstance(mod_type, types.ModuleType):
+                    node.name_spec.type = types.UnknownType()
+                    # TODO: Add diagnostic that from_loc is not accessible.
+                    # Eg: 'Import "scipy" could not be resolved'
+                    return node.name_spec.type
                 if sym := mod_type.symbol_table.lookup(node.name.value, deep=True):
                     node.name.sym = sym
                     if node.alias:
@@ -164,14 +231,23 @@ class TypeEvaluator:
         if node.name_spec.type is not None:
             return cast(types.ClassType, node.name_spec.type)
 
+        base_classes: list[TypeBase] = []
+        for base_class in node.base_classes or []:
+            base_class_type = self.get_type_of_expression(base_class)
+            base_classes.append(base_class_type)
+        is_builtin_class = node.find_parent_of_type(uni.Module) == self.builtins_module
+
         cls_type = types.ClassType(
             types.ClassType.ClassDetailsShared(
                 class_name=node.name_spec.sym_name,
                 symbol_table=node,
-                # TODO: Resolve the base class expression and pass them here.
+                base_classes=base_classes,
+                is_builtin_class=is_builtin_class,
             ),
             flags=types.TypeFlags.Instantiable,
         )
+
+        compute_mro_linearization(cls_type)
 
         # Cache the type, pyright is doing invalidateTypeCacheIfCanceled()
         # we're not doing that any time sooner.
@@ -220,6 +296,11 @@ class TypeEvaluator:
         assert self.prefetch.int_class is not None
         return self.prefetch.int_class
 
+    def get_type_of_float(self, node: uni.Float) -> TypeBase:
+        """Return the effective type of the float."""
+        assert self.prefetch.float_class is not None
+        return self.prefetch.float_class
+
     # Pyright equivalent function name = getTypeOfExpression();
     def get_type_of_expression(self, node: uni.Expr) -> TypeBase:
         """Return the effective type of the expression."""
@@ -261,6 +342,29 @@ class TypeEvaluator:
         # FIXME: This is temporary.
         return src_type == dest_type
 
+    # TODO: This should take an argument list as parameter.
+    def get_type_of_magic_method_call(
+        self, obj_type: TypeBase, method_name: str
+    ) -> TypeBase | None:
+        """Return the effective return type of a magic method call."""
+        if obj_type.category == types.TypeCategory.Class:
+            # TODO: getTypeOfBoundMember() <-- Implement this if needed, for the simple case
+            # we'll directly call member lookup.
+            #
+            # WE'RE DAVIATING FROM PYRIGHT FOR THIS METHOD HEAVILY HOWEVER THIS CAN BE RE-WRITTEN IF NEEDED.
+            #
+            assert isinstance(obj_type, types.ClassType)  # <-- To make typecheck happy.
+            if member := self._lookup_class_member(obj_type, method_name):
+                member_ty = self.get_type_of_symbol(member.symbol)
+                if isinstance(member_ty, types.FunctionType):
+                    return member_ty.return_type
+                # If we reached here, magic method is not a function.
+                # 1. recursively check __call__() on the type, TODO
+                # 2. if any or unknown, return getUnknownTypeForCallable() TODO
+                # 3. return undefined.
+                return None
+        return None
+
     def _assign_class(
         self, src_type: types.ClassType, dest_type: types.ClassType
     ) -> bool:
@@ -286,6 +390,7 @@ class TypeEvaluator:
             tuple_class=self._get_builtin_type("tuple"),
             bool_class=self._get_builtin_type("bool"),
             int_class=self._get_builtin_type("int"),
+            float_class=self._get_builtin_type("float"),
             str_class=self._get_builtin_type("str"),
             dict_class=self._get_builtin_type("dict"),
             # module_type_class=
@@ -363,6 +468,9 @@ class TypeEvaluator:
             case uni.Int():
                 return self._convert_to_instance(self.get_type_of_int(expr))
 
+            case uni.Float():
+                return self._convert_to_instance(self.get_type_of_float(expr))
+
             case uni.AtomTrailer():
                 # NOTE: Pyright is using CFG to figure out the member type by narrowing the base
                 # type and filtering the members. We're not doing that anytime sooner.
@@ -404,17 +512,75 @@ class TypeEvaluator:
                 else:  # <expr>[<expr>]
                     pass  # TODO:
 
+            case uni.AtomUnit():
+                return self.get_type_of_expression(expr.value)
+
             case uni.FuncCall():
                 caller_type = self.get_type_of_expression(expr.target)
                 if isinstance(caller_type, types.FunctionType):
                     return caller_type.return_type or types.UnknownType()
-                # TODO: Check if it has a `__call__` method if it's not a function type.
+                if (
+                    isinstance(caller_type, types.ClassType)
+                    and caller_type.is_instantiable_class()
+                ):
+                    return caller_type.clone_as_instance()
+                if caller_type.is_class_instance():
+                    magic_call_ret = self.get_type_of_magic_method_call(
+                        caller_type, "__call__"
+                    )
+                    if magic_call_ret:
+                        return magic_call_ret
+
+            case uni.BinaryExpr():
+                return operations.get_type_of_binary_operation(self, expr)
 
             case uni.Name():
+                # NOTE: For self's type pyright is getting the first parameter of a method and
+                # the name can be anything not just self, however we don't have the first parameter
+                # and self is a keyword, we need to do it in this way.
+                if (
+                    (expr.name == Tok.KW_SELF.value)
+                    and (fn := self._get_enclosing_method(expr))
+                    and (not fn.is_static)
+                ):
+                    return self._get_type_of_self(expr)
+
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
+                    expr.sym = symbol
                     return self.get_type_of_symbol(symbol)
 
             # TODO: More expressions.
+        return types.UnknownType()
+
+    # -----------------------------------------------------------------------------
+    # Helper functions
+    # -----------------------------------------------------------------------------
+
+    def _get_enclosing_function(self, node: uni.UniNode) -> uni.Ability | None:
+        """Get the enclosing function (ability) of the given node."""
+        if (impl := node.find_parent_of_type(uni.ImplDef)) and (
+            isinstance(impl.decl_link, uni.Ability)
+        ):
+            return impl.decl_link
+        return node.find_parent_of_type(uni.Ability)
+
+    def _get_enclosing_method(self, node: uni.UniNode) -> uni.Ability | None:
+        """Get the enclosing method (ability) of the given node."""
+        enclosing_fn = self._get_enclosing_function(node)
+        while enclosing_fn and (not enclosing_fn.is_method):
+            enclosing_fn = self._get_enclosing_function(enclosing_fn)
+        if enclosing_fn and enclosing_fn.is_method:
+            return enclosing_fn
+        return None
+
+    def _get_type_of_self(self, node: uni.Name) -> TypeBase:
+        """Return the effective type of self."""
+        if method := self._get_enclosing_method(node):
+            cls = method.method_owner
+            if isinstance(cls, uni.Archetype):
+                return self.get_type_of_class(cls).clone_as_instance()
+            if isinstance(cls, uni.Enum):
+                pass  # TODO: Implement type from enum.
         return types.UnknownType()
 
     def _convert_to_instance(self, jtype: TypeBase) -> TypeBase:
@@ -439,8 +605,9 @@ class TypeEvaluator:
 
         # NOTE: This is a simple implementation to make it work and more robust implementation will
         # be done in a future PR.
-        if sym := base_type.lookup_member_symbol(member):
-            return ClassMember(sym, base_type)
+        for cls in base_type.shared.mro:
+            if sym := cls.lookup_member_symbol(member):
+                return ClassMember(sym, cls)
         return None
 
     def _lookup_object_member(
