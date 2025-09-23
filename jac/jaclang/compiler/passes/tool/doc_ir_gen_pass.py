@@ -785,7 +785,7 @@ class DocIRGenPass(UniPass):
         parts.append(self.hard_line())
         for i in node.kid:
             if isinstance(i, uni.Expr):
-                parts.append(self.group(i.gen.doc_ir))
+                parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
             elif isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
