@@ -22,10 +22,6 @@ class PreDynamoPass(UniPass):
         """Exit node."""
         super().exit_node(node)
 
-    # def exit_module(self, node: uni.Module) -> None:
-    #     """Exit module."""
-    #     print("exiting module", node.unparse())
-
     def replace_node(self, new_node: uni.UniNode, old_node: uni.UniNode) -> None:
         """Copy location from old node to new node."""
         pass
