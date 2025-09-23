@@ -2143,7 +2143,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             kwarg.add_kids_left([kwarg.unpack])
         defaults = [self.convert(expr) for expr in node.defaults]
         # iterate reverse to match from the end
-        for para in [ *posonlyargs, *args ][::-1]:
+        for para in [*posonlyargs, *args][::-1]:
             if not defaults:
                 break
             default = defaults.pop()
@@ -2154,24 +2154,14 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 para.value = default
                 para.add_kids_right([para.value])
-            
-
 
         if kwonlyargs or args or posonlyargs or vararg or kwarg:
             kids = []
             kids.extend(posonlyargs) if posonlyargs else None
-            if node.posonlyargs:
-                kids.append(self.operator(Tok.DIV, "/"))
             kids.extend(args) if args else None
-            if vararg:
-                if args:
-                    kids.append(self.operator(Tok.COMMA, ","))
-                kids.append(vararg)
-            if kwonlyargs:
-                kids.append(self.operator(Tok.STAR_MUL, "*"))
-                kids.extend(kwonlyargs)
-            if kwarg:
-                kids.append(kwarg)
+            kids.append(vararg) if vararg else None
+            kids.extend(kwonlyargs) if kwonlyargs else None
+            kids.append(kwarg) if kwarg else None
             return uni.FuncSignature(
                 posonly_params=posonlyargs,
                 params=args,
@@ -2179,7 +2169,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 kwonlyargs=kwonlyargs,
                 kwargs=kwarg,
                 return_type=None,
-                kid=kids
+                kid=kids,
             )
         else:
             return uni.FuncSignature(

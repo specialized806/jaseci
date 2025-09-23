@@ -857,7 +857,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 self.consume_token(Tok.LPAREN)
                 all_params = self.match(list) or []
-                posonly_params, params, varargs, kwonlyargs, kwargs = self._parse_parameter_categories(all_params)
+                posonly_params, params, varargs, kwonlyargs, kwargs = (
+                    self._parse_parameter_categories(all_params)
+                )
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
@@ -875,28 +877,28 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return x
 
         def _parse_parameter_categories(self, all_params: list[uni.UniNode]) -> tuple[
-            list[uni.ParamVar], 
-            list[uni.ParamVar], 
-            uni.ParamVar | None, 
-            list[uni.ParamVar], 
-            uni.ParamVar | None
+            list[uni.ParamVar],
+            list[uni.ParamVar],
+            uni.ParamVar | None,
+            list[uni.ParamVar],
+            uni.ParamVar | None,
         ]:
             posonly_params = []
             params = []
             varargs = None
             kwonlyargs = []
             kwargs = None
-            
+
             # Initial state determination
             cur_state = "positional"
             for param in all_params:
                 if isinstance(param, uni.Token) and param.name == Tok.DIV:
                     cur_state = "posonly"
                     break
-                    
+
             for cur_nd in all_params:
                 cur_state = self._update_parameter_state(cur_nd, cur_state)
-                if isinstance(cur_nd, uni.ParamVar): 
+                if isinstance(cur_nd, uni.ParamVar):
                     if cur_state == "positional":
                         params.append(cur_nd)
                     elif cur_state == "posonly":
@@ -910,7 +912,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         kwargs = cur_nd
                     else:
                         raise self.ice()
-                        
+
             return posonly_params, params, varargs, kwonlyargs, kwargs
 
         def _update_parameter_state(self, cur_nd: uni.UniNode, cur_state: str) -> str:

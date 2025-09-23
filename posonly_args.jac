@@ -1,17 +1,19 @@
 def foo1(){
-    print("foo1");
+    return True;
 }
 
 def foo2(a:int){
-    print("foo2:", a);
+    if a ==2{
+        return True;
+    }
 }
 def foo3(a:int,){
     print("foo2:", a);
 }
 with entry{
-    foo1();
-    foo2(2);
-    foo3(3);
+    print(foo1());
+    print(foo2(2));
+    print(foo3(3));
 }
 
 
@@ -780,7 +782,7 @@ def long_param_list(
     p1: int, p2: int, p3: int, p4: int, p5: int,
     p6: int = 6, p7: int = 7, p8: int = 8, p9: int = 9, p10: int = 10,
     /,
-    r2: str = "r2", r3: str = "r3", r4: str = "r4", r5: str = "r5",
+    r1:str='r1', r2: str = "r2", r3: str = "r3", r4: str = "r4", r5: str = "r5",
     *args: float,
     kw1: bool, kw2: bool = False, kw3: bool = True,
     kw4: str = "kw4", kw5: str = "kw5",
