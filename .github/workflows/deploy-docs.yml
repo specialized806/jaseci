@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - deploying_jac_lang  # Temporary: for testing
+      - jaclang-deploy  # Temporary: for testing
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
