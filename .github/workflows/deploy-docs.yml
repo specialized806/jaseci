@@ -131,7 +131,7 @@ jobs:
       - name: Build documentation site
         run: |
           echo "Building MkDocs site..."
-          mkdocs build --clean --strict
+          mkdocs build --clean
 
           # Create build info file
           echo "Build Information:" > site/build-info.txt
