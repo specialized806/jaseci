@@ -866,7 +866,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.RPAREN)
                 if self.match_token(Tok.RETURN_HINT):
                     return_spec = self.consume(uni.Expr)
-                x = uni.FuncSignature(
+                return uni.FuncSignature(
                     posonly_params=posonly_params,
                     params=params,
                     varargs=varargs,
@@ -875,9 +875,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     return_type=return_spec,
                     kid=self.flat_cur_nodes,
                 )
-                # print(x.pp())
-                # print(x.args_pp)
-                return x
 
         def _parse_parameter_categories(self, all_params: list[uni.UniNode]) -> tuple[
             list[uni.ParamVar],
@@ -921,14 +918,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def _update_parameter_state(self, cur_nd: uni.UniNode, cur_state: str) -> str:
             if isinstance(cur_nd, uni.Token):
                 if cur_nd.name == Tok.DIV:
-                    if cur_state in ["keyword_only", "kwargs",'positional']:
+                    if cur_state in ["keyword_only", "kwargs", "positional"]:
                         self.parse_ref.log_error(
                             "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
                             node_override=cur_nd,
                         )
                     return "positional"
                 elif cur_nd.name == Tok.STAR_MUL:
-                    if cur_state in ["keyword_only","kwargs"]:
+                    if cur_state in ["keyword_only", "kwargs"]:
                         self.parse_ref.log_error(
                             "Invalid syntax in function parameters: '*' cannot appear after '**'.",
                             node_override=cur_nd,

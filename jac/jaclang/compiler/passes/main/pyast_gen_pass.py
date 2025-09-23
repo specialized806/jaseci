@@ -1022,7 +1022,9 @@ class PyastGenPass(UniPass):
             if i.value:
                 defaults.append(cast(ast3.expr, i.value.gen.py_ast[0]))
         kwonly_args = [i.gen.py_ast[0] for i in node.kwonlyargs]
-        kw_defaults = []
+        # kw_defaults must be the same length as kwonlyargs
+        # it will have None for args that don't have defaults
+        kw_defaults: list[ast3.expr | None] = []
         for i in node.kwonlyargs:
             if i.value:
                 kw_defaults.append(cast(ast3.expr, i.value.gen.py_ast[0]))

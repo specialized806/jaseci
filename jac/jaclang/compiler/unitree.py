@@ -1959,21 +1959,29 @@ class FuncSignature(UniNode):
 
     @property
     def args_pp(self) -> str:
-        stem = f"----Function Parameters- ----\n"
-        # Convert each ParamVar to string
-        print("Positional-only parameters:")
-        stem += "\tposonly " + "\n\t\t".join(str(p.unparse()) for p in self.posonly_params) + "\n"
-        print("Positional or keyword parameters:")
-        stem += "\tparams " + "\n\t\t".join(str(p.unparse()) for p in self.params) + "\n"
-        print("Varargs parameter:")
-        stem += f"\tvarargs {self.varargs.unparse() if self.varargs else None}\n"
-        print("Keyword-only parameters:")
-        stem += "\tkwonlyargs " + "\n\t\t".join(str(p.unparse()) for p in self.kwonlyargs) + "\n"
-        print("Kwargs parameter:")
-        stem += f"\tkwargs {self.kwargs.unparse() if self.kwargs else None}\n"
-        print("Return type:")
-        return stem
-
+        arg_detail = "----Function Parameters- ----\n"
+        arg_detail += (
+            "\tposonly: "
+            + "\n\t\t".join(str(param.unparse()) for param in self.posonly_params)
+            + "\n"
+        )
+        arg_detail += (
+            "\tparams: "
+            + "\n\t\t".join(str(arg.unparse()) for arg in self.params)
+            + "\n"
+        )
+        arg_detail += f"\tvarargs: {self.varargs.unparse() if self.varargs else None}\n"
+        arg_detail += (
+            "\tkwonlyargs: "
+            + "\n\t\t\t".join(
+                str(keyword_param.unparse()) for keyword_param in self.kwonlyargs
+            )
+            + "\n"
+        )
+        arg_detail += (
+            "\tkwargs: " + (self.kwargs.unparse() if self.kwargs else "None") + "\n"
+        )
+        return arg_detail
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -2002,8 +2010,8 @@ class FuncSignature(UniNode):
             new_kid.append(self.gen_token(Tok.STAR_MUL))
             new_kid.append(self.gen_token(Tok.COMMA))
         for prm in self.kwonlyargs:
-                new_kid.append(prm)
-                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(prm)
+            new_kid.append(self.gen_token(Tok.COMMA))
         if self.kwargs:
             new_kid.append(self.kwargs)
             new_kid.append(self.gen_token(Tok.COMMA))
