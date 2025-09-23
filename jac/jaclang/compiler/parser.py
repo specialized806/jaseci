@@ -848,9 +848,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if self.match_token(Tok.RETURN_HINT):
                 return_spec = self.consume(uni.Expr)
                 return uni.FuncSignature(
-                    params=[],
-                    return_type=return_spec,
                     posonly_params=[],
+                    params=[],
+                    varargs=None,
+                    kwonlyargs=[],
+                    kwargs=None,
+                    return_type=return_spec,
                     kid=self.flat_cur_nodes,
                 )
             # Otherwise, parse the traditional parameter list form
@@ -918,14 +921,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def _update_parameter_state(self, cur_nd: uni.UniNode, cur_state: str) -> str:
             if isinstance(cur_nd, uni.Token):
                 if cur_nd.name == Tok.DIV:
-                    if cur_state in ["keyword_only", "kwargs"]:
+                    if cur_state in ["keyword_only", "kwargs",'positional']:
                         self.parse_ref.log_error(
                             "Invalid syntax in function parameters: '/' cannot appear after '*' or '**'.",
                             node_override=cur_nd,
                         )
                     return "positional"
                 elif cur_nd.name == Tok.STAR_MUL:
-                    if cur_state == "kwargs":
+                    if cur_state in ["keyword_only","kwargs"]:
                         self.parse_ref.log_error(
                             "Invalid syntax in function parameters: '*' cannot appear after '**'.",
                             node_override=cur_nd,
@@ -1625,11 +1628,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 sig_kid.append(return_type)
             signature = (
                 uni.FuncSignature(
+                    posonly_params=[],
                     params=(
                         self.extract_from_list(params, uni.ParamVar) if params else []
                     ),
+                    varargs=None,
+                    kwonlyargs=[],
+                    kwargs=None,
                     return_type=return_type,
-                    posonly_params=[],
                     kid=sig_kid,
                 )
                 if params or return_type

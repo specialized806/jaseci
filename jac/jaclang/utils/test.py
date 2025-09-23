@@ -68,6 +68,13 @@ class TestCase(_TestCase):
         )
         return os.path.abspath(file_path)
 
+    def test_lang_fixture_abs_path(self,file:str) -> None:
+        """TestLanguage fixture abs path."""
+        fixture_src = jaclang.__file__
+        file_path = os.path.join(
+            os.path.dirname(fixture_src), "tests",'fixtures' ,file
+        )
+        return os.path.abspath(file_path)
 
 class TestCaseMicroSuite(TestCase):
     """Base test case for Jaseci."""

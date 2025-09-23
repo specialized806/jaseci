@@ -765,6 +765,43 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("i work", stdout_value)
 
+    def test_kwonly_params(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import("test_kwonly_params", base_path=self.fixture_abs_path("./params"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("KW_SIMPLE: 42", stdout_value[0])
+        self.assertEqual("KW_DEF: 10-def 20-def", stdout_value[1])
+        self.assertEqual("REG_KW: 10|test", stdout_value[2])
+        self.assertEqual("MIXED_KW: 1-def-2.5-True 2-custom-3.5-False", stdout_value[3])
+        self.assertEqual("ALL_KW: 100:test:1.0 200:hi:9.9", stdout_value[4])
+
+    def test_complex_params(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import("test_complex_params", base_path=self.fixture_abs_path("./params"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("ULTIMATE_MIN: 1|def|2.5|0|test|100|0", stdout_value[0])
+        self.assertEqual("ULTIMATE_FULL: 1|custom|3.14|3|req|200|1", stdout_value[1])
+        self.assertEqual("SEPARATORS: 42", stdout_value[2])
+        self.assertEqual("EDGE_MIX: 1-test-2-True-1", stdout_value[3])
+        self.assertEqual("RECURSIVE: 7 11", stdout_value[4])
+        self.assertEqual("VALIDATION: x:1,y:2.5,z:10,args:1,w:True,kwargs:1", stdout_value[5])
+
+    def test_param_failing(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        for i in ["test_failing_posonly", "test_failing_kwonly", "test_failing_varargs"]:
+            Jac.jac_import(i, base_path=self.fixture_abs_path("./params"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn('FAILED', stdout_value)
+
     def test_double_import_exec(self) -> None:
         """Test importing python."""
         captured_output = io.StringIO()

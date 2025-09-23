@@ -179,5 +179,13 @@ class TestLarkParser(TestCaseMicroSuite):
         prog.compile(self.fixture_abs_path("codegentext.jac"))
         self.assertFalse(prog.errors_had)
 
+    def test_param_syntax(self) -> None:
+        """Parse param syntax jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        prog = JacProgram()
+        prog.compile(self.test_lang_fixture_abs_path("params/param_syntax.jac"))
+        sys.stdout = sys.__stdout__
+        self.assertEqual(len(prog.errors_had), 8)
 
 TestLarkParser.self_attach_micro_tests()
