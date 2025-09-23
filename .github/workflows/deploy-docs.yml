@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - jaclang-deploy  # Temporary: for testing
+      - jaclang-deploy
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
@@ -131,7 +131,7 @@ jobs:
       - name: Build documentation site
         run: |
           echo "Building MkDocs site..."
-          mkdocs build --clean
+          mkdocs build --clean --strict
 
           # Create build info file
           echo "Build Information:" > site/build-info.txt
