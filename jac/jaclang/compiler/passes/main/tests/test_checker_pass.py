@@ -28,6 +28,18 @@ class TypeCheckerPassTests(TestCase):
                  ^^^^^^^^^^^^^^^^^^^^^^
         """, program.errors_had[1].pretty_print())
 
+    def test_float_types(self) -> None:
+        program = JacProgram()
+        mod = program.compile(self.fixture_abs_path("checker_float.jac"))
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+            f: float = pi; # <-- OK
+            s: str = pi;   # <-- Error
+            ^^^^^^^^^^^
+        """, program.errors_had[0].pretty_print())
+
+
     def test_infer_type_of_assignment(self) -> None:
         program = JacProgram()
         mod = program.compile(self.fixture_abs_path("infer_type_assignment.jac"))
@@ -114,6 +126,17 @@ class TypeCheckerPassTests(TestCase):
             foo(A()); # <-- Ok
             foo(B()); # <-- Error
                 ^^^
+        """, program.errors_had[0].pretty_print())
+
+    def test_self_type_inference(self) -> None:
+        path = self.fixture_abs_path("checker_self_type.jac")
+        program = JacProgram()
+        mod = program.compile(path)
+        TypeCheckPass(ir_in=mod, prog=program)
+        self.assertEqual(len(program.errors_had), 1)
+        self._assert_error_pretty_found("""
+          x: str = self.i; # <-- Error
+          ^^^^^^^^^^^^^^^
         """, program.errors_had[0].pretty_print())
 
     def test_binary_op(self) -> None:
