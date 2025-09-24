@@ -2142,15 +2142,17 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             )
             kwarg.add_kids_left([kwarg.unpack])
         defaults = [self.convert(expr) for expr in node.defaults]
-        params = [*posonlyargs, *args, *([vararg] if vararg else []), *kwonlyargs]
+        params = [*args]
         for param, default in zip(params[::-1], defaults[::-1]):
             if isinstance(default, uni.Expr) and isinstance(param, uni.ParamVar):
                 param.value = default
                 param.add_kids_right([default])
-        # We need to append kwarg after the above default matching cause kwarg is always at the end
-        # and should not be matched with any default value
+        if vararg:
+            params.append(vararg)
+        params += kwonlyargs
         if kwarg:
             params.append(kwarg)
+        params += defaults
 
         valid_params = [param for param in params if isinstance(param, uni.ParamVar)]
         if valid_params:
