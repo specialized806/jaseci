@@ -80,7 +80,7 @@ obj Level {
 }
 
 obj Map {
-    has level: Level, walls: list[Wall];    # embeds Level + walls 
+    has level: Level, walls: list[Wall];    # embeds Level + walls
     has small_obstacles: list[Position];    # extra blocks
     has enemies: list[Position];    # enemy positions
     has player_pos: Position;       # player start
@@ -206,7 +206,7 @@ This method executes the following sequence:
 2. **Memory Management**: Keeps only the last 3 levels
 3. **AI Level Generation**: Calls the AI to create a new level
 4. **AI Map Generation**: Requests the AI to generate map
-5. **Difficulty Progression**: Increases difficulty every 2 levels 
+5. **Difficulty Progression**: Increases difficulty every 2 levels
 6. **Return Results**: Returns both the level config and detailed map
 
 Now let’s add a visualization helper that converts maps into tile grids. Create a function that converts the AI-generated `Map` into game tiles:
