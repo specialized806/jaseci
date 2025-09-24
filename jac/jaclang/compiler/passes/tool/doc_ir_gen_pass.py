@@ -1186,6 +1186,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_filter_compr(self, node: uni.FilterCompr) -> None:
