@@ -169,6 +169,7 @@ class ClassType(TypeBase):
             self.class_name = class_name
             self.symbol_table = symbol_table
             self.base_classes = base_classes or []
+            self.mro: list[ClassType] = []
 
             # In pyright classes have ClassTypeFlags to indicate if it's builtin
             # along with other information, I'm adding only the builtin flag for now.
@@ -190,6 +191,10 @@ class ClassType(TypeBase):
         """Initialize the class type."""
         super().__init__(flags=flags)
         self.shared = shared
+
+    def __str__(self) -> str:
+        """Return a string representation of the class type."""
+        return f"<class {self.shared.class_name}>"
 
     def clone_as_instance(self) -> "ClassType":
         """Clone this class type as an instance type."""
