@@ -72,8 +72,7 @@ For the best development experience, install the Jac VS Code extension:
 
 **For Cursor users:**
 
-
-1. Download the VSIX file: [jaclang-extension-2025.7.17.vsix](../../jac/support/vscode_ext/jac/jaclang-extension-2025.7.17.vsix)
+1. Download the VSIX file: [jaclang-extension-2025.7.17.vsix](../../assets/vsce/jaclang-extension-2025.7.17.vsix)
 2. Open Cursor
 3. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
 4. Type `>install from vsix` and select the command
