@@ -79,9 +79,9 @@ Consider a program that detects the personality type of a historical figure from
     glob llm = Model(model_name="gemini/gemini-2.0-flash");
 
     enum Personality {
-        INTROVERT = "Introvert",
-        EXTROVERT = "Extrovert",
-        AMBIVERT = "Ambivert"
+        INTROVERT,
+        EXTROVERT,
+        AMBIVERT
     }
 
     def get_personality(name: str) -> Personality by llm();
@@ -108,7 +108,7 @@ Consider a program that detects the personality type of a historical figure from
 
     name = "Albert Einstein"
     result = get_personality(name)
-    print(f"{result.value} personality detected for {name}")
+    print(f"{result} personality detected for {name}")
     ```
 
 Similarly, custom types can be used as output types which force the LLM to adhere to the specified type and produce a valid result.
