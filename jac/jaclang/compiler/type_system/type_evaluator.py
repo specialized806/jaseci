@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
 from . import operations
-from .type_utils import ClassMember, compute_mro_linearization
+from . import type_utils
 from .types import TypeBase
 
 
@@ -247,7 +247,8 @@ class TypeEvaluator:
             flags=types.TypeFlags.Instantiable,
         )
 
-        compute_mro_linearization(cls_type)
+        # Compute the MRO for the class.
+        type_utils.compute_mro_linearization(cls_type)
 
         # Cache the type, pyright is doing invalidateTypeCacheIfCanceled()
         # we're not doing that any time sooner.
@@ -263,9 +264,30 @@ class TypeEvaluator:
             node.name_spec.type = types.UnknownType()
             return node.name_spec.type
 
-        if not isinstance(node.signature.return_type, uni.Expr):
-            node.name_spec.type = types.UnknownType()
-            return node.name_spec.type
+        return_type: TypeBase
+        if isinstance(node.signature.return_type, uni.Expr):
+            return_type = self._convert_to_instance(
+                self.get_type_of_expression(node.signature.return_type)
+            )
+        else:
+            return_type = types.UnknownType()
+
+        parameters: list[types.Parameter] = []
+        for idx, param in enumerate(node.signature.get_parameters()):
+            # TODO: Set parameter category for *args, and **kwargs
+            param_type: TypeBase | None = None
+            if param.type_tag:
+                param_type_cls = self.get_type_of_expression(param.type_tag.tag)
+                param_type = self._convert_to_instance(param_type_cls)
+            parameters.append(
+                types.Parameter(
+                    name=param.name.value,
+                    category=types.ParameterCategory.Positional,
+                    param_type=param_type,
+                    default_value=param.value,
+                    is_self=(idx == 0 and self._is_expr_self(param.name)),
+                )
+            )
 
         return_type = self._convert_to_instance(
             self.get_type_of_expression(node.signature.return_type)
@@ -538,11 +560,7 @@ class TypeEvaluator:
                 # NOTE: For self's type pyright is getting the first parameter of a method and
                 # the name can be anything not just self, however we don't have the first parameter
                 # and self is a keyword, we need to do it in this way.
-                if (
-                    (expr.name == Tok.KW_SELF.value)
-                    and (fn := self._get_enclosing_method(expr))
-                    and (not fn.is_static)
-                ):
+                if self._is_expr_self(expr):
                     return self._get_type_of_self(expr)
 
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
@@ -555,6 +573,17 @@ class TypeEvaluator:
     # -----------------------------------------------------------------------------
     # Helper functions
     # -----------------------------------------------------------------------------
+
+    def _is_expr_self(self, expr: uni.Expr) -> bool:
+        """Check if the expression is Name that is 'self' and in the method context."""
+        if (
+            isinstance(expr, uni.Name)
+            and (expr.name == Tok.KW_SELF.value)
+            and (fn := self._get_enclosing_method(expr))
+            and (not fn.is_static)
+        ):
+            return True
+        return False
 
     def _get_enclosing_function(self, node: uni.UniNode) -> uni.Ability | None:
         """Get the enclosing function (ability) of the given node."""
@@ -597,7 +626,7 @@ class TypeEvaluator:
 
     def _lookup_class_member(
         self, base_type: types.ClassType, member: str
-    ) -> ClassMember | None:
+    ) -> type_utils.ClassMember | None:
         """Lookup the class member type."""
         assert self.prefetch.int_class is not None
         # FIXME: Pyright's way: Implement class member iterator (based on mro and the multiple inheritance)
@@ -607,12 +636,12 @@ class TypeEvaluator:
         # be done in a future PR.
         for cls in base_type.shared.mro:
             if sym := cls.lookup_member_symbol(member):
-                return ClassMember(sym, cls)
+                return type_utils.ClassMember(sym, cls)
         return None
 
     def _lookup_object_member(
         self, base_type: types.ClassType, member: str
-    ) -> ClassMember | None:
+    ) -> type_utils.ClassMember | None:
         """Lookup the object member type."""
         assert self.prefetch.int_class is not None
         if base_type.is_class_instance():
@@ -620,3 +649,96 @@ class TypeEvaluator:
             # TODO: We need to implement Member lookup flags and set SkipInstanceMember to 0.
             return self._lookup_class_member(base_type, member)
         return None
+
+    def match_args_to_params(
+        self, expr: uni.FuncCall, func_type: types.FunctionType
+    ) -> MatchArgsToParamsResult:
+        """
+        Match arguments passed to a function to the corresponding parameters in that function.
+
+        This matching is done based on positions and keywords. Type evaluation and
+        validation is left to the caller.
+        This logic is based on PEP 3102: https://www.python.org/dev/peps/pep-3102/
+        """
+        arg_params: dict[uni.Expr, types.Parameter | None] = {}
+        argument_errors = False
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # FIXME: This is a ad-hoc implementation to make it work for now. !
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        params_to_match = func_type.parameters.copy()
+
+        # Skip `self` for method calls.
+        if len(func_type.parameters) >= 1 and func_type.parameters[0].is_self:
+            params_to_match.pop(0)
+
+        # Match arguments to parameters based on position.
+        for idx, param in enumerate(params_to_match):
+            if idx >= len(expr.params):
+                break
+            arg = expr.params[idx]
+            arg_expr = arg.value if isinstance(arg, uni.KWPair) else arg
+            arg_params[arg_expr] = param
+
+        # Check arity
+        if type_utils.max_args_count(params_to_match) < len(expr.params):
+            self.add_diagnostic(expr, "Too many positional arguments", warning=True)
+            argument_errors = True
+        elif type_utils.min_args_count(params_to_match) > len(expr.params):
+            self.add_diagnostic(expr, "Too few positional arguments", warning=True)
+            argument_errors = True
+
+        return MatchArgsToParamsResult(
+            arg_params=arg_params, argument_errors=argument_errors
+        )
+
+    def validate_call_args(self, expr: uni.FuncCall) -> TypeBase:
+        """
+        Validate that the arguments can be assigned to the call's parameter list.
+
+        Specializes the call based on arg types, and returns the specialized
+        type of the return value. If it detects an error along the way, it emits
+        a diagnostic and sets argumentErrors to true.
+        """
+        caller_type = self.get_type_of_expression(expr.target)
+        if isinstance(caller_type, types.FunctionType):
+            arg_param_match = self.match_args_to_params(expr, caller_type)
+            if not arg_param_match.argument_errors:
+                self.validate_arg_types(arg_param_match)
+            return caller_type.return_type or types.UnknownType()
+
+        if (
+            isinstance(caller_type, types.ClassType)
+            and caller_type.is_instantiable_class()
+        ):
+            # TODO: validate args for __init__()
+            return caller_type.clone_as_instance()
+
+        if caller_type.is_class_instance():
+            # TODO: validate args.
+            magic_call_ret = self.get_type_of_magic_method_call(caller_type, "__call__")
+            if magic_call_ret:
+                return magic_call_ret
+
+        return types.UnknownType()
+
+    # FIXME: This is a ad-hoc implementation to make it work for now.
+    def validate_arg_types(
+        self,
+        args: MatchArgsToParamsResult,
+    ) -> None:
+        """Validate that the argument types can be assigned to the parameter types."""
+        for arg, param in args.arg_params.items():
+            if param is None or param.param_type is None:
+                continue
+            arg_type = self.get_type_of_expression(arg)
+            if not self.assign_type(arg_type, param.param_type):
+                # TODO: Add __str__ for types and use that here.
+                self.add_diagnostic(
+                    arg,
+                    f"Cannot assign {arg_type} to parameter '{param.name}' of type {param.param_type}",
+                    # TODO: make the `class` architype `self` parameter working and change
+                    # the warning to error.
+                    warning=True,
+                )

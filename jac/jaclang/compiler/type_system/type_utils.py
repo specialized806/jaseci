@@ -65,3 +65,30 @@ def compute_mro_linearization(cls: types.ClassType) -> None:
             for mro_cls in base.shared.mro:
                 if mro_cls not in cls.shared.mro:
                     cls.shared.mro.append(mro_cls)
+
+
+def max_args_count(parameters: list[types.Parameter]) -> int:
+    """Return the maximum number of positional arguments this function can take."""
+    count = 0
+    for param in parameters:
+        if param.category == types.ParameterCategory.Positional:
+            count += 1
+        elif param.category in (
+            types.ParameterCategory.ArgsList,
+            types.ParameterCategory.KwargsDict,
+        ):
+            count = (1 << 32) - 1
+            break
+    return count
+
+
+def min_args_count(parameters: list[types.Parameter]) -> int:
+    """Return the minimum number of positional arguments this function requires."""
+    count = 0
+    for param in parameters:
+        if (
+            param.category == types.ParameterCategory.Positional
+            and param.default_value is None
+        ):
+            count += 1
+    return count

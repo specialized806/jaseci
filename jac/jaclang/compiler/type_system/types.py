@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import ClassVar, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jaclang.compiler.unitree import Symbol, UniScopeNode as SymbolTable
+    from jaclang.compiler.unitree import Expr, Symbol, UniScopeNode as SymbolTable
 
 
 class TypeCategory(IntEnum):
@@ -231,13 +231,25 @@ class Parameter:
     """Represents a function parameter."""
 
     def __init__(
-        self, name: str, category: ParameterCategory, param_type: TypeBase | None
+        self,
+        name: str,
+        category: ParameterCategory,
+        param_type: TypeBase | None,
+        default_value: Expr | None = None,
+        is_self: bool = False,
     ) -> None:
         """Initialize obviously."""
         super().__init__()
         self.name = name
         self.category = category
+        self.default_value = default_value
         self.param_type = param_type
+
+        # This will set to true if the parameter is `self`. In jaclang self
+        # in the context of obj, node, edge, walker methods is not required to
+        # be explicitly defined. However, in the `class` methods it should be
+        # explicitly defined.
+        self.is_self = is_self
 
 
 class FunctionType(TypeBase):
