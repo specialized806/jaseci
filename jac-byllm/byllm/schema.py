@@ -117,7 +117,11 @@ def _type_to_schema(ty: type, title: str = "", desc: str = "") -> dict:
                     f"Enum {ty.__name__} has mixed types. Not supported for schema generation."
                 )
             enum_type = enum_type or int
-        enum_desc = f"\nThe value *should* be one in this list: {enum_values}"
+        if enum_type is int:
+            enum_desc = f"\nThe value *should* be one in this list: {enum_values} where"
+            enum_desc += " the names are [" + ", ".join([e.name for e in ty]) + "]."
+        else:
+            enum_desc = f"\nThe value *should* be one in this list: {enum_values}"
         if enum_type not in (int, str):
             raise ValueError(
                 f"Enum {ty.__name__} has unsupported type {enum_type}. "
