@@ -56,34 +56,38 @@ class PreDynamoPass(UniPass):
             return None
         return ta  # common target
 
-    def check_register_buffer_call(self, node: uni.Assignment) -> Optional[tuple]:
+    def check_register_buffer_call(self, node: uni.ExprStmt) -> Optional[tuple]:
         """Return (name, tensor_expr, kwargs) if node is self.register_buffer(name, tensor_expr, **kwargs)."""
-        if not isinstance(node, uni.ExprStmt) or not isinstance(
-            node.value, uni.FuncCall
+        if isinstance(node, uni.ExprStmt) and isinstance(
+            node.expr, uni.FuncCall
         ):
+            call = node.expr
+            if isinstance(call.target, uni.AtomTrailer) and isinstance(call.target.right, uni.Name) and call.target.right.value == "register_buffer":
+                if (
+                    isinstance(call.target.target, uni.Name)
+                    and call.target.target.value == "self"
+                ):
+                    if (
+                        len(call.params) >= 2
+                        and isinstance(call.params[0], uni.String)
+                        and isinstance(call.params[1], uni.Expr)
+                    ):
+                        name = call.params[0]
+                        tensor_expr = call.params[1]
+                        kwargs = (
+                            {kw.key._sym_name: kw.value for kw in call.params[2:] if isinstance(kw, uni.KWPair)}
+                            if len(call.params) > 2
+                            else {}
+                        )
+                        return (name, tensor_expr, kwargs)
+                    else:
+                        return None
+                else:
+                    return None
+            else: 
+                return None
+        else:
             return None
-        call = node.value
-        if not (
-            isinstance(call.targets[0], uni.AtomTrailer) and call.targets[0].is_attr
-        ):
-            return None
-        if call.targets[0].right.value != "register_buffer":
-            return None
-        if not (
-            isinstance(call.targets[0].target, uni.Name)
-            and call.targets[0].target.value == "self"
-        ):
-            return None
-        if (
-            len(call.params) < 2
-            or not isinstance(call.params[0], uni.String)
-            or not isinstance(call.params[1], uni.Expr)
-        ):
-            return None
-        name = call.params[0].value
-        expr = call.params[1]
-        kwargs = call.params[2:] if len(call.params) > 2 else []
-        return name, expr, kwargs
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Exit if statement."""
@@ -93,8 +97,6 @@ class PreDynamoPass(UniPass):
             b0 = node.else_body.body[0]
         else:
             return
-        print(f"a0: {a0}")
-        print(f"b0: {b0}")
         if isinstance(a0, uni.Assignment) and isinstance(b0, uni.Assignment):
             lhs = self.check_same_lhs(a0, b0)
             if lhs is not None:
@@ -148,8 +150,8 @@ class PreDynamoPass(UniPass):
             if a_reg is not None and b_reg is not None:
                 a_name, a_expr, a_kwargs = a_reg
                 b_name, b_expr, b_kwargs = b_reg
-                if a_name == b_name and set(a_kwargs.keys()) == set(b_kwargs.keys()):
-                    tmp_name = self.gen_name(node, Tok.NAME, f"__{a_name}_sel")
+                if a_name.value == b_name.value and set(a_kwargs.keys()) == set(b_kwargs.keys()):
+                    tmp_name = self.gen_name(node, Tok.NAME, f"__{eval(a_name.value)}_sel")
                     func_name = self.gen_name(node, Tok.NAME, "torch")
                     attr_name = self.gen_name(node, Tok.NAME, "where")
                     target = uni.AtomTrailer(
@@ -165,7 +167,7 @@ class PreDynamoPass(UniPass):
                         genai_call=None,
                         kid=[target, node.condition, a_expr, b_expr],
                     )
-                    new_node = uni.Assignment(
+                    assign_node = uni.Assignment(
                         target=[tmp_name],
                         value=call,
                         type_tag=None,
@@ -184,23 +186,26 @@ class PreDynamoPass(UniPass):
                     kwargs_nodes = [v for k, v in a_kwargs.items()]
                     reg_call = uni.FuncCall(
                         target=buffer_target,
-                        params=[node.condition, a_expr, b_expr] + kwargs_nodes,
+                        params=[a_name, tmp_name] + kwargs_nodes,
                         genai_call=None,
-                        kid=[buffer_target, node.condition, a_expr, b_expr]
+                        kid=[buffer_target, a_name, tmp_name]
                         + kwargs_nodes,
                     )
                     reg_node = uni.ExprStmt(
                         expr=reg_call, in_fstring=False, kid=[reg_call]
                     )
-                    if reg_node is not None:
-                        reg_node.parent = node.parent
-                        if (
-                            (parent := node.parent)
-                            and hasattr(parent, "body")
-                            and node in parent.body
-                        ):
-                            parent.body[parent.body.index(node)] = reg_node
-                            parent.kid[parent.kid.index(node)] = reg_node
+                    assign_node.parent = node.parent
+                    reg_node.parent = node.parent
+                    if (
+                        (parent := node.parent)
+                        and hasattr(parent, "body")
+                        and node in parent.body
+                    ):
+                        body_idx = parent.body.index(node)
+                        parent.body = parent.body[:body_idx] + [assign_node, reg_node] + parent.body[body_idx + 1 :]
+                        kid_idx = parent.kid.index(node)
+                        parent.kid = parent.kid[:kid_idx] + [assign_node, reg_node] + parent.kid[kid_idx + 1 :]
+                    new_node = None  # already replaced above
 
         if new_node is not None:
             new_node.parent = node.parent
