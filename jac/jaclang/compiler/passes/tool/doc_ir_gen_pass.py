@@ -482,6 +482,11 @@ class DocIRGenPass(UniPass):
                 in_params = False
                 if isinstance(indent_parts[-1], doc.Line):
                     indent_parts.pop()
+                if (
+                    isinstance(indent_parts[-1], doc.Text)
+                    and indent_parts[-1].text == ","
+                ):
+                    indent_parts.pop()
                 parts.append(
                     self.indent(
                         self.concat(
