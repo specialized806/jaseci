@@ -99,9 +99,9 @@ Consider a program that detects the personality type of a historical figure from
     llm =  Model(model_name="gemini/gemini-2.0-flash")
 
     class Personality(Enum):
-        INTROVERT = "Introvert"
-        EXTROVERT = "Extrovert"
-        AMBIVERT = "Ambivert"
+        INTROVERT
+        EXTROVERT
+        AMBIVERT
 
     @by(model=llm)
     def get_personality(name: str) -> Personality: ...
