@@ -8,7 +8,7 @@ PyrightReference:
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import Callable, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 from . import operations
 from . import type_utils
 from .types import TypeBase
+
+# The callback type definition for the diagnostic messages.
+DiagnosticCallback = Callable[[uni.UniNode, str, bool], None]
 
 
 @dataclass
@@ -62,10 +65,28 @@ class SymbolResolutionStackEntry:
     partial_type: TypeBase | None = None
 
 
+@dataclass
+class MatchArgsToParamsResult:
+    """Result of matching arguments to parameters."""
+
+    # FIXME: This class implementation is modified from pyright to make it
+    # simple and work for now, however this needs to be revisited and
+    # implemented properly.
+    arg_params: dict[uni.Expr, types.Parameter | None]
+
+    overload: types.FunctionType | None = None
+    argument_errors: bool = False
+
+
 class TypeEvaluator:
     """Type evaluator for JacLang."""
 
-    def __init__(self, builtins_module: uni.Module, program: "JacProgram") -> None:
+    def __init__(
+        self,
+        builtins_module: uni.Module,
+        program: "JacProgram",
+        callback: DiagnosticCallback,
+    ) -> None:
         """Initialize the type evaluator with prefetched types.
 
         Implementation Note:
@@ -80,6 +101,13 @@ class TypeEvaluator:
         self.builtins_module = builtins_module
         self.program = program
         self.prefetch = self._prefetch_types()
+        self.callback = callback
+
+    def add_diagnostic(
+        self, node: uni.UniNode, message: str, warning: bool = False
+    ) -> None:
+        """Add a diagnostic message to the program."""
+        self.callback(node, message, warning)
 
     # -------------------------------------------------------------------------
     # Symbol resolution stack
@@ -289,13 +317,10 @@ class TypeEvaluator:
                 )
             )
 
-        return_type = self._convert_to_instance(
-            self.get_type_of_expression(node.signature.return_type)
-        )
         func_type = types.FunctionType(
             func_name=node.name_spec.sym_name,
             return_type=return_type,
-            parameters=[],  # TODO:
+            parameters=parameters,
         )
 
         node.name_spec.type = func_type
@@ -453,6 +478,11 @@ class TypeEvaluator:
             case uni.Ability():
                 return self.get_type_of_ability(node)
 
+            case uni.ParamVar():
+                if node.type_tag:
+                    annotation_type = self.get_type_of_expression(node.type_tag.tag)
+                    return self._convert_to_instance(annotation_type)
+
             # This actually defined in the function getTypeForDeclaration();
             # Pyright has DeclarationType.Variable.
             case uni.Name():
@@ -538,20 +568,7 @@ class TypeEvaluator:
                 return self.get_type_of_expression(expr.value)
 
             case uni.FuncCall():
-                caller_type = self.get_type_of_expression(expr.target)
-                if isinstance(caller_type, types.FunctionType):
-                    return caller_type.return_type or types.UnknownType()
-                if (
-                    isinstance(caller_type, types.ClassType)
-                    and caller_type.is_instantiable_class()
-                ):
-                    return caller_type.clone_as_instance()
-                if caller_type.is_class_instance():
-                    magic_call_ret = self.get_type_of_magic_method_call(
-                        caller_type, "__call__"
-                    )
-                    if magic_call_ret:
-                        return magic_call_ret
+                return self.validate_call_args(expr)
 
             case uni.BinaryExpr():
                 return operations.get_type_of_binary_operation(self, expr)
