@@ -19,7 +19,7 @@
 
     *A text-based trding game where non-player charaters are handled using large language models. This is use tool calling for game mechanics such as bargaining at shops.*
 
-    [Start](./../../examples/mtp_examples/fantacy_trading_game.md/){ .md-button }
+    [Start](./../../examples/mtp_examples/fantasy_trading_game/){ .md-button }
 
 -   **AI-Powered Multimodal MCP Chatbot**
 
@@ -27,7 +27,7 @@
 
     *This Tutorial shows how to implemented a agentic AI application using the byLLM package and object-spatiol programming. In additionn MCP integration is demonstrated here. *
 
-    [Start](./../../examples/rag_chatbot/Overview.md){ .md-button }
+    [Start](./../../examples/rag_chatbot/Overview/){ .md-button }
 
 </div>
 
