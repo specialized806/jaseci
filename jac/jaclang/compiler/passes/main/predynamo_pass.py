@@ -64,40 +64,29 @@ class PreDynamoPass(UniPass):
                 isinstance(call.target, uni.AtomTrailer)
                 and isinstance(call.target.right, uni.Name)
                 and call.target.right.value == "register_buffer"
+                and isinstance(call.target.target, uni.Name)
+                and call.target.target.value == "self"
+                and len(call.params) >= 2
+                and isinstance(call.params[0], (uni.String, uni.MultiString))
+                and isinstance(call.params[1], uni.Expr)
             ):
-                if (
-                    isinstance(call.target.target, uni.Name)
-                    and call.target.target.value == "self"
-                ):
-                    if (
-                        len(call.params) >= 2
-                        and isinstance(call.params[0], (uni.String, uni.MultiString))
-                        and isinstance(call.params[1], uni.Expr)
-                    ):
-                        name = (
-                            call.params[0]
-                            if isinstance(call.params[0], uni.String)
-                            else call.params[0].strings[0]
-                        )
-                        tensor_expr = call.params[1]
-                        kwargs = (
-                            {
-                                kw.key._sym_name: kw.value
-                                for kw in call.params[2:]
-                                if isinstance(kw, uni.KWPair)
-                            }
-                            if len(call.params) > 2
-                            else {}
-                        )
-                        return (name, tensor_expr, kwargs)
-                    else:
-                        return None
-                else:
-                    return None
-            else:
-                return None
-        else:
-            return None
+                name = (
+                    call.params[0]
+                    if isinstance(call.params[0], uni.String)
+                    else call.params[0].strings[0]
+                )
+                tensor_expr = call.params[1]
+                kwargs = (
+                    {
+                        kw.key._sym_name: kw.value
+                        for kw in call.params[2:]
+                        if isinstance(kw, uni.KWPair)
+                    }
+                    if len(call.params) > 2
+                    else {}
+                )
+                return (name, tensor_expr, kwargs)
+        return None
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Exit if statement."""
