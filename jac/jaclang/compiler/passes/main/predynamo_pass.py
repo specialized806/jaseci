@@ -162,6 +162,7 @@ class PreDynamoPass(UniPass):
                     tmp_name = self.gen_name(
                         node, Tok.NAME, f"__{eval(a_name.value)}_sel"
                     )
+                    tmp_name.py_ctx_func = ast3.Store
                     func_name = self.gen_name(node, Tok.NAME, "torch")
                     attr_name = self.gen_name(node, Tok.NAME, "where")
                     target = uni.AtomTrailer(
@@ -193,12 +194,20 @@ class PreDynamoPass(UniPass):
                         is_null_ok=False,
                         kid=[self_name, buffer_name],
                     )
-                    kwargs_nodes = [v for k, v in a_kwargs.items()]
+                    kwargs_nodes = [
+                        uni.KWPair(
+                            name := self.gen_name(node, Tok.NAME, k), v, [name, v]
+                        )
+                        for k, v in a_kwargs.items()
+                    ]
+                    param_name = self.gen_name(
+                        node, Tok.NAME, f"__{eval(a_name.value)}_sel"
+                    )
                     reg_call = uni.FuncCall(
                         target=buffer_target,
-                        params=[a_name, tmp_name] + kwargs_nodes,
+                        params=[a_name, param_name] + kwargs_nodes,
                         genai_call=None,
-                        kid=[buffer_target, a_name, tmp_name] + kwargs_nodes,
+                        kid=[buffer_target, a_name, param_name] + kwargs_nodes,
                     )
                     reg_node = uni.ExprStmt(
                         expr=reg_call, in_fstring=False, kid=[reg_call]
