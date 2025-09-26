@@ -71,10 +71,14 @@ class PreDynamoPass(UniPass):
                 ):
                     if (
                         len(call.params) >= 2
-                        and isinstance(call.params[0], uni.String)
+                        and isinstance(call.params[0], (uni.String, uni.MultiString))
                         and isinstance(call.params[1], uni.Expr)
                     ):
-                        name = call.params[0]
+                        name = (
+                            call.params[0]
+                            if isinstance(call.params[0], uni.String)
+                            else call.params[0].strings[0]
+                        )
                         tensor_expr = call.params[1]
                         kwargs = (
                             {
