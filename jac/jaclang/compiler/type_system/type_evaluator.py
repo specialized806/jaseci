@@ -371,9 +371,6 @@ class TypeEvaluator:
             # NOTE: For now if we don't have the type info, we assume it's compatible.
             # For strict mode we should disallow usage of unknown unless explicitly ignored.
             return True
-        # FIXME: This logic is not valid, just here as a stub.
-        if types.TypeCategory.Unknown in (src_type.category, dest_type.category):
-            return True
 
         if src_type == dest_type:
             return True
@@ -383,8 +380,7 @@ class TypeEvaluator:
             assert isinstance(src_type, types.ClassType)
             return self._assign_class(src_type, dest_type)
 
-        # FIXME: This is temporary.
-        return src_type == dest_type
+        return False
 
     # TODO: This should take an argument list as parameter.
     def get_type_of_magic_method_call(
@@ -415,6 +411,11 @@ class TypeEvaluator:
         """Assign the source class type to the destination class type."""
         if src_type.shared == dest_type.shared:
             return True
+
+        # Check if src class is a subclass of dest class.
+        for base_cls in src_type.shared.mro:  # noqa: SIM110
+            if base_cls.shared == dest_type.shared:
+                return True
 
         # TODO: Search base classes and everything else pyright is doing.
         return False
@@ -732,11 +733,7 @@ class TypeEvaluator:
                 continue
             arg_type = self.get_type_of_expression(arg)
             if not self.assign_type(arg_type, param.param_type):
-                # TODO: Add __str__ for types and use that here.
                 self.add_diagnostic(
                     arg,
                     f"Cannot assign {arg_type} to parameter '{param.name}' of type {param.param_type}",
-                    # TODO: make the `class` architype `self` parameter working and change
-                    # the warning to error.
-                    warning=True,
                 )
