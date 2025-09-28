@@ -180,7 +180,7 @@ class TypeCheckerPassTests(TestCase):
         path = self.fixture_abs_path("checker_arg_param_match.jac")
         mod = program.compile(path)
         TypeCheckPass(ir_in=mod, prog=program)
-        self.assertEqual(len(program.errors_had), 12)
+        self.assertEqual(len(program.errors_had), 13)
 
         expected_errors = [
             """
