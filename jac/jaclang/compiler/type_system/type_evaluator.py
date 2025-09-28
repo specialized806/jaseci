@@ -413,9 +413,13 @@ class TypeEvaluator:
             return True
 
         # Check if src class is a subclass of dest class.
-        for base_cls in src_type.shared.mro:  # noqa: SIM110
+        for base_cls in src_type.shared.mro:
             if base_cls.shared == dest_type.shared:
                 return True
+
+        # Integers can be used where floats are expected.
+        if src_type.is_builtin("int") and dest_type.is_builtin("float"):
+            return True
 
         # TODO: Search base classes and everything else pyright is doing.
         return False
