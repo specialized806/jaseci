@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.type_system import types
 
@@ -72,7 +73,7 @@ class MatchArgsToParamsResult:
     # FIXME: This class implementation is modified from pyright to make it
     # simple and work for now, however this needs to be revisited and
     # implemented properly.
-    arg_params: dict[uni.Expr, types.Parameter | None]
+    arg_params: dict[uni.Expr | uni.KWPair, types.Parameter | None]
 
     overload: types.FunctionType | None = None
     argument_errors: bool = False
@@ -300,20 +301,46 @@ class TypeEvaluator:
         else:
             return_type = types.UnknownType()
 
+        # Define helper function for parameter conversion.
+        def _get_param_category(param: uni.ParamVar) -> types.ParameterCategory:
+            if param.is_vararg:
+                return types.ParameterCategory.ArgsList
+            if param.is_kwargs:
+                return types.ParameterCategory.KwargsDict
+            return types.ParameterCategory.Positional
+
+        # Define helper function for parameter kind conversion.
+        def _convert_param_kind(kind: uni.ParamKind) -> types.ParamKind:
+            match kind:
+                case uni.ParamKind.POSONLY:
+                    return types.ParamKind.POSONLY
+                case uni.ParamKind.NORMAL:
+                    return types.ParamKind.NORMAL
+                case uni.ParamKind.VARARG:
+                    return types.ParamKind.VARARG
+                case uni.ParamKind.KWONLY:
+                    return types.ParamKind.KWONLY
+                case uni.ParamKind.KWARG:
+                    return types.ParamKind.KWARG
+            return types.ParamKind.NORMAL
+
         parameters: list[types.Parameter] = []
         for idx, param in enumerate(node.signature.get_parameters()):
             # TODO: Set parameter category for *args, and **kwargs
             param_type: TypeBase | None = None
+
             if param.type_tag:
                 param_type_cls = self.get_type_of_expression(param.type_tag.tag)
                 param_type = self._convert_to_instance(param_type_cls)
+
             parameters.append(
                 types.Parameter(
                     name=param.name.value,
-                    category=types.ParameterCategory.Positional,
+                    category=_get_param_category(param),
                     param_type=param_type,
                     default_value=param.value,
                     is_self=(idx == 0 and self._is_expr_self(param.name)),
+                    param_kind=_convert_param_kind(param.param_kind),
                 )
             )
 
@@ -595,7 +622,7 @@ class TypeEvaluator:
         """Check if the expression is Name that is 'self' and in the method context."""
         if (
             isinstance(expr, uni.Name)
-            and (expr.name == Tok.KW_SELF.value)
+            and (expr.value == TOKEN_MAP[Tok.KW_SELF])
             and (fn := self._get_enclosing_method(expr))
             and (not fn.is_static)
         ):
@@ -677,12 +704,8 @@ class TypeEvaluator:
         validation is left to the caller.
         This logic is based on PEP 3102: https://www.python.org/dev/peps/pep-3102/
         """
-        arg_params: dict[uni.Expr, types.Parameter | None] = {}
+        arg_params: dict[uni.Expr | uni.KWPair, types.Parameter | None] = {}
         argument_errors = False
-
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # FIXME: This is a ad-hoc implementation to make it work for now. !
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         params_to_match = func_type.parameters.copy()
 
@@ -690,21 +713,40 @@ class TypeEvaluator:
         if len(func_type.parameters) >= 1 and func_type.parameters[0].is_self:
             params_to_match.pop(0)
 
-        # Match arguments to parameters based on position.
-        for idx, param in enumerate(params_to_match):
-            if idx >= len(expr.params):
-                break
-            arg = expr.params[idx]
-            arg_expr = arg.value if isinstance(arg, uni.KWPair) else arg
-            arg_params[arg_expr] = param
+        # Create a tracker for parameter assignment.
+        param_tracker = type_utils.ParamAssignmentTracker(params_to_match)
 
-        # Check arity
-        if type_utils.max_args_count(params_to_match) < len(expr.params):
-            self.add_diagnostic(expr, "Too many positional arguments", warning=True)
+        # We iterate over the arguments and match with the parameter, the param_tracker will
+        # keep track of the matched parameters and unmatched required parameters.
+        #
+        # Tracker: p1, p2, /, p3, p4,   *args,       | p6,   **kwargs
+        #          ^   ^      ^    ^    ^^   ^       | ^       ^^
+        #          |   |      |    |    | \__ \__    | |       | \________
+        # Args:    a1, a2,   a3, p4=a4, a5, a6, *a7, | p6=a8, p_kw1=a9, p_kw2=a10
+        #         '--------------------------------' | '------------------------'
+        #          We match positional with          |  We match named arguments with
+        #          tracked parameter index.          |  param name lookup.
+        #
+        for arg in expr.params:
+            try:
+                if isinstance(arg, uni.KWPair):
+                    # Match parameter based on name lookup.
+                    matching_param = param_tracker.match_named_argument(arg)
+                    arg_params[arg] = matching_param
+                else:  # Match parameter based on the position of the argument.
+                    matching_param = param_tracker.match_positional_argument(arg)
+                    arg_params[arg] = matching_param
+            except Exception as e:
+                self.add_diagnostic(arg, str(e))
+                argument_errors = True
+
+        if unmatched_params := param_tracker.get_unmatched_required_params():
+            names = ", ".join(f"'{p.name}'" for p in unmatched_params)
             argument_errors = True
-        elif type_utils.min_args_count(params_to_match) > len(expr.params):
-            self.add_diagnostic(expr, "Too few positional arguments", warning=True)
-            argument_errors = True
+            self.add_diagnostic(
+                expr,
+                f"Not all required parameters were provided in the function call: {names}",
+            )
 
         return MatchArgsToParamsResult(
             arg_params=arg_params, argument_errors=argument_errors
@@ -740,7 +782,6 @@ class TypeEvaluator:
 
         return types.UnknownType()
 
-    # FIXME: This is a ad-hoc implementation to make it work for now.
     def validate_arg_types(
         self,
         args: MatchArgsToParamsResult,
@@ -749,13 +790,13 @@ class TypeEvaluator:
         for arg, param in args.arg_params.items():
             if param is None or param.param_type is None:
                 continue
-            arg_type = self.get_type_of_expression(arg)
+            if isinstance(arg, uni.KWPair):
+                arg_type = self.get_type_of_expression(arg.value)
+            else:
+                arg_type = self.get_type_of_expression(arg)
+
             if not self.assign_type(arg_type, param.param_type):
-                # TODO: Add __str__ for types and use that here.
                 self.add_diagnostic(
                     arg,
                     f"Cannot assign {arg_type} to parameter '{param.name}' of type {param.param_type}",
-                    # TODO: make the `class` architype `self` parameter working and change
-                    # the warning to error.
-                    warning=True,
                 )

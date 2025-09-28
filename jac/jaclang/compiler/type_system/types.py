@@ -227,6 +227,16 @@ class ClassType(TypeBase):
         return True
 
 
+class ParamKind(IntEnum):
+    """Enumeration of parameter kinds."""
+
+    POSONLY = 0
+    NORMAL = 1
+    VARARG = 2
+    KWONLY = 3
+    KWARG = 4
+
+
 class Parameter:
     """Represents a function parameter."""
 
@@ -237,6 +247,7 @@ class Parameter:
         param_type: TypeBase | None,
         default_value: Expr | None = None,
         is_self: bool = False,
+        param_kind: ParamKind = ParamKind.NORMAL,
     ) -> None:
         """Initialize obviously."""
         super().__init__()
@@ -250,6 +261,9 @@ class Parameter:
         # be explicitly defined. However, in the `class` methods it should be
         # explicitly defined.
         self.is_self = is_self
+
+        # Kind is wheather it's normal, posonly, vararg, kwonly, kwarg.
+        self.param_kind: ParamKind = param_kind
 
 
 class FunctionType(TypeBase):
