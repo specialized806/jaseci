@@ -63,9 +63,9 @@ node GeneralChat {
 }
 
 enum RoutingNodes{
-    TASK_HANDLING = "TaskHandling",
-    EMAIL_HANDLING = "EmailHandling",
-    GENERAL_CHAT = "GeneralChat"
+    TASK_HANDLING,
+    EMAIL_HANDLING,
+    GENERAL_CHAT
 }
 
 walker task_manager {
