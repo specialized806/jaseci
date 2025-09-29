@@ -77,6 +77,8 @@ Here's what you'll build - a full AI-powered multimodal MCP chatbot:
     --8<-- "docs/learn/examples/rag_chatbot/solution/tools.jac"
     ```
 
+The full source code for this project is also available at: [https://github.com/jaseci-labs/Agentic-AI/tree/main/jac-mcp-chatbot](https://github.com/jaseci-labs/Agentic-AI/tree/main/jac-mcp-chatbot)
+
 ---
 
 ## Step 1: Set Up Your Environment
