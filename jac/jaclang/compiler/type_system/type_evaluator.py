@@ -6,19 +6,25 @@ PyrightReference:
     packages/pyright-internal/src/analyzer/typeEvaluatorTypes.ts
 """
 
+import ast as py_ast
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler import TOKEN_MAP
 from jaclang.compiler.constant import Tokens as Tok
+from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
+from jaclang.compiler.passes.main.sym_tab_build_pass import SymTabBuildPass
 from jaclang.compiler.type_system import types
+from jaclang.runtimelib.utils import read_file_with_encoding
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
 from . import operations
-from .type_utils import ClassMember, compute_mro_linearization
+from . import type_utils
 from .types import TypeBase
 
 # The callback type definition for the diagnostic messages.
@@ -72,7 +78,7 @@ class MatchArgsToParamsResult:
     # FIXME: This class implementation is modified from pyright to make it
     # simple and work for now, however this needs to be revisited and
     # implemented properly.
-    arg_params: dict[uni.Expr, types.Parameter | None]
+    arg_params: dict[uni.Expr | uni.KWPair, types.Parameter | None]
 
     overload: types.FunctionType | None = None
     argument_errors: bool = False
@@ -81,11 +87,18 @@ class MatchArgsToParamsResult:
 class TypeEvaluator:
     """Type evaluator for JacLang."""
 
+    # NOTE: This is done in the binder pass of pyright, however I'm doing this
+    # here, cause this will be the entry point of the type checker and we're not
+    # relying on the binder pass at the moment and we can go back to binder pass
+    # in the future if we needed it.
+    _BUILTINS_STUB_FILE_PATH = os.path.join(
+        os.path.dirname(__file__),
+        "../../vendor/typeshed/stdlib/builtins.pyi",
+    )
+
     def __init__(
         self,
-        builtins_module: uni.Module,
         program: "JacProgram",
-        callback: DiagnosticCallback,
     ) -> None:
         """Initialize the type evaluator with prefetched types.
 
@@ -97,17 +110,68 @@ class TypeEvaluator:
         in some place then it will not be available in the evaluator, So we
         are prefetching the builtins at the constructor level once.
         """
-        self.symbol_resolution_stack: list[SymbolResolutionStackEntry] = []
-        self.builtins_module = builtins_module
         self.program = program
+        self.symbol_resolution_stack: list[SymbolResolutionStackEntry] = []
+        self.builtins_module = self._load_builtins_stub_module()
         self.prefetch = self._prefetch_types()
-        self.callback = callback
+        self.diagnostic_callback: DiagnosticCallback | None = None
+
+    def _load_builtins_stub_module(self) -> uni.Module:
+        """Load and return the builtins stub module."""
+        if not os.path.exists(TypeEvaluator._BUILTINS_STUB_FILE_PATH):
+            raise FileNotFoundError(
+                f"Builtins stub file not found at {TypeEvaluator._BUILTINS_STUB_FILE_PATH}"
+            )
+        file_content = read_file_with_encoding(TypeEvaluator._BUILTINS_STUB_FILE_PATH)
+        uni_source = uni.Source(file_content, TypeEvaluator._BUILTINS_STUB_FILE_PATH)
+        mod = PyastBuildPass(
+            ir_in=uni.PythonModuleAst(
+                py_ast.parse(file_content),
+                orig_src=uni_source,
+            ),
+            prog=self.program,
+        ).ir_out
+        SymTabBuildPass(ir_in=mod, prog=self.program)
+        return mod
+
+    def _get_builtin_type(self, name: str) -> TypeBase:
+        """Return the built-in type with the given name."""
+        if (symbol := self.builtins_module.lookup(name)) is not None:
+            return self.get_type_of_symbol(symbol)
+        return types.UnknownType()
+
+    def _prefetch_types(self) -> "PrefetchedTypes":
+        """Return the prefetched types for the type evaluator."""
+        return PrefetchedTypes(
+            # TODO: Pyright first try load NoneType from typeshed and if it cannot
+            # then it set to unknown type.
+            none_type_class=types.UnknownType(),
+            object_class=self._get_builtin_type("object"),
+            type_class=self._get_builtin_type("type"),
+            # union_type_class=
+            # awaitable_class=
+            # function_class=
+            # method_class=
+            tuple_class=self._get_builtin_type("tuple"),
+            bool_class=self._get_builtin_type("bool"),
+            int_class=self._get_builtin_type("int"),
+            float_class=self._get_builtin_type("float"),
+            str_class=self._get_builtin_type("str"),
+            dict_class=self._get_builtin_type("dict"),
+            # module_type_class=
+            # typed_dict_class=
+            # typed_dict_private_class=
+            # supports_keys_and_get_item_class=
+            # mapping_class=
+            # template_class=
+        )
 
     def add_diagnostic(
         self, node: uni.UniNode, message: str, warning: bool = False
     ) -> None:
         """Add a diagnostic message to the program."""
-        self.callback(node, message, warning)
+        if self.diagnostic_callback:
+            self.diagnostic_callback(node, message, warning)
 
     # -------------------------------------------------------------------------
     # Symbol resolution stack
@@ -275,7 +339,8 @@ class TypeEvaluator:
             flags=types.TypeFlags.Instantiable,
         )
 
-        compute_mro_linearization(cls_type)
+        # Compute the MRO for the class.
+        type_utils.compute_mro_linearization(cls_type)
 
         # Cache the type, pyright is doing invalidateTypeCacheIfCanceled()
         # we're not doing that any time sooner.
@@ -299,18 +364,46 @@ class TypeEvaluator:
         else:
             return_type = types.UnknownType()
 
+        # Define helper function for parameter conversion.
+        def _get_param_category(param: uni.ParamVar) -> types.ParameterCategory:
+            if param.is_vararg:
+                return types.ParameterCategory.ArgsList
+            if param.is_kwargs:
+                return types.ParameterCategory.KwargsDict
+            return types.ParameterCategory.Positional
+
+        # Define helper function for parameter kind conversion.
+        def _convert_param_kind(kind: uni.ParamKind) -> types.ParamKind:
+            match kind:
+                case uni.ParamKind.POSONLY:
+                    return types.ParamKind.POSONLY
+                case uni.ParamKind.NORMAL:
+                    return types.ParamKind.NORMAL
+                case uni.ParamKind.VARARG:
+                    return types.ParamKind.VARARG
+                case uni.ParamKind.KWONLY:
+                    return types.ParamKind.KWONLY
+                case uni.ParamKind.KWARG:
+                    return types.ParamKind.KWARG
+            return types.ParamKind.NORMAL
+
         parameters: list[types.Parameter] = []
-        for param in node.signature.get_parameters():
+        for idx, param in enumerate(node.signature.get_parameters()):
             # TODO: Set parameter category for *args, and **kwargs
             param_type: TypeBase | None = None
+
             if param.type_tag:
                 param_type_cls = self.get_type_of_expression(param.type_tag.tag)
                 param_type = self._convert_to_instance(param_type_cls)
+
             parameters.append(
                 types.Parameter(
                     name=param.name.value,
-                    category=types.ParameterCategory.Positional,
+                    category=_get_param_category(param),
                     param_type=param_type,
+                    default_value=param.value,
+                    is_self=(idx == 0 and self._is_expr_self(param.name)),
+                    param_kind=_convert_param_kind(param.param_kind),
                 )
             )
 
@@ -423,38 +516,6 @@ class TypeEvaluator:
 
         # TODO: Search base classes and everything else pyright is doing.
         return False
-
-    def _prefetch_types(self) -> "PrefetchedTypes":
-        """Return the prefetched types for the type evaluator."""
-        return PrefetchedTypes(
-            # TODO: Pyright first try load NoneType from typeshed and if it cannot
-            # then it set to unknown type.
-            none_type_class=types.UnknownType(),
-            object_class=self._get_builtin_type("object"),
-            type_class=self._get_builtin_type("type"),
-            # union_type_class=
-            # awaitable_class=
-            # function_class=
-            # method_class=
-            tuple_class=self._get_builtin_type("tuple"),
-            bool_class=self._get_builtin_type("bool"),
-            int_class=self._get_builtin_type("int"),
-            float_class=self._get_builtin_type("float"),
-            str_class=self._get_builtin_type("str"),
-            dict_class=self._get_builtin_type("dict"),
-            # module_type_class=
-            # typed_dict_class=
-            # typed_dict_private_class=
-            # supports_keys_and_get_item_class=
-            # mapping_class=
-            # template_class=
-        )
-
-    def _get_builtin_type(self, name: str) -> TypeBase:
-        """Return the built-in type with the given name."""
-        if (symbol := self.builtins_module.lookup(name)) is not None:
-            return self.get_type_of_symbol(symbol)
-        return types.UnknownType()
 
     # This function is a combination of the bellow pyright functions.
     #  - getDeclaredTypeOfSymbol
@@ -579,11 +640,7 @@ class TypeEvaluator:
                 # NOTE: For self's type pyright is getting the first parameter of a method and
                 # the name can be anything not just self, however we don't have the first parameter
                 # and self is a keyword, we need to do it in this way.
-                if (
-                    (expr.name == Tok.KW_SELF.value)
-                    and (fn := self._get_enclosing_method(expr))
-                    and (not fn.is_static)
-                ):
+                if self._is_expr_self(expr):
                     return self._get_type_of_self(expr)
 
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True):
@@ -596,6 +653,17 @@ class TypeEvaluator:
     # -----------------------------------------------------------------------------
     # Helper functions
     # -----------------------------------------------------------------------------
+
+    def _is_expr_self(self, expr: uni.Expr) -> bool:
+        """Check if the expression is Name that is 'self' and in the method context."""
+        if (
+            isinstance(expr, uni.Name)
+            and (expr.value == TOKEN_MAP[Tok.KW_SELF])
+            and (fn := self._get_enclosing_method(expr))
+            and (not fn.is_static)
+        ):
+            return True
+        return False
 
     def _get_enclosing_function(self, node: uni.UniNode) -> uni.Ability | None:
         """Get the enclosing function (ability) of the given node."""
@@ -638,7 +706,7 @@ class TypeEvaluator:
 
     def _lookup_class_member(
         self, base_type: types.ClassType, member: str
-    ) -> ClassMember | None:
+    ) -> type_utils.ClassMember | None:
         """Lookup the class member type."""
         assert self.prefetch.int_class is not None
         # FIXME: Pyright's way: Implement class member iterator (based on mro and the multiple inheritance)
@@ -648,12 +716,12 @@ class TypeEvaluator:
         # be done in a future PR.
         for cls in base_type.shared.mro:
             if sym := cls.lookup_member_symbol(member):
-                return ClassMember(sym, cls)
+                return type_utils.ClassMember(sym, cls)
         return None
 
     def _lookup_object_member(
         self, base_type: types.ClassType, member: str
-    ) -> ClassMember | None:
+    ) -> type_utils.ClassMember | None:
         """Lookup the object member type."""
         assert self.prefetch.int_class is not None
         if base_type.is_class_instance():
@@ -672,25 +740,49 @@ class TypeEvaluator:
         validation is left to the caller.
         This logic is based on PEP 3102: https://www.python.org/dev/peps/pep-3102/
         """
-        arg_params: dict[uni.Expr, types.Parameter | None] = {}
+        arg_params: dict[uni.Expr | uni.KWPair, types.Parameter | None] = {}
         argument_errors = False
 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # FIXME: This is a ad-hoc implementation to make it work for now. !
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        for idx, param in enumerate(func_type.parameters):
-            if idx < len(expr.params):
-                arg = expr.params[idx]
-                arg_expr = arg.value if isinstance(arg, uni.KWPair) else arg
-                arg_params[arg_expr] = param
-            else:
-                argument_errors = True
-                self.add_diagnostic(expr, "Too few positional arguments", warning=True)
-                break
+        params_to_match = func_type.parameters.copy()
 
-        if len(func_type.parameters) < len(expr.params):
-            self.add_diagnostic(expr, "Too many positional arguments", warning=True)
+        # Skip `self` for method calls.
+        if len(func_type.parameters) >= 1 and func_type.parameters[0].is_self:
+            params_to_match.pop(0)
+
+        # Create a tracker for parameter assignment.
+        param_tracker = type_utils.ParamAssignmentTracker(params_to_match)
+
+        # We iterate over the arguments and match with the parameter, the param_tracker will
+        # keep track of the matched parameters and unmatched required parameters.
+        #
+        # Tracker: p1, p2, /, p3, p4,   *args,       | p6,   **kwargs
+        #          ^   ^      ^    ^    ^^   ^       | ^       ^^
+        #          |   |      |    |    | \__ \__    | |       | \________
+        # Args:    a1, a2,   a3, p4=a4, a5, a6, *a7, | p6=a8, p_kw1=a9, p_kw2=a10
+        #         '--------------------------------' | '------------------------'
+        #          We match positional with          |  We match named arguments with
+        #          tracked parameter index.          |  param name lookup.
+        #
+        for arg in expr.params:
+            try:
+                if isinstance(arg, uni.KWPair):
+                    # Match parameter based on name lookup.
+                    matching_param = param_tracker.match_named_argument(arg)
+                    arg_params[arg] = matching_param
+                else:  # Match parameter based on the position of the argument.
+                    matching_param = param_tracker.match_positional_argument(arg)
+                    arg_params[arg] = matching_param
+            except Exception as e:
+                self.add_diagnostic(arg, str(e))
+                argument_errors = True
+
+        if unmatched_params := param_tracker.get_unmatched_required_params():
+            names = ", ".join(f"'{p.name}'" for p in unmatched_params)
             argument_errors = True
+            self.add_diagnostic(
+                expr,
+                f"Not all required parameters were provided in the function call: {names}",
+            )
 
         return MatchArgsToParamsResult(
             arg_params=arg_params, argument_errors=argument_errors
@@ -726,7 +818,6 @@ class TypeEvaluator:
 
         return types.UnknownType()
 
-    # FIXME: This is a ad-hoc implementation to make it work for now.
     def validate_arg_types(
         self,
         args: MatchArgsToParamsResult,
@@ -735,7 +826,11 @@ class TypeEvaluator:
         for arg, param in args.arg_params.items():
             if param is None or param.param_type is None:
                 continue
-            arg_type = self.get_type_of_expression(arg)
+            if isinstance(arg, uni.KWPair):
+                arg_type = self.get_type_of_expression(arg.value)
+            else:
+                arg_type = self.get_type_of_expression(arg)
+
             if not self.assign_type(arg_type, param.param_type):
                 self.add_diagnostic(
                     arg,
