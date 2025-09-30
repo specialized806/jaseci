@@ -1,21 +1,22 @@
-exclude: "(_v1|vendor|larkparse|jac/examples|tests|support|setup.py|langserve/tests|pygame_mock|docs/docs/playground|jac-splice-orc/jac_splice_orc/proxy/grpc_local)"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-json
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 25.1.0
     hooks:
       - id: black
+        exclude: "venv|vendor|__jac_gen__"
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.2.0
+    rev: 7.1.2
     hooks:
       - id: flake8
-        args: ["--config=.flake8"]
+        args: ["--config=./jac-splice-orc/.flake8"]
+        exclude: jac-splice-orc/_v1|jac-splice-orc/jac_splice_orc/proxy/grpc_local/module_service_pb2*
         additional_dependencies:
           [
             pep8-naming,
@@ -30,12 +31,5 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
-        args:
-          - --follow-imports=silent
-          - --ignore-missing-imports
-          - --install-types
-          - --non-interactive
-          - --config-file=mypy.ini
-          - --explicit-package-bases
-          - --exclude=jac-byllm/scripts
-        additional_dependencies: [types-PyYAML]
+        args: ["--config-file=./jac-splice-orc/mypy.ini"]
+        exclude: jac-splice-orc/_v1|jac-splice-orc/jac_splice_orc/proxy/grpc_local/module_service_pb2*
