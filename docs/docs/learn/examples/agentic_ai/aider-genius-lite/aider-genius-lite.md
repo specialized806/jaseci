@@ -22,6 +22,9 @@ Aider Genius Lite is a simple Jac-based Streamlit application for AI-powered cod
 
 Here's what you'll build - a simple AI coding assistant in just **two files**:
 
+=== "Frontend Preview"
+    ![Aider Genius Lite Frontend](aider.png)
+
 === "genius_lite.jac"
     ```jac linenums="1"
     --8<-- "docs/learn/examples/agentic_ai/aider-genius-lite/genius_lite.jac"

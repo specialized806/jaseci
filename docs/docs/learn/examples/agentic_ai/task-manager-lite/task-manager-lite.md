@@ -54,6 +54,9 @@ Task Management Operationsk Manager Lite is a lightweight AI-powered task manage
 
 Here's what you'll build - an intelligent task routing system in just **two files**:
 
+=== "Frontend Preview"
+    ![Task Manager Lite Frontend](task manager.png)
+
 === "task_manager.jac"
     ```jac linenums="1"
     --8<-- "docs/learn/examples/agentic_ai/task-manager-lite/task_manager.jac"
@@ -242,37 +245,8 @@ obj EmailTemplate {
 - **Personalized Responses**: Adapts communication style to user preferences
 - **Context Memory**: Maintains long-term conversation context
 
-## <span style="color: orange">Customization and Configuration
 
-### <span style="color: orange">Adding Custom Handlers
-
-Create specialized handlers for domain-specific tasks:
-
-```jac
-node CustomHandler {
-    can handle_request(user_input: str) -> str {
-        # Custom processing logic
-        return "Specialized response";
-    }
-}
-```
-
-
-
-### <span style="color: orange">Template Customization
-
-Personalize email templates and task formats:
-
-```jac
-email_templates = {
-    "meeting_invite": {
-        "subject": "Meeting Invitation: {topic}",
-        "body": "Please join us for {purpose} on {date} at {time}"
-    }
-}
-```
-
-## <span style="color: orange">Integration Capabilities
+## <span style="color: orange">Future Integration Improvements
 
 ### Calendar Systems
 - **Google Calendar**: Sync tasks and events with Google Calendar

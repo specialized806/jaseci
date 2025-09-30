@@ -51,6 +51,9 @@ obj Response {
 
 Here's what you'll build - an AI memory capture system in just **two files**:
 
+=== "Frontend Preview"
+    ![Friendzone Lite Frontend](friendzone.png)
+
 === "friendzone_lite.jac"
     ```jac linenums="1"
     --8<-- "docs/learn/examples/agentic_ai/friendzone-lite/friendzone_lite.jac"
