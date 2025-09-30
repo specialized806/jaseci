@@ -29,7 +29,7 @@ A simple Jac-based Streamlit application for AI-powered code generation with tas
    cd /home/udith/jaseci/jac-byllm
    
    # Start the backend API server
-   jac serve examples/agentic_ai/aider-genius-lite/genius_lite.jac
+   jac serve genius_lite.jac
    ```
 
 3. **Run the frontend:**
@@ -38,7 +38,7 @@ A simple Jac-based Streamlit application for AI-powered code generation with tas
    cd /home/udith/jaseci/jac-byllm/examples/agentic_ai/aider-genius-lite
    
    # Start the Jac Streamlit frontend
-   jac run frontend.jac
+   jac streamlit frontend.jac
    ```
 
 4. **Open your browser** to `http://localhost:8501`
