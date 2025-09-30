@@ -16,13 +16,11 @@ data:
     echo "=== Starting jac-cloud Pod Initialization ==="
 
     NAMESPACE=${NAMESPACE:-default}
-    CONFIGMAP_NAME=${CONFIGMAP_NAME:-module-config}
     FILE_NAME=${FILE_NAME:-example.jac}
 
     echo "Using Namespace: $NAMESPACE"
     echo "Running Jac File: $FILE_NAME"
 
-    jac orc_initialize "$NAMESPACE" || exit 1
     jac serve "$FILE_NAME" || exit 1
 ---
 
@@ -113,7 +111,7 @@ spec:
             echo "Cloning littleX repository..."
             git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git /app/littleX
             echo "Installing Python dependencies..."
-            pip install --no-cache-dir -r /app/littleX/littleX_BE/requirements.txt openai jac-splice-orc
+            pip install --no-cache-dir -r /app/littleX/littleX_BE/requirements.txt openai
             echo "Starting initialization script..."
             /bin/bash /app/init_jac_cloud.sh
 
@@ -123,8 +121,6 @@ spec:
             value: "/cfg/module_config.json"
           - name: NAMESPACE
             value: "littlex"
-          - name: CONFIGMAP_NAME
-            value: "module-config"
           - name: FILE_NAME
             value: "/app/littleX/littleX_BE/_archive/littleX_full.jac"
           - name: OPENAI_API_KEY
@@ -142,12 +138,6 @@ spec:
             subPath: init_jac_cloud.sh
 
       volumes:
-        - name: config-vol
-          configMap:
-            name: module-config
-            items:
-              - key: module_config.json
-                path: module_config.json
         - name: init-script-vol
           configMap:
             name: init-script
