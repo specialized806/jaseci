@@ -488,20 +488,15 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
         in_params = False
-        last_was_comma = False
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.LPAREN and node.params:
                 in_params = True
-                last_was_comma = False
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.Token) and i.name == Tok.RPAREN and node.params:
                 in_params = False
 
                 if isinstance(indent_parts[-1], doc.Line):
                     indent_parts.pop()
-                if last_was_comma:
-                    indent_parts.pop()
-                last_was_comma = False
                 parts.append(
                     self.indent(
                         self.concat(
@@ -518,13 +513,10 @@ class DocIRGenPass(UniPass):
                 if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                     indent_parts.append(i.gen.doc_ir)
                     indent_parts.append(self.line())
-                    last_was_comma = True
                 else:
-                    last_was_comma = False
                     indent_parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
-                last_was_comma = False
                 if isinstance(i, uni.Token) and i.name == Tok.KW_BY:
                     parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
