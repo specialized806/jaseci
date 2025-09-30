@@ -77,7 +77,7 @@ A lightweight AI-powered task management system that intelligently routes user r
 
 ### 🎯 Visual Feedback
 - **📋 Blue**: Task Management operations
-- **📧 Green**: Email Writing operations  
+- **📧 Green**: Email Writing operations
 - **💬 Orange**: General Chat operations
 
 ## Requirements
@@ -118,7 +118,7 @@ task-manager-lite/
 
 3. **Run the Application**:
    ```bash
-   jac serve task_manager.jac 
+   jac serve task_manager.jac
    jac streamlit frontend.jac
    ```
 

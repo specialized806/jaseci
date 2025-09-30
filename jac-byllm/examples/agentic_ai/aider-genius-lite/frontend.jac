@@ -7,10 +7,10 @@ def bootstrap_frontend(token: str) {
         page_icon="💻",
         layout="wide"
     );
-    
+
     st.title("🚀 Genius Lite - AI Coding Assistant");
     st.markdown("✨ Simple, structured code generation with validation");
-    
+
     # Initialize session state
     if "results" not in st.session_state {
         st.session_state.results = None;
@@ -18,10 +18,10 @@ def bootstrap_frontend(token: str) {
     if "loading" not in st.session_state {
         st.session_state.loading = False;
     }
-    
+
     # Main interface
     st.markdown("### 💡 What would you like me to code for you?");
-    
+
     # Examples
     with st.expander("💫 Example Requests") {
         if st.button("🧮 Create a Python calculator") {
@@ -31,7 +31,7 @@ def bootstrap_frontend(token: str) {
             st.session_state.user_request = "Create a simple number guessing game in Python";
         }
     }
-    
+
     # Text input
     user_request = st.text_area(
         "📝 Describe your coding request:",
@@ -39,7 +39,7 @@ def bootstrap_frontend(token: str) {
         height=100,
         placeholder="e.g., Create a Python script that sorts a list of numbers 📊"
     );
-    
+
     # Generate button
     if st.button("🚀 Generate Code") {
         if user_request.strip() {
@@ -50,7 +50,7 @@ def bootstrap_frontend(token: str) {
             st.warning("⚠️ Please enter a coding request!");
         }
     }
-    
+
     # Show loading state
     if st.session_state.loading {
         with st.spinner("🧠 AI is thinking and generating code...") {
@@ -60,7 +60,7 @@ def bootstrap_frontend(token: str) {
                     json={"request": user_request},
                     headers={"Authorization": f"Bearer {token}"}
                 );
-                
+
                 if response.status_code == 200 {
                     result = response.json();
                     st.session_state.results = result.get("reports", [{}])[0];
@@ -80,24 +80,24 @@ def bootstrap_frontend(token: str) {
             }
         }
     }
-    
+
     # Display results
     if st.session_state.results {
         results = st.session_state.results;
-        
+
         st.markdown("---");
         st.markdown("## 🎯 Generated Code Results");
-        
+
         if "total_tasks" in results {
             st.info(f"📋 Completed {results['total_tasks']} tasks");
         }
-        
+
         if "tasks" in results and results["tasks"] {
             i = 1;
             for task in results["tasks"] {
                 task_name = task.get('name', 'Unnamed Task');
                 with st.expander(f"📝 Task {i}: {task_name}") {
-                    
+
                     # Task status
                     status = task.get("status", "unknown");
                     if status == "success" {
@@ -105,18 +105,18 @@ def bootstrap_frontend(token: str) {
                     } else {
                         st.error("❌ Failed");
                     }
-                    
+
                     # Generated code
                     if task.get("code") {
                         st.markdown("**🔧 Generated Code:**");
                         st.code(task["code"]);
-                        
+
                         # Copy button
                         if st.button(f"📋 Copy Code {i}") {
                             st.write("📋 Code copied to clipboard! (Use Ctrl+C to copy manually)");
                         }
                     }
-                    
+
                     # Feedback
                     if task.get("feedback") {
                         st.markdown("**💬 AI Feedback:**");
@@ -126,7 +126,7 @@ def bootstrap_frontend(token: str) {
                 i += 1;
             }
         }
-        
+
         # Clear results button
         if st.button("🗑️ Clear Results") {
             st.session_state.results = None;
@@ -134,7 +134,7 @@ def bootstrap_frontend(token: str) {
             st.rerun();
         }
     }
-    
+
     # Footer
     st.markdown("---");
     st.markdown("**🤖 Powered by Genius Lite AI Assistant**");

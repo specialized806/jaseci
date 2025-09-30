@@ -91,7 +91,7 @@ walker task_manager {
             routed_node = here ++> GeneralChat();
         }
         visit routed_node;
-        
+
         # Report results for frontend
         report {
             "utterance": self.utterance,

@@ -147,7 +147,7 @@ walker generate_code {
     can execute with `root entry {
         print(f"Processing request: {self.request}");
         agent = GeniusAgent(request=self.request) spawn root;
-        
+
         # Return the results
         report {
             "status": "success",

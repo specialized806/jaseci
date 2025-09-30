@@ -7,10 +7,10 @@ def bootstrap_frontend(token: str) {
         page_icon="🧠",
         layout="wide"
     );
-    
+
     st.title("🧠 Friendzone Lite - Memory Assistant");
     st.markdown("✨ Capture and organize your memories from images");
-    
+
     # Initialize session state
     if "memory_results" not in st.session_state {
         st.session_state.memory_results = None;
@@ -27,20 +27,20 @@ def bootstrap_frontend(token: str) {
     if "loading" not in st.session_state {
         st.session_state.loading = False;
     }
-    
+
     # Main interface
     st.markdown("### 📷 Start Your Memory Journey");
-    
+
     # Image URL input section
     if not st.session_state.conversation_active {
         st.markdown("#### 🌐 Enter Image URL");
-        
+
         image_url = st.text_input(
             "🔗 Image URL:",
             placeholder="https://example.com/your-image.jpg",
             help="Enter the URL of an image containing a memory you'd like to capture"
         );
-        
+
         if st.button("🚀 Start Memory Session") {
             if image_url.strip() {
                 st.session_state.image_url = image_url;
@@ -52,7 +52,7 @@ def bootstrap_frontend(token: str) {
             }
         }
     }
-    
+
     # Active conversation section
     if st.session_state.conversation_active {
         # Display current image
@@ -62,7 +62,7 @@ def bootstrap_frontend(token: str) {
         } except Exception {
             st.warning("⚠️ Could not display image. Proceeding with URL...");
         }
-        
+
         # Initialize session if loading
         if st.session_state.loading and not st.session_state.memory_results {
             with st.spinner("🧠 AI is analyzing your image...") {
@@ -75,7 +75,7 @@ def bootstrap_frontend(token: str) {
                         },
                         headers={"Authorization": f"Bearer {token}"}
                     );
-                    
+
                     if response.status_code == 200 {
                         result = response.json();
                         st.session_state.memory_results = result.get("reports", [{}])[0];
@@ -92,14 +92,14 @@ def bootstrap_frontend(token: str) {
                 }
         }
         }
-        
+
         # Display memory progress
         if st.session_state.memory_results {
             results = st.session_state.memory_results;
-            
+
             # Memory summary section
             st.markdown("#### 📝 Memory Details");
-            
+
             st.markdown("**📅 When:**");
             when_val = results.get("when", "Not specified");
             if when_val {
@@ -107,7 +107,7 @@ def bootstrap_frontend(token: str) {
             } else {
                 st.info("Not specified");
             }
-            
+
             st.markdown("**👥 Who:**");
             who_val = results.get("who", []);
             if who_val {
@@ -115,7 +115,7 @@ def bootstrap_frontend(token: str) {
             } else {
                 st.info("Not specified");
             }
-            
+
             st.markdown("**📍 Where:**");
             where_val = results.get("where", []);
             if where_val {
@@ -123,7 +123,7 @@ def bootstrap_frontend(token: str) {
             } else {
                 st.info("Not specified");
             }
-            
+
             st.markdown("**🎯 What:**");
             what_val = results.get("what", "");
             if what_val {
@@ -131,7 +131,7 @@ def bootstrap_frontend(token: str) {
             } else {
                 st.info("Not specified");
             }
-            
+
             # Summary
             if results.get("summary") {
                 st.markdown("**📋 Memory Summary:**");
@@ -145,10 +145,10 @@ def bootstrap_frontend(token: str) {
                     st.write("📝 Building memory summary...");
                 }
             }
-            
+
             # Conversation section
             st.markdown("#### 💬 Conversation");
-            
+
             # Display conversation history
             if st.session_state.conversation_history {
                 for msg in st.session_state.conversation_history {
@@ -159,11 +159,11 @@ def bootstrap_frontend(token: str) {
                     }
                 }
             }
-            
+
             # Check if conversation is complete
             if results.get("show_summary", False) and results.get("terminate_conversation", False) {
                 st.success("🎉 Memory capture complete!");
-                
+
                 if st.button("🔄 Start New Memory Session") {
                     st.session_state.conversation_active = False;
                     st.session_state.memory_results = None;
@@ -175,14 +175,14 @@ def bootstrap_frontend(token: str) {
             } else {
                 # User input for continuing conversation
                 user_input = st.chat_input("Continue the conversation...");
-                
+
                 if user_input {
                     # Add user message to history
                     st.session_state.conversation_history.append({
                         "role": "user",
                         "content": user_input
                     });
-                    
+
                     # Send to backend
                     with st.spinner("🤖 AI is processing your response...") {
                         try {
@@ -194,11 +194,11 @@ def bootstrap_frontend(token: str) {
                                 },
                                 headers={"Authorization": f"Bearer {token}"}
                             );
-                            
+
                             if response.status_code == 200 {
                                 result = response.json();
                                 st.session_state.memory_results = result.get("reports", [{}])[0];
-                                
+
                                 # Add assistant response to history
                                 if "follow_up_questions" in st.session_state.memory_results {
                                     st.session_state.conversation_history.append({
@@ -206,7 +206,7 @@ def bootstrap_frontend(token: str) {
                                         "content": st.session_state.memory_results["follow_up_questions"]
                                     });
                                 }
-                                
+
                                 st.rerun();
                             } else {
                                 st.error(f"❌ Failed to process response: {response.text}");
@@ -216,10 +216,10 @@ def bootstrap_frontend(token: str) {
                         }
                     }
                 }
-        
+
             }
         }
-        
+
         # Reset session button
         if st.button("🔄 Reset Session") {
             st.session_state.conversation_active = False;
@@ -230,7 +230,7 @@ def bootstrap_frontend(token: str) {
             st.rerun();
         }
     }
-    
+
     # Footer
     st.markdown("---");
     st.markdown("**🧠 Powered by Friendzone Lite AI Assistant**");
@@ -260,7 +260,7 @@ with entry {
         assert response.status_code == 201;
 
         response = requests.post(
-            f"{INSTANCE_URL}/user/login",  
+            f"{INSTANCE_URL}/user/login",
             json={"email": TEST_USER_EMAIL, "password": TEST_USER_PASSWORD}
         );
         assert response.status_code == 200;

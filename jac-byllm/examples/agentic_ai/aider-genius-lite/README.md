@@ -27,7 +27,7 @@ A simple Jac-based Streamlit application for AI-powered code generation with tas
    ```bash
    # Navigate to the jac-byllm directory
    cd /home/udith/jaseci/jac-byllm
-   
+
    # Start the backend API server
    jac serve genius_lite.jac
    ```
@@ -36,7 +36,7 @@ A simple Jac-based Streamlit application for AI-powered code generation with tas
    ```bash
    # In a new terminal, navigate to the genius lite directory
    cd /home/udith/jaseci/jac-byllm/examples/agentic_ai/aider-genius-lite
-   
+
    # Start the Jac Streamlit frontend
    jac streamlit frontend.jac
    ```
@@ -46,7 +46,7 @@ A simple Jac-based Streamlit application for AI-powered code generation with tas
 ## Usage
 
 1. Enter your coding request in the text area (or use one of the example buttons)
-2. Click "Generate Code" 
+2. Click "Generate Code"
 3. Wait for the AI to process your request and generate code
 4. View the results, including generated code and AI feedback
 5. Use the generated code in your projects
