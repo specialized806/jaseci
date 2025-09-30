@@ -95,7 +95,8 @@ def bootstrap_frontend(token: str) {
         if "tasks" in results and results["tasks"] {
             i = 1;
             for task in results["tasks"] {
-                with st.expander(f"📝 Task {i}: {task.get('name', 'Unnamed Task')}") {
+                task_name = task.get('name', 'Unnamed Task');
+                with st.expander(f"📝 Task {i}: {task_name}") {
                     
                     # Task status
                     status = task.get("status", "unknown");
@@ -121,7 +122,6 @@ def bootstrap_frontend(token: str) {
                         st.markdown("**💬 AI Feedback:**");
                         st.info(task["feedback"]);
                     }
-                }
                 }
                 i += 1;
             }
