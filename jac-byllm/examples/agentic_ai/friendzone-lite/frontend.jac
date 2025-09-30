@@ -35,16 +35,6 @@ def bootstrap_frontend(token: str) {
     if not st.session_state.conversation_active {
         st.markdown("#### 🌐 Enter Image URL");
         
-        # Examples
-        with st.expander("💫 Example Image URLs") {
-            st.markdown("""
-            **Try these example images:**
-            - `https://example.com/vacation-photo.jpg` - A vacation memory
-            - `https://example.com/family-dinner.jpg` - A family gathering
-            - `https://example.com/birthday-party.jpg` - A celebration
-            """);
-        }
-        
         image_url = st.text_input(
             "🔗 Image URL:",
             placeholder="https://example.com/your-image.jpg",
