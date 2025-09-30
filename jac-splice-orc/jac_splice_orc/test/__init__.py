@@ -1,1 +1,1 @@
-"""Jac-Splice-Orc Tests."""
+"""Test package for jac-splice-orc."""
