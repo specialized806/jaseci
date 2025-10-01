@@ -37,8 +37,11 @@ node TaskHandling {
         print("[TaskHandling Node Activated]");
         response = self.route_and_run(visitor.utterance);
         print("→", response);
-        visitor.response = response;
-        visitor.node_type = "TaskHandling";
+        report {
+            "utterance": visitor.utterance,
+            "response": response,
+            "node_type": self.__class__.__name__
+        };
     }
 }
 
@@ -52,8 +55,11 @@ node EmailHandling {
         print("[EmailHandling Node Activated]");
         response = self.route_and_run(visitor.utterance);
         print("→", response);
-        visitor.response = response;
-        visitor.node_type = "EmailHandling";
+        report {
+            "utterance": visitor.utterance,
+            "response": response,
+            "node_type": self.__class__.__name__
+        };
     }
 }
 
@@ -63,8 +69,11 @@ node GeneralChat {
         print("[GeneralChat Node Activated]");
         response = self.chat(visitor.utterance);
         print("→", response);
-        visitor.response = response;
-        visitor.node_type = "GeneralChat";
+        report {
+            "utterance": visitor.utterance,
+            "response": response,
+            "node_type": self.__class__.__name__
+        };
     }
 }
 
@@ -76,8 +85,6 @@ enum RoutingNodes{
 
 walker task_manager {
     has utterance: str = "";
-    has response: str = "";
-    has node_type: str = "";
 
     def route_to_node(utterance: str) -> RoutingNodes by llm();
     can execute with `root entry {
@@ -91,28 +98,5 @@ walker task_manager {
             routed_node = here ++> GeneralChat();
         }
         visit routed_node;
-
-        # Report results for frontend
-        report {
-            "utterance": self.utterance,
-            "response": self.response,
-            "node_type": self.node_type,
-            "routed_to": str(routed_node_name)
-        };
     }
 }
-
-# with entry {
-#     inputs: list = [
-#         "Write an email to my friend which has the email friend@example.com to inform that I need to arrange a meeting regarding the project.",
-#         "Can you add a task to buy the Robotics items before tomorrow 12 noon",
-#         "Summarize all my tasks",
-#         "What was the popular programming language in 2020?"
-#     ];
-
-#     for input in inputs {
-#         print("User Input: " + input);
-#         task_manager(utterance=input) spawn root;
-#         print("====================================================================\n");
-#     }
-# }
