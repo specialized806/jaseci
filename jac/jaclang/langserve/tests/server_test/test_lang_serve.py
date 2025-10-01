@@ -191,7 +191,7 @@ class TestLangServe:
         diagnostics = ls.diagnostics.get(uri, [])
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 1
-        assert diagnostics[0].message == "Syntax Error"
+        assert "Unexpected token 'error'" in diagnostics[0].message
 
         ls.shutdown()
         os.remove(temp_file_path)
@@ -255,7 +255,7 @@ class TestLangServe:
         diagnostics = ls.diagnostics.get(uri, [])
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 1
-        assert diagnostics[0].message == "Syntax Error"
+        assert "Unexpected token" in diagnostics[0].message
 
         ls.shutdown()
         os.remove(temp_file_path)
@@ -317,7 +317,7 @@ class TestLangServe:
         diagnostics2 = ls.diagnostics.get(uri2, [])
         assert len(diagnostics1) == 0
         assert len(diagnostics2) == 1
-        assert diagnostics2[0].message == "Syntax Error"
+        assert "Unexpected token" in diagnostics2[0].message
 
         before_sem_tokens_1 = ls.get_semantic_tokens(uri1)
         before_sem_tokens_2 = ls.get_semantic_tokens(uri2)

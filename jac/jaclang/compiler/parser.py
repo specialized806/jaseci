@@ -85,8 +85,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
         if isinstance(e, jl.UnexpectedToken):
-            if any(tok.type == Tok.DOT.name for tok in (e.token_history or [])) and (
-                Tok.NAME.name in e.accepts
+
+            # If last token is DOT and we expect a NAME, insert a NAME token
+            last_tok: jl.Token | None = (
+                e.token_history[-1]
+                if e.token_history and len(e.token_history) >= 1
+                else None
+            )
+            if (
+                last_tok
+                and last_tok.type == Tok.DOT.name
+                and (Tok.NAME.name in e.accepts)
             ):
                 self.log_error("Incomplete member access", self.error_to_token(e))
                 e.interactive_parser.feed_token(
@@ -95,7 +104,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 e.interactive_parser.feed_token(e.token)
                 return True
 
-            # Insert missing tokens
+            # If any of the below token is missing, insert them and continue parsing.
             missing_tokens = {
                 Tok.COMMA: "comma",
                 Tok.SEMI: "semicollon",
@@ -122,7 +131,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
     def error_to_message(self, e: jl.UnexpectedInput) -> str:
         """Return an error message based on the exception."""
-        # TODO: Example based on Lark's advanced error reporting
+        # TODO: Match more specific errors with lark's example based matching.
         # Reference: https://github.com/lark-parser/lark/blob/master/examples/advanced/error_reporting_lalr.py
         # e.match_examples()
         if isinstance(e, jl.UnexpectedToken):
