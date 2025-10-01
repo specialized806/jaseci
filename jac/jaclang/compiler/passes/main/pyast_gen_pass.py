@@ -1474,21 +1474,21 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
-        if node.parent_of_type(uni.Test):
+        if isinstance(node.parent, uni.Test):
             self.assert_helper(node)
-            return
-        node.gen.py_ast = [
-            self.sync(
-                ast3.Assert(
-                    test=cast(ast3.expr, node.condition.gen.py_ast[0]),
-                    msg=(
-                        cast(ast3.expr, node.error_msg.gen.py_ast[0])
-                        if node.error_msg
-                        else None
-                    ),
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Assert(
+                        test=cast(ast3.expr, node.condition.gen.py_ast[0]),
+                        msg=(
+                            cast(ast3.expr, node.error_msg.gen.py_ast[0])
+                            if node.error_msg
+                            else None
+                        ),
+                    )
                 )
-            )
-        ]
+            ]
 
     def assert_helper(self, node: uni.AssertStmt) -> None:
         """Sub objects.
