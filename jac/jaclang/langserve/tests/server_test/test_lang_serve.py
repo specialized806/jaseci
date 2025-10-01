@@ -79,7 +79,7 @@ class TestLangServe:
         ls.shutdown()
         assert len(diagnostics) == 1
         assert "Unexpected token 'error'" in diagnostics[0].message
-        assert str(diagnostics[0].range) == "66:0-66:1"
+        assert str(diagnostics[0].range) == "66:0-66:5"
 
         os.remove(temp_file_path)
 
