@@ -78,7 +78,7 @@ class TestLangServe:
         diagnostics = ls.diagnostics.get(uri, [])
         ls.shutdown()
         assert len(diagnostics) == 1
-        assert diagnostics[0].message == "Syntax Error"
+        assert "Unexpected token 'error'" in diagnostics[0].message
         assert str(diagnostics[0].range) == "66:0-66:1"
 
         os.remove(temp_file_path)
