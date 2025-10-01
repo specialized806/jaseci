@@ -82,16 +82,12 @@ class PreDynamoPass(UniPass):
             return None
         return ta  # common target
 
-    def check_register_buffer_call(self, node: uni.ExprStmt) -> Optional[tuple]:
-        """Return (name, tensor_expr, kwargs) if node is self.register_buffer(name, tensor_expr, **kwargs)."""
+    def check_call(self, node: uni.ExprStmt) -> Optional[tuple]:
+        """Return (target, name, tensor_expr, kwargs) if node is target(name, tensor_expr, **kwargs)."""
         if isinstance(node, uni.ExprStmt) and isinstance(node.expr, uni.FuncCall):
             call = node.expr
             if (
                 isinstance(call.target, uni.AtomTrailer)
-                and isinstance(call.target.right, uni.Name)
-                and call.target.right.value == "register_buffer"
-                and isinstance(call.target.target, uni.Name)
-                and call.target.target.value == "self"
                 and len(call.params) >= 2
                 and isinstance(call.params[0], (uni.String, uni.MultiString))
                 and isinstance(call.params[1], uni.Expr)
@@ -111,7 +107,7 @@ class PreDynamoPass(UniPass):
                     if len(call.params) > 2
                     else {}
                 )
-                return (name, tensor_expr, kwargs)
+                return (call.target, name, tensor_expr, kwargs)
         return None
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
@@ -172,17 +168,15 @@ class PreDynamoPass(UniPass):
             self.replace_node(new_node, node, "body")
 
         elif isinstance(a0, uni.ExprStmt) and isinstance(b0, uni.ExprStmt):
-            a_reg = self.check_register_buffer_call(a0)
-            b_reg = self.check_register_buffer_call(b0)
+            a_reg = self.check_call(a0)
+            b_reg = self.check_call(b0)
             if a_reg is not None and b_reg is not None:
-                a_name, a_expr, a_kwargs = a_reg
-                b_name, b_expr, b_kwargs = b_reg
+                a_target, a_name, a_expr, a_kwargs = a_reg
+                b_target, b_name, b_expr, b_kwargs = b_reg
                 if a_name.value == b_name.value and set(a_kwargs.keys()) == set(
                     b_kwargs.keys()
                 ):
-                    tmp_name = self.gen_name(
-                        node, Tok.NAME, f"__{eval(a_name.value)}_sel"
-                    )
+                    tmp_name = self.gen_name(node, Tok.NAME, f"__{eval(a_name.value)}")
                     tmp_name.py_ctx_func = ast3.Store
                     func_name = self.gen_name(node, Tok.NAME, "torch")
                     attr_name = self.gen_name(node, Tok.NAME, "where")
@@ -206,15 +200,6 @@ class PreDynamoPass(UniPass):
                         kid=[tmp_name, call],
                     )
 
-                    self_name = self.gen_name(node, Tok.NAME, "self")
-                    buffer_name = self.gen_name(node, Tok.NAME, "register_buffer")
-                    buffer_target = uni.AtomTrailer(
-                        target=self_name,
-                        right=buffer_name,
-                        is_attr=True,
-                        is_null_ok=False,
-                        kid=[self_name, buffer_name],
-                    )
                     kwargs_nodes = [
                         uni.KWPair(
                             name := self.gen_name(node, Tok.NAME, k), v, [name, v]
@@ -222,13 +207,13 @@ class PreDynamoPass(UniPass):
                         for k, v in a_kwargs.items()
                     ]
                     param_name = self.gen_name(
-                        node, Tok.NAME, f"__{eval(a_name.value)}_sel"
+                        node, Tok.NAME, f"__{eval(a_name.value)}"
                     )
                     reg_call = uni.FuncCall(
-                        target=buffer_target,
+                        target=a_target,
                         params=[a_name, param_name] + kwargs_nodes,
                         genai_call=None,
-                        kid=[buffer_target, a_name, param_name] + kwargs_nodes,
+                        kid=[a_target, a_name, param_name] + kwargs_nodes,
                     )
                     reg_node = uni.ExprStmt(
                         expr=reg_call, in_fstring=False, kid=[reg_call]
