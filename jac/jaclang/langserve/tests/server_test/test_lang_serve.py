@@ -123,13 +123,10 @@ class TestLangServe:
         assert len(diagnostics) == 1
 
         sem_tokens = ls.get_semantic_tokens(uri)
-        print(sem_tokens)
         ls.shutdown()
         assert hasattr(sem_tokens, "data")
         assert isinstance(sem_tokens.data, list)
-        assert (
-            len(sem_tokens.data) == 0
-        )  # TODO: we should retain the sem tokens, will be fixed in next PR
+        assert len(sem_tokens.data) == 340
 
         os.remove(temp_file_path)
 
@@ -275,7 +272,6 @@ class TestLangServe:
         assert (
             len(edits[0].new_text) > 100
         )  # it is a random number to check if the text is changed
-        print(edits[0].new_text)
         ls.shutdown()
         os.remove(temp_file_path)
 
@@ -322,7 +318,9 @@ class TestLangServe:
         before_sem_tokens_1 = ls.get_semantic_tokens(uri1)
         before_sem_tokens_2 = ls.get_semantic_tokens(uri2)
         assert len(before_sem_tokens_1.data) == 15
-        assert len(before_sem_tokens_2.data) == 0
+        # Since we're doing type checking although it has syntax errors,
+        # the count wont change.
+        assert len(before_sem_tokens_2.data) == 15
 
         changed_code = get_simple_code("glob x = 90;")
         ls.workspace.put_text_document(
@@ -343,7 +341,7 @@ class TestLangServe:
         after_sem_tokens_2 = ls.get_semantic_tokens(uri2)
 
         assert len(after_sem_tokens_1.data) == 20
-        assert len(after_sem_tokens_2.data) == 0
+        assert len(after_sem_tokens_2.data) == 15
 
         ls.shutdown()
         os.remove(temp_file_path1)
