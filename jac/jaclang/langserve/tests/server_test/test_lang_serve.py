@@ -15,8 +15,9 @@ from lsprotocol.types import (
 )
 from jaclang.langserve.tests.server_test.utils import (
     create_temp_jac_file,
-    get_code,
-    get_simple_code,
+    # get_code,
+    # get_simple_code,
+    load_jac_template,
     create_ls_with_workspace,  # new helper
 )
 from jaclang.vendor.pygls.uris import from_fs_path
@@ -25,6 +26,13 @@ from jaclang import JacMachineInterface as _
 from jaclang.langserve.engine import JacLangServer
 from jaclang.langserve.server import did_open, did_save, did_change, formatting
 
+def get_path_to_test_template(file_name: str) -> str:
+    """Return the absolute path to the sample Jac template file used for testing."""
+    return os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__), file_name
+        )
+    )
 
 class TestLangServe:
     """Test class for Jac language server features."""
@@ -34,7 +42,7 @@ class TestLangServe:
         """Test opening a Jac file with a syntax error."""
         ls = JacLangServer()
 
-        code = get_code("")
+        code = load_jac_template(get_path_to_test_template("circle_template.jac"), "")
         temp_file_path = create_temp_jac_file(code)
         uri = from_fs_path(temp_file_path)
         ls.lsp._workspace = Workspace(os.path.dirname(temp_file_path), ls)
@@ -60,7 +68,7 @@ class TestLangServe:
         """Test opening a Jac file with a syntax error."""
         ls = JacLangServer()
 
-        code = get_code("error")
+        code = load_jac_template(get_path_to_test_template("circle_template.jac"), "error")
         temp_file_path = create_temp_jac_file(code)
         uri = from_fs_path(temp_file_path)
         ls.lsp._workspace = Workspace(os.path.dirname(temp_file_path), ls)
@@ -79,7 +87,7 @@ class TestLangServe:
         ls.shutdown()
         assert len(diagnostics) == 1
         assert "Unexpected token 'error'" in diagnostics[0].message
-        assert str(diagnostics[0].range) == "66:0-66:5"
+        assert str(diagnostics[0].range) == "65:0-65:5"
 
         os.remove(temp_file_path)
 
@@ -88,7 +96,7 @@ class TestLangServe:
         """Test diagnostics for a Jac file with a syntax error."""
         ls = JacLangServer()
 
-        code = get_code("")
+        code = load_jac_template(get_path_to_test_template("circle_template.jac"), "")
         temp_file_path = create_temp_jac_file(code)
         uri = from_fs_path(temp_file_path)
         ls.lsp._workspace = Workspace(os.path.dirname(temp_file_path), ls)
@@ -106,7 +114,7 @@ class TestLangServe:
         assert isinstance(diagnostics, list)
         assert len(diagnostics) == 0
 
-        broken_code = get_code("error")
+        broken_code = load_jac_template(get_path_to_test_template("circle_template.jac"), "error")
         with open(temp_file_path, "w") as f:
             f.write(broken_code)
         params = DidOpenTextDocumentParams(
@@ -133,7 +141,7 @@ class TestLangServe:
     @pytest.mark.asyncio
     async def test_did_save(self):
         """Test saving a Jac file triggers diagnostics."""
-        code = get_code("")
+        code = load_jac_template(get_path_to_test_template("circle_template.jac"), "")
         temp_file_path = create_temp_jac_file(code)
         uri, ls = create_ls_with_workspace(temp_file_path)
 
@@ -164,7 +172,7 @@ class TestLangServe:
         assert len(diagnostics) == 0
 
         # Now simulate a syntax error by updating the workspace and saving
-        broken_code = get_code("error")
+        broken_code = load_jac_template(get_path_to_test_template("circle_template.jac"), "error")
         ls.workspace.put_text_document(
             TextDocumentItem(
                 uri=uri,
@@ -196,7 +204,7 @@ class TestLangServe:
     @pytest.mark.asyncio
     async def test_did_change(self):
         """Test changing a Jac file triggers diagnostics."""
-        code = get_code("")
+        code = load_jac_template(get_path_to_test_template("circle_template.jac"), "")
         temp_file_path = create_temp_jac_file(code)
         uri, ls = create_ls_with_workspace(temp_file_path)
 
@@ -259,7 +267,7 @@ class TestLangServe:
 
     def test_vsce_formatting(self):
         """Test formatting a Jac file returns edits."""
-        code = get_code("")
+        code = load_jac_template(get_path_to_test_template('circle_template.jac'), "")
         temp_file_path = create_temp_jac_file(code)
         uri, ls = create_ls_with_workspace(temp_file_path)
         params = DocumentFormattingParams(
@@ -278,8 +286,8 @@ class TestLangServe:
     @pytest.mark.asyncio
     async def test_multifile_workspace(self):
         """Test opening multiple Jac files in a workspace."""
-        code1 = get_simple_code("")
-        code2 = get_simple_code("error")
+        code1 = load_jac_template(get_path_to_test_template('glob_template.jac'), "")
+        code2 = load_jac_template(get_path_to_test_template('glob_template.jac'), "error")
         temp_file_path1 = create_temp_jac_file(code1)
         temp_file_path2 = create_temp_jac_file(code2)
 
@@ -322,7 +330,8 @@ class TestLangServe:
         # the count wont change.
         assert len(before_sem_tokens_2.data) == 15
 
-        changed_code = get_simple_code("glob x = 90;")
+        # changed_code = get_simple_code("glob x = 90;")
+        changed_code = load_jac_template(get_path_to_test_template('glob_template.jac'), "glob x = 90;")
         ls.workspace.put_text_document(
             TextDocumentItem(
                 uri=uri1,
