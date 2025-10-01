@@ -22,10 +22,6 @@ class PreDynamoPass(UniPass):
         """Exit node."""
         super().exit_node(node)
 
-    def replace_node(self, new_node: uni.UniNode, old_node: uni.UniNode) -> None:
-        """Copy location from old node to new node."""
-        pass
-
     def gen_name(self, node: uni.UniNode, name: Tok, value: str) -> uni.Name:
         """Generate Name."""
         return uni.Name(
@@ -39,6 +35,36 @@ class PreDynamoPass(UniPass):
             pos_start=0,
             pos_end=0,
         )
+
+    def replace_node(
+        self,
+        new_nodes: list[uni.UniNode] | uni.UniNode,
+        old_node: uni.UniNode,
+        attr: str,
+    ) -> None:
+        """Replace old node with new nodes in parent's body and kid lists."""
+        parent = old_node.parent
+        if isinstance(new_nodes, uni.UniNode):
+            new_nodes.parent = parent
+            if hasattr(parent, attr):
+                lst = getattr(parent, attr)
+                if old_node in lst:
+                    idx = lst.index(old_node)
+                    lst[idx] = new_nodes
+            if hasattr(parent, "kid") and old_node in parent.kid:
+                idx = parent.kid.index(old_node)
+                parent.kid[idx] = new_nodes
+        else:  # list of nodes
+            for n in new_nodes:
+                n.parent = parent
+            if hasattr(parent, attr):
+                lst = getattr(parent, attr)
+                if old_node in lst:
+                    idx = lst.index(old_node)
+                    setattr(parent, attr, lst[:idx] + new_nodes + lst[idx + 1 :])
+            if hasattr(parent, "kid") and old_node in parent.kid:
+                idx = parent.kid.index(old_node)
+                parent.kid = parent.kid[:idx] + new_nodes + parent.kid[idx + 1 :]
 
     def check_same_lhs(
         self, assign_a: uni.UniNode, assign_b: uni.UniNode
@@ -121,6 +147,7 @@ class PreDynamoPass(UniPass):
                 new_node = uni.Assignment(
                     target=[lhs], value=call, type_tag=None, kid=[lhs, call]
                 )
+                self.replace_node(new_node, node, "body")
 
         elif isinstance(a0, uni.ReturnStmt) and isinstance(b0, uni.ReturnStmt):
             aexpr, bexpr = a0.expr, b0.expr
@@ -142,6 +169,7 @@ class PreDynamoPass(UniPass):
                 kid=[target, node.condition, a0, b0],
             )
             new_node = uni.ReturnStmt(expr=call, kid=[call])
+            self.replace_node(new_node, node, "body")
 
         elif isinstance(a0, uni.ExprStmt) and isinstance(b0, uni.ExprStmt):
             a_reg = self.check_register_buffer_call(a0)
@@ -205,33 +233,4 @@ class PreDynamoPass(UniPass):
                     reg_node = uni.ExprStmt(
                         expr=reg_call, in_fstring=False, kid=[reg_call]
                     )
-                    assign_node.parent = node.parent
-                    reg_node.parent = node.parent
-                    if (
-                        (parent := node.parent)
-                        and hasattr(parent, "body")
-                        and node in parent.body
-                    ):
-                        body_idx = parent.body.index(node)
-                        parent.body = (
-                            parent.body[:body_idx]
-                            + [assign_node, reg_node]
-                            + parent.body[body_idx + 1 :]
-                        )
-                        kid_idx = parent.kid.index(node)
-                        parent.kid = (
-                            parent.kid[:kid_idx]
-                            + [assign_node, reg_node]
-                            + parent.kid[kid_idx + 1 :]
-                        )
-                    new_node = None  # already replaced above
-
-        if new_node is not None:
-            new_node.parent = node.parent
-            if (
-                (parent := node.parent)
-                and hasattr(parent, "body")
-                and node in parent.body
-            ):
-                parent.body[parent.body.index(node)] = new_node
-                parent.kid[parent.kid.index(node)] = new_node
+                    self.replace_node([assign_node, reg_node], node, "body")
