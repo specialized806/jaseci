@@ -7,6 +7,7 @@ import builtins
 import os
 from copy import copy
 from dataclasses import dataclass
+from enum import IntEnum
 from hashlib import md5
 from types import EllipsisType
 from typing import (
@@ -873,6 +874,12 @@ class Module(AstDocNode, UniScopeNode):
         self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
+        # We continue to parse a module even if there are syntax errors
+        # so that we can report more errors in a single pass and support
+        # features like code completion, lsp, format etc. This flag
+        # indicates if there were syntax errors during parsing.
+        self.has_syntax_errors: bool = False
+
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name)
@@ -1392,23 +1399,12 @@ class Archetype(
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_category=(
-                SymbolType.OBJECT_ARCH
-                if arch_type.name == Tok.KW_OBJECT
-                else (
-                    SymbolType.NODE_ARCH
-                    if arch_type.name == Tok.KW_NODE
-                    else (
-                        SymbolType.EDGE_ARCH
-                        if arch_type.name == Tok.KW_EDGE
-                        else (
-                            SymbolType.WALKER_ARCH
-                            if arch_type.name == Tok.KW_WALKER
-                            else SymbolType.TYPE
-                        )
-                    )
-                )
-            ),
+            sym_category={
+                Tok.KW_OBJECT.value: SymbolType.OBJECT_ARCH,
+                Tok.KW_NODE.value: SymbolType.NODE_ARCH,
+                Tok.KW_EDGE.value: SymbolType.EDGE_ARCH,
+                Tok.KW_WALKER.value: SymbolType.WALKER_ARCH,
+            }.get(arch_type.name, SymbolType.TYPE),
         )
         AstImplNeedingNode.__init__(self, body=body)
         AstAccessNode.__init__(self, access=access)
@@ -1908,20 +1904,6 @@ class FuncSignature(UniNode):
         self.return_type = return_type
         UniNode.__init__(self, kid=kid)
 
-    @property
-    # fmt: off
-    def args_pp(self) -> str:
-        arg_detail = "----Function Parameters- ----\n"
-        arg_detail += f"\tposonly: {"\n\t\t".join(str(param.unparse()) for param in self.posonly_params)}\n"
-        arg_detail += f"\tparams:  {"\n\t\t".join(str(arg.unparse()) for arg in self.params)} \n"
-        arg_detail += f"\tvarargs: {self.varargs.unparse() if self.varargs else None}\n"
-        arg_detail += f"\tkwonlyargs: {"\n\t\t\t".join(
-            str(keyword_param.unparse()) for keyword_param in self.kwonlyargs
-        )}\n"
-        arg_detail += f"\tkwargs: {self.kwargs.unparse() if self.kwargs else 'None'}\n"
-        return arg_detail
-    # fmt: on
-
     def normalize(self, deep: bool = False) -> bool:
         res = True
         is_lambda = self.parent and isinstance(self.parent, LambdaExpr)
@@ -1963,6 +1945,16 @@ class FuncSignature(UniNode):
             new_kid.append(self.return_type)
         self.set_kids(nodes=new_kid)
         return res
+
+    def get_parameters(self) -> list[ParamVar]:
+        """Return all parameters in the declared order."""
+        params = self.posonly_params + self.params
+        if self.varargs:
+            params.append(self.varargs)
+        params += self.kwonlyargs
+        if self.kwargs:
+            params.append(self.kwargs)
+        return params
 
     @property
     def is_static(self) -> bool:
@@ -2020,6 +2012,16 @@ class EventSignature(WalkerStmtOnlyNode):
         return res
 
 
+class ParamKind(IntEnum):
+    """Parameter kinds."""
+
+    POSONLY = 0
+    NORMAL = 1
+    VARARG = 2
+    KWONLY = 3
+    KWARG = 4
+
+
 class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
 
@@ -2033,6 +2035,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
     ) -> None:
         self.name = name
         self.unpack = unpack
+        self.param_kind = ParamKind.NORMAL
         self.value = value
         UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -2042,6 +2045,14 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
             sym_category=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+
+    @property
+    def is_vararg(self) -> bool:
+        return bool((self.unpack) and (self.unpack.name == Tok.STAR_MUL.name))
+
+    @property
+    def is_kwargs(self) -> bool:
+        return bool((self.unpack) and (self.unpack.name == Tok.STAR_POW.name))
 
     def normalize(self, deep: bool = True) -> bool:
         res = True
@@ -3826,10 +3837,12 @@ class EdgeRefTrailer(Expr):
         self,
         chain: list[Expr | FilterCompr],
         edges_only: bool,
+        is_async: bool,
         kid: Sequence[UniNode],
     ) -> None:
         self.chain = chain
         self.edges_only = edges_only
+        self.is_async = is_async
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
@@ -3839,6 +3852,8 @@ class EdgeRefTrailer(Expr):
             res = res and expr.normalize(deep)
         new_kid: list[UniNode] = []
         new_kid.append(self.gen_token(Tok.LSQUARE))
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
         if self.edges_only:
             new_kid.append(self.gen_token(Tok.KW_EDGE))
         new_kid.extend(self.chain)

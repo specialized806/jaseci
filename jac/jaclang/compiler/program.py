@@ -32,6 +32,7 @@ from jaclang.compiler.passes.tool import (
     FuseCommentsPass,
     JacFormatPass,
 )
+from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
 from jaclang.runtimelib.utils import read_file_with_encoding
 from jaclang.settings import settings
 from jaclang.utils.log import logging
@@ -66,6 +67,13 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+        self.type_evaluator: TypeEvaluator | None = None
+
+    def get_type_evaluator(self) -> TypeEvaluator:
+        """Return the type evaluator."""
+        if not self.type_evaluator:
+            self.type_evaluator = TypeEvaluator(program=self)
+        return self.type_evaluator
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -119,7 +127,8 @@ class JacProgram:
         self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
         if type_check:
             self.run_schedule(mod=mod_targ, passes=type_check_sched)
-        if not no_cgen:
+        # If the module has syntax errors, we skip code generation.
+        if (not mod_targ.has_syntax_errors) and (not no_cgen):
             if settings.predynamo_pass and PreDynamoPass not in py_code_gen:
                 py_code_gen.insert(0, PreDynamoPass)
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
