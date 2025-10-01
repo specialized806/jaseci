@@ -217,20 +217,6 @@ Configure the level of detail for memory capture:
 - **Calendar Integration**: Link memories with calendar events and dates
 - **Search Functionality**: Build searchable memory databases
 
-## Privacy and Security
-
-### Data Protection
-- **Local Processing**: Option to process images locally without cloud uploads
-- **Conversation Privacy**: User responses stored securely and privately
-- **Image Handling**: Temporary processing with automatic cleanup
-- **Memory Encryption**: Optional encryption for sensitive memories
-
-### User Control
-- **Selective Sharing**: Choose which memory details to capture
-- **Edit Capabilities**: Modify or correct captured information
-- **Deletion Options**: Remove memories and associated data
-- **Export Functions**: Extract memories in various formats
-
 ## Use Cases and Applications
 
 ### Personal Memory Keeping
