@@ -419,7 +419,7 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(circle_file)
         test_cases = [
             (47, 12, ["circle.jac:47:8-47:14", "69:8-69:14", "74:8-74:14"]),
-            (54, 66, ["54:62-54:76", "65:22-65:36"]),
+            (54, 66, ["54:62-54:76", "65:23-65:37"]),
             (62, 14, ["65:43-65:56", "70:32-70:45"]),
         ]
         for line, char, expected_refs in test_cases:
