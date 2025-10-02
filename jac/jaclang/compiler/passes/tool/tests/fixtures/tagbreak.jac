@@ -141,3 +141,11 @@ with entry {
     );
     a = (4 if True else 4);
 }
+
+
+import from typing { Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar }
+
+import from jaclang.compiler.constant {
+    JacSemTokenModifier as SemTokMod,
+    JacSemTokenType as SemTokType,
+}
