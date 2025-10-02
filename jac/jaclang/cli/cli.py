@@ -323,22 +323,7 @@ def lsp() -> None:
     run_lang_server()
 
 
-@cmd_registry.register
-def lsp_dev() -> None:
-    """Run Jac Language Server Protocol in Developer Mode.
 
-    Starts the experimental Jac Language Server with enhanced features
-    for development and testing. Used by editor extensions in developer mode.
-
-    Args:
-        This command takes no parameters.
-
-    Examples:
-        jac lsp_dev
-    """
-    from jaclang.langserve.dev_server import run_lang_server  # type: ignore
-
-    run_lang_server()
 
 
 @cmd_registry.register
