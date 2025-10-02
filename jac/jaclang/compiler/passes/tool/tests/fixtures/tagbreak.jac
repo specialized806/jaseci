@@ -142,6 +142,7 @@ with entry {
     a = (4 if True else 4);
 }
 
+
 @decorator
 def x() { }
 
