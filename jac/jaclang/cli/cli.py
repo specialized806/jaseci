@@ -323,9 +323,6 @@ def lsp() -> None:
     run_lang_server()
 
 
-
-
-
 @cmd_registry.register
 def enter(
     filename: str,
