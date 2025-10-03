@@ -2,9 +2,7 @@
 
 with entry {
     # Basic with statement with as binding
-    with open(__file__, 'r') as file {
-        print(file.read());
-    }
+    with open(__file__, 'r') as file {}
 
     # With expression without as
     # with some_context_manager() {
@@ -24,12 +22,17 @@ with entry {
 
     # With statement for resource management
     class Resource {
-        def __enter__(self) {
+        def __enter__(self: Resource) -> Resource {
             print("Acquiring resource");
             return self;
         }
 
-        def __exit__(self, exc_type, exc_val, exc_tb) {
+        def __exit__(
+            self: Resource, 
+            exc_type: `Optional[Type[BaseException]], 
+            exc_val: `Optional[BaseException], 
+            exc_tb: `Optional[`TracebackType]
+            ) -> None {
             print("Releasing resource");
         }
     }

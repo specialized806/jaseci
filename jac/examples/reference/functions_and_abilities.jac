@@ -83,7 +83,7 @@ walker AsyncWalker {
 }
 
 # Function with decorator
-def logger(func) {
+def logger(func: object) {
     return func;
 }
 

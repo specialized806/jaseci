@@ -23,7 +23,9 @@ def outer_func -> None {
 }
 
 # Multiple names in global statement
-glob a, b, c = 1, 2, 3;
+glob a = 1;
+glob b = 2;
+glob c = 3;
 
 def modify_globals {
     # Global with multiple names

@@ -235,7 +235,6 @@ assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
 
 aug_op: RSHIFT_EQ
        | LSHIFT_EQ
-       | BW_NOT_EQ
        | BW_XOR_EQ
        | BW_OR_EQ
        | BW_AND_EQ
@@ -624,7 +623,6 @@ FLOOR_DIV_EQ: "//="
 BW_AND_EQ: "&="
 BW_OR_EQ: "|="
 BW_XOR_EQ: "^="
-BW_NOT_EQ: "~="
 LSHIFT_EQ: "<<="
 RSHIFT_EQ: ">>="
 

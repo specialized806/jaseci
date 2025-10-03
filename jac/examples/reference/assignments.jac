@@ -40,7 +40,6 @@ with entry {
     bits &= 7;   # Bitwise AND assign
     bits |= 8;   # Bitwise OR assign
     bits ^= 3;   # Bitwise XOR assign
-    bits ~= 1;   # Bitwise NOT assign (if supported)
 
     # Matrix multiplication assign (if supported)
     # matrix @= other_matrix;

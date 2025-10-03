@@ -13,6 +13,6 @@ with entry {
     print(c);
 
     # Backward atomic pipe with lambda
-    result = (lambda x: x * 3) <: 10;
+    result = (lambda x:int : x * 3) <: 10;
     print("Result:", result);
 }

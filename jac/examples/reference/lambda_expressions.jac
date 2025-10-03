@@ -10,7 +10,7 @@ with entry {
     print(get_five());
 
     # Lambda without return hint
-    add = lambda x, y : x + y;
+    add = lambda x: int, y: int : x + y;
     print(add(3, 7));
 
     # Lambda with only return hint (no params)
@@ -23,20 +23,20 @@ with entry {
     print(multiply(5));
     print(multiply(5, 10));
 
-    # Lambda with variadic args
-    sum_all = lambda *args : sum(args);
+    # Lambda with variadic args (use regular function instead)
+    def sum_all(*args: tuple) { return sum(args); }
     print(sum_all(1, 2, 3, 4, 5));
 
     # Lambda as argument to function
     numbers = [1, 2, 3, 4, 5];
-    squared = list(map(lambda x : x ** 2, numbers));
+    squared = list(map(lambda x: int : x ** 2, numbers));
     print(squared);
 
     # Lambda in filter
-    evens = list(filter(lambda x : x % 2 == 0, numbers));
+    evens = list(filter(lambda x: int : x % 2 == 0, numbers));
     print(evens);
 
     # Complex lambda with conditional expression
-    max_val = lambda a, b : a if a > b else b;
+    max_val = lambda a: int, b: int : a if a > b else b;
     print(max_val(10, 20));
 }

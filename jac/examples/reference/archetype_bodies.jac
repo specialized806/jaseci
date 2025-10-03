@@ -22,10 +22,8 @@ obj Car {
     # Has with by postinit
     has config: dict by postinit;
 
-    def postinit(config: dict) {
-        if not config {
-            self.config = {"color": "white", "sunroof": False};
-        }
+    def postinit {
+        self.config = {"color": "white", "sunroof": False};
     }
 
     # Methods in body

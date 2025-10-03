@@ -1,7 +1,7 @@
 # Import and Include statements
 
 # Include statement (includes module directly)
-include os;
+import os;
 
 # Import with alias
 import datetime as dt;
