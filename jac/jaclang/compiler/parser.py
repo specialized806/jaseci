@@ -3087,6 +3087,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.FSTR_SQ_PIECE,
+                Tok.FSTR_TRIPLE_PIECE,
+                Tok.FSTR_SQ_TRIPLE_PIECE,
             ]:
                 ret_type = uni.String
                 if token.type == Tok.FSTR_BESC:
