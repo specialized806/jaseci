@@ -13,6 +13,7 @@ with entry {
     d: dict = {"key": "value"};
     b: bool = True;
 
+    print(x, y, z, lst, tup, s, d, b);
     # Note: These are tokenized specially so they can be used as types
     # See builtin_types.jac for more comprehensive type usage examples
 }

@@ -3,7 +3,7 @@
 walker DataCollector {
     has collected: list = [];
 
-    can process with entry {
+    can process with `root entry {
         # Report single value
         report "Processing started";
 
@@ -21,5 +21,6 @@ walker DataCollector {
 with entry {
     # Reports are typically used in walker contexts
     w = DataCollector();
+    w spawn root;
     # In actual execution, report statements would return values to caller
 }
