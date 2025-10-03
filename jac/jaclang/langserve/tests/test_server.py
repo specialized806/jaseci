@@ -7,7 +7,7 @@ import lsprotocol.types as lspt
 import pytest
 from jaclang import JacMachineInterface as _
 from jaclang.langserve.engine import JacLangServer
-# from .session import LspSession
+from .session import LspSession
 
 
 class TestJacLangServer(TestCase):
