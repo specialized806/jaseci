@@ -8,9 +8,10 @@ import from typing { Callable, Optional }
 
 import jaclang.compiler.unitree as uni;
 import from jaclang { JacMachineInterface as Jac }
-import from jaclang.compiler.constant {SymbolType}
+import from jaclang.compiler.constant { SymbolType }
 import from jaclang.compiler.program { JacProgram }
-import from jaclang.compiler.type_system.types{ ClassType, TypeBase }
+import from jaclang.compiler.type_system.type_utils { get_completion_items }
+import from jaclang.compiler.type_system.types { ClassType, TypeBase }
 import from jaclang.compiler.unitree { UniScopeNode }
 import from sem_manager { SemTokManager }
 import from jaclang.vendor.pygls { uris }
@@ -219,12 +220,11 @@ class JacLangServer(JacProgram , LanguageServer) {
         return node_selected;
     }
 
-    def log(self: JacLangServer, msg: str) -> None {
-        self.log_py("*" * 80);
-        self.log_py(f"MSG = {msg}");
-        self.log_py("*" * 80);
+    def debug(self: JacLangServer, msg: str) -> None {
+        self.log_py("[DEBUG] " + ("-" * 80));
+        self.log_py(f"[DEBUG] {msg}");
+        self.log_py("[DEBUG] " + ("-" * 80));
     }
-
 
     """Return completion for a file."""
     def get_completion(
@@ -233,34 +233,41 @@ class JacLangServer(JacProgram , LanguageServer) {
         position: lspt.Position,
         completion_trigger: Optional[str]
     ) -> lspt.CompletionList {
-
-        self.log("getting completion for " + file_uri + " at " + str(position));
+        self.debug("getting completion for " + file_uri + " at " + str(position));
 
         try {
             file_path = uris.to_fs_path(file_uri);
 
             if (node_at_pos := self.get_node_at_position(file_path, position.line, position.character - 1)) {
-                self.log("found the node at pos " + str(position) + " " + str(node_at_pos));
+                self.debug("found the node at pos " + str(position) + " " + str(node_at_pos));
 
                 # For each trigger character we need to handle the completion differently
-                if isinstance(node_at_pos, uni.Token) and node_at_pos.name == "DOT" {
-                    member_access = node_at_pos.parent;
-                    self.log("found dot " + str(member_access));
-                    if isinstance(member_access, uni.AtomTrailer) {
-                        self.log("before returning the list");
-                        return self.get_members_of_node(member_access.target);
+                if isinstance(node_at_pos, uni.Token) {
+                    if node_at_pos.name == "DOT" {
+                        member_access = node_at_pos.parent;
+                        self.debug("found dot " + str(member_access));
+                        if isinstance(member_access, uni.AtomTrailer) {
+                            self.debug("before returning the list");
+                            return self.get_completion_of_node(member_access.target);
+                        }
+
+                    # FIXME: This is wrong but imma do it anyways like this for now.
+                    } elif node_at_pos.name == "NAME" {
+                        if scope_node := node_at_pos.find_parent_of_type(uni.UniScopeNode) {
+                            return self.get_completion_of_node(scope_node);
+                        }
                     }
                 }
             }
 
-            # TODO: Return empty list or something here.
+            return lspt.CompletionList(is_incomplete=False, items=[]);
 
         } except Exception as e {
             self.log_py(f"'Error during completion: '{e}");
             return lspt.CompletionList(is_incomplete=False, items=[]);
         }
 
-        self.log("returning empty list");
+        self.debug("returning empty list");
     }
 
     def get_ast_of_file(self: JacLangServer, file_path: str) -> Optional[uni.AstNode] {
@@ -276,7 +283,6 @@ class JacLangServer(JacProgram , LanguageServer) {
                 if not isinstance(ast_node, uni.Token) {
                     continue;
                 }
-                self.log("**** line col " + str(line) + " " + str(col) + f"{ast_node.loc.first_line} {ast_node.loc.col_start} {ast_node.loc.col_end}");
                 if (utils.position_within_node(ast_node, line + 1, col + 1)) {
                     return ast_node;
                 }
@@ -285,44 +291,43 @@ class JacLangServer(JacProgram , LanguageServer) {
         return None;
     }
 
-    def get_members_of_node(self: JacLangServer, node: uni.AstNode) -> lspt.CompletionList {
+    def get_completion_of_node(self: JacLangServer, node: uni.AstNode) -> lspt.CompletionList {
         if (node_type := self.get_node_type(node)) {
-            self.log("found type " + str(node_type));
-            return self.get_type_members(node_type);
+            self.debug("found type " + str(node_type));
+            return self.get_completion_items_of(node_type);
+        } elif isinstance(node, UniScopeNode) {
+            self.debug("found scope node " + str(node));
+            return self.get_completion_items_of(node);
         }
-        self.log("no type found for node " + str(node));
+
+        self.debug("no type found for node " + str(node));
         return lspt.CompletionList(is_incomplete=False, items=[]);
     }
 
     """Return the type of an AST node if it has one."""
     def get_node_type(self: JacLangServer, n: uni.AstNode) -> Optional[TypeBase] {
         if isinstance(n, uni.Expr) {
-            t = self.get_type_evaluator().get_type_of_expression(n);
-            self.log("found type " + str(t) + " for expr " + str(n));
-            return t;
+            typ = self.get_type_evaluator().get_type_of_expression(n);
+            self.debug("found type " + str(typ) + " for expr " + str(n));
+            return typ;
         }
-        self.log("no type found for node " + str(n));
+        self.debug("no type found for node " + str(n));
         return None;
     }
 
     """Get type members for completion."""
-    def get_type_members(self: JacLangServer, ty: TypeBase) -> lspt.CompletionList {
+    def get_completion_items_of(self: JacLangServer, ty: TypeBase | uni.UniScopeNode) -> lspt.CompletionList {
         evaluator = self.get_type_evaluator();
-
-        self.log("getting members of type " + str(ty));
-        if isinstance(ty, ClassType) {
-            member_names = ty.shared.symbol_table.names_in_scope;
-        } else {
-            member_names = [];
-        }
-        self.log("members are " + str(member_names));
-
+        self.debug("getting completion of " + str(ty));
+        items = get_completion_items(ty);
+        self.debug("completion items are " + str(items));
         return lspt.CompletionList(
             is_incomplete=False,
             items=[
                 lspt.CompletionItem(
-                    label=member_name,
-                ) for member_name in member_names
+                    label=item.label,
+                    kind=item.kind,
+                ) for item in items
             ],
         );
     }

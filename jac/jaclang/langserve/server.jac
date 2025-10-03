@@ -19,6 +19,11 @@ with entry {
     server = JacLangServer();
 }
 
+def debug(ls: JacLangServer, msg: str) -> None {
+    ls.log_py(f"[DEBUG] " + ("-" * 80));
+    ls.log_py(f"[DEBUG]' {msg} ");
+    ls.log_py(f"[DEBUG] " + ("-" * 80));
+}
 
 """Check syntax on change."""
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
@@ -48,9 +53,6 @@ async def did_change(
     ls: JacLangServer,
     params: lspt.DidChangeTextDocumentParams
 ) -> None {
-    ls.log_py("-" * 80);
-    ls.log_py(" 'Waiting for ongoing compilation to finish...' ");
-    ls.log_py("-" * 80);
     global still_compiling;
     still_compiling = True;
 
@@ -67,11 +69,10 @@ async def did_change(
     } except Exception as e {
         ls.log_py(f" 'Failed to update semantic tokens: ' {e} ");
     }
+
+    debug(ls, "Compilation started...");
     ls.log_py(f" 'Launching debounced quick check for ' {file_path} ");
     quick_check_passed = await ls.launch_quick_check(file_path, delay=0.5);
-    ls.log_py("-" * 80);
-    ls.log_py(" 'After quick check' ");
-    ls.log_py("-" * 80);
     if quick_check_passed {
         ls.log_py(
             f" 'Quick check passed, launching debounced deep check for ' {file_path} "
@@ -81,9 +82,7 @@ async def did_change(
         ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH);
     }
     still_compiling = False;
-    ls.log_py("-" * 80);
-    ls.log_py(" 'Finished waiting for ongoing compilation.' ");
-    ls.log_py("-" * 80);
+    debug(ls, "Compilation finished...");
 }
 
 """Format the given document."""
@@ -142,13 +141,13 @@ def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None 
     lspt.CompletionOptions(trigger_characters=['.', ':', 'a-zA-Z0-9'])
 )
 async def completion(ls: JacLangServer, params: lspt.CompletionParams) -> lspt.CompletionList {
+
+    debug(ls, "Waiting for compilation to finish...");
     global still_compiling;
-    ls.log_py(" 'Completin: Starting completion request...' ");
     while still_compiling {
-        ls.log_py(" 'Waiting for ongoing compilation to finish...' ");
         await asyncio.sleep(0.1);
     }
-    ls.log_py(" 'Completin: Finished waiting for ongoing compilation.' ");
+    debug(ls, "Compilation finished, providing completions...");
 
     return ls.get_completion(
         params.text_document.uri,
