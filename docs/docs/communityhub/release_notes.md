@@ -28,6 +28,8 @@ This document provides a summary of new features, improvements, and bug fixes in
   - Corrected decorator and boolean operator formatting
   - Fixed function args/calls formatting (removed extra commas/spaces)
   - Fixed index slice spacing and redundant atom units
+- **byLLM Enhancements**:
+  - Fixed bug with Enums without values not being properly included in prompts (e.g., `enum Tell { YES, NO }` now works correctly).
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Latest Release)
 
