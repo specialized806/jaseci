@@ -330,7 +330,7 @@ class TestJacLangServer(TestCase):
 
         test_cases: list[Case] = [
             Case(
-                lspt.Position(9, 9),
+                lspt.Position(9, 8),
                 ["bar", "baz"],
             ),
         ]
