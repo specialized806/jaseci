@@ -1,3 +1,5 @@
+# Object spatial walker statements - Graph traversal and spatial operations
+
 walker Visitor {
     can self_destruct with entry {
         print("get's here");
