@@ -1991,7 +1991,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             aug_op: RSHIFT_EQ
                    | LSHIFT_EQ
-                   | BW_NOT_EQ
                    | BW_XOR_EQ
                    | BW_OR_EQ
                    | BW_AND_EQ

@@ -197,7 +197,6 @@ class Tokens(str, Enum):
     BW_AND_EQ = "BW_AND_EQ"
     BW_OR_EQ = "BW_OR_EQ"
     BW_XOR_EQ = "BW_XOR_EQ"
-    BW_NOT_EQ = "BW_NOT_EQ"
     LSHIFT_EQ = "LSHIFT_EQ"
     RSHIFT_EQ = "RSHIFT_EQ"
     WALRUS_EQ = "WALRUS_EQ"

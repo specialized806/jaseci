@@ -96,6 +96,7 @@ nav:
         - "communityhub/fun/p3.md"
       - Content Pieces: "communityhub/content_pieces.md"
     - Internals:
+      - Lang Ref Coverage: "internals/refs_coverage_report.md"
       - Roadmap: "communityhub/roadmap.md"
       - Design Docs and Guides:
         - Compiler/Runtime Design: "internals/internals.md"
