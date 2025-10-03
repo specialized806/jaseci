@@ -137,7 +137,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         mod_items: list[doc.DocType] = []
         is_in_items: bool = False
-        print(node.kid)
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 if is_in_items:
@@ -176,7 +175,6 @@ class DocIRGenPass(UniPass):
                     parts.append(i.gen.doc_ir)
                     parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
-        print(node.gen.doc_ir)
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
