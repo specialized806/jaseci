@@ -2173,10 +2173,22 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstring: FSTR_START fstr_parts FSTR_END
                 | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
+                | FSTR_TRIPLE_START fstr_triple_parts FSTR_TRIPLE_END
+                | FSTR_SQ_TRIPLE_START fstr_sq_triple_parts FSTR_SQ_TRIPLE_END
             """
-            self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
+            (
+                self.match_token(Tok.FSTR_TRIPLE_START)
+                or self.match_token(Tok.FSTR_SQ_TRIPLE_START)
+                or self.match_token(Tok.FSTR_START)
+                or self.consume_token(Tok.FSTR_SQ_START)
+            )
             target = self.match(list)
-            self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
+            (
+                self.match_token(Tok.FSTR_TRIPLE_END)
+                or self.match_token(Tok.FSTR_SQ_TRIPLE_END)
+                or self.match_token(Tok.FSTR_END)
+                or self.consume_token(Tok.FSTR_SQ_END)
+            )
             return uni.FString(
                 parts=(
                     self.extract_from_list(target, (uni.String, uni.ExprStmt))
@@ -2209,6 +2221,44 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            """
+            valid_parts: list[uni.UniNode] = [
+                (
+                    i
+                    if isinstance(i, uni.String)
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
+                )
+                for i in self.cur_nodes
+            ]
+            return valid_parts
+
+        def fstr_triple_parts(self, _: None) -> list[uni.UniNode]:
+            """Grammar rule.
+
+            fstr_triple_parts: (FSTR_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            """
+            valid_parts: list[uni.UniNode] = [
+                (
+                    i
+                    if isinstance(i, uni.String)
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
+                )
+                for i in self.cur_nodes
+            ]
+            return valid_parts
+
+        def fstr_sq_triple_parts(self, _: None) -> list[uni.UniNode]:
+            """Grammar rule.
+
+            fstr_sq_triple_parts: (FSTR_SQ_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
             valid_parts: list[uni.UniNode] = [
                 (
