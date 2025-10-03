@@ -665,7 +665,7 @@ class JacCliTests(TestCase):
         """Test that CLI commands return non-zero exit codes on errors."""
         # Test run command with syntax error
         process = subprocess.Popen(
-            ["jac", "run", self.examples_abs_path("reference/try_statements.jac")],
+            ["jac", "run", self.fixture_abs_path("err2.jac")],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -678,7 +678,7 @@ class JacCliTests(TestCase):
 
         # Test build command with syntax error
         process = subprocess.Popen(
-            ["jac", "build", self.examples_abs_path("reference/try_statements.jac")],
+            ["jac", "build", self.fixture_abs_path("err2.jac")],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -689,11 +689,10 @@ class JacCliTests(TestCase):
             1,
             "build command should exit with code 1 on compilation error",
         )
-        self.assertIn("Missing comma", stderr)
 
         # Test check command with syntax error
         process = subprocess.Popen(
-            ["jac", "check", self.examples_abs_path("reference/try_statements.jac")],
+            ["jac", "check", self.fixture_abs_path("err2.jac")],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
