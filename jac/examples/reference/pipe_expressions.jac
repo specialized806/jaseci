@@ -18,10 +18,10 @@ with entry {
     result = number |> square;
     print(result);
 
-    # Chained forward pipes
-    value = 3;
-    chained = value |> increment |> double |> square;
-    print(f"3 -> increment -> double -> square = {chained}");
+    # TODO: Fix Chained forward pipes
+    # value = 3;
+    # chained = value |> increment |> double |> square;
+    # print(f"3 -> increment -> double -> square = {chained}");
 
     # Pipe with function calls
     data = [1, 2, 3, 4, 5];
@@ -29,6 +29,6 @@ with entry {
     print(f"Sum: {total}");
 
     # Pipe to lambda
-    x = 10 |> (lambda n : n * 3);
+    x = 10 |> (lambda n: int : n * 3);
     print(x);
 }

@@ -74,7 +74,8 @@ with entry {
     dog = Dog(breed="Labrador");
     cat = Cat(fur_color="Tabby");
 
-    print(dog.breed, dog.sound, dog.trick);
+    # TODO: Fix something wrong here with dog.trick
+    # print(dog.breed, dog.sound, dog.trick);
     dog.speak();
 
     # root special ref in graph context
