@@ -50,10 +50,10 @@ with entry {
         print("Cleanup complete");
     }
 
-    # Bare except (without exception type)
-    try {
-        risky_operation = 1 / 1;
-    } except {
-        print("Caught any exception");
-    }
+    # TODO: Bare except (without exception type)
+    # try {
+    #     risky_operation = 1 / 1;
+    # } except {
+    #     print("Caught any exception");
+    # }
 }

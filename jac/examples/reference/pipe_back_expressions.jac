@@ -18,13 +18,13 @@ with entry {
     result = double <| number;
     print(result);
 
-    # Chained backward pipes (right to left evaluation)
-    value = 2;
-    chained = negate <| triple <| double <| value;
-    print(f"2 <- double <- triple <- negate = {chained}");
+    # TODO: Fix Chained backward pipes (right to left evaluation)
+    # value = 2;
+    # chained = negate <| triple <| double <| value;
+    # print(f"2 <- double <- triple <- negate = {chained}");
 
     # Backward pipe with lambda
-    x = (lambda n : n * 3) <| 10;
+    x = (lambda n:int : n * 3) <| 10;
     print(x);
 
     # Backward pipe to function calls

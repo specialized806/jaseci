@@ -41,8 +41,9 @@ with entry {
     # Match with complex patterns
     data = [1, 2, 3];
     match data {
-        case []:
-            print("Empty list");
+        # TODO: Fix empty list (and tuple) pattern
+        # case []:
+        #     print("Empty list");
         case [x]:
             print(f"Single element: {x}");
         case [x, y]:
