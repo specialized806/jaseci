@@ -318,7 +318,7 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
         base_module_file = uris.from_fs_path(
-            self.fixture_abs_path("completion_test.jac")
+            self.fixture_abs_path("completion_test_err.jac")
         )
         lsp.deep_check(base_module_file)
 
