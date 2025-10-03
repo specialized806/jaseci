@@ -1705,15 +1705,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
             lambda_expr: KW_LAMBDA func_decl_params? (RETURN_HINT expression)? COLON expression
             """
             return_type: uni.Expr | None = None
+            return_hint_tok: uni.Token | None = None
             sig_kid: list[uni.UniNode] = []
             self.consume_token(Tok.KW_LAMBDA)
             params = self.match(list)
-            if self.match_token(Tok.RETURN_HINT):
+            if return_hint_tok := self.match_token(Tok.RETURN_HINT):
                 return_type = self.consume(uni.Expr)
             self.consume_token(Tok.COLON)
             body = self.consume(uni.Expr)
             if params:
                 sig_kid.extend(params)
+            if return_hint_tok:
+                sig_kid.append(return_hint_tok)
             if return_type:
                 sig_kid.append(return_type)
             signature = (
@@ -1731,7 +1734,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 if params or return_type
                 else None
             )
-            new_kid = [i for i in self.cur_nodes if i != params and i != return_type]
+            new_kid = [
+                i
+                for i in self.cur_nodes
+                if i != params and i != return_type and i != return_hint_tok
+            ]
             new_kid.insert(1, signature) if signature else None
             return uni.LambdaExpr(
                 signature=signature,
