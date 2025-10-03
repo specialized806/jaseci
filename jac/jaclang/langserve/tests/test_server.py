@@ -318,8 +318,7 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
         base_module_file = uris.from_fs_path(
-            #self.fixture_abs_path("base_module_structure.jac")
-            r"C:\Users\Thakee\Desktop\Home\jaseci\jaseci\build\main.jac"
+            self.fixture_abs_path("completion_test.jac")
         )
         lsp.deep_check(base_module_file)
 
@@ -331,7 +330,7 @@ class TestJacLangServer(TestCase):
 
         test_cases: list[Case] = [
             Case(
-                lspt.Position(8, 6),
+                lspt.Position(9, 9),
                 ["bar", "baz"],
             ),
         ]

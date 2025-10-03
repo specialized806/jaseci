@@ -212,6 +212,7 @@ class CompletionItem:
 
     label: str
     kind: int
+    detail: str | None = None
 
 
 class CompletionItemKind(int, Enum):

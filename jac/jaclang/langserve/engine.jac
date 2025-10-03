@@ -253,7 +253,16 @@ class JacLangServer(JacProgram , LanguageServer) {
 
                     # FIXME: This is wrong but imma do it anyways like this for now.
                     } elif node_at_pos.name == "NAME" {
+
+                        # Name of atom trailer.
+                        if node_at_pos.parent and isinstance(node_at_pos.parent, uni.AtomTrailer) {
+                            self.debug("found name in atom trailer " + str(node_at_pos.parent));
+                            return self.get_completion_of_node(node_at_pos.parent.target);
+                        }
+
+                        # Just a name field.
                         if scope_node := node_at_pos.find_parent_of_type(uni.UniScopeNode) {
+                            self.debug("found name in scope node " + str(scope_node));
                             return self.get_completion_of_node(scope_node);
                         }
                     }
@@ -321,14 +330,25 @@ class JacLangServer(JacProgram , LanguageServer) {
         self.debug("getting completion of " + str(ty));
         items = get_completion_items(ty);
         self.debug("completion items are " + str(items));
-        return lspt.CompletionList(
-            is_incomplete=False,
-            items=[
+
+        items: list[lspt.CompletionItem] = [];
+        for item in get_completion_items(ty) {
+            detail: lspt.CompletionItemLabelDetails | None = None;
+            if item.detail {
+                detail = lspt.CompletionItemLabelDetails(detail=item.detail);
+            }
+            items.append(
                 lspt.CompletionItem(
                     label=item.label,
                     kind=item.kind,
-                ) for item in items
-            ],
+                    label_details=detail,
+                )
+            );
+        }
+
+        return lspt.CompletionList(
+            is_incomplete=False,
+            items=items,
         );
     }
 
