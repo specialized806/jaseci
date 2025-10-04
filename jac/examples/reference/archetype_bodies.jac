@@ -41,13 +41,12 @@ obj Car {
         return "This is Python code"
     ::py::
 
-    # Nested archetype (allowed by grammar)
+    # Nested archetype
     class Engine {
         has horsepower: int;
     }
 
     # Free code in member (with entry)
-    # Note: This may not be semantically valid but is grammatically allowed
     with entry {
         print("Member-level entry");
     }
