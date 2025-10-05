@@ -108,9 +108,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def feed_current_token(iparser: jl.InteractiveParser, tok: jl.Token) -> bool:
             """Feed the current token to the parser."""
+            max_attempts = 100  # Prevent infinite loops
+            attempts = 0
             while tok.type not in iparser.accepts():
+                if attempts >= max_attempts:
+                    return False  # Give up after too many attempts
                 if not try_feed_missing_token(iparser):
                     return False
+                attempts += 1
             iparser.feed_token(tok)
             return True
 
