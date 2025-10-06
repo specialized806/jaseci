@@ -1328,10 +1328,6 @@ class JacBasics:
 
                 JacMachineInterface.get_context().mem.remove(anchor.id)
 
-
-class JacByLLM:
-    """Jac byLLM integration."""
-
     @staticmethod
     def entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
@@ -1343,6 +1339,10 @@ class JacByLLM:
         """Mark a method as jac exit with this decorator."""
         setattr(func, "__jac_exit", None)  # noqa:B010
         return func
+
+
+class JacByLLM:
+    """Jac byLLM integration."""
 
     @staticmethod
     def sem(semstr: str, inner_semstr: dict[str, str]) -> Callable:
