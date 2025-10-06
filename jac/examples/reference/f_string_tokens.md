@@ -70,8 +70,8 @@ graph TD
     E --> F[Insert into final string]
     F --> G[Return complete string]
 
-    style D fill:#e8f5e9
-    style E fill:#fff3e0
+    style D fill:#2e7d32,stroke:#fff,color:#fff
+    style E fill:#e65100,stroke:#fff,color:#fff
 ```
 
 **Method Calls (Lines 26-28)**

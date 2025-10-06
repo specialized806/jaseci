@@ -38,9 +38,9 @@ graph TD
     E --> F[Release f1]
     F --> G[Continue execution]
 
-    style D fill:#e8f5e9
-    style E fill:#ffebee
-    style F fill:#ffebee
+    style D fill:#2e7d32,stroke:#fff,color:#fff
+    style E fill:#c62828,stroke:#fff,color:#fff
+    style F fill:#c62828,stroke:#fff,color:#fff
 ```
 
 **Custom Context Manager (Lines 14-33)**

@@ -40,8 +40,8 @@ graph TD
     I --> J[Walker stops]
     E -->|Yes| I
 
-    style I fill:#ffebee
-    style J fill:#ffebee
+    style I fill:#c62828,stroke:#fff,color:#fff
+    style J fill:#c62828,stroke:#fff,color:#fff
 ```
 
 **Conditional Disengage (Lines 24-42)**
@@ -86,11 +86,11 @@ graph TD
     Alice --> Charlie
     Bob --> Diana
 
-    style Root fill:#e3f2fd
-    style Alice fill:#f3e5f5
-    style Bob fill:#f3e5f5
-    style Charlie fill:#f3e5f5
-    style Diana fill:#f3e5f5
+    style Root fill:#1976d2,stroke:#fff,color:#fff
+    style Alice fill:#6a1b9a,stroke:#fff,color:#fff
+    style Bob fill:#6a1b9a,stroke:#fff,color:#fff
+    style Charlie fill:#6a1b9a,stroke:#fff,color:#fff
+    style Diana fill:#6a1b9a,stroke:#fff,color:#fff
 ```
 
 **Walker Execution Examples**

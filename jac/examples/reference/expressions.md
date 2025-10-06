@@ -29,8 +29,8 @@ graph TD
     C --> E[Use result]
     D --> E
 
-    style C fill:#e8f5e9
-    style D fill:#fff3e0
+    style C fill:#2e7d32,stroke:#fff,color:#fff
+    style D fill:#e65100,stroke:#fff,color:#fff
 ```
 
 **Nested Ternary Expressions (Line 7)**
@@ -51,9 +51,9 @@ graph TD
     B -->|Yes| D[Return B]
     B -->|No| E[Return C]
 
-    style C fill:#4caf50
-    style D fill:#8bc34a
-    style E fill:#ffc107
+    style C fill:#1b5e20,stroke:#fff,color:#fff
+    style D fill:#33691e,stroke:#fff,color:#fff
+    style E fill:#f57f17,stroke:#fff,color:#fff
 ```
 
 **Lambda Expressions**
@@ -123,8 +123,8 @@ graph TD
     C --> G[Result: 10]
     D --> H[Result: 10]
 
-    style G fill:#e8f5e9
-    style H fill:#e8f5e9
+    style G fill:#2e7d32,stroke:#fff,color:#fff
+    style H fill:#2e7d32,stroke:#fff,color:#fff
 ```
 
 **Expression Usage (Line 22)**

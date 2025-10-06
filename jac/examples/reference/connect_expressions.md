@@ -44,9 +44,9 @@ graph LR
     C[charlie] -->|<++| B
     A <-->|<++>| C
 
-    style A fill:#e1f5fe
-    style B fill:#e1f5fe
-    style C fill:#e1f5fe
+    style A fill:#1565c0,stroke:#fff,color:#fff
+    style B fill:#1565c0,stroke:#fff,color:#fff
+    style C fill:#1565c0,stroke:#fff,color:#fff
 ```
 
 **Typed Connect Operators (Lines 43-58)**

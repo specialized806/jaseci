@@ -51,8 +51,8 @@ graph LR
     B -->|double| C[26]
     C -->|square| D[676]
 
-    style A fill:#9f9
-    style D fill:#f99
+    style A fill:#2e7d32,stroke:#fff,color:#fff
+    style D fill:#b71c1c,stroke:#fff,color:#fff
 ```
 
 Step-by-step execution:

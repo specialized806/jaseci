@@ -29,7 +29,7 @@ graph LR
     A -->|outgoing from Alice| B[Bob]
     A -->|outgoing from Alice| C[Charlie]
 
-    style A fill:#9f9
+    style A fill:#2e7d32,stroke:#fff,color:#fff
 
     Note1[From Root: <br/> -->  = Alice]
     Note2[From Alice: <br/> -->  = Bob, Charlie <br/> <--  = Root <br/> <-->  = Root, Bob, Charlie]
@@ -93,8 +93,8 @@ graph LR
     A[Alice] -->|Friend| B[Bob]
     B -->|Friend| D[David]
 
-    style A fill:#9f9
-    style D fill:#f99
+    style A fill:#2e7d32,stroke:#fff,color:#fff
+    style D fill:#b71c1c,stroke:#fff,color:#fff
 
     Note[here ->:Friend:-> ->:Friend:-> <br/> starts at Alice, returns David]
 ```

@@ -92,7 +92,7 @@ graph LR
     T1 --> T3[Task3]
     T3 --> T4[Task4]
 
-    style T2 fill:#f96
+    style T2 fill:#c62828,stroke:#fff,color:#fff
 
     Note[SubWalker spawns here at Task2]
 ```

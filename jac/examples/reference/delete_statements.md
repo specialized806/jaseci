@@ -27,7 +27,7 @@ graph LR
     A["[1, 2, 3, 4, 5]<br/>indices: 0 1 2 3 4"] --> B[del x at index 2]
     B --> C["[1, 2, 4, 5]<br/>indices: 0 1 2 3"]
 
-    style B fill:#ffebee
+    style B fill:#c62828,stroke:#fff,color:#fff
 ```
 
 **Deleting Variables (Lines 10-13)**
@@ -64,7 +64,7 @@ graph TD
     B --> C["Removes: 2, 3, 4"]
     C --> D["Result: [0,1,5,6,7,8,9]"]
 
-    style C fill:#ffebee
+    style C fill:#c62828,stroke:#fff,color:#fff
 ```
 
 **Deleting Nested Elements (Lines 27-31)**
@@ -98,8 +98,8 @@ graph TD
     A["[0, 1, 2, 3, 4, 5]<br/>Delete index 0"] --> B["[1, 2, 3, 4, 5]<br/>Indices shift!"]
     B --> C["Delete index 2<br/>(now refers to 3)"] --> D["[1, 2, 4, 5]"]
 
-    style A fill:#e1f5fe
-    style D fill:#e8f5e9
+    style A fill:#1565c0,stroke:#fff,color:#fff
+    style D fill:#2e7d32,stroke:#fff,color:#fff
 ```
 
 **Delete Semantics Summary**

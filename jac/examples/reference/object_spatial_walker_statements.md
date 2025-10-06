@@ -41,8 +41,8 @@ graph TD
     D --> E[Walker terminated]
     E --> F[Line 7: SKIPPED]
 
-    style D fill:#f96
-    style F fill:#999
+    style D fill:#c62828,stroke:#fff,color:#fff
+    style F fill:#616161,stroke:#fff,color:#fff
 ```
 
 **How Spawning Triggers the Ability**

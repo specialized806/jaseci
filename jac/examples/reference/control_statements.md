@@ -118,7 +118,7 @@ graph TD
     F --> G[x=2]
     G --> H[y: 0,1,2]
 
-    style F fill:#ffebee
+    style F fill:#c62828,stroke:#fff,color:#fff
 ```
 
 **Nested Loops with Continue (Lines 57-65)**

@@ -54,9 +54,9 @@ graph LR
     A[Root] -->|walker visits| B[Task1]
     B -->|walker visits| C[Task2]
 
-    style A fill:#f9f
-    style B fill:#bbf
-    style C fill:#bbf
+    style A fill:#7b1fa2,stroke:#fff,color:#fff
+    style B fill:#1565c0,stroke:#fff,color:#fff
+    style C fill:#1565c0,stroke:#fff,color:#fff
 
     Note1[here = Root]
     Note2[here = Task1]
@@ -91,10 +91,10 @@ graph TD
     R -->|connected| A
     A -->|connected| B
 
-    style R fill:#9f9
-    style A fill:#9f9
-    style B fill:#9f9
-    style C fill:#f99
+    style R fill:#2e7d32,stroke:#fff,color:#fff
+    style A fill:#2e7d32,stroke:#fff,color:#fff
+    style B fill:#2e7d32,stroke:#fff,color:#fff
+    style C fill:#b71c1c,stroke:#fff,color:#fff
 
     Note[Anything connected to root persists]
 ```

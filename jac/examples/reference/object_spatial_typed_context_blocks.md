@@ -96,8 +96,8 @@ graph LR
     W -->|triggers| WA[Walker Ability: produce]
     N -->|triggers| NA[Node Ability: make]
 
-    style W fill:#9f9
-    style N fill:#99f
+    style W fill:#2e7d32,stroke:#fff,color:#fff
+    style N fill:#283593,stroke:#fff,color:#fff
 ```
 
 The context is "typed" because:

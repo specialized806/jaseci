@@ -71,8 +71,8 @@ graph TD
     G -->|No| H{value < 500?}
     H -->|Yes| I[Returns 'client_error']
 
-    style D fill:#e8f5e9
-    style I fill:#fff3e0
+    style D fill:#2e7d32,stroke:#fff,color:#fff
+    style I fill:#e65100,stroke:#fff,color:#fff
 ```
 
 **Enum Comparison (Lines 75-98)**
@@ -166,9 +166,9 @@ graph TD
     H --> J[Return results]
     I --> J
 
-    style A fill:#e1f5fe
-    style G fill:#fff3e0
-    style H fill:#e8f5e9
+    style A fill:#1565c0,stroke:#fff,color:#fff
+    style G fill:#e65100,stroke:#fff,color:#fff
+    style H fill:#2e7d32,stroke:#fff,color:#fff
 ```
 
 **Common Enum Patterns**
