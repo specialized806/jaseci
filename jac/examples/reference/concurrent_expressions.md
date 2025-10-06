@@ -1,215 +1,63 @@
-Concurrent expressions enable parallel and asynchronous execution in Jac through the `flow` and `wait` modifiers. These constructs provide built-in concurrency support, allowing efficient parallel processing while maintaining clean, readable code.
+Concurrent expressions in Jac enable asynchronous programming through the `flow` and `wait` keywords, allowing tasks to run concurrently and improving performance for I/O-bound or parallel operations.
 
-#### Flow Modifier
+**Flow Keyword - Starting Concurrent Tasks**
 
-The `flow` modifier initiates parallel execution of expressions:
+The `flow` keyword initiates concurrent execution of an expression, immediately returning a task or future object without blocking.
 
-```jac
-# Execute operations in parallel
-flow process_data(chunk1);
-flow process_data(chunk2);
-flow process_data(chunk3);
-```
+Line 29 demonstrates using `flow` with walker-node interaction: `t1 = flow A() spawn B("Hi")`. This spawns node A and walker B concurrently, returning a task handle that can be waited on later.
 
-#### Wait Modifier
+Lines 32-34 show concurrent function calls:
+- `task1 = flow add(1, 10)` - starts add(1, 10) concurrently
+- `task2 = flow add(2, 11)` - starts add(2, 11) concurrently
+- `print("All are started")` - executes immediately without waiting
 
-The `wait` modifier synchronizes parallel operations:
+Both `add` calls run in parallel. The print statement executes right away because `flow` doesn't block - it returns immediately after scheduling the tasks.
 
-```jac
-# Wait for specific operation
-result = wait async_operation();
+**Wait Keyword - Collecting Results**
 
-# Wait for multiple operations
-wait all_tasks_complete();
-```
+The `wait` keyword blocks until a concurrent task completes and returns its result.
 
-#### Combined Usage
+Lines 37-38 demonstrate waiting for task completion:
+- `res1 = wait task1` - blocks until task1 finishes, returns its result
+- `res2 = wait task2` - blocks until task2 finishes, returns its result
 
-Flow and wait work together for parallel patterns:
+Lines 40-41 print the results after both tasks complete.
 
-```jac
-walker ParallelProcessor {
-    can process with entry {
-        # Start parallel operations
-        task1 = flow compute_heavy(here.data1);
-        task2 = flow compute_heavy(here.data2);
-        task3 = flow compute_heavy(here.data3);
-        
-        # Wait for all results
-        result1 = wait task1;
-        result2 = wait task2;
-        result3 = wait task3;
-        
-        # Combine results
-        here.result = combine(result1, result2, result3);
-    }
-}
-```
+**Concurrent Execution Model**
 
-#### Parallel Walker Spawning
+The `add` function (lines 19-25) includes `sleep(2)` calls to simulate long-running operations. When called with `flow`:
+1. Both `add` calls start nearly simultaneously
+2. Program continues to line 34 without waiting
+3. When `wait` is called, execution blocks until the task completes
+4. If a task has already finished, `wait` returns immediately
 
-Concurrent execution with walkers:
+**Implementation Details**
 
-```jac
-walker Analyzer {
-    can analyze with entry {
-        # Spawn walkers in parallel
-        flow spawn ChildWalker() on node1;
-        flow spawn ChildWalker() on node2;
-        flow spawn ChildWalker() on node3;
-        
-        # Continue while children process
-        visit [-->];
-    }
-}
-```
+Under the hood, Jac's `flow`/`wait` concurrency uses Python's standard `concurrent.futures.ThreadPoolExecutor`:
+- `flow` submits the expression as a callable to a shared `ThreadPoolExecutor` and returns a `Future`-like handle
+- `wait` calls the underlying future's `.result()` to retrieve the value
+- The thread pool is shared across the entire program with a default size based on CPU count
+- Exception propagation works naturally—if the background computation raises an exception, `wait` re-raises it in the calling thread
+- Best suited for I/O-bound or mixed workloads; CPU-bound speedups are subject to Python's Global Interpreter Lock (GIL) like ordinary threads
+- This is **thread-based** concurrency, distinct from Python's event-loop based `async`/`await` model
 
-#### Async Graph Operations
+**Node and Walker Concurrency**
 
-Parallel graph traversal:
+Lines 5-17 define a node A with an `entry` ability and walker B. Line 29 shows that `flow` works with walker-node spawning, enabling concurrent graph traversal and node processing.
 
-```jac
-walker ParallelTraverser {
-    can traverse with entry {
-        children = [-->];
-        
-        # Process children concurrently
-        tasks = [];
-        for child in children {
-            task = flow process_node(child);
-            tasks.append(task);
-        }
-        
-        # Collect results
-        results = [];
-        for task in tasks {
-            result = wait task;
-            results.append(result);
-        }
-        
-        report aggregate(results);
-    }
-}
-```
+**Benefits**
 
-#### Error Handling
+Concurrent expressions allow:
+- Parallel I/O operations (network requests, file I/O)
+- Improved responsiveness by not blocking on long-running operations
+- Explicit control over when to wait for results
+- Expression-level concurrency that composes naturally with other Jac features
+- Parallel map patterns through list comprehensions with `flow`/`wait`
 
-Managing errors in concurrent operations:
+**Comparison with async/await**
 
-```jac
-can parallel_safe_process(items: list) -> list {
-    results = [];
-    errors = [];
-    
-    # Start all tasks
-    tasks = [];
-    for item in items {
-        task = flow process_item(item);
-        tasks.append({"item": item, "task": task});
-    }
-    
-    # Collect results with error handling
-    for t in tasks {
-        try {
-            result = wait t["task"];
-            results.append(result);
-        } except as e {
-            errors.append({"item": t["item"], "error": e});
-        }
-    }
-    
-    if errors {
-        handle_errors(errors);
-    }
-    
-    return results;
-}
-```
-
-#### Concurrency Patterns
-
-##### Map-Reduce Pattern
-```jac
-can map_reduce(data: list, mapper: func, reducer: func) -> any {
-    # Map phase - parallel
-    mapped = [];
-    for chunk in partition(data) {
-        task = flow mapper(chunk);
-        mapped.append(task);
-    }
-    
-    # Collect mapped results
-    results = [];
-    for task in mapped {
-        result = wait task;
-        results.append(result);
-    }
-    
-    # Reduce phase
-    return reducer(results);
-}
-```
-
-##### Pipeline Pattern
-```jac
-walker Pipeline {
-    can process with entry {
-        # Stage 1 - parallel data fetch
-        data1 = flow fetch_source1();
-        data2 = flow fetch_source2();
-        data3 = flow fetch_source3();
-        
-        # Stage 2 - process as ready
-        processed1 = flow transform(wait data1);
-        processed2 = flow transform(wait data2);
-        processed3 = flow transform(wait data3);
-        
-        # Stage 3 - aggregate
-        final = aggregate([
-            wait processed1,
-            wait processed2,
-            wait processed3
-        ]);
-        
-        report final;
-    }
-}
-```
-
-#### Best Practices
-
-1. **Granularity**: Balance task size for efficient parallelism
-2. **Dependencies**: Clearly manage data dependencies
-3. **Error Propagation**: Handle errors from parallel tasks
-4. **Resource Limits**: Consider system constraints
-5. **Synchronization**: Use wait appropriately to avoid race conditions
-
-#### Integration with Object-Spatial
-
-Concurrent expressions enhance graph processing:
-
-```jac
-walker GraphAnalyzer {
-    can analyze with entry {
-        # Parallel subgraph analysis
-        subgraphs = partition_graph(here);
-        
-        analyses = [];
-        for sg in subgraphs {
-            analysis = flow analyze_subgraph(sg);
-            analyses.append(analysis);
-        }
-        
-        # Combine results
-        combined = {};
-        for a in analyses {
-            result = wait a;
-            merge_results(combined, result);
-        }
-        
-        report combined;
-    }
-}
-```
-
-Concurrent expressions provide powerful primitives for parallel execution in Jac, enabling efficient utilization of modern multi-core systems while maintaining the clarity and expressiveness of the language's object-spatial programming model. 
+While similar in concept to async/await in other languages, `flow`/`wait` differs in important ways:
+- `flow`/`wait` is **thread-based**, using `ThreadPoolExecutor`
+- `async`/`await` is **event-loop based**, requiring special async functions
+- You can mix both when appropriate: use `flow` for blocking I/O or CPU-bound work; use `async`/`await` for event-driven I/O
+- `flow`/`wait` works anywhere expressions are valid, including comprehensions and argument lists
