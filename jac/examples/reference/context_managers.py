@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 import typing
 with open(__file__, 'r') as file:
     pass

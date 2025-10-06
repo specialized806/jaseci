@@ -25,127 +25,97 @@ edge Colleague {
 # ===== Test Walker =====
 walker GraphBuilder {
     can build with `root entry {
-        print("=== 1. Basic Untyped Connect (++>) ===");
-        # Simple forward connect - creates default edge type
+        print("=== 1. Untyped Connect Operators ===");
+        # Forward (++>), Backward (<++), Bidirectional (<++>)
         alice = Person(name="Alice", age=30);
         bob = Person(name="Bob", age=25);
-
-        # Connect alice to bob with default edge
-        alice ++> bob;
-        print(f"Connected {alice.name} ++> {bob.name}");
-
-        print("\n=== 2. Backward Connect (<++) ===");
-        # Backward connect - creates edge from RIGHT to LEFT
         charlie = Person(name="Charlie", age=28);
+
+        alice ++> bob;  # Forward: alice -> bob
+        print(f"Forward: {alice.name} ++> {bob.name}");
+
+        bob <++ charlie;  # Backward: charlie -> bob
+        print(f"Backward: {bob.name} <++ {charlie.name} (edge from Charlie to Bob)");
+
+        alice <++> charlie;  # Bidirectional: alice <-> charlie
+        print(f"Bidirectional: {alice.name} <++> {charlie.name} (both directions)");
+
+        print("\n=== 2. Typed Connect Operators ===");
+        # Forward (+>:Type:+>), Backward (<+:Type:<+), Bidirectional (<+:Type:+>)
         diana = Person(name="Diana", age=32);
-
-        # This creates edge from diana TO charlie (reverse of written order)
-        charlie <++ diana;
-        print(f"Connected {charlie.name} <++ {diana.name} (edge goes from Diana to Charlie)");
-
-        print("\n=== 3. Bidirectional Connect (<++>) ===");
-        # Bidirectional - creates edges in BOTH directions
         eve = Person(name="Eve", age=27);
         frank = Person(name="Frank", age=29);
-
-        eve <++> frank;
-        print(f"Connected {eve.name} <++> {frank.name} (edges in both directions)");
-
-        print("\n=== 4. Typed Forward Connect (+>:Type:+>) ===");
-        # Forward connect with specific edge type
-        grace = Person(name="Grace", age=26);
         nyc = City(name="New York");
-
-        grace +>:LivesIn:+> nyc;
-        print(f"Connected {grace.name} +>:LivesIn:+> {nyc.name}");
-
-        print("\n=== 5. Typed Backward Connect (<+:Type:<+) ===");
-        # Backward connect with specific edge type
-        henry = Person(name="Henry", age=31);
         london = City(name="London");
 
-        # Edge goes from london TO henry
-        henry <+:LivesIn:<+ london;
-        print(f"Connected {henry.name} <+:LivesIn:<+ {london.name} (edge from London to Henry)");
+        diana +>:LivesIn:+> nyc;  # Typed forward
+        print(f"Typed forward: {diana.name} +>:LivesIn:+> {nyc.name}");
 
-        print("\n=== 6. Typed Bidirectional Connect (<+:Type:+>) ===");
-        # Bidirectional with edge type
+        eve <+:LivesIn:<+ london;  # Typed backward: london -> eve
+        print(f"Typed backward: {eve.name} <+:LivesIn:<+ {london.name} (edge from London to Eve)");
+
+        diana <+:Friend:+> eve;  # Typed bidirectional
+        print(f"Typed bidirectional: {diana.name} <+:Friend:+> {eve.name}");
+
+        print("\n=== 3. Edge Attribute Initialization ===");
+        # Initialize edge attributes during connect (all directions)
+        grace = Person(name="Grace", age=26);
+        henry = Person(name="Henry", age=31);
         iris = Person(name="Iris", age=24);
+
+        grace +>: Friend(since=2015) :+> henry;  # Forward with attributes
+        print(f"Forward with attrs: {grace.name} +>: Friend(since=2015) :+> {henry.name}");
+
+        henry <+: Friend(since=2018) :<+ iris;  # Backward with attributes
+        print(f"Backward with attrs: {henry.name} <+: Friend(since=2018) :<+ {iris.name}");
+
+        grace <+: Colleague(department="Engineering") :+> iris;  # Bidirectional with attributes
+        print(f"Bidirectional with attrs: {grace.name} <+: Colleague(department='Engineering') :+> {iris.name}");
+
+        print("\n=== 4. Chained Connections ===");
+        # Multiple connects in one expression
         jack = Person(name="Jack", age=35);
-
-        iris <+:Friend:+> jack;
-        print(f"Connected {iris.name} <+:Friend:+> {jack.name} (Friend edges both ways)");
-
-        print("\n=== 7. Connect with Edge Attributes ===");
-        # Typed connect with edge attribute initialization
         kate = Person(name="Kate", age=29);
         liam = Person(name="Liam", age=30);
-
-        # Forward connect with edge attributes
-        kate +>: Friend(since=2015) :+> liam;
-        print(f"Connected {kate.name} +>: Friend(since=2015) :+> {liam.name}");
-
-        # Backward connect with attributes
         mike = Person(name="Mike", age=33);
+
+        jack ++> kate ++> liam ++> mike;  # Chain of connections
+        print(f"Chain: {jack.name} ++> {kate.name} ++> {liam.name} ++> {mike.name}");
+
+        print("\n=== 5. Inline Node Creation ===");
+        # Create nodes inline within connect expression
         nina = Person(name="Nina", age=28);
 
-        mike <+: Friend(since=2018) :<+ nina;
-        print(f"Connected {mike.name} <+: Friend(since=2018) :<+ {nina.name}");
+        nina ++> Person(name="InlineNode1", age=35);  # Untyped with inline
+        nina +>:Friend:+> Person(name="InlineNode2", age=40);  # Typed with inline
+        nina +>: Friend(since=2010) :+> Person(name="InlineNode3", age=45);  # With attributes
+        print("Connected to 3 inline-created nodes (untyped, typed, with attrs)");
 
-        # Bidirectional with attributes
+        print("\n=== 6. Connect to Multiple Targets ===");
+        # One node connecting to multiple targets
         oscar = Person(name="Oscar", age=27);
         paula = Person(name="Paula", age=26);
+        quinn = Person(name="Quinn", age=24);
 
-        oscar <+: Colleague(department="Engineering") :+> paula;
-        print(f"Connected {oscar.name} <+: Colleague(department='Engineering') :+> {paula.name}");
+        oscar ++> paula;
+        oscar ++> quinn;
+        oscar +>:Friend:+> Person(name="Rita", age=30);
+        print(f"Connected {oscar.name} to 3 different targets");
 
-        print("\n=== 8. Disconnect Operator (del) ===");
-        # Note: Disconnect syntax varies - commenting for compatibility
+        print("\n=== 7. Disconnect Operator ===");
         # Grammar: disconnect_op: KW_DELETE edge_op_ref
-        # Example syntax: node1 del [-->] node2
-        # This would delete edges from node1 to node2
+        # Syntax: node del [-->] target
+        print("Disconnect syntax: node del [-->] target (deletes edges from node to target)");
 
-        print("Disconnect operator syntax: node del [-->] target");
+        print("\n=== 8. Connect in Expressions ===");
+        # Connect expressions return values and can be used in larger expressions
+        steve = Person(name="Steve", age=45);
+        tina = Person(name="Tina", age=42);
 
-        print("\n=== 9. Chained Connect Operations ===");
-        # Multiple connects in one expression (chain)
-        t1 = Person(name="Tom", age=25);
-        t2 = Person(name="Uma", age=26);
-        t3 = Person(name="Vic", age=27);
+        steve ++> tina;
+        print(f"Connect used in expression: {steve.name} ++> {tina.name}");
 
-        # Create a chain: t1 -> t2 -> t3
-        t1 ++> t2 ++> t3;
-        print(f"Chained: {t1.name} ++> {t2.name} ++> {t3.name}");
-
-        print("\n=== 10. Connect to Multiple Targets ===");
-        # Connect one node to multiple targets
-        parent = Person(name="Walter", age=50);
-        child1 = Person(name="Xavier", age=20);
-        child2 = Person(name="Yara", age=18);
-        child3 = Person(name="Zoe", age=15);
-
-        # Individual connections
-        parent ++> child1;
-        parent ++> child2;
-        parent ++> child3;
-        print(f"Connected {parent.name} to three children");
-
-        print("\n=== 11. Connect with Inline Node Creation ===");
-        # Create node inline within connect expression
-        start = Person(name="Start", age=40);
-
-        # Connect to newly created node in one expression
-        start ++> Person(name="InlineNode", age=35);
-        print("Connected to node created inline");
-
-        print("\n=== 12. Connect in Expression ===");
-        # Connect can be used in expressions
-        base = Person(name="Base", age=45);
-        target = Person(name="Target", age=42);
-        base ++> target;
-        print(f"Connected {base.name} to {target.name} in expression");
-
-        print("\n✓ All connect expression variations demonstrated!");
+        print("\n✓ All connect expression features demonstrated!");
         disengage;
     }
 }
@@ -155,7 +125,7 @@ walker EdgeTraverser {
     can traverse with `root entry {
         print("\n=== Edge Traversal with Visit ===");
 
-        # Build a small graph for traversal
+        # Build a small graph demonstrating typed edges
         a = Person(name="A", age=25);
         b = Person(name="B", age=30);
         c = Person(name="C", age=35);
@@ -165,10 +135,8 @@ walker EdgeTraverser {
         a +>: Colleague(department="Sales") :+> c;
         b +>: Friend(since=2015) :+> c;
 
-        print("Built graph: root->A, A-Friend->B, A-Colleague->C, B-Friend->C");
-
-        # Visit all outgoing edges
-        print("\nVisiting all outgoing edges from root:");
+        print("Graph: root->A, A-Friend->B, A-Colleague->C, B-Friend->C");
+        print("Visiting all outgoing edges from root:");
         visit [-->];
     }
 

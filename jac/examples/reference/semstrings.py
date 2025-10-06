@@ -1,7 +1,7 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 import byllm
+from jaclang import JacMachineInterface as _jl
 from byllm import Model
 llm = Model(model_name='mockllm', outputs=['R8@jL3pQ'])
 

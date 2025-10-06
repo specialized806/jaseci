@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 if 5 > 4:
     print('5 > 4: True')
 if 5 >= 5:

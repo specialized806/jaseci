@@ -3,7 +3,7 @@ from jaclang.runtimelib.builtin import *
 from jaclang import JacMachineInterface as _jl
 from enum import Enum, auto
 
-@_jl.impl_patch_filename('implementations.jac')
+@_jl.impl_patch_filename('/home/ninja/jaseci/jac/examples/reference/implementations.jac')
 def foo() -> str:
     return 'Hello'
 

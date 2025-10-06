@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 import os
 import datetime as dt
 import sys, json, random

@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 
 def foo(x: int, y: int, z: int) -> None:
     return (x * y, y * z)

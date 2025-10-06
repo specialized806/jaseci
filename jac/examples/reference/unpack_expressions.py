@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 
 def combine_via_func(a: int, b: int, c: int, d: int) -> int:
     return a + b + c + d

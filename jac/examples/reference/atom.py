@@ -1,7 +1,7 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 from enum import Enum, auto
+from jaclang import JacMachineInterface as _jl
 c = (3, 4, 5)
 list1 = [2, 3, 4, 5]
 a = 'abcde....'

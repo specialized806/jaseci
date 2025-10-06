@@ -6,7 +6,6 @@ it is assumed to be a module docstring.
 """
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 
 def add(a: int, b: int) -> int:
     """A docstring for add function"""

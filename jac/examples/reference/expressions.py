@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 x = 1 if 5 / 2 == 1 else 2
 print(x)
 age = 20

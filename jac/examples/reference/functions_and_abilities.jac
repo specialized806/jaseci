@@ -115,7 +115,7 @@ async def process_batch(items: list) -> list {
 
 # ===== Part 7: Decorators =====
 def logger(func: object) {
-    print(f"Decorator applied to {func}");
+    print(f"Decorator applied to {func.__name__}");
     return func;
 }
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 p = print
 p('Multiply:', 7 * 2)
 p('Division:', 15 / 3)

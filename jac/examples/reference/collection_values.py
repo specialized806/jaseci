@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 squares = {num: num ** 2 for num in range(1, 6)}
 print('Dict compr:', squares)
 even_squares_set = {num ** 2 for num in range(1, 11) if num % 2 == 0}

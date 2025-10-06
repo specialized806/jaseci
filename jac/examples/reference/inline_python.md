@@ -1,40 +1,62 @@
-Inline Python allows embedding native Python code within Jac modules using the `::py::` delimiter syntax, enabling interoperability between Jac and Python.
+# Inline Python
 
-**Jac Code Block**
+Jac supports embedding Python code blocks using the `::py::` delimiter syntax, enabling seamless integration with Python libraries and code.
 
-Lines 3-5 show standard Jac code: a `with entry` block that prints "hello ".
+## Syntax
 
-**Python Code Block Delimiters**
+Python code blocks are delimited by `::py::` markers:
+```
+::py::
+# Python code here
+def my_function():
+    return "Hello from Python"
+::py::
+```
 
-Lines 8-13 demonstrate the Python code block syntax:
-- Opening delimiter: `::py::`
-- Python code (lines 9-12)
-- Closing delimiter: `::py::`
+## Usage Contexts
 
-**Python Code Execution**
+Python blocks can appear in:
+- **Global scope:** Define functions and variables accessible throughout the module
+- **Archetype bodies:** Add Python methods to objects, nodes, edges, and walkers
+- **Mixed with Jac methods:** Combine Python and Jac methods in the same archetype
 
-Lines 9-12 contain native Python code:
-- Line 9: `def foo():` - Python function definition
-- Line 10: `print("world")` - Python print statement
-- Line 12: `foo()` - Call the Python function
+## Data Interoperability
 
-This code executes as if written in a pure Python file.
+Jac and Python share data structures seamlessly:
+- **Jac → Python:** Lists, dicts, sets, tuples, and basic types are directly accessible
+- **Python → Jac:** Python return values integrate naturally into Jac code
+- **State access:** Python methods can access and modify Jac archetype state via `self`
 
-**Interoperability**
+## Python Libraries
 
-The Python code block:
-- Has access to Python's standard library and syntax
-- Can define functions, classes, and variables
-- Can be called from Jac code (and vice versa, depending on implementation)
-- Executes in the same runtime environment as Jac code
+Standard Python libraries and third-party packages are fully available:
+- **Standard library:** `json`, `math`, `datetime`, `collections`, etc.
+- **Import statements:** Use standard Python `import` within `::py::` blocks
+- **Package ecosystem:** Any installed Python package can be used
 
-**Use Cases**
+## Method Integration
 
-Inline Python is useful for:
-- Leveraging existing Python libraries
-- Using Python-specific features not yet in Jac
-- Gradual migration from Python to Jac
-- Performance-critical sections that benefit from Python optimizations
-- Integration with Python ecosystems
+Python methods integrate with Jac archetypes:
+- **Access members:** Python methods use `self.attribute` to access Jac member variables
+- **Modify state:** Python can update Jac object state directly
+- **Return values:** Python return values are usable in Jac expressions
+- **Call from Jac:** Python-defined methods are called like native Jac methods
 
-The `::py::` syntax provides clear visual separation between Jac and Python code, making it easy to identify language boundaries in mixed-language files.
+## Best Practices
+
+- Use Python for computationally intensive operations or when leveraging existing Python libraries
+- Use Jac for object-spatial programming features and graph operations
+- Mix Python and Jac methods based on the strength of each language
+- Python methods in archetypes should follow Python conventions (snake_case, etc.)
+
+## Limitations
+
+- Python code must be valid Python (follows Python syntax rules)
+- Python code blocks cannot contain Jac syntax (use separate methods)
+- Async Python requires appropriate async/await handling
+
+## See Also
+
+- [Archetypes](archetypes.md) - Defining objects, nodes, edges, walkers
+- [Functions and Abilities](functions_and_abilities.md) - Jac method syntax
+- [Implementations](implementations.md) - Forward declarations and impl blocks

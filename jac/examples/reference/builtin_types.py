@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 a: float = 9.2
 b: int = 44
 c: list = [2, 4, 6, 10]

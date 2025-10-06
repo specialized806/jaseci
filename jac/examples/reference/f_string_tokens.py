@@ -1,6 +1,5 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacMachineInterface as _jl
 x = 'a'
 y = 25
 print(f'Hello {x} {y} {{This is an escaped curly brace}}')
