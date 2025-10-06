@@ -9,7 +9,7 @@ def generate_password() -> str by llm();
 
 # Semantic definition for the LLM
 sem generate_password = """
-Password is at least 8 characters, has one uppercase letter, 
+Password is at least 8 characters, has one uppercase letter,
 one lowercase letter, one digit, and one special character.
 """;
 
