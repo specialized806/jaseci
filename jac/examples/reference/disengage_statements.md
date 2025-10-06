@@ -1,433 +1,374 @@
-The `disengage` statement is a walker-specific control flow mechanism that immediately terminates walker execution and returns control to the spawn point. It is one of several control flow statements in Jac, each serving distinct purposes in different contexts.
+**Disengage Statements in Jac**
 
-**Grammar Rule**
+The `disengage` statement is a walker-specific control flow mechanism that immediately terminates walker execution and returns control to the spawn point. It's essential for controlling graph traversal and implementing search patterns.
 
-```
-spatial_stmt: visit_stmt | disenage_stmt
-disenage_stmt: KW_DISENGAGE SEMI
+**Walker Control Statements**
 
-ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
-```
+| Statement | Context | Effect | Continues After |
+|-----------|---------|--------|-----------------|
+| `disengage` | Walker abilities | Stop entire walker | No (walker terminates) |
+| `skip` | Walker abilities | Skip current node only | Yes (next node) |
+| `break` | Loops (for/while) | Exit innermost loop | Yes (after loop) |
+| `continue` | Loops (for/while) | Skip current iteration | Yes (next iteration) |
 
-Note: `disengage` is categorized as a spatial statement (walker-specific), while `skip`, `break`, and `continue` are general control statements. The grammar shows "disenage_stmt" (typo in grammar) but the keyword is correctly `disengage`.
+**Basic Disengage (Lines 7-22)**
 
-**Basic Disengage Semantics**
+The example defines `BasicDisengage` walker to demonstrate core functionality:
 
-Lines 18-20 demonstrate the fundamental usage:
+**Walker structure (Lines 8-22)**:
+- Lines 9-12: `start` ability with `root entry` - executes when walker begins at root
+- Lines 14-21: `visit_person` ability with `Person entry` - executes when visiting Person nodes
+
+**Disengage execution (Lines 16-18)**:
 ```
 if here.name == "Bob" {
-    print(f"  Found Bob - disengaging!");
+    print("found Bob, disengaging");
     disengage;
 }
 ```
+- Line 16: Checks if current node's name is "Bob"
+- Line 17: Prints message
+- Line 18: `disengage` stops the walker immediately
+- Line 20: `visit [-->]` will NOT execute if disengage was called
 
-When `disengage` executes:
-1. Walker execution stops immediately
-2. Control returns to the code that spawned the walker
-3. No further nodes are visited
-4. Any code after `disengage` in the current ability does not execute
+**Disengage Flow Diagram**
 
-Line 22 (`visit [-->];`) will not execute if disengage was triggered on line 20.
+```mermaid
+graph TD
+    A[Walker spawned at root] --> B[Execute root entry ability]
+    B --> C[visit results queued]
+    C --> D[Visit Alice]
+    D --> E{Alice == Bob?}
+    E -->|No| F[Queue more visits]
+    F --> G[Visit Bob]
+    G --> H{Bob == Bob?}
+    H -->|Yes| I[disengage]
+    I --> J[Walker stops]
+    E -->|Yes| I
 
-**Disengage in Walker Entry Abilities**
-
-Lines 11-13 show disengage in a walker's root entry ability:
+    style I fill:#ffebee
+    style J fill:#ffebee
 ```
-can start with `root entry {
-    print("BasicDisengage: Starting at root");
-    visit [-->];
+
+**Conditional Disengage (Lines 24-42)**
+
+The `ConditionalDisengage` walker demonstrates using state to control termination:
+
+**Walker attributes (Lines 26-27)**:
+- `max_visits: int = 2` - maximum allowed visits
+- `visit_count: int = 0` - tracks visits made
+
+**Visit counting (Lines 33-40)**:
+- Line 34: Increments visit counter
+- Line 35: Prints visit information
+- Line 36: Checks if max visits reached
+- Line 38: Disengages when limit hit
+- Line 40: Only executes if disengage not called
+
+**Search Walker Pattern (Lines 44-62)**
+
+The `SearchWalker` demonstrates a common pattern - searching for a specific node:
+
+**Walker state (Lines 46-47)**:
+- `target_name: str` - what we're looking for
+- `found: bool = False` - whether we found it
+
+**Search logic (Lines 53-60)**:
+```
+if here.name == self.target_name {
+    print(f"found {here.name}!");
+    self.found = True;
+    disengage;
 }
 ```
+- Line 55: Compares current node name to target
+- Line 56: Prints success message
+- Line 57: Updates walker state
+- Line 58: Disengages (stops searching)
 
-The walker begins at root, prints a message, and queues visits to outgoing nodes. When those nodes are visited (lines 16-23), the walker's Person entry ability executes. If that ability calls `disengage` (line 20), the walker stops immediately.
+**Graph Construction (Lines 64-74)**
 
-**Walker Execution Model**
-
-When a walker is spawned (line 150: `root spawn BasicDisengage();`):
-1. Walker is created at the spawn point (root)
-2. Entry ability matching the spawn node type executes (`\`root entry`)
-3. Walker processes queued visits (from `visit` statements)
-4. For each visited node, matching entry abilities execute
-5. Process continues until: no more visits queued, `disengage` called, or exception occurs
-
-The output (lines 152-155) shows: walker starts at root, visits Alice, then Bob, disengages at Bob, never visits Diana or Charlie.
-
-**Skip Statement**
-
-Lines 34-36 demonstrate `skip`:
+Lines 66-74 build a test graph:
 ```
-if here.name == "Charlie" {
-    print(f"  Skipping {here.name}");
-    skip;  # Skip stops current node, continues traversal
-}
+root ++> alice;
+alice ++> bob;
+alice ++> charlie;
+bob ++> diana;
 ```
 
-**Skip semantics**:
-- Stops processing the current node immediately
-- Walker continues to next queued node
-- Code after `skip` in current ability does not execute
-- Walker does NOT terminate (contrast with `disengage`)
+**Graph Structure Visualization**
 
-Lines 38-39 will NOT execute for Charlie (because of `skip` on line 36), but WILL execute for other nodes.
+```mermaid
+graph TD
+    Root --> Alice
+    Alice --> Bob
+    Alice --> Charlie
+    Bob --> Diana
 
-Output (lines 158-162) shows: Alice processed, Bob processed, Charlie skipped (not processed), Diana processed. The walker continued after skipping Charlie.
+    style Root fill:#e3f2fd
+    style Alice fill:#f3e5f5
+    style Bob fill:#f3e5f5
+    style Charlie fill:#f3e5f5
+    style Diana fill:#f3e5f5
+```
+
+**Walker Execution Examples**
+
+**BasicDisengage execution (Line 77)**:
+- Starts at root
+- Visits Alice (processes normally)
+- Visits Bob (disengages immediately)
+- Charlie and Diana are NEVER visited
+
+**ConditionalDisengage execution (Line 80)**:
+- Visits Alice (count=1, continues)
+- Visits Bob (count=2, disengages)
+- Limit reached, walker stops
+
+**SearchWalker execution (Lines 83-84)**:
+```
+w = root spawn SearchWalker(target_name="Charlie");
+print(f"found: {w.found}");
+```
+- Line 83: Spawns walker looking for "Charlie"
+- Walker visits nodes until finding Charlie or exhausting graph
+- Line 84: Prints result from walker's state
 
 **Disengage vs Skip Comparison**
 
-Lines 56-58 show disengage in action:
+**Disengage semantics**:
+1. Stops walker execution immediately
+2. Clears all queued visits
+3. Returns control to spawn point
+4. Walker state preserved and accessible
+
+**Skip semantics** (not shown but compared):
+1. Stops processing current node only
+2. Queued visits continue
+3. Walker moves to next node
+4. Walker continues running
+
+**Comparison Table**
+
+| Scenario | disengage | skip |
+|----------|-----------|------|
+| Current node processing | Stops | Stops |
+| Queued nodes | Discarded | Processed |
+| Walker state | Preserved | Preserved |
+| Walker continues | No | Yes |
+| Return to spawn | Yes | No |
+| Use case | Search complete, error | Filter node |
+
+**Execution Model**
+
+When a walker is spawned:
+1. Walker created at spawn node
+2. Entry ability for spawn node type executes
+3. `visit` statements queue nodes to visit
+4. Walker processes queued visits in order
+5. For each node, matching entry abilities execute
+6. Process continues until:
+   - No more queued visits (normal completion)
+   - `disengage` called (early termination)
+   - Exception raised (error)
+
+**Walker State Preservation**
+
+The walker object persists after disengage:
+
 ```
-if self.mode == "disengage" and here.name == "Bob" {
-    print("    Using disengage - walker stops completely");
+# From line 83-84
+w = root spawn SearchWalker(target_name="Charlie");
+print(f"found: {w.found}");  # Access walker's state
+```
+
+After disengage:
+- All `has` attributes accessible
+- Can inspect walker's final state
+- Useful for collecting data during traversal
+- Return values from graph exploration
+
+**Common Disengage Patterns**
+
+**Search pattern** (lines 55-58):
+```
+if is_target(here) {
+    self.result = here;
     disengage;
 }
 ```
 
-Lines 61-63 show skip:
+**Depth limit** (lines 36-38):
 ```
-if self.mode == "skip" and here.name == "Bob" {
-    print("    Using skip - skips this node, continues");
-    skip;
+if self.depth >= MAX_DEPTH {
+    disengage;
 }
 ```
 
-Comparing outputs:
-
-**Disengage mode** (lines 179-181):
-- Visits Alice, processes it
-- Visits Bob, disengages
-- Diana and Charlie never visited
-
-**Skip mode** (lines 184-188):
-- Visits Alice, processes it
-- Visits Bob, skips processing
-- Continues to Charlie, processes it
-- Diana not visited (because Bob didn't queue more visits before skipping)
-
-Key difference: **disengage stops walker entirely**, **skip stops current node only**.
-
-**Break Statement**
-
-Lines 78-83 demonstrate `break` in loops:
+**Error condition**:
 ```
-for i in range(5) {
-    if i == 3 {
-        print(f"    Breaking at {i}");
-        break;
-    }
-    print(f"    i={i}");
+if here.is_invalid() {
+    self.error = "Invalid node found";
+    disengage;
 }
 ```
 
-**Break semantics**:
-- Exits the innermost enclosing loop
-- Execution continues after the loop
-- Only works in loop contexts (for, while)
-- Does NOT affect walker execution
-
-Output shows: i=0, 1, 2, then breaks at 3. The loop exits and execution continues to the next statement (line 87).
-
-**Continue Statement**
-
-Lines 88-92 demonstrate `continue`:
+**Resource limit**:
 ```
-for i in range(5) {
-    if i == 2 {
-        continue;
-    }
-    print(f"    i={i}");
+if self.nodes_visited > 1000 {
+    self.timeout = True;
+    disengage;
 }
 ```
 
-**Continue semantics**:
-- Skips remaining code in current loop iteration
-- Jumps to next iteration of the loop
-- Does NOT exit the loop
-- Only works in loop contexts
-
-Output shows: i=0, 1, (2 skipped), 3, 4. When i=2, `continue` skips the print statement but the loop continues.
-
-**Control Statement Comparison Table**
-
-| Statement | Context | Scope | Effect |
-|-----------|---------|-------|--------|
-| `disengage` | Walker abilities | Walker | Stops entire walker immediately |
-| `skip` | Walker abilities | Current node | Skips current node, walker continues |
-| `break` | Loops (for/while) | Innermost loop | Exits loop, continues after loop |
-| `continue` | Loops (for/while) | Current iteration | Skips to next iteration |
-| `return` | Functions/methods | Function | Exits function, returns value |
-
-**Depth-Limited Traversal with Disengage**
-
-Lines 115-122 show a common pattern - using walker state to control termination:
+**Goal achievement**:
 ```
-can traverse with Person entry {
-    self.depth += 1;
-    print(f"  Depth {self.depth}: {here.name}");
-
-    if self.depth >= self.max_depth {
-        print(f"  Max depth reached - disengaging");
-        disengage;
-    }
-
-    visit [-->];
+if self.collected.count() >= required {
+    self.success = True;
+    disengage;
 }
 ```
 
-The walker:
-1. Increments depth counter on each node visit
-2. Checks if maximum depth reached
-3. If so, disengages (stops walker)
-4. Otherwise, continues visiting (line 124)
+**Best Practices**
 
-Output (lines 197-199): Depth 1 (Alice), Depth 2 (Bob), max reached, disengage. Diana is never visited despite being connected to Bob.
-
-This pattern enables:
-- Bounded graph exploration
-- Search with depth limits
-- Preventing infinite traversal in cyclic graphs
-- Resource-limited algorithms
+1. **Document termination conditions**: Make it clear when/why walker disengages
+2. **Update walker state before disengage**: Set result flags for caller to check
+3. **Use for early termination**: Don't traverse entire graph if you found what you need
+4. **Combine with skip for filtering**: Skip unwanted nodes, disengage when done
+5. **Consider depth limits**: Prevent infinite traversal in cyclic graphs
 
 **Disengage Use Cases**
 
-**Early termination on goal**:
-```
-if found_target {
-    disengage;  // Stop searching
-}
-```
+| Use Case | Pattern | Example |
+|----------|---------|---------|
+| Search | Find target, disengage | Find node by ID (lines 55-58) |
+| Limit depth | Track depth, disengage at max | Bounded exploration (lines 36-38) |
+| Collect data | Gather until satisfied, disengage | Collect N samples |
+| Validate | Check condition, disengage on fail | Schema validation |
+| Count nodes | Increment counter, disengage at threshold | Count specific types |
 
-**Error handling**:
-```
-if invalid_state {
-    disengage;  // Abort walker
-}
-```
+**Multiple Disengage Points**
 
-**Resource limits**:
-```
-if self.nodes_visited > limit {
-    disengage;  // Stop to preserve resources
-}
-```
-
-**Conditional exploration**:
-```
-if not should_continue(here) {
-    disengage;  // End traversal
-}
-```
-
-**Skip Use Cases**
-
-**Filtering during traversal**:
-```
-if not matches_criteria(here) {
-    skip;  // Ignore this node, check others
-}
-```
-
-**Avoiding duplicate processing**:
-```
-if here.already_processed {
-    skip;  // Don't reprocess
-}
-```
-
-**Type-based selective processing**:
-```
-if not isinstance(here, TargetType) {
-    skip;  // Only process certain node types
-}
-```
-
-**Conditional node operations**:
-```
-if here.locked {
-    skip;  // Can't process locked nodes
-}
-```
-
-**Interaction with Visit Statements**
-
-Lines 12-13 and 22:
-```
-can start with `root entry {
-    visit [-->];  // Queues visits
-}
-
-can check with Person entry {
-    // ...
-    visit [-->];  // Queues more visits
-}
-```
-
-The `visit` statements queue nodes to visit. The `disengage` statement clears the queue and stops processing:
-
-- **Before disengage**: Visit statements add nodes to queue
-- **After disengage**: Queue is cleared, no more visits
-- **Skip**: Doesn't affect queue, next queued node is visited
-
-**Loop Control Within Walker Abilities**
-
-Lines 73-96 show that standard loop control (`break`, `continue`) works normally inside walker abilities:
+A walker can have multiple conditional disengage points:
 
 ```
-can demonstrate with `root entry {
-    for i in range(5) {
-        if i == 3 { break; }
-        // ...
+can explore with Node entry {
+    if found_error(here) {
+        self.error = True;
+        disengage;  # Path 1: Error
     }
-    visit [-->];  // Executes after loop
-}
-```
 
-Important: `break` and `continue` only affect loops, NOT walker traversal. Line 96 shows `visit [-->]` executes after the loops complete. If you want to stop the walker, use `disengage` (line 101).
-
-**Multiple Disengage Paths**
-
-A single walker can have multiple conditional disengage points:
-
-```
-can explore with Person entry {
-    if condition1 {
-        disengage;  // Path 1
+    if found_target(here) {
+        self.result = here;
+        disengage;  # Path 2: Success
     }
-    if condition2 {
-        disengage;  // Path 2
+
+    if self.budget_exceeded() {
+        disengage;  # Path 3: Resource limit
     }
-    visit [-->];  // Only if neither condition
+
+    visit [-->];  # Only if no disengage
 }
 ```
 
-The walker stops at the first matching condition. This enables complex decision logic for when to terminate traversal.
+The walker stops at the first matching condition.
 
-**Disengage and Walker Return Values**
+**Disengage and Visit Interaction**
 
-Line 150: `root spawn BasicDisengage();`
+Lines 11 and 20 show `visit` statements:
+- `visit [-->]` queues outgoing nodes for visiting
+- If disengage is called, queued visits are discarded
+- Walker stops immediately without processing queue
 
-The spawn expression returns the walker instance. When `disengage` executes, the walker's final state (all `has` attributes) is accessible:
-
+**Before disengage**:
 ```
-walker DataCollector {
-    has results: list = [];
-    // ... collect data, then disengage
+can process with Node entry {
+    visit [-->];  # Queues nodes
+    // ... more processing ...
+    visit [->:Type:->];  # Queues more nodes
+    // Queue contains multiple nodes
 }
-
-collector = DataCollector() spawn root;
-print(collector.results);  // Access collected data
 ```
 
-The walker state is preserved when it disengages, allowing data to be retrieved.
-
-**Execution Flow Examples**
-
-**Example 1: Disengage stops everything**
+**After disengage**:
 ```
-Graph: A -> B -> C -> D
-Walker visits A, then B, disengages at B
-Result: A and B processed, C and D never visited
-```
-
-**Example 2: Skip continues traversal**
-```
-Graph: A -> B -> C -> D
-Walker visits A, then B (skips), then C, then D
-Result: A processed, B skipped, C and D processed
+can process with Node entry {
+    if condition {
+        disengage;  # Clears all queued visits
+    }
+    visit [-->];  # Never executes if disengage called
+}
 ```
 
-**Example 3: Break exits loop only**
-```
-Walker at A:
-  for item in [1,2,3,4,5]:
-    if item == 3: break
-  visit [-->]  // This executes!
-Result: Loop ends early, walker continues to B
-```
+**Walker Abilities Execution Order**
 
-**Nested Walker Abilities**
-
-If a walker has multiple abilities that could execute on the same node, `disengage` in any of them stops the entire walker:
+If multiple abilities match a node type, they execute in definition order:
 
 ```
 walker Multi {
     can first with Person entry {
-        // ... could disengage here
+        // Executes first
+        if should_stop {
+            disengage;  // Stops here
+        }
     }
+
     can second with Person entry {
-        // ... or here
+        // Only executes if first didn't disengage
     }
 }
 ```
 
-Abilities execute in definition order. If `first` disengages, `second` never executes.
+If `first` disengages, `second` never executes.
 
-**Best Practices**
+**Return to Spawn Point**
 
-1. **Use `disengage` for**: Search termination, error conditions, resource limits, goal achievement
-2. **Use `skip` for**: Filtering nodes, avoiding duplicates, selective processing
-3. **Use `break` for**: Exiting loops within walker logic
-4. **Use `continue` for**: Skipping loop iterations within walker logic
-5. **Clear termination logic**: Make disengage conditions explicit and well-documented
-6. **State preservation**: Use walker attributes to track why disengage was called
+Line 77: `root spawn BasicDisengage();`
 
-**Grammar Coverage Summary**
+Disengage returns control to the spawn statement:
+- Spawn expression completes
+- Next statement executes
+- Walker object available for inspection
+- Normal program flow continues
 
-This example demonstrates:
-- ✅ `disengage` statement (spatial_stmt)
-- ✅ `skip` statement (ctrl_stmt)
-- ✅ `break` statement (ctrl_stmt)
-- ✅ `continue` statement (ctrl_stmt)
-- ✅ Disengage in walker root entry abilities
-- ✅ Disengage in walker node entry abilities
-- ✅ Skip in walker node entry abilities
-- ✅ Conditional disengage based on walker state
-- ✅ Comparison of all control flow mechanisms
-- ✅ Loop control within walker abilities
+**Disengage in Different Abilities**
 
-**Common Patterns**
+Disengage works in any walker ability:
 
-**Search pattern**:
+**Root entry** (lines 9-12):
 ```
-can search with Node entry {
-    if is_target(here) {
-        self.found = here;
-        disengage;
+can start with `root entry {
+    if should_not_start {
+        disengage;  // Stop before even starting
     }
     visit [-->];
 }
 ```
 
-**Filter pattern**:
+**Node entry** (lines 14-21):
 ```
-can filter with Node entry {
-    if not should_process(here) {
-        skip;
+can visit_person with Person entry {
+    if condition {
+        disengage;  // Stop during traversal
     }
-    process(here);
-    visit [-->];
 }
 ```
 
-**Depth-limit pattern**:
+**Exit ability** (if defined):
 ```
-can traverse with Node entry {
-    if self.depth >= MAX {
-        disengage;
-    }
-    self.depth += 1;
-    visit [-->];
+can cleanup with exit {
+    // Cleanup runs even after disengage
 }
 ```
 
-**Cycle detection pattern**:
-```
-can avoid_cycles with Node entry {
-    if here in self.visited {
-        skip;
-    }
-    self.visited.add(here);
-    visit [-->];
-}
-```
+Note: Exit abilities may still run after disengage, depending on implementation.
 
-The `disengage` statement is essential for controlled graph traversal in Jac's Object-Spatial Programming model, providing fine-grained control over when and how walkers terminate their execution.
+**Comparison with Return**
+
+| Feature | disengage | return |
+|---------|-----------|--------|
+| Context | Walker abilities | Functions |
+| Stops | Entire walker | Current function |
+| Returns value | No (use walker state) | Yes |
+| Continues after | No | Yes (caller continues) |
+| State preservation | Walker object persists | Function locals lost |
