@@ -1,277 +1,211 @@
-Jac provides special reference keywords that are automatically available in specific contexts, allowing access to important runtime objects and enabling key Object-Spatial Programming patterns. The primary special references are `self`, `super`, `here`, `visitor`, and `root`.
+Jac provides special reference keywords that are automatically available in specific contexts, allowing access to important runtime objects and enabling key Object-Spatial Programming patterns.
 
-**self - Instance Reference**
+**What are Special References?**
 
-Lines 4-16 demonstrate `self` referring to the current instance in object methods.
+Special references are keywords that Jac makes available automatically in certain contexts. They provide access to important objects like the current instance, parent class, current node, visiting walker, and root node. Understanding when each reference is available is crucial for effective Jac programming.
 
-Line 8: `self.count += 1` - Access instance attribute
-Line 14: `self.increment()` - Call instance method on self
+**Reference Availability Table**
 
-`self` is available in **all instance methods** (both `def` and `can` abilities) and refers to:
-- In objects/classes: The current object instance
-- In nodes: The current node instance
-- In walkers: The current walker instance
-
-Lines 204-207 show usage: creating Counter instance and calling methods. Output shows counter incrementing: "Counter at 1", "Counter at 2", "Counter at 1" (after reset).
-
-**super - Parent Class Reference**
-
-Lines 18-45 demonstrate `super` accessing parent class methods and attributes.
-
-Line 36: `super.init(species="Dog")` - Call parent's init method
-Line 42: `super.speak()` - Call parent's speak method
-
-`super` enables:
-- Calling overridden parent methods
-- Proper initialization in inheritance hierarchies
-- Method delegation to parent classes
-
-Lines 210-211 show creating Dog instance which inherits from Animal. Output shows both parent and child init executing:
-```
-Animal init: Dog       # super.init() call
-Dog init: Labrador     # Dog's init
-```
-
-Lines 42-43 show method override with delegation - Dog's `speak` calls `super.speak()` then adds its own behavior. Output:
-```
-Dog makes a sound      # super.speak()
-Dog says: Woof!        # Dog's additional behavior
-```
-
-**here - Current Node Reference**
-
-Lines 47-69 demonstrate `here` referring to the current node during walker traversal.
-
-Line 58: `here` in `\`root entry` ability refers to the root node
-Lines 64-65: `here.title` and `here.completed` access current Task node's attributes
-
-`here` is available in **spatial contexts** (walker and node abilities) and refers to:
-- In walker abilities: The node currently being visited
-- In node abilities: The node itself (same as `self` for nodes)
-- Always refers to a node, never a walker
-
-Lines 219-221 show walker execution. Output demonstrates `here` changing as walker visits different nodes:
-```
-TaskProcessor: Starting at Root()          # here = root
-  Processing: Write Code (priority 10)     # here = task1
-  Processing: Write Tests (priority 8)     # here = task2
-```
-
-Line 65: `here.completed = True` - Walker modifies the node it's visiting, demonstrating how walkers can update data at each location.
-
-**visitor - Current Walker Reference**
-
-Lines 72-81 demonstrate `visitor` referring to the walker currently visiting a node.
-
-Line 78: `visitor.processed_count` - Access walker's attributes from node ability
-Line 79: Uses visitor data to customize node behavior
-
-`visitor` is available **only in node abilities** (abilities defined on nodes with `can ... entry`). It refers to the walker that triggered the ability.
-
-This creates **bidirectional communication**:
-- Walker abilities: Walker's behavior when visiting specific node types
-- Node abilities (with `visitor`): Node's behavior when visited by specific walker types
-
-Lines 224-230 show InteractiveTask node responding to TaskProcessor walker. Output:
-```
-Interactive 1 visited by walker (processed 1 so far)
-```
-
-The node ability (line 78) accesses `visitor.processed_count`, reading the walker's state. Line 230 confirms the node stored data about its visitor: `"TaskProcessor #1"`.
-
-**root - Root Node Reference**
-
-Lines 84-99 demonstrate `root` as a globally accessible reference to the root node.
-
-Line 89: `self.start_node = root` - Store root reference
-Line 90: Access root for printing
-Line 95: Access root from any node during traversal
-
-`root` is **always available in spatial contexts** and refers to the persistent root node of the current execution context.
-
-**The root Persistence Model** (lines 156-184):
-
-The `root` keyword is central to Jac's persistence-by-reachability model:
-
-1. **Automatic Persistence**: Anything connected to root (via edges) persists automatically
-2. **Per-User Isolation**: Each user has their own distinct root node
-3. **Global Accessibility**: The `root` keyword provides access anywhere in spatial code
-4. **No Explicit Save**: No need for database calls or serialization - connectivity = persistence
-
-Lines 171-182 demonstrate this:
-```
-data1 = PersistentData(value="persisted");
-root ++> data1;  # Connected to root = persists
-
-data2 = PersistentData(value="temporary");
-# Not connected = eventually garbage collected
-```
-
-Output confirms: `data1 connected to root: True`, `data2 connected to root: False`.
-
-This inverts traditional persistence models:
-- **Traditional**: Explicitly save objects to database
-- **Jac**: Connect objects to root; persistence is automatic
-
-Lines 232-235 show accessing root from anywhere. Output confirms walker can store and compare root: `"Walker stored root: True"`.
-
-**init - Constructor Method**
-
-Lines 107-114 demonstrate `init` as the constructor method called during object instantiation.
-
-Line 107: `def init(name: str, value: int)` - Constructor signature
-Lines 109-111: Initialize instance attributes
-Line 113: Explicitly call postinit
-
-`init` is called automatically when creating instances: `ConfiguredObject(name="test", value=5)` (line 238).
-
-Output shows init execution: `"init: test = 5"` (before "postinit").
-
-**postinit - Post-Construction Hook**
-
-Lines 116-120 demonstrate `postinit` for initialization logic that runs after `init`.
-
-Line 116: `def postinit` - No parameters, called after init
-Lines 117-119: Compute derived values based on initialized attributes
-
-In this example, postinit is called manually (line 113), but in some contexts it may be called automatically by the runtime. The `postinit` pattern enables:
-- Derived attribute computation
-- Validation after all attributes set
-- Setup requiring full object state
-
-Output shows execution order: `"init: test = 5"` then `"postinit: computed = 10"`.
-
-**Special References in Node Abilities**
-
-Lines 122-136 clarify which references are available in node abilities:
-
-```
-can log_access with RootExplorer entry {
-    # Available references:
-    # - self: this node
-    # - visitor: the walker visiting
-    # - here: also this node (self == here)
-    # - root: root node
-}
-```
-
-Line 134 demonstrates: `self is here` evaluates to True in node abilities.
-
-This means in node abilities, both `self` and `here` refer to the same node instance, while `visitor` refers to the walker.
-
-**Special References in Walker Abilities**
-
-Lines 139-154 clarify which references are available in walker abilities:
-
-```
-can demonstrate with \`root entry {
-    # Available references:
-    # - self: this walker
-    # - here: current node (root in this case)
-    # - root: root node
-    # - visitor: NOT available (walker is the visitor)
-}
-```
-
-Lines 148-152 demonstrate accessing each reference. Output confirms:
-```
-self = ReferenceDemo(walker_id='ref_demo')    # Walker instance
-here = Root()                                  # Current node
-root = Root()                                  # Root node
-here is root: True                             # At root node
-```
-
-Note that `visitor` is not available in walker abilities because the walker IS the visitor.
-
-**Combining Multiple References**
-
-Lines 187-200 demonstrate using multiple special references together:
-
-Line 195: `visitor.walker_id if hasattr(visitor, 'walker_id')` - Safely access visitor attribute
-Line 196: `self.name` - Access node's own attribute
-Line 199: `root` - Access global root
-
-This shows how node abilities can coordinate:
-- `self`: Node's own state
-- `visitor`: Walker's state and identity
-- `root`: Global persistence anchor
-
-Output demonstrates the combination:
-```
-Work Item 1 processed by TaskProcessor
-  (root is always accessible: Root())
-```
-
-**Reference Availability Summary**
-
-| Reference | Object Methods | Walker Abilities | Node Abilities | Meaning |
-|-----------|---------------|------------------|----------------|---------|
-| `self` | ✓ | ✓ | ✓ | Current instance (obj/walker/node) |
-| `super` | ✓ | ✓ | ✓ | Parent class |
+| Reference | Object Methods | Walker Abilities | Node Abilities | What It Refers To |
+|-----------|---------------|------------------|----------------|-------------------|
+| `self` | ✓ | ✓ | ✓ | Current instance (object/walker/node) |
+| `super` | ✓ | ✓ | ✓ | Parent class for inheritance |
 | `here` | ✗ | ✓ | ✓ | Current node being visited |
-| `visitor` | ✗ | ✗ | ✓ | Current walker (in node abilities) |
+| `visitor` | ✗ | ✗ | ✓ | Current walker (only in node abilities) |
 | `root` | ✗ | ✓ | ✓ | Root node (persistence anchor) |
+
+**self - The Instance Reference**
+
+Lines 4-11 demonstrate `self` in an object. Line 8 shows `self.count += 1`, which accesses the instance's `count` attribute. Line 9 uses `self.count` to print the current value.
+
+When you create an instance (line 79) and call its methods (lines 80-81), `self` refers to that specific instance. Each instance has its own `self` that refers to itself.
+
+Think of `self` as the answer to "who am I?" - it always points to the current instance, whether that's an object, a walker, or a node.
+
+**super - The Parent Reference**
+
+Lines 14-25 demonstrate inheritance with `super`. The `Dog` object inherits from `Animal` (line 20). Line 22 shows `super.speak()`, which calls the parent class's `speak` method before adding the dog's own behavior.
+
+```mermaid
+classDiagram
+    Animal <|-- Dog
+    Animal: +speak()
+    Dog: +speak()
+    Dog: super.speak() calls parent
+```
+
+When `d.speak()` executes on line 85:
+1. Line 22: `super.speak()` calls Animal's speak (line 15-16)
+2. Line 23: Dog adds its own behavior
+
+This allows you to extend parent behavior without replacing it entirely.
+
+**here - The Current Node Reference**
+
+Lines 28-37 show `here` used in a walker. Line 34 demonstrates `here.name`, accessing the current node's attributes.
+
+When a walker visits different nodes:
+- At root: `here` refers to the root node
+- At Task node: `here` refers to that specific Task node
+- Line 35: `visit [-->]` moves to the next node, updating what `here` points to
+
+```mermaid
+graph LR
+    A[Root] -->|walker visits| B[Task1]
+    B -->|walker visits| C[Task2]
+
+    style A fill:#f9f
+    style B fill:#bbf
+    style C fill:#bbf
+
+    Note1[here = Root]
+    Note2[here = Task1]
+    Note3[here = Task2]
+```
+
+Think of `here` as "where am I right now?" - it automatically updates as the walker moves through the graph.
+
+**visitor - The Walker Reference (in Node Abilities)**
+
+Lines 40-47 demonstrate `visitor` in a node ability. Line 44 shows `visitor.__class__.__name__`, accessing the walker's type from within a node's ability.
+
+This creates bidirectional communication:
+- Walker abilities: Define what the walker does when visiting a node
+- Node abilities (with `visitor`): Define what the node does when visited by a walker
+
+The node can inspect the walker using `visitor` to customize its behavior based on which walker is visiting.
+
+**root - The Global Root Reference**
+
+Lines 50-60 show `root` being accessed from different contexts. Line 52 demonstrates printing `root`, and line 53 checks `here is root` to see if the current position is the root node.
+
+The `root` reference is central to Jac's persistence model:
+
+```mermaid
+graph TD
+    R[root - Persistent]
+    A[Node A - Persistent]
+    B[Node B - Persistent]
+    C[Node C - Temporary]
+
+    R -->|connected| A
+    A -->|connected| B
+
+    style R fill:#9f9
+    style A fill:#9f9
+    style B fill:#9f9
+    style C fill:#f99
+
+    Note[Anything connected to root persists]
+```
+
+Key insights about `root`:
+- **Automatic Persistence**: Anything connected to root (via edges) persists automatically
+- **Per-User Isolation**: Each user gets their own distinct root node
+- **Global Accessibility**: Available anywhere in spatial contexts (walkers, node abilities)
+- **No Explicit Save**: Just connect to root - persistence happens automatically
+
+**init and postinit - Constructor Hooks**
+
+Lines 63-75 demonstrate the initialization lifecycle. Line 67 shows `def init(value: int)`, which is the constructor. Line 69 calls `self.postinit()`, which executes after initialization.
+
+The initialization flow:
+1. Object is created: `Configured(value=10)` on line 98
+2. `init` method executes (lines 67-69), setting `self.value`
+3. `postinit` method executes (lines 72-73), computing derived values
+
+This two-phase initialization lets you:
+- `init`: Set up basic attributes with parameters
+- `postinit`: Compute derived values that depend on those attributes
+
+**Context Matters: When References Are Available**
+
+In walker abilities (lines 12-14, 17-21):
+- ✓ `self` - the walker instance
+- ✓ `here` - the current node being visited
+- ✓ `root` - the root node
+- ✗ `visitor` - NOT available (the walker IS the visitor)
+
+In node abilities (lines 43-46):
+- ✓ `self` - the node instance (same as `here`)
+- ✓ `here` - also the node instance
+- ✓ `visitor` - the walker that's visiting
+- ✓ `root` - the root node
+
+In regular object methods (lines 7-10):
+- ✓ `self` - the object instance
+- ✓ `super` - parent class
+- ✗ Spatial references (`here`, `visitor`, `root`) - NOT available
 
 **Common Patterns**
 
-**Walker state accumulation**:
+**Pattern 1: Walker state accumulation** (lines 88-92)
 ```
-walker Analyzer {
-    has stats: dict = {};
-    can analyze with DataNode entry {
-        self.stats[here.id] = here.value;  # self = walker, here = node
+# Walker collects data as it traverses
+walker TaskWalker {
+    can process with Task entry {
+        self.visited_names.append(here.name);  # self=walker, here=node
+        visit [-->];
     }
 }
 ```
 
-**Node responding to walker**:
+**Pattern 2: Node responding to walker** (lines 43-46)
 ```
-node SecurityNode {
-    can check_access with AdminWalker entry {
-        # visitor = walker, self = node
-        if visitor.has_permission(self.required_permission) {
-            self.grant_access();
-        }
+# Node customizes behavior based on walker
+node Interactive {
+    can track with TaskWalker entry {
+        self.visitor_name = visitor.__class__.__name__;  # visitor=walker
     }
 }
 ```
 
-**Using root for persistence**:
+**Pattern 3: Persistence via root** (lines 88-92)
 ```
-walker DataCreator {
-    can create with `root entry {
-        new_data = DataNode(value="important");
-        root ++> new_data;  # Connect to root = persists
+# Create data and connect to root to persist
+task = Task(name="test");
+root ++> task;  # Connected to root = persists
+```
+
+**Pattern 4: Parent method delegation** (lines 21-24)
+```
+# Call parent method, then add own behavior
+obj Dog(Animal) {
+    def speak {
+        super.speak();  # Do parent behavior
+        print("woof");  # Add own behavior
     }
 }
 ```
 
-**Parent method delegation**:
-```
-obj SpecializedProcessor(BaseProcessor) {
-    def process(data: object) {
-        super.process(data);  # Do base processing
-        # Add specialized behavior
-    }
-}
-```
+**Understanding the Execution Model**
 
-**Key Insights**
+When `root spawn TaskWalker()` executes on line 92:
 
-1. **self is universal**: Available in all instance contexts (objects, walkers, nodes)
-2. **here tracks location**: Automatically updates as walker visits different nodes
-3. **visitor enables bidirectionality**: Nodes can inspect and respond to specific walkers
-4. **root is the persistence anchor**: Connectivity to root determines persistence
-5. **References are context-specific**: Different references available in different contexts
-6. **here and self overlap**: In node abilities, `here` and `self` refer to the same node
-7. **super enables composition**: Properly delegate to parent classes while adding behavior
+1. Walker is created and spawned at root
+2. Walker's root entry ability executes with:
+   - `self` = the TaskWalker instance
+   - `here` = root node
+   - `root` = root node (so `here is root` is True)
+3. `visit [-->]` queues nodes to visit
+4. Walker visits task node with:
+   - `self` = still the same TaskWalker instance
+   - `here` = now the task node (changed!)
+   - `root` = still the root node
+5. Node's ability executes (if defined) with:
+   - `self` = the task node
+   - `here` = the task node (same as self)
+   - `visitor` = the TaskWalker instance
+   - `root` = the root node
 
-**Relationship to Other Features**
+**Why These References Matter**
 
-Special references interact with:
-- **Archetypes** (archetypes.jac): `self` and `super` work with all archetypes; `here`, `visitor`, `root` work with spatial archetypes
-- **Abilities** (functions_and_abilities.jac): `can` abilities have access to spatial references (`here`, `visitor`, `root`)
-- **Spawn** (object_spatial_calls.jac): `root spawn Walker()` uses root; walker execution populates `here` and `visitor`
-- **Visit statements**: `visit [-->]` queues nodes that become `here` in subsequent ability executions
+Special references enable Object-Spatial Programming's key features:
 
-Special references are the mechanism by which spatial computation accesses and manipulates the graph structure, enabling the "computation flows to data" paradigm where walkers (`self`) traverse nodes (`here`) in a persistent graph anchored at `root`.
+- **self**: Track instance state as computation moves
+- **here**: Access data where computation currently is
+- **visitor**: Let data respond to different computations differently
+- **root**: Anchor persistence without databases or explicit saves
+- **super**: Build on existing behavior through inheritance
+
+Understanding when each reference is available and what it refers to is essential for writing effective Jac programs. The references work together to create a programming model where computation flows to data, rather than data flowing to computation.

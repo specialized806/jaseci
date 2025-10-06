@@ -1,175 +1,116 @@
-# Archetypes
+**Archetypes** are Jac's fundamental type declarations, providing five distinct keywords for building both traditional object-oriented and Object-Spatial programs.
 
-Archetypes are Jac's fundamental type declarations, providing five distinct keywords for building both traditional object-oriented and Object-Spatial programs: `class`, `obj`, `node`, `edge`, and `walker`.
+**The Five Archetype Types:**
 
-## The Five Archetype Types
+| Type | Purpose | Spatial? | Use Case |
+|------|---------|----------|----------|
+| `class` | Traditional OOP classes | No | Pure object-oriented programming without graph features |
+| `obj` | OOP objects compatible with spatial | Hybrid | Bridge between OOP and spatial programming |
+| `node` | Graph vertices | Yes | Data locations that can be connected and visited |
+| `edge` | Graph relationships | Yes | First-class connections with state and behavior |
+| `walker` | Mobile computation | Yes | Traversal logic that flows to data |
 
-**class** - Traditional OOP classes with attributes and methods. Not spatial - cannot participate in graph structures or walker traversal.
+**Basic Archetype Declaration:**
 
-**obj** - Object archetypes that bridge OOP and OSP. Support all OOP features while being compatible with spatial inheritance.
+Lines 4-8 show a basic `class` archetype with member variables (`has` statements) and a method (`def`). The `has` keyword declares attributes with type annotations and default values. Methods are traditional functions called explicitly.
 
-**node** - Spatial vertices representing locations in the graph. Can be connected via edges and host walker visits.
+Lines 11-18 demonstrate an `obj` archetype, which works like a class but is compatible with spatial inheritance. Objects can be inherited by nodes for hybrid OOP/spatial designs.
 
-**edge** - First-class relationships between nodes with their own state, behavior, and abilities.
+Lines 23-31 show a `node` archetype with multiple inheritance from both `Animal` and `Domesticated` objects, plus `Mammal`. Nodes represent graph vertices and can define both methods and abilities. The `can` keyword (line 28) defines an ability that triggers automatically when a specific walker type visits.
 
-**walker** - Mobile computation units that traverse the graph, flowing to data rather than data flowing to functions.
+Lines 34-41 demonstrate an `edge` archetype with the `:pub` access modifier, member variables, and a method. Edges are first-class relationships that carry state and behavior.
 
-## Inheritance
+Lines 53-65 show a `walker` archetype inheriting from `Animal`. Walkers traverse graphs and execute node-specific abilities. Line 56 shows the special `` `root `` type for the entry ability.
 
-Archetypes support single and multiple inheritance:
+**Inheritance Patterns:**
 
-- **Single inheritance:** `node Pet(Animal)` - Inherit from one parent
-- **Multiple inheritance:** `node Pet(Animal, Domesticated, Mammal)` - Inherit from multiple parents
-- **Inheritance chains:** `walker Veterinarian(Caretaker)` where `Caretaker(Person)` creates chain: Veterinarian → Caretaker → Person
+```mermaid
+graph TD
+    A[Animal] --> P[Person Walker]
+    P --> C[Caretaker Walker]
+    C --> V[Veterinarian Walker]
 
-**Important:** When inheriting from both `obj` and `class` archetypes:
-- `obj` attributes are available as constructor parameters
-- `class` attributes must be set after construction
-
-## Access Modifiers
-
-Control visibility across modules using colon syntax:
-
-- `:pub` - Public, accessible anywhere
-- `:prot` - Protected, accessible to subclasses
-- `:priv` - Private, accessible only within defining module
-
-Apply to any archetype: `obj :pub PublicAPI`, `edge :priv SecretEdge`
-
-## Has Statements (Member Variables)
-
-The `has` keyword declares attributes with optional type annotations and default values:
-
-```
-has name: str = "Default";
-has age: int;
-has trained: bool = False;
+    A2[Animal] --> Pet[Pet Node]
+    Dom[Domesticated] --> Pet
+    Mam[Mammal] --> Pet
 ```
 
-Attributes defined in `has` statements become instance variables accessible via `self`.
+Lines 67-81 demonstrate walker inheritance chains. `Veterinarian` inherits from `Caretaker`, which inherits from `Person`, creating a three-level hierarchy. Each child accumulates all parent abilities plus its own.
 
-## Methods vs Abilities
+Lines 23-31 show multiple inheritance where `Pet` combines three parent archetypes. When inheriting from both `obj` and `class` types, `obj` attributes become constructor parameters while `class` attributes must be set post-construction.
 
-**Methods (def)** - Traditional functions that must be explicitly called:
-- Available in all archetypes
-- Called directly: `object.method()`
-- Execute on demand
+**Access Modifiers:**
 
-**Abilities (can)** - Event-driven behaviors triggered during traversal:
-- Available in `node`, `edge`, and `walker` archetypes
-- Triggered automatically when walker visits matching node/edge type
-- Enable bidirectional polymorphism: walkers have node-specific abilities, nodes have walker-specific abilities
-- Syntax: `can ability_name with NodeType entry`
+Lines 98-100 demonstrate the three access levels using colon syntax:
+- `:priv` - Private to defining module
+- `:pub` - Publicly accessible
+- `:protect` - Protected to subclasses
 
-## Decorators
+Access modifiers appear after the archetype keyword and before the name.
 
-Python decorators can be applied to archetype definitions:
+**Methods vs Abilities:**
 
-```
-@print_bases
-@track_creation
-node DecoratedNode { }
-```
+| Feature | Methods (`def`) | Abilities (`can`) |
+|---------|----------------|-------------------|
+| Invocation | Explicit call | Automatic trigger on visit |
+| Availability | All archetypes | Only `node`, `edge`, `walker` |
+| Polymorphism | Standard OOP | Bidirectional (walker→node and node→walker) |
+| Context | `self` | `self`, `here`, `visitor` |
 
-Decorators execute at definition time (before main execution) and apply bottom-up when multiple decorators are stacked.
+Line 7 shows a method definition - must be explicitly called like `animal.make_sound()`.
 
-## Forward Declarations and Impl Blocks
+Lines 28-30 show a node ability that triggers when a `Person` walker visits. Line 29 accesses the visiting walker via `visitor`.
 
-Separate interface from implementation:
+Lines 46-49 show an edge ability triggered during edge traversal. Abilities enable event-driven spatial programming.
 
-**Forward declaration:**
-```
-node AnimalNode;
-walker SpecializedWalker;
-edge SpecialEdge;
-```
+**Bidirectional Polymorphism:**
 
-**Implementation:**
-```
-impl AnimalNode {
-    has animal_type: str = "wild";
-    def describe { ... }
-}
-```
+When a walker visits a node, both execute matching abilities:
+- Walker's abilities dispatch based on visited node type (lines 60-64)
+- Node's abilities dispatch based on visiting walker type (lines 28-30)
 
-Use for:
+This creates rich interaction patterns where both parties respond to encounters.
+
+**Forward Declarations and Implementations:**
+
+Lines 103-105 show forward declarations - declaring archetype names without bodies. These enable:
 - Breaking circular dependencies
 - Organizing large codebases
-- Applying decorators before defining body
-- Implementing interfaces
+- Separating interface from implementation
 
-## Async Walkers
+Lines 108-125 provide implementations via `impl` blocks. Each impl block adds members, methods, and abilities to the forward-declared archetype.
 
-Walkers can be declared async for concurrent operations:
+**Decorators:**
 
-```
-async walker AsyncInspector {
-    async can inspect with `root entry { ... }
-    async can check with Pet entry { ... }
-}
-```
+Lines 128-140 demonstrate decorator usage. Decorators are Python functions that transform archetypes at definition time. Multiple decorators stack and apply bottom-up (line 140 applies `track_creation` first, then `print_bases`).
 
-Async abilities can use `await` for asynchronous operations during traversal.
+**Async Walkers:**
 
-## OSP Integration
+Lines 84-95 show async walker declaration. The `async` keyword enables concurrent operations:
+- Async walkers can have async abilities (line 86, 90)
+- Async abilities can use `await` for asynchronous operations
+- Useful for I/O-bound traversal logic
 
-The spatial archetypes (`node`, `edge`, `walker`) enable Object-Spatial Programming:
+**Spatial Integration:**
 
-**Nodes** represent data locations in the graph and can:
-- Be connected via edges
-- Host walker visits
-- Have walker-specific abilities that execute when visited
-- Access visiting walker via `visitor` reference
+Lines 184-204 demonstrate Object-Spatial Programming:
+- Line 184: Create graph structure with `++>` (connect operator)
+- Line 189: Spawn walker at root with `root spawn person`
+- Line 203: Connect with typed edge using `+>: EdgeType() :+>`
+- Line 204: Spawn walker to trigger edge abilities
 
-**Edges** are first-class relationships that can:
-- Carry their own state and behavior
-- Have abilities triggered during edge traversal
-- Be typed and filtered during visits
-- Transform relationships from implementation details to program entities
+Spatial archetypes (`node`, `edge`, `walker`) enable computation that flows to data locations rather than data flowing to functions - a fundamental shift from traditional programming paradigms.
 
-**Walkers** are mobile computation that can:
-- Spawn at nodes and traverse the graph
-- Have node-specific abilities for different node types
-- Accumulate abilities through inheritance
-- Access current location via `here` reference
+**Execution Flow:**
 
-## Bidirectional Polymorphism
-
-Jac enables unique bidirectional dispatch:
-- **Walkers dispatch on node types:** Walker abilities execute based on visited node type
-- **Nodes dispatch on walker types:** Node abilities execute based on visiting walker type
-
-When a walker visits a node, both walker abilities and node abilities execute, enabling rich interaction patterns.
-
-## Common Patterns
-
-**Separation of concerns:**
-```
-obj DataModel { has data: dict; }
-node DataNode(DataModel) { can process with AnalyzerWalker entry { ... } }
-walker Analyzer { can analyze with DataNode entry { ... } }
+```mermaid
+graph LR
+    R[root] -->|spawn| W[Walker]
+    W -->|visit| N1[Node1]
+    N1 -->|trigger| A1[Node Ability]
+    N1 -->|trigger| A2[Walker Ability]
+    W -->|visit| N2[Node2]
+    N2 -->|trigger| A3[Walker Ability]
 ```
 
-**Edge-rich graphs:**
-```
-edge Relationship {
-    has strength: int;
-    can update with AuditWalker entry { ... }
-}
-```
-
-**Walker specialization hierarchies:**
-```
-walker BaseProcessor { can process with Node entry { ... } }
-walker Validator(BaseProcessor) { can validate with Node entry { ... } }
-```
-
-Child walkers inherit all parent abilities and add their own, enabling ability composition.
-
-## See Also
-
-- [Functions and Abilities](functions_and_abilities.md) - Method and ability syntax
-- [Implementations](implementations.md) - Forward declarations and impl blocks
-- [Object Spatial Calls](object_spatial_calls.md) - Spawn and walker execution
-- [Object Spatial References](object_spatial_references.md) - Special references (here, visitor, self)
-- [Inline Python](inline_python.md) - Embedding Python in archetypes
+When a walker spawns and visits nodes, abilities automatically trigger based on type matching, creating declarative traversal patterns.

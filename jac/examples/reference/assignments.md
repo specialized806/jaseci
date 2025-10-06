@@ -1,75 +1,137 @@
-# Assignments
+Assignment statements bind values to variables, providing the foundation for storing and manipulating data in your programs.
 
-Assignment statements bind values to variables using various patterns and operators.
+**Simple Assignment**
 
-## Basic Assignment
+Line 5 shows the most basic assignment: `x = 10;`. The equals sign `=` takes the value on the right (10) and binds it to the variable name on the left (x). Line 6 prints the value to verify the assignment worked.
 
-The `=` operator assigns values to variables. Assignments can be chained (`a = b = c = value`) where evaluation proceeds right-to-left.
+**Chain Assignment**
 
-The `let` keyword provides explicit declaration, emphasizing the creation of a new binding.
-
-## Type Annotations
-
-Variables can be annotated with types using the `:` syntax:
-- With immediate assignment: `name: type = value`
-- Declaration without value: `name: type` (assigned later)
-- Combined with `let`: `let name: type = value`
-
-Type annotations serve as documentation and enable type checking but don't enforce runtime constraints.
-
-## Augmented Assignment Operators
-
-Augmented assignments combine an operation with assignment (`var op= value` ≡ `var = var op value`):
-
-**Arithmetic:** `+=`, `-=`, `*=`, `/=`, `//=` (floor division), `%=` (modulo), `**=` (power)
-
-**Bitwise:** `&=` (AND), `|=` (OR), `^=` (XOR), `<<=` (left shift), `>>=` (right shift)
-
-**Matrix:** `@=` (matrix multiplication, for compatible types)
-
-## Unpacking Assignments
-
-Sequences can be unpacked into multiple variables:
-- Tuple unpacking: `(x, y) = (1, 2)`
-- List unpacking: `[a, b, c] = [1, 2, 3]`
-- Nested unpacking: `(a, (b, c)) = (1, (2, 3))`
-
-**Extended Unpacking** with `*` captures remaining elements:
-- `(first, *rest) = [1, 2, 3, 4]` → `rest = [2, 3, 4]`
-- `(head, *middle, tail) = [1, 2, 3, 4]` → `middle = [2, 3]`
-- `(*beginning, last) = [1, 2, 3]` → `beginning = [1, 2]`
-
-## Walrus Operator (Assignment Expression)
-
-The walrus operator `:=` assigns and returns a value within expressions, enabling inline assignments in:
-- Conditionals: `if (n := compute()) > 10`
-- Loops: `while (line := read_line())`
-- Comprehensions: `[y for x in data if (y := transform(x)) > 0]`
-
-**OSP Context:** Walrus enables connect-and-assign patterns:
+Line 9 demonstrates chaining assignments to give multiple variables the same value:
 ```
-root ++> (node := DataNode())
+a = b = c = 20;
 ```
 
-## Assignments in Archetypes
+This evaluates right-to-left: first 20 is assigned to c, then to b, then to a. All three variables now hold the value 20, as confirmed by printing them on line 10.
 
-Assignments occur in various archetype contexts:
-- **Object methods:** Modify instance state via `self.attribute`
-- **Walker abilities:** Update walker state, access nodes via `here`
-- **Has statements:** Initialize member variables with default values
+**The let Keyword**
 
-## Complex Assignment Contexts
+Lines 13-14 introduce the `let` keyword for explicit variable declaration:
+```
+let value = 100;
+```
 
-Assignments can appear with:
-- **Function results:** Capture return values
-- **Conditional expressions:** Ternary operator results
-- **Comprehensions:** List/dict/set comprehensions
-- **Multiple returns:** Unpack tuple returns from functions
-- **Nested scopes:** Access global and outer scope variables (requires `global`/`nonlocal` statements for modification)
+While `let` is optional, it makes your intent clear - you're creating a new variable. This improves code readability, especially in complex scopes.
 
-## See Also
+**Type Annotations**
 
-- [Walrus Assignments](walrus_assignments.md) - Detailed `:=` operator usage
-- [Unpack Expressions](unpack_expressions.md) - Extended unpacking with `*`
-- [Global and Nonlocal Statements](global_and_nonlocal_statements.md) - Scope modification
-- [Type Tags](archetype_bodies.md) - Type annotation syntax in has statements
+Jac supports optional type annotations to document what kind of value a variable should hold:
+
+| Pattern | Example Line | Description |
+|---------|--------------|-------------|
+| Type with value | 17-18 | `age: int = 25;` declares and assigns |
+| Type without value | 22-23 | `result: str;` declares for later assignment |
+| Let with type | 27 | `let count: int = 5;` combines declaration and typing |
+
+Lines 17-18 show annotating variables with their types: `age: int = 25` and `name: str = "Alice"`. These annotations serve as documentation and enable type checking tools to catch errors.
+
+Lines 22-23 demonstrate declaring a variable with a type but without an initial value. Line 22 declares `result: str`, then line 23 assigns it the value "computed".
+
+**Augmented Assignment Operators**
+
+Instead of writing `x = x + 5`, you can use augmented assignment: `x += 5`. These operators combine an operation with assignment:
+
+```mermaid
+graph LR
+    A[num = 10] --> B[num += 5]
+    B --> C[num -= 3]
+    C --> D[num *= 2]
+    D --> E[num /= 4]
+    E --> F[num %= 5]
+    F --> G[num **= 2]
+    G --> H[num //= 3]
+    H --> I[Final: 1]
+```
+
+Lines 31-39 show all arithmetic augmented assignments:
+
+| Operator | Line | Meaning | Effect on num |
+|----------|------|---------|---------------|
+| `+=` | 32 | Add and assign | 10 + 5 = 15 |
+| `-=` | 33 | Subtract and assign | 15 - 3 = 12 |
+| `*=` | 34 | Multiply and assign | 12 * 2 = 24 |
+| `/=` | 35 | Divide and assign | 24 / 4 = 6.0 |
+| `%=` | 36 | Modulo and assign | 6.0 % 5 = 1.0 |
+| `**=` | 37 | Power and assign | 1.0 ** 2 = 1.0 |
+| `//=` | 38 | Floor divide and assign | 1.0 // 3 = 0.0 |
+
+Lines 42-48 demonstrate bitwise augmented assignments:
+
+| Operator | Line | Operation |
+|----------|------|-----------|
+| `&=` | 43 | Bitwise AND |
+| `\|=` | 44 | Bitwise OR |
+| `^=` | 45 | Bitwise XOR |
+| `<<=` | 46 | Left shift |
+| `>>=` | 47 | Right shift |
+
+**Tuple Unpacking**
+
+Lines 51-52 show unpacking a tuple into multiple variables:
+```
+(x, y) = (10, 20);
+```
+
+The tuple `(10, 20)` on the right is unpacked, assigning 10 to x and 20 to y in a single statement. This is much cleaner than two separate assignments.
+
+**The Swap Pattern**
+
+Line 55 demonstrates the classic swap using tuple unpacking:
+```
+(x, y) = (y, x);
+```
+
+This swaps the values of x and y without needing a temporary variable. If x was 10 and y was 20, they become 20 and 10 respectively.
+
+**List Unpacking**
+
+Lines 59-60 show that lists can also be unpacked:
+```
+[p, q, r] = [1, 2, 3];
+```
+
+This works identically to tuple unpacking - the values from the list are distributed to the variables in order.
+
+**Nested Unpacking**
+
+Lines 63-64 demonstrate unpacking nested structures:
+```
+(m, (n, o)) = (5, (6, 7));
+```
+
+The outer tuple contains 5 and another tuple (6, 7). Variable m gets 5, while the inner tuple is unpacked with n getting 6 and o getting 7.
+
+**Extended Unpacking with Asterisk**
+
+The `*` operator captures remaining elements into a list:
+
+| Pattern | Line | Example | Result |
+|---------|------|---------|--------|
+| Rest elements | 67 | `(first, *rest) = [1, 2, 3, 4, 5]` | first=1, rest=[2,3,4,5] |
+| Middle elements | 70 | `(head, *middle, tail) = [10, 20, 30, 40, 50]` | head=10, middle=[20,30,40], tail=50 |
+| Beginning elements | 73 | `(*beginning, last) = [100, 200, 300]` | beginning=[100,200], last=300 |
+
+Line 67 shows `(first, *rest)` where first captures the first element and rest captures everything else as a list.
+
+Line 70 demonstrates `(head, *middle, tail)` where the asterisk variable captures all elements between the first and last.
+
+Line 73 shows `(*beginning, last)` where the asterisk comes first, capturing all elements except the last one.
+
+**Practical Applications**
+
+Unpacking is particularly useful for:
+- Function returns: Extracting multiple return values
+- Data processing: Separating headers from data rows
+- Pattern matching: Pulling apart structured data
+- Swapping: Exchanging values elegantly
+
+The combination of simple assignments, type annotations, augmented operators, and unpacking patterns gives you powerful tools for managing data in your Jac programs.
