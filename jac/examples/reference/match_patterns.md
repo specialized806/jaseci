@@ -44,7 +44,7 @@ Lines 21-22 show exact sequence matching:
 
 ```mermaid
 graph LR
-    A[Input: [1,2,3]] --> B{Matches [1,2,3]?}
+    A["Input: list with 1,2,3"] --> B{"Matches pattern?"}
     B -->|Yes| C[Execute line 22]
     B -->|No| D[Try next pattern]
 ```
@@ -114,9 +114,9 @@ Lines 47-48 demonstrate the OR pattern using `|`. Pattern: `case [1, 2] | [3, 4]
 
 ```mermaid
 graph LR
-    A[Input data] --> B{Matches [1,2]?}
+    A[Input data] --> B{"Matches 1,2?"}
     B -->|Yes| C[Execute case]
-    B -->|No| D{Matches [3,4]?}
+    B -->|No| D{"Matches 3,4?"}
     D -->|Yes| C
     D -->|No| E[Try next pattern]
 ```

@@ -63,7 +63,7 @@ flowchart TD
     Alias1 -->|Yes| UseAlias1[module as alias]
     Alias1 -->|No| UseDirect1[Use module.item]
     From --> Items{Specific<br/>Items?}
-    Items -->|Yes| SelectItems[Curly braces { items }]
+    Items -->|Yes| SelectItems["Curly braces with items"]
     Items -->|No| ImportAll[Import all]
     SelectItems --> Alias2{Item<br/>Aliases?}
     Alias2 -->|Yes| ItemAlias[item as alias]

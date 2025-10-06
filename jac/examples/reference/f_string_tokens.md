@@ -63,7 +63,7 @@ Line 24: `print(f"Math: {5 + 3}, {10 * 2}");`
 
 ```mermaid
 graph TD
-    A[f-string with {expr}] --> B[Parse string]
+    A["f-string with expression"] --> B[Parse string]
     B --> C[Find expressions in braces]
     C --> D[Evaluate each expression]
     D --> E[Convert result to string]

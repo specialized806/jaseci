@@ -63,9 +63,9 @@ flowchart LR
     FD1[def compute;] --> Ref[Code can reference compute]
     FD2[obj Vehicle;] --> Ref
     FD3[enum Priority;] --> Ref
-    Ref --> I1[impl compute { body }]
-    Ref --> I2[impl Vehicle { members }]
-    Ref --> I3[impl Priority { values }]
+    Ref --> I1["impl compute with body"]
+    Ref --> I2["impl Vehicle with members"]
+    Ref --> I3["impl Priority with values"]
     I1 --> Ready[All Elements Ready]
     I2 --> Ready
     I3 --> Ready

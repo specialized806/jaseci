@@ -90,8 +90,8 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Object[Jac Object/Node] --> JacMethod[Jac Methods<br/>def name { }]
-    Object --> PyMethods[Python Methods<br/>::py:: def name]
+    Object[Jac Object/Node] --> JacMethod["Jac Methods (def)"]
+    Object --> PyMethods["Python Methods (::py::)"]
     JacMethod -->|Access| State[Shared State<br/>self.attributes]
     PyMethods -->|Access| State
     State -->|Available| Both[Both Method Types]
