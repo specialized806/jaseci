@@ -1328,6 +1328,10 @@ class JacBasics:
 
                 JacMachineInterface.get_context().mem.remove(anchor.id)
 
+
+class JacByLLM:
+    """Jac byLLM integration."""
+
     @staticmethod
     def entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
@@ -1574,6 +1578,7 @@ class JacMachineInterface(
     JacBuiltin,
     JacCmd,
     JacBasics,
+    JacByLLM,
     JacUtils,
 ):
     """Jac Feature."""
