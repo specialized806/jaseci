@@ -2,17 +2,13 @@ The atomic forward pipe operator `:>` enables elegant data pipelines by passing 
 
 **Basic Atomic Pipe Syntax**
 
-Line 5 introduces the atomic forward pipe operator:
-
-This takes the string "Hello" on the left and pipes it to the `print` function on the right. It's equivalent to `print("Hello")`, but the pipe syntax emphasizes the flow of data from source to destination.
+Line 5 introduces the atomic forward pipe operator. This takes the string "Hello" on the left and pipes it to the `print` function on the right. It's equivalent to `print("Hello")`, but the pipe syntax emphasizes the flow of data from source to destination.
 
 The `:>` operator reads naturally: "take this value and send it to this function."
 
 **Chaining Multiple Pipes**
 
-Line 8 demonstrates the real power of pipes - chaining transformations:
-
-This creates a pipeline:
+Line 8 demonstrates the real power of pipes - chaining transformations. This creates a pipeline:
 
 ```mermaid
 graph LR
@@ -31,9 +27,7 @@ Compare this to the nested function call equivalent: `print(type("Test"))`. The 
 
 **Pipes with Lambda Functions**
 
-Lines 11-12 show using pipes with lambda expressions for custom transformations:
-
-This creates a computation pipeline:
+Lines 11-12 show using pipes with lambda expressions for custom transformations. This creates a computation pipeline:
 
 | Step | Operation | Input | Output |
 |------|-----------|-------|--------|

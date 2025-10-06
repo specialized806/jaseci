@@ -2,9 +2,7 @@ The atomic backward pipe operator `<:` provides right-to-left data flow, offerin
 
 **Basic Backward Pipe Syntax**
 
-Line 5 introduces the atomic backward pipe operator:
-
-This takes the value on the right ("Hello") and pipes it backward to the function on the left (print). It's equivalent to `print("Hello")`, but with reversed syntax.
+Line 5 introduces the atomic backward pipe operator. This takes the value on the right ("Hello") and pipes it backward to the function on the left (print). It's equivalent to `print("Hello")`, but with reversed syntax.
 
 While the forward pipe `:>` reads as "send this value to that function," the backward pipe `<:` reads as "this function receives that value."
 
@@ -24,9 +22,7 @@ The choice between operators is often stylistic:
 
 **Mixing Pipe Directions**
 
-Lines 8-10 demonstrate combining both pipe operators in a single expression:
-
-Let's trace the evaluation:
+Lines 8-10 demonstrate combining both pipe operators in a single expression. Let's trace the evaluation:
 
 | Step | Operation | Result |
 |------|-----------|--------|
@@ -38,9 +34,7 @@ However, step 3 would cause an error because `len()` expects a sequence, not an 
 
 **Backward Pipe with Lambda**
 
-Lines 13-14 show using the backward pipe with a lambda expression:
-
-The value `10` on the right flows backward to the lambda function on the left:
+Lines 13-14 show using the backward pipe with a lambda expression. The value `10` on the right flows backward to the lambda function on the left:
 
 ```mermaid
 graph RL

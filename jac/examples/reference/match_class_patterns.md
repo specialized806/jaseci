@@ -19,7 +19,6 @@ These represent geometric objects, perfect for demonstrating pattern matching.
 
 The general form of a class pattern is:
 
-
 Line 17 shows a complete example: `case Point(int(a), y = 0):`
 
 ```mermaid
@@ -98,10 +97,7 @@ Line 33 uses literal values (`0.0`) to check for exact matches, while line 35 us
 
 Lines 42-46 demonstrate one of the most powerful features: nested class patterns for matching complex object structures.
 
-Line 42 creates a Circle with a Point as its center. Line 44 shows the nested pattern:
-
-
-This breaks down as:
+Line 42 creates a Circle with a Point as its center. Line 44 shows the nested pattern. This breaks down as:
 
 ```mermaid
 graph TD

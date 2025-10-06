@@ -4,24 +4,15 @@ If statements provide conditional control flow through `if`, `elif`, and `else` 
 
 **Basic If Statement**
 
-Lines 4-8 demonstrate the simplest conditional:
-
-
-When the condition `x > 5` evaluates to true, the block executes.
+Lines 4-8 demonstrate the simplest conditional. When the condition `x > 5` evaluates to true, the block executes.
 
 **If-Else Statement**
 
-Lines 11-16 show binary choice logic:
-
-
-Exactly one block executes: the `if` block when true, otherwise the `else` block.
+Lines 11-16 show binary choice logic. Exactly one block executes: the `if` block when true, otherwise the `else` block.
 
 **If-Elif-Else Chain**
 
-Lines 19-28 demonstrate multiple exclusive conditions:
-
-
-Evaluation is top-down. The first true condition executes, then the entire chain terminates.
+Lines 19-28 demonstrate multiple exclusive conditions. Evaluation is top-down. The first true condition executes, then the entire chain terminates.
 
 **Multiple Elif Branches**
 
@@ -29,10 +20,7 @@ Lines 31-42 show extended conditional chains with many branches. Each `elif` pro
 
 **Nested If Statements**
 
-Lines 45-55 demonstrate if statements within if statements:
-
-
-Inner conditions only evaluate if outer conditions are true.
+Lines 45-55 demonstrate if statements within if statements. Inner conditions only evaluate if outer conditions are true.
 
 **Complex Boolean Expressions**
 
@@ -56,24 +44,15 @@ Parentheses control precedence.
 
 **Chained Comparisons**
 
-Lines 75-78 demonstrate Python-style chained comparisons:
-
-
-Equivalent to `20 <= temp and temp <= 30`, but evaluates `temp` only once.
+Lines 75-78 demonstrate Python-style chained comparisons. Equivalent to `20 <= temp and temp <= 30`, but evaluates `temp` only once.
 
 **Membership Tests**
 
-Lines 81-88 show `in` and `not in` operators:
-
-
-Works with any iterable: lists, tuples, sets, dictionaries (checks keys), strings.
+Lines 81-88 show `in` and `not in` operators. Works with any iterable: lists, tuples, sets, dictionaries (checks keys), strings.
 
 **Identity Tests**
 
-Lines 91-100 demonstrate `is` and `is not` for identity checking:
-
-
-Use `is` for None checks, not `==`.
+Lines 91-100 demonstrate `is` and `is not` for identity checking. Use `is` for None checks, not `==`.
 
 **Comparison Operators**
 
@@ -151,13 +130,11 @@ Example:
 
 `and` and `or` use short-circuit evaluation:
 
-
 If `x != 0` is false, `y / x` doesn't execute (preventing division by zero).
 
 **If Expression (Ternary)**
 
 Jac supports if expressions for value selection:
-
 
 **If expressions must have an else clause** and return a value.
 

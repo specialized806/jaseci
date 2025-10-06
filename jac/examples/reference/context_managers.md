@@ -135,7 +135,6 @@ The key benefit of context managers is guaranteed cleanup:
 
 The `__exit__` method receives exception details:
 
-
 **Common Use Cases**
 
 File I/O (line 5):

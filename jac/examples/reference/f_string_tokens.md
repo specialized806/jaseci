@@ -122,7 +122,6 @@ Lines 39-40:
 
 Different quote combinations work:
 
-
 **Complex Expression Examples**
 
 Chained method calls:

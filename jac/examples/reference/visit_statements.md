@@ -19,17 +19,11 @@ This tells the walker to visit all nodes reachable via outgoing edges from the c
 
 **Walker with Visit**
 
-Lines 8-17 define a walker that demonstrates basic visiting:
-
-
-Line 9 defines an ability that triggers when entering the root node. Line 11 executes the visit statement, queueing connected nodes. Lines 14-16 define an ability that triggers when entering Person nodes, using `here.name` to access the current node's attribute.
+Lines 8-17 define a walker that demonstrates basic visiting. Line 9 defines an ability that triggers when entering the root node. Line 11 executes the visit statement, queueing connected nodes. Lines 14-16 define an ability that triggers when entering Person nodes, using `here.name` to access the current node's attribute.
 
 **Visit with Else Clause**
 
-Lines 23-24 demonstrate the else clause:
-
-
-The else block executes when the edge expression matches zero edges. This is useful for:
+Lines 23-24 demonstrate the else clause. The else block executes when the edge expression matches zero edges. This is useful for:
 - Detecting terminal/leaf nodes
 - Implementing backtracking behavior
 - Handling dead ends in traversal
@@ -49,17 +43,11 @@ Line 11 uses `[-->]` for outgoing traversal, the most common pattern.
 
 **Direct Node Visit**
 
-Lines 37-49 demonstrate visiting a specific node:
-
-
-Line 42 shows `visit self.target;` - instead of an edge expression, this visits the specific node stored in the walker's `target` attribute. Line 106 spawns this walker with `DirectVisit(target=charlie)`, passing the target node as a parameter.
+Lines 37-49 demonstrate visiting a specific node. Line 42 shows `visit self.target;` - instead of an edge expression, this visits the specific node stored in the walker's `target` attribute. Line 106 spawns this walker with `DirectVisit(target=charlie)`, passing the target node as a parameter.
 
 **Typed Edge Traversal**
 
-Lines 52-59 demonstrate visiting through specific edge types:
-
-
-Line 57 uses `[->:Friend:->]` to traverse only Friend-typed edges. The pattern is:
+Lines 52-59 demonstrate visiting through specific edge types. Line 57 uses `[->:Friend:->]` to traverse only Friend-typed edges. The pattern is:
 - `->` - Outgoing direction indicator
 - `:Friend:` - Edge type filter
 - `->` - Target direction
@@ -68,10 +56,7 @@ This allows structural queries: "follow only these types of connections."
 
 **Filtered Edge Traversal**
 
-Lines 62-71 demonstrate edge attribute filtering:
-
-
-Line 69 uses `[->:Colleague:strength > 5:->]` to traverse only Colleague edges where the `strength` attribute exceeds 5. The pattern is:
+Lines 62-71 demonstrate edge attribute filtering. Line 69 uses `[->:Colleague:strength > 5:->]` to traverse only Colleague edges where the `strength` attribute exceeds 5. The pattern is:
 - `->:Colleague:` - Edge type
 - `strength > 5` - Attribute filter condition
 - `:->` - Target direction
@@ -80,10 +65,7 @@ This combines structural and property-based filtering.
 
 **Multiple Visit Statements**
 
-Lines 74-85 show a walker with multiple visit statements:
-
-
-When this walker executes:
+Lines 74-85 show a walker with multiple visit statements. When this walker executes:
 1. Line 77 visits from root
 2. For each Person reached, lines 80-83 execute
 3. Line 83 visits again from that Person

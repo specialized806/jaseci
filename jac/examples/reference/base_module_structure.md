@@ -2,9 +2,7 @@ Jac modules organize code with docstrings for documentation and entry points for
 
 **Module-Level Docstrings**
 
-Lines 1-5 show the module docstring - a string literal at the very beginning of the file:
-
-This triple-quoted string documents what the entire module does. It appears before any code elements (functions, classes, etc.). Module docstrings are used by documentation tools and can be accessed at runtime to provide help text.
+Lines 1-5 show the module docstring - a string literal at the very beginning of the file. This triple-quoted string documents what the entire module does. It appears before any code elements (functions, classes, etc.). Module docstrings are used by documentation tools and can be accessed at runtime to provide help text.
 
 **Function Definitions**
 
@@ -19,9 +17,7 @@ Both functions use type annotations (`a: int, b: int -> int`) to specify paramet
 
 **Default Entry Point**
 
-Lines 16-18 define the default entry point using `with entry`:
-
-This code block executes when the module runs. Let's trace the execution:
+Lines 16-18 define the default entry point using `with entry`. This code block executes when the module runs. Let's trace the execution:
 
 ```mermaid
 graph LR

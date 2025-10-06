@@ -4,21 +4,13 @@ Functions and abilities are the core computational units in Jac. Functions provi
 
 **Basic Functions**
 
-Lines 6-8 show a function with typed parameters and return type:
-
-
-Lines 11-13 demonstrate a function with only a return type (no parameters):
-
+Lines 6-8 show a function with typed parameters and return type. Lines 11-13 demonstrate a function with only a return type (no parameters):
 
 Lines 16-18 use the generic `object` type when flexible typing is needed:
 
-
 **Static Functions**
 
-Lines 26-28 define a static function that belongs to the class, not instances:
-
-
-Call static functions directly on the class: `Calculator.square(5)` (line 307).
+Lines 26-28 define a static function that belongs to the class, not instances. Call static functions directly on the class: `Calculator.square(5)` (line 307).
 
 **Access Modifiers**
 
@@ -34,72 +26,43 @@ Access tags can be combined with `static`: `static def:priv internal_helper` (li
 
 **Abstract Methods**
 
-Line 49 demonstrates abstract method declaration:
-
-
-The `abs` keyword marks it as abstract - subclasses must implement it. Lines 63-65 show implementation in `ConcreteCalculator`.
+Line 49 demonstrates abstract method declaration. The `abs` keyword marks it as abstract - subclasses must implement it. Lines 63-65 show implementation in `ConcreteCalculator`.
 
 **Forward Declarations**
 
-Lines 52, 55, 58 show forward declarations - signatures without bodies:
-
-
-Forward declarations allow separating interface from implementation, useful for circular dependencies.
+Lines 52, 55, 58 show forward declarations - signatures without bodies. Forward declarations allow separating interface from implementation, useful for circular dependencies.
 
 **Implementation Blocks**
 
-Lines 70-72 implement forward-declared methods using `impl`:
-
-
-The pattern: `impl ClassName.method_name(params) -> return_type { body }`
+Lines 70-72 implement forward-declared methods using `impl`. The pattern: `impl ClassName.method_name(params) -> return_type { body }`
 
 **Variadic Parameters**
 
-Lines 86-88 show positional variadic (*args):
-
-
-Lines 91-93 show keyword variadic (**kwargs):
-
+Lines 86-88 show positional variadic (*args). Lines 91-93 show keyword variadic (**kwargs):
 
 Lines 96-102 combine regular parameters, *args, and **kwargs:
-
 
 **Parameter order must be: regular, *args, **kwargs**
 
 **Async Functions**
 
-Lines 106-108 show async function declaration:
-
-
-Async functions enable concurrent operations and must be awaited when called.
+Lines 106-108 show async function declaration. Async functions enable concurrent operations and must be awaited when called.
 
 **Decorators**
 
-Lines 128-130 show single decorator application:
-
-
-Lines 134-137 demonstrate multiple decorators (applied bottom-up):
-
+Lines 128-130 show single decorator application. Lines 134-137 demonstrate multiple decorators (applied bottom-up):
 
 Equivalent to: `double_decorated = logger(tracer(double_decorated))`
 
 **Walker Abilities - Basic Events**
 
-Lines 145-147 show an entry ability that triggers when a walker spawns:
-
-
-Lines 151-153 show an exit ability that triggers when the walker completes:
-
+Lines 145-147 show an entry ability that triggers when a walker spawns. Lines 151-153 show an exit ability that triggers when the walker completes:
 
 **Abilities use `can` instead of `def` and specify event clauses with `with`.**
 
 **Walker Abilities with Typed Node Context**
 
-Lines 172-175 show root-specific ability:
-
-
-Lines 178-182 show typed node ability (triggers only for Person nodes):
-
+Lines 172-175 show root-specific ability. Lines 178-182 show typed node ability (triggers only for Person nodes):
 
 The `here` reference accesses the current node being visited.
 
@@ -124,42 +87,27 @@ flowchart TD
 
 Lines 201-212 demonstrate multiple abilities for the same node type:
 
-
 **Both abilities execute sequentially in definition order.** Walker state persists across both.
 
 **Node Abilities**
 
-Lines 225-228 show abilities defined on nodes (not walkers):
-
-
-When a TypedWalker visits, both the walker's ability AND the node's ability execute. The `self` in node abilities refers to the node.
+Lines 225-228 show abilities defined on nodes (not walkers). When a TypedWalker visits, both the walker's ability AND the node's ability execute. The `self` in node abilities refers to the node.
 
 **Async Abilities**
 
 Lines 237-240 show async walker and async abilities:
 
-
 **Abstract Abilities**
 
-Line 251 declares abstract ability:
-
-
-Lines 256-258 show implementation in subclass:
-
+Line 251 declares abstract ability. Lines 256-258 show implementation in subclass:
 
 **Static Abilities**
 
-Lines 266-268 show static abilities (rare but allowed):
-
-
-Static abilities belong to the walker class, not instances. Cannot access `self`.
+Lines 266-268 show static abilities (rare but allowed). Static abilities belong to the walker class, not instances. Cannot access `self`.
 
 **Ability Control Flow**
 
-Lines 284-287 demonstrate `disengage` for early termination:
-
-
-The `disengage` statement immediately terminates walker execution.
+Lines 284-287 demonstrate `disengage` for early termination. The `disengage` statement immediately terminates walker execution.
 
 **Ability Event Clauses**
 

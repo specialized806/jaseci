@@ -238,7 +238,6 @@ Lambda in ternary:
 
 Both expressions maintain type safety:
 
-
 **Performance Considerations**
 
 **Ternary**:

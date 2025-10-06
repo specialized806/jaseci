@@ -4,17 +4,11 @@ Try statements provide structured exception handling, allowing you to catch and 
 
 **Basic Try-Except**
 
-Lines 5-9 demonstrate fundamental exception handling:
-
-
-The try block (lines 5-6) contains code that might raise an exception. When division by zero occurs on line 6, execution jumps to the except block (lines 7-9). Line 8 prints a message instead of crashing.
+Lines 5-9 demonstrate fundamental exception handling. The try block (lines 5-6) contains code that might raise an exception. When division by zero occurs on line 6, execution jumps to the except block (lines 7-9). Line 8 prints a message instead of crashing.
 
 **Exception Binding with 'as'**
 
-Lines 12-16 show binding the exception to a variable:
-
-
-Line 14 uses `as e` to bind the exception object to variable `e`, making it accessible in the handler. Line 15 prints the exception details. The variable is only available within the except block's scope.
+Lines 12-16 show binding the exception to a variable. Line 14 uses `as e` to bind the exception object to variable `e`, making it accessible in the handler. Line 15 prints the exception details. The variable is only available within the except block's scope.
 
 **Multiple Except Clauses**
 
@@ -35,20 +29,14 @@ Only the first matching except clause executes.
 
 **Try-Except-Else**
 
-Lines 30-36 demonstrate the `else` clause:
-
-
-The else block (lines 34-35) executes only if no exception occurred in the try block. Line 31 succeeds, so line 35 executes. The else clause is useful for:
+Lines 30-36 demonstrate the `else` clause. The else block (lines 34-35) executes only if no exception occurred in the try block. Line 31 succeeds, so line 35 executes. The else clause is useful for:
 - Code that should only run on success
 - Distinguishing setup (try) from success handling (else)
 - Keeping exception-prone code isolated in the try block
 
 **Try-Finally**
 
-Lines 39-45 demonstrate the `finally` clause:
-
-
-The finally block (lines 43-44) always executes, whether an exception occurred or not. Line 44 runs after the try block completes successfully. Finally clauses are essential for:
+Lines 39-45 demonstrate the `finally` clause. The finally block (lines 43-44) always executes, whether an exception occurred or not. Line 44 runs after the try block completes successfully. Finally clauses are essential for:
 - Cleanup operations (closing files, releasing resources)
 - Ensuring critical code runs regardless of errors
 - Logging or auditing that must happen
@@ -77,17 +65,11 @@ In this example, line 50 accesses a valid list index (no exception), so line 54 
 
 **Try-Finally Without Except**
 
-Lines 60-64 show try-finally without exception handling:
-
-
-This pattern ensures cleanup code runs even if an exception propagates up. The finally block executes before the exception is re-raised.
+Lines 60-64 show try-finally without exception handling. This pattern ensures cleanup code runs even if an exception propagates up. The finally block executes before the exception is re-raised.
 
 **Nested Try Statements**
 
-Lines 67-75 demonstrate nested exception handling:
-
-
-Line 69 raises `ZeroDivisionError`. The inner except (line 70) only catches `ValueError`, so it doesn't match. The exception propagates to the outer try, where line 73 catches it as `Exception`.
+Lines 67-75 demonstrate nested exception handling. Line 69 raises `ZeroDivisionError`. The inner except (line 70) only catches `ValueError`, so it doesn't match. The exception propagates to the outer try, where line 73 catches it as `Exception`.
 
 **Exception Handling Flow**
 

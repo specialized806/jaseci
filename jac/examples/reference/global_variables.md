@@ -4,33 +4,21 @@ Global variables are module-level declarations that can have access control tags
 
 **Let with Access Modifiers**
 
-Lines 4-5 demonstrate `let` declarations with access tags:
-
-
-Line 4: `let:priv` creates a private module-level variable accessible only within the current module.
+Lines 4-5 demonstrate `let` declarations with access tags. Line 4: `let:priv` creates a private module-level variable accessible only within the current module.
 Line 5: `let:pub` creates a public module-level variable accessible from other modules.
 
 **Glob with Access Modifiers**
 
-Lines 8-9 show `glob` declarations with access control:
-
-
-Line 8: `glob:protect` creates a protected variable with restricted access.
+Lines 8-9 show `glob` declarations with access control. Line 8: `glob:protect` creates a protected variable with restricted access.
 Line 9: `glob shared_var` creates a global variable with default visibility.
 
 **Multiple Variable Declarations**
 
-Line 12 demonstrates declaring multiple globals in one statement:
-
-
-This comma-separated syntax declares three global variables simultaneously.
+Line 12 demonstrates declaring multiple globals in one statement. This comma-separated syntax declares three global variables simultaneously.
 
 **Typed Global Variables**
 
-Line 15 shows a typed global declaration:
-
-
-The type annotation `: int` specifies that `counter` must be an integer.
+Line 15 shows a typed global declaration. The type annotation `: int` specifies that `counter` must be an integer.
 
 **Access Control Tags**
 
@@ -43,10 +31,7 @@ The type annotation `: int` specifies that `counter` must be an integer.
 
 **Using Global Variables**
 
-Lines 17-19 show accessing all declared globals in an entry block:
-
-
-All module-level globals are accessible within the module's entry blocks and functions.
+Lines 17-19 show accessing all declared globals in an entry block. All module-level globals are accessible within the module's entry blocks and functions.
 
 **Global Variable Declaration Patterns**
 

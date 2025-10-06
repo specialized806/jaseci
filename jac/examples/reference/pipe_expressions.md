@@ -11,10 +11,7 @@ The key advantage is readability, especially when chaining multiple operations.
 
 **Basic Forward Pipe Syntax**
 
-Line 9 demonstrates the basic form:
-
-
-This breaks down as:
+Line 9 demonstrates the basic form. This breaks down as:
 - `5` is the value on the left
 - `|>` is the forward pipe operator
 - `square` is the function on the right
@@ -40,10 +37,7 @@ These demonstrate how pipe works with different operations.
 
 **Chained Forward Pipes**
 
-Line 12 demonstrates the real power - chaining multiple operations:
-
-
-This creates a transformation pipeline that evaluates left to right:
+Line 12 demonstrates the real power - chaining multiple operations. This creates a transformation pipeline that evaluates left to right:
 
 ```mermaid
 graph LR
@@ -77,10 +71,7 @@ The piped version eliminates nested parentheses and makes the data flow explicit
 
 **Pipe with Built-in Functions**
 
-Line 15 shows using pipe with built-in functions:
-
-
-This pipes a list into the `sum` function, producing 15. The pipe operator works with:
+Line 15 shows using pipe with built-in functions. This pipes a list into the `sum` function, producing 15. The pipe operator works with:
 - User-defined functions (lines 3-5)
 - Built-in functions (line 15)
 - Lambda expressions (line 18)
@@ -88,17 +79,13 @@ This pipes a list into the `sum` function, producing 15. The pipe operator works
 
 **Pipe to Lambda Expressions**
 
-Line 18 demonstrates piping to inline lambda functions:
-
-
-This breaks down as:
+Line 18 demonstrates piping to inline lambda functions. This breaks down as:
 - `10` is the input value
 - `|>` pipes it to the lambda
 - `(lambda n: int : n * 3)` multiplies by 3
 - Result: `10 * 3 = 30`
 
 The lambda must be wrapped in parentheses when used with pipe. This pattern is useful for one-off transformations in the middle of a pipeline:
-
 
 **Forward Pipe vs Pipe Back**
 

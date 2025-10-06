@@ -4,27 +4,17 @@ Jac supports flexible function calling with positional arguments, keyword argume
 
 **Function Definitions**
 
-Lines 3-5 define a function with three parameters, the last having a default value:
-
-
-The parameter `z` defaults to 10 if not provided. The function returns a tuple of two computed values.
+Lines 3-5 define a function with three parameters, the last having a default value. The parameter `z` defaults to 10 if not provided. The function returns a tuple of two computed values.
 
 Lines 7-9 define a variadic function accepting both *args and **kwargs:
 
-
 **Positional Arguments**
 
-Line 13 demonstrates the most basic calling pattern - positional arguments:
-
-
-Arguments are matched to parameters by position: `x=2`, `y=3`, `z=4`. The order matters.
+Line 13 demonstrates the most basic calling pattern - positional arguments. Arguments are matched to parameters by position: `x=2`, `y=3`, `z=4`. The order matters.
 
 **Keyword Arguments**
 
-Line 16 shows calling with all keyword arguments:
-
-
-Each argument explicitly specifies which parameter it's for. This allows:
+Line 16 shows calling with all keyword arguments. Each argument explicitly specifies which parameter it's for. This allows:
 - Arguments in any order
 - Clear intent for each value
 - Better readability for complex calls
@@ -32,7 +22,6 @@ Each argument explicitly specifies which parameter it's for. This allows:
 **Mixed Positional and Keyword Arguments**
 
 Line 19 demonstrates combining both styles:
-
 
 **Rules for mixing:**
 1. Positional arguments must come first
@@ -42,17 +31,11 @@ Line 19 demonstrates combining both styles:
 
 **Default Parameter Usage**
 
-Line 22 shows omitting parameters with default values:
-
-
-Only `x` and `y` are provided. The parameter `z` automatically uses its default value of 10.
+Line 22 shows omitting parameters with default values. Only `x` and `y` are provided. The parameter `z` automatically uses its default value of 10.
 
 **Variadic Arguments**
 
-Line 25 demonstrates calling a function with *args and **kwargs:
-
-
-In this call:
+Line 25 demonstrates calling a function with *args and **kwargs. In this call:
 - Positional arguments (1, 2, 3) are collected into `args` tuple
 - Keyword arguments (a=4, b=5) are collected into `kwargs` dictionary
 - The function sums all values: 1+2+3+4+5 = 15

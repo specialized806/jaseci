@@ -153,7 +153,6 @@ When a walker is spawned:
 
 The walker object persists after disengage:
 
-
 After disengage:
 - All `has` attributes accessible
 - Can inspect walker's final state
@@ -194,7 +193,6 @@ After disengage:
 
 A walker can have multiple conditional disengage points:
 
-
 The walker stops at the first matching condition.
 
 **Disengage and Visit Interaction**
@@ -211,7 +209,6 @@ Lines 11 and 20 show `visit` statements:
 **Walker Abilities Execution Order**
 
 If multiple abilities match a node type, they execute in definition order:
-
 
 If `first` disengages, `second` never executes.
 

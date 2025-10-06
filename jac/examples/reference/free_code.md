@@ -30,9 +30,7 @@ Lines 12-14 define a standalone function `square` that returns `n ** 2`. This fu
 
 **Entry Block (Main Execution)**
 
-Lines 17-21 demonstrate the `with entry` block, which executes when the module runs:
-
-Line 18: `print("Free code execution")` - Executes unconditionally
+Lines 17-21 demonstrate the `with entry` block, which executes when the module runs. Line 18: `print("Free code execution")` - Executes unconditionally
 
 Line 19: `print(square(7))` - Calls the square function with 7, printing 49
 
@@ -45,7 +43,6 @@ Line 20: `print(int(Circle(radius=10).area()))` - Demonstrates chained operation
 **Named Entry Points**
 
 Lines 24-26 show a named entry point using `with entry:custom`:
-
 
 Named entry points allow conditional or selective execution. The `:custom` label can be used to execute this block specifically.
 

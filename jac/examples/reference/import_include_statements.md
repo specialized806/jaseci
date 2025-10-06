@@ -4,20 +4,14 @@ Import statements control module dependencies, allowing code to access functiona
 
 **Simple Imports**
 
-Lines 4-5 demonstrate basic import patterns:
-
-
-Line 4: Imports a single module (`os`)
+Lines 4-5 demonstrate basic import patterns. Line 4: Imports a single module (`os`)
 Line 5: Imports multiple modules in one statement, comma-separated (`sys`, `json`)
 
 After importing, all module members are accessible via dot notation: `os.getcwd()`, `sys.path`, `json.dumps()`.
 
 **Import with Alias**
 
-Line 8 shows renaming a module during import:
-
-
-The module is imported but referenced by the shorter name `dt` instead of `datetime`. Use this for:
+Line 8 shows renaming a module during import. The module is imported but referenced by the shorter name `dt` instead of `datetime`. Use this for:
 - Shorter names (convenience)
 - Avoiding naming conflicts
 - Conventional abbreviations
@@ -26,10 +20,7 @@ Line 26 demonstrates usage: `dt.datetime.now().year`
 
 **Import From with Specific Items**
 
-Line 11 demonstrates selective imports using `import from`:
-
-
-This syntax:
+Line 11 demonstrates selective imports using `import from`. This syntax:
 - Imports only specific items from a module (`sqrt`, `pi`, `log`)
 - Can alias imported items (`log as logarithm`)
 - Uses curly braces `{ }` to group the imports
@@ -39,17 +30,11 @@ Lines 23-25 show usage: `sqrt(16)`, `pi`, `logarithm(10)` - no `math.` prefix ne
 
 **Import From with Trailing Comma**
 
-Line 14 shows that trailing commas are allowed:
-
-
-The trailing comma after `Counter` is valid and useful for version control (adding/removing items creates cleaner diffs).
+Line 14 shows that trailing commas are allowed. The trailing comma after `Counter` is valid and useful for version control (adding/removing items creates cleaner diffs).
 
 **Relative Imports**
 
-Lines 17-19 (commented) show relative import syntax for package-relative imports:
-
-
-The dot notation indicates package hierarchy:
+Lines 17-19 (commented) show relative import syntax for package-relative imports. The dot notation indicates package hierarchy:
 - `.` - Current package
 - `..` - Parent package
 - `...` - Grandparent package
@@ -93,7 +78,6 @@ flowchart TD
 **Usage Examples**
 
 Lines 21-27 demonstrate using imported items:
-
 
 **When to Use Each Pattern**
 

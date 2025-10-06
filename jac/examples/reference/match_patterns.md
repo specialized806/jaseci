@@ -55,9 +55,7 @@ graph LR
 
 **4. MatchStar Pattern**
 
-Lines 25-28 demonstrate the star pattern for variable-length sequences:
-
-Pattern: `case [1, *rest, 3]:`
+Lines 25-28 demonstrate the star pattern for variable-length sequences. Pattern: `case [1, *rest, 3]:`
 
 | Component | Matches | Example |
 |-----------|---------|---------|
@@ -69,9 +67,7 @@ If data is `[1, 2, 2, 3]`, then `rest` would be `[2, 2]`.
 
 **5. MatchMapping Pattern**
 
-Lines 31-34 show dictionary pattern matching:
-
-Pattern: `case {"key1" : 1, "key2" : 2, **rest}:`
+Lines 31-34 show dictionary pattern matching. Pattern: `case {"key1" : 1, "key2" : 2, **rest}:`
 
 ```mermaid
 graph TD
@@ -91,9 +87,7 @@ graph TD
 
 **6. MatchClass Pattern**
 
-Lines 37-38 demonstrate class pattern matching with type conversion:
-
-Pattern: `case Point(int(a), y = 0):`
+Lines 37-38 demonstrate class pattern matching with type conversion. Pattern: `case Point(int(a), y = 0):`
 
 | Component | Action | Purpose |
 |-----------|--------|---------|
@@ -105,9 +99,7 @@ This combines three operations: type checking, type conversion, and value valida
 
 **7. MatchAs Pattern**
 
-Lines 41-44 show capture patterns with the `as` keyword:
-
-Pattern: `case [1, 2, rest_val as value]:`
+Lines 41-44 show capture patterns with the `as` keyword. Pattern: `case [1, 2, rest_val as value]:`
 
 | Element | What It Does |
 |---------|-------------|
@@ -118,9 +110,7 @@ The `as` keyword creates an additional binding, useful when you need the same va
 
 **8. MatchOr Pattern**
 
-Lines 47-48 demonstrate the OR pattern using `|`:
-
-Pattern: `case [1, 2] | [3, 4]:`
+Lines 47-48 demonstrate the OR pattern using `|`. Pattern: `case [1, 2] | [3, 4]:`
 
 ```mermaid
 graph LR

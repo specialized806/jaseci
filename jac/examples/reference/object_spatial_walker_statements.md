@@ -90,13 +90,11 @@ The queued nodes are abandoned when `disengage` runs.
 
 Even though the walker terminates early, you can still access its state:
 
-
 The walker instance persists after `disengage`, so you can read its attributes.
 
 **Common Pattern: Search and Stop**
 
 A very common pattern combines `disengage` with a search:
-
 
 This searches the graph until finding the target, then stops immediately rather than continuing to traverse.
 

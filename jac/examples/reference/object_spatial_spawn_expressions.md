@@ -110,9 +110,7 @@ Choose the form that makes your code most readable for the specific situation.
 
 The walker-first syntax shines when:
 
-
 The node-first syntax is better for simple cases:
-
 
 **Key Takeaways**
 

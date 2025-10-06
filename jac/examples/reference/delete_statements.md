@@ -166,7 +166,6 @@ Deleting a variable removes the binding, not necessarily the object:
 
 Attempting to delete non-existent items raises errors:
 
-
 Safe deletion patterns:
 
 **When to Use Del**

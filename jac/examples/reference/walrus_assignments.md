@@ -4,10 +4,7 @@ The walrus operator `:=` enables assignment within expressions, allowing you to 
 
 **Walrus in If Conditions**
 
-Lines 5-7 demonstrate using walrus in an if statement:
-
-
-Execution flow:
+Lines 5-7 demonstrate using walrus in an if statement. Execution flow:
 1. Assign 10 to `x`
 2. Evaluate `x > 5` (true, since 10 > 5)
 3. Enter the if block
@@ -17,10 +14,7 @@ Without walrus, you'd need: `x = 10; if x > 5 { ... }`. The walrus combines assi
 
 **Walrus in While Loops**
 
-Lines 10-15 demonstrate walrus in a while condition:
-
-
-Line 12 assigns and tests in one expression:
+Lines 10-15 demonstrate walrus in a while condition. Line 12 assigns and tests in one expression:
 1. Evaluate ternary: `data[i] if i < len(data) else None`
 2. Assign result to `item`
 3. Test `item and i < 3` (None is falsy, ending loop)
@@ -30,10 +24,7 @@ This pattern processes items until a sentinel value (None) or condition limit.
 
 **Walrus in Expressions**
 
-Lines 18-19 demonstrate walrus in a regular expression:
-
-
-Execution:
+Lines 18-19 demonstrate walrus in a regular expression. Execution:
 1. Assign 20 to `y`
 2. Walrus evaluates to 20
 3. Add 10 to get 30
@@ -43,10 +34,7 @@ After this, `y` equals 20 and `result` equals 30. The walrus returns the assigne
 
 **Multiple Walrus Assignments**
 
-Lines 22-24 show multiple walrus operators:
-
-
-Execution:
+Lines 22-24 show multiple walrus operators. Execution:
 1. Assign 5 to `a` (evaluates to 5, which is truthy)
 2. Assign 10 to `b` (evaluates to 10, which is truthy)
 3. Test `5 and 10` (true)
@@ -54,10 +42,7 @@ Execution:
 
 **Walrus in Function Calls**
 
-Lines 27-33 demonstrate walrus with function calls:
-
-
-Line 31 assigns the function result and tests it:
+Lines 27-33 demonstrate walrus with function calls. Line 31 assigns the function result and tests it:
 1. Call `process(7)` which returns 14
 2. Assign 14 to `z`
 3. Test if `z > 10` (true)
@@ -67,10 +52,7 @@ This avoids calling the function twice or storing in a temporary variable.
 
 **Walrus with Complex Expressions**
 
-Lines 36-39 show walrus with built-in functions:
-
-
-Line 37 computes sum and assigns in one step:
+Lines 36-39 show walrus with built-in functions. Line 37 computes sum and assigns in one step:
 1. Calculate `sum(numbers)` which returns 15
 2. Assign 15 to `total`
 3. Test if `total > 10` (true)
@@ -78,10 +60,7 @@ Line 37 computes sum and assigns in one step:
 
 **Walrus in Nested Context**
 
-Lines 42-46 demonstrate nesting:
-
-
-Nested walrus assignments:
+Lines 42-46 demonstrate nesting. Nested walrus assignments:
 1. Outer: assign 5 to `m`, test truthiness (true)
 2. Inner: assign `m * 2` (10) to `n`, test if `n > 8` (true)
 3. Both `m` and `n` available in innermost block

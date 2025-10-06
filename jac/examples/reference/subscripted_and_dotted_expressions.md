@@ -104,5 +104,4 @@ Line 31 prints all the values extracted in lines 13-29:
 
 Combining dot and subscript notation enables powerful data access:
 
-
 These expressions form the basis for navigating complex data structures in Jac programs.

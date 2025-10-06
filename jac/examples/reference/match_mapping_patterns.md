@@ -66,9 +66,7 @@ Without `**rest`, the pattern still matches dictionaries with extra keys, but th
 
 **Multiple Keys with Values**
 
-Lines 28-32 demonstrate matching multiple specific key-value pairs:
-
-Line 30 pattern: `case {"host": "localhost", "port": 8080, **rest}:`
+Lines 28-32 demonstrate matching multiple specific key-value pairs. Line 30 pattern: `case {"host": "localhost", "port": 8080, **rest}:`
 
 | Dictionary (line 28) | Pattern Matches | Rest Captures |
 |---------------------|-----------------|---------------|

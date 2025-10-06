@@ -110,7 +110,6 @@ If you had a different walker type (e.g., `Consumer`), the `make` ability wouldn
 
 You can have multiple abilities for different type combinations:
 
-
 Each ability executes only when the matching walker type visits.
 
 **Entry vs Exit Abilities**
@@ -127,7 +126,6 @@ Entry abilities (like lines 4, 10) run when visiting begins. Exit abilities run 
 **Polymorphic Spatial Programming**
 
 The typed context system enables polymorphic behavior:
-
 
 The same node type can respond differently to different walker types, creating flexible, extensible systems.
 

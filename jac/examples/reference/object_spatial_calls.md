@@ -51,10 +51,7 @@ Once nodes are in the queue, they're always processed FIFO regardless of how the
 
 **Walker Return Values**
 
-Lines 219-221 demonstrate accessing walker state after execution:
-
-
-The spawn operator returns the walker instance, allowing you to:
+Lines 219-221 demonstrate accessing walker state after execution. The spawn operator returns the walker instance, allowing you to:
 - Access accumulated data (lines 71-72: `collected` and `sum` attributes)
 - Check walker state after traversal completes
 - Use walkers as data collectors or analyzers
@@ -111,10 +108,7 @@ Lines 125-135 show the walker using these parameters to control its behavior, st
 
 **Multiple Walkers on Same Graph**
 
-Lines 232-238 demonstrate running different walkers on the same graph structure:
-
-
-Each walker traverses independently:
+Lines 232-238 demonstrate running different walkers on the same graph structure. Each walker traverses independently:
 - `Counter` (lines 139-150) counts total tasks
 - `Analyzer` (lines 152-168) categorizes by priority
 
@@ -141,10 +135,7 @@ This structure is then traversed by various walkers throughout the example.
 
 **Comparing Traversal Approaches**
 
-Lines 257-281 demonstrate how different visit patterns affect traversal order:
-
-
-The key insight: traversal order is controlled by HOW you structure your visit statements, not by the spawn operator used.
+Lines 257-281 demonstrate how different visit patterns affect traversal order. The key insight: traversal order is controlled by HOW you structure your visit statements, not by the spawn operator used.
 
 Both depth-first and breadth-first styles process the queue FIFO, but they add nodes to the queue differently:
 - Depth-first effect: Add child nodes to front of queue

@@ -13,17 +13,11 @@ Components:
 
 **Test Examples**
 
-Lines 4-6 define `test1`:
+Lines 4-6 define `test1`. This test uses `almostEqual()` to check if two floating-point numbers are approximately equal. This function is useful for comparing floats where exact equality might fail due to precision issues.
 
-This test uses `almostEqual()` to check if two floating-point numbers are approximately equal. This function is useful for comparing floats where exact equality might fail due to precision issues.
+Lines 9-11 define `test2`. This uses a simple equality assertion to verify that 5 equals itself.
 
-Lines 9-11 define `test2`:
-
-This uses a simple equality assertion to verify that 5 equals itself.
-
-Lines 14-16 define `test3`:
-
-This uses a membership assertion to verify that the character "e" exists in the string "qwerty".
+Lines 14-16 define `test3`. This uses a membership assertion to verify that the character "e" exists in the string "qwerty".
 
 **Assertion Behavior**
 
@@ -36,9 +30,7 @@ Assertions are the primary mechanism for verifying expected behavior. Each test 
 
 **Running Tests**
 
-Lines 18-26 show programmatic test execution:
-
-Line 18 uses `with entry:__main__` to ensure code only runs when the file is executed directly (not imported).
+Lines 18-26 show programmatic test execution. Line 18 uses `with entry:__main__` to ensure code only runs when the file is executed directly (not imported).
 
 Lines 21-24 use `subprocess.run()` to execute the Jac test runner:
 - `["jac", "test", f"{__file__}"]` - Command to test current file

@@ -2,9 +2,7 @@ Bitwise expressions manipulate individual bits in integer values using logical o
 
 **Bitwise OR Operator**
 
-Lines 5-6 demonstrate the bitwise OR operator `|`:
-
-The OR operation compares each bit position:
+Lines 5-6 demonstrate the bitwise OR operator `|`. The OR operation compares each bit position:
 
 | Operation | Binary | Decimal |
 |-----------|--------|---------|
@@ -16,9 +14,7 @@ Each bit is 1 if either operand has 1 in that position. Line 5 produces 7 becaus
 
 **Bitwise XOR Operator**
 
-Lines 9-10 show the bitwise XOR (exclusive OR) operator `^`:
-
-XOR returns 1 only when bits differ:
+Lines 9-10 show the bitwise XOR (exclusive OR) operator `^`. XOR returns 1 only when bits differ:
 
 | Operation | Binary | Decimal |
 |-----------|--------|---------|
@@ -30,9 +26,7 @@ Line 9 produces 6. The rightmost bit is 0 (both operands have 1), but the second
 
 **Bitwise AND Operator**
 
-Lines 13-14 demonstrate the bitwise AND operator `&`:
-
-AND returns 1 only when both operands have 1:
+Lines 13-14 demonstrate the bitwise AND operator `&`. AND returns 1 only when both operands have 1:
 
 | Operation | Binary | Decimal |
 |-----------|--------|---------|
@@ -44,9 +38,7 @@ Line 13 produces 1 because only the rightmost bit is 1 in both numbers.
 
 **Left Shift Operator**
 
-Lines 17-18 show the left shift operator `<<`:
-
-Left shift moves all bits to the left, filling with zeros:
+Lines 17-18 show the left shift operator `<<`. Left shift moves all bits to the left, filling with zeros:
 
 ```mermaid
 graph LR
@@ -64,9 +56,7 @@ Left shifting by n positions multiplies by 2^n.
 
 **Right Shift Operator**
 
-Lines 21-22 demonstrate the right shift operator `>>`:
-
-Right shift moves all bits to the right:
+Lines 21-22 demonstrate the right shift operator `>>`. Right shift moves all bits to the right:
 
 | Operation | Binary | Decimal | Equivalent |
 |-----------|--------|---------|------------|
@@ -78,9 +68,7 @@ Right shifting by n positions divides by 2^n (integer division).
 
 **Bitwise NOT Operator**
 
-Lines 25-27 show the bitwise NOT operator `~` (unary):
-
-NOT inverts all bits. Due to two's complement representation:
+Lines 25-27 show the bitwise NOT operator `~` (unary). NOT inverts all bits. Due to two's complement representation:
 
 ```mermaid
 graph LR
@@ -97,9 +85,7 @@ In two's complement, `~x` always equals `-(x + 1)`.
 
 **Combined Bitwise Operations**
 
-Lines 30-31 demonstrate combining bitwise operations:
-
-Line 30 uses parentheses to control order:
+Lines 30-31 demonstrate combining bitwise operations. Line 30 uses parentheses to control order:
 1. `8 | 4` = 12 (binary: 1000 | 0100 = 1100)
 2. `12 & 12` = 12 (binary: 1100 & 1100 = 1100)
 
@@ -109,9 +95,7 @@ Line 31 follows operator precedence (AND before XOR):
 
 **Chained Bitwise Operations**
 
-Lines 34-35 show chaining operators:
-
-Line 34: AND has higher precedence than OR:
+Lines 34-35 show chaining operators. Line 34: AND has higher precedence than OR:
 1. `15 & 7` = 7 (binary: 1111 & 0111 = 0111)
 2. `7 | 8` = 15 (binary: 0111 | 1000 = 1111)
 
@@ -121,9 +105,7 @@ Line 35: Shifts have equal precedence, evaluated left-to-right:
 
 **Complex Bitwise Expression**
 
-Lines 38-39 demonstrate a complex expression:
-
-Breaking it down:
+Lines 38-39 demonstrate a complex expression. Breaking it down:
 
 ```mermaid
 graph TD

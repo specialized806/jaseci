@@ -2,21 +2,15 @@ Code blocks organize sequences of statements within curly braces, providing stru
 
 **Entry Point Code Block**
 
-Lines 3-20 show an entry code block - the starting point when the module executes:
-
-The `with entry` construct creates a code block that runs when the program starts. Everything inside the curly braces `{ }` is part of this block.
+Lines 3-20 show an entry code block - the starting point when the module executes. The `with entry` construct creates a code block that runs when the program starts. Everything inside the curly braces `{ }` is part of this block.
 
 **Expression Statements**
 
-Line 5 demonstrates an expression statement:
-
-An expression followed by a semicolon becomes a statement. The expression is evaluated for its side effect (in this case, printing output). The semicolon is required to mark the end of the statement.
+Line 5 demonstrates an expression statement. An expression followed by a semicolon becomes a statement. The expression is evaluated for its side effect (in this case, printing output). The semicolon is required to mark the end of the statement.
 
 **Function Definitions Inside Blocks**
 
-Lines 8-10 show that you can define functions inside code blocks:
-
-This function is defined within the entry block's scope. The function itself contains its own code block (lines 9-10) with a return statement.
+Lines 8-10 show that you can define functions inside code blocks. This function is defined within the entry block's scope. The function itself contains its own code block (lines 9-10) with a return statement.
 
 **Code Block Structure**
 
@@ -39,9 +33,7 @@ Every code block has:
 
 **Function Call Statements**
 
-Line 13 shows a function call as a statement:
-
-The function call `add(10, 89)` is evaluated, its result is passed to `print()`, and then the statement completes. Function calls can be statements when their return value isn't assigned.
+Line 13 shows a function call as a statement. The function call `add(10, 89)` is evaluated, its result is passed to `print()`, and then the statement completes. Function calls can be statements when their return value isn't assigned.
 
 **Multiple Statement Types**
 

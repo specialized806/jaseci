@@ -4,10 +4,7 @@ Implementation blocks (`impl`) provide bodies for forward-declared elements, sep
 
 **Forward Declarations**
 
-Lines 4-6 show forward declarations using semicolons to declare signatures without bodies:
-
-
-Line 4: Function signature without implementation
+Lines 4-6 show forward declarations using semicolons to declare signatures without bodies. Line 4: Function signature without implementation
 Line 5: Object declaration without members
 Line 6: Enum declaration without values
 
@@ -15,31 +12,19 @@ Forward declarations establish names and interfaces early, allowing references b
 
 **Function Implementation**
 
-Lines 9-11 implement the forward-declared function:
-
-
-The `impl` keyword introduces the implementation block. The signature must match the forward declaration exactly.
+Lines 9-11 implement the forward-declared function. The `impl` keyword introduces the implementation block. The signature must match the forward declaration exactly.
 
 **Object Implementation**
 
-Lines 14-18 implement the forward-declared object:
-
-
-The implementation adds the object's structure: member variables and methods.
+Lines 14-18 implement the forward-declared object. The implementation adds the object's structure: member variables and methods.
 
 **Enum Implementation**
 
-Lines 21-25 implement the forward-declared enum:
-
-
-Enum implementations provide member names and their associated values.
+Lines 21-25 implement the forward-declared enum. Enum implementations provide member names and their associated values.
 
 **Using Implemented Elements**
 
-Lines 27-35 demonstrate using the implemented elements:
-
-
-All elements work normally after implementation, as if they were defined in a single step.
+Lines 27-35 demonstrate using the implemented elements. All elements work normally after implementation, as if they were defined in a single step.
 
 **Forward Declaration and Implementation Pattern**
 

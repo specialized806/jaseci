@@ -40,10 +40,7 @@ These demonstrate how pipe back works with different functions.
 
 **Pipe Back with Lambda Expressions**
 
-Line 13 demonstrates using pipe back with inline lambda functions:
-
-
-This breaks down as:
+Line 13 demonstrates using pipe back with inline lambda functions. This breaks down as:
 - `(lambda n: int : n * 3)` creates an inline function that multiplies by 3
 - `<|` applies the lambda to the value
 - `10` is the input value
@@ -53,10 +50,7 @@ The lambda must be wrapped in parentheses when used with pipe back. This pattern
 
 **Pipe Back with Built-in Functions**
 
-Line 16 shows using pipe back with built-in functions:
-
-
-This applies the built-in `sum` function to the list, producing 15. The pipe back operator works with any callable:
+Line 16 shows using pipe back with built-in functions. This applies the built-in `sum` function to the list, producing 15. The pipe back operator works with any callable:
 - User-defined functions (lines 3-5)
 - Lambda expressions (line 13)
 - Built-in functions (line 16)
@@ -64,10 +58,7 @@ This applies the built-in `sum` function to the list, producing 15. The pipe bac
 
 **Multiple Operations**
 
-Lines 19-20 show sequential pipe back operations:
-
-
-While you can't chain pipe back operators in a single expression (unlike forward pipe), you can sequence them across statements. This applies transformations step by step.
+Lines 19-20 show sequential pipe back operations. While you can't chain pipe back operators in a single expression (unlike forward pipe), you can sequence them across statements. This applies transformations step by step.
 
 **Pipe Back vs Forward Pipe**
 

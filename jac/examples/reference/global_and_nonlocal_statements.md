@@ -4,38 +4,23 @@ The `global` and `nonlocal` statements control variable scope, allowing function
 
 **Module-Level Global Variables**
 
-Lines 3-4 declare module-level global variables:
-
-
-These variables exist at module scope and are accessible throughout the module.
+Lines 3-4 declare module-level global variables. These variables exist at module scope and are accessible throughout the module.
 
 **Global Statement - Single Variable**
 
-Lines 6-11 demonstrate the `global` statement:
-
-
-Line 8: `global x` declares that `x` refers to the module-level global variable (line 3). Without this statement, line 9's assignment would create a new local variable instead of modifying the global.
+Lines 6-11 demonstrate the `global` statement. Line 8: `global x` declares that `x` refers to the module-level global variable (line 3). Without this statement, line 9's assignment would create a new local variable instead of modifying the global.
 
 **Global Statement - Multiple Variables**
 
-Lines 13-19 show declaring multiple global variables:
-
-
-Line 15: `global a, b` is more concise than separate `global` statements for each variable.
+Lines 13-19 show declaring multiple global variables. Line 15: `global a, b` is more concise than separate `global` statements for each variable.
 
 **Nonlocal Statement - Single Variable**
 
-Lines 21-34 demonstrate the `nonlocal` statement for nested functions:
-
-
-Line 26: `nonlocal y` declares that `y` refers to the enclosing function's variable (line 22), not a global or new local. Line 27's assignment modifies the outer function's `y`.
+Lines 21-34 demonstrate the `nonlocal` statement for nested functions. Line 26: `nonlocal y` declares that `y` refers to the enclosing function's variable (line 22), not a global or new local. Line 27's assignment modifies the outer function's `y`.
 
 **Nonlocal Statement - Multiple Variables**
 
-Lines 36-52 show declaring multiple nonlocal variables:
-
-
-Line 43: `nonlocal p, q, r` modifies all three variables from the enclosing scope.
+Lines 36-52 show declaring multiple nonlocal variables. Line 43: `nonlocal p, q, r` modifies all three variables from the enclosing scope.
 
 **Scope Resolution Rules**
 
@@ -49,7 +34,6 @@ Without `global` or `nonlocal`, assignments create new local variables. These ke
 **Execution Flow**
 
 Lines 54-65 demonstrate the execution and effects:
-
 
 **Variable Modification Flow**
 

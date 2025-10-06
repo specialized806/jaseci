@@ -76,7 +76,6 @@ This is crucial to understand about singleton patterns:
 
 Singleton patterns use identity (`is`), which means:
 
-
 **Why Use Singleton Patterns?**
 
 | Reason | Explanation |

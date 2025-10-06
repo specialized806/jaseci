@@ -4,10 +4,7 @@ Jac supports embedding Python code blocks using the `::py::` delimiter syntax, e
 
 **Basic Python Block**
 
-Lines 4-10 demonstrate the simplest Python embedding:
-
-
-Python code is delimited by `::py::` markers at the beginning and end. Functions defined in Python blocks are directly callable from Jac code (lines 14-15).
+Lines 4-10 demonstrate the simplest Python embedding. Python code is delimited by `::py::` markers at the beginning and end. Functions defined in Python blocks are directly callable from Jac code (lines 14-15).
 
 **Python Block Syntax**
 
@@ -19,10 +16,7 @@ The `::py::` delimiter:
 
 **Python Methods in Objects**
 
-Lines 19-41 show Python methods within a Jac object:
-
-
-Python methods:
+Lines 19-41 show Python methods within a Jac object. Python methods:
 - Use `self` to access Jac member variables (line 25: `self.data`)
 - Follow Python syntax and conventions
 - Can use Python built-ins and comprehensions
@@ -30,27 +24,18 @@ Python methods:
 
 **Data Interoperability**
 
-Lines 55-76 demonstrate Jac-Python data exchange:
-
-
-Data structures seamlessly pass between Jac and Python:
+Lines 55-76 demonstrate Jac-Python data exchange. Data structures seamlessly pass between Jac and Python:
 - Jac lists work as Python lists (line 70)
 - Jac dicts work as Python dicts (line 74)
 - Return values integrate naturally into Jac code
 
 **Python Libraries Integration**
 
-Lines 79-106 show importing and using Python libraries:
-
-
-Standard Python libraries and third-party packages are fully available within `::py::` blocks. Import statements work normally (lines 80-81).
+Lines 79-106 show importing and using Python libraries. Standard Python libraries and third-party packages are fully available within `::py::` blocks. Import statements work normally (lines 80-81).
 
 **Python in Nodes**
 
-Lines 109-135 demonstrate Python methods in node definitions:
-
-
-Python methods in nodes can:
+Lines 109-135 demonstrate Python methods in node definitions. Python methods in nodes can:
 - Access node state via `self.value` (line 117)
 - Modify node attributes (line 118)
 - Import libraries locally (line 116)
@@ -58,10 +43,7 @@ Python methods in nodes can:
 
 **Mixed Jac and Python Methods**
 
-Lines 166-205 show combining Jac and Python methods in the same object:
-
-
-Objects can have both Jac methods (lines 170-173) and Python methods (lines 177-191). Both types:
+Lines 166-205 show combining Jac and Python methods in the same object. Objects can have both Jac methods (lines 170-173) and Python methods (lines 177-191). Both types:
 - Access the same `self.history` attribute
 - Are called the same way from Jac code (lines 198-200)
 - Can modify shared state

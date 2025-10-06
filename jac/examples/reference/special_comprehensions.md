@@ -99,10 +99,7 @@ Order matters - each filter receives output of the previous filter. Line 86 show
 
 **Filter on Edge Traversal Results**
 
-Lines 115-117 demonstrate the critical spatial programming pattern:
-
-
-This is where comprehensions become essential for OSP:
+Lines 115-117 demonstrate the critical spatial programming pattern. This is where comprehensions become essential for OSP:
 - `[-->]` traverses outgoing edges, returns target nodes
 - Result is a collection of nodes (Employee objects)
 - `(?salary > 75000)` filters nodes by attribute
@@ -117,10 +114,7 @@ graph LR
 
 **Typed Edge with Node Filter**
 
-Lines 121-123 combine edge type filtering with node attribute filtering:
-
-
-Workflow:
+Lines 121-123 combine edge type filtering with node attribute filtering. Workflow:
 - `[->:ReportsTo:->]` - Traverse only ReportsTo-typed edges
 - Returns nodes connected via those specific edges
 - `(?department == "Engineering")` - Filter nodes by attribute
@@ -129,10 +123,7 @@ This dual-level filtering (structural + property) is a hallmark of Jac's spatial
 
 **Assign on Edge Results**
 
-Lines 129-130 demonstrate spatial bulk updates:
-
-
-Pattern:
+Lines 129-130 demonstrate spatial bulk updates. Pattern:
 1. Get nodes via edge traversal: `[-->]`
 2. Modify all retrieved nodes in bulk
 
@@ -140,19 +131,13 @@ This enables graph-wide updates: traverse to find nodes, then update them. Commo
 
 **Complete Spatial Pattern**
 
-Lines 137-141 show the quintessential three-step pattern:
-
-
-This can be written as one expression: `[-->](?salary >= 75000)(=salary=90000);`
+Lines 137-141 show the quintessential three-step pattern. This can be written as one expression: `[-->](?salary >= 75000)(=salary=90000);`
 
 The pattern is: navigate, filter, act.
 
 **Empty Collection Handling**
 
-Lines 177-180 show edge cases:
-
-
-Both comprehensions handle empty collections gracefully without errors.
+Lines 177-180 show edge cases. Both comprehensions handle empty collections gracefully without errors.
 
 **Return Value Semantics**
 

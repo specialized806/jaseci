@@ -60,9 +60,7 @@ Lines 27-28 show that operators of the same precedence evaluate left-to-right:
 
 **Complex Expressions**
 
-Line 31 shows a complex expression combining multiple operators:
-
-This evaluates in the following order:
+Line 31 shows a complex expression combining multiple operators. This evaluates in the following order:
 1. `4 ** 2` = 16 (exponentiation first)
 2. `3 * 16` = 48 (multiplication)
 3. `10 / 2` = 5.0 (division)

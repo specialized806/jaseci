@@ -23,10 +23,7 @@ The `by` keyword handles delegation to the AI. Jac automatically extracts meanin
 
 **Semantic String Definition**
 
-Lines 11-14 use the `sem` keyword to provide additional semantic context:
-
-
-The syntax pattern is `sem function_name = """description""";` where:
+Lines 11-14 use the `sem` keyword to provide additional semantic context. The syntax pattern is `sem function_name = """description""";` where:
 - `sem` - Keyword indicating a semantic annotation
 - `generate_password` - Matches the function name from line 8
 - Triple-quoted string - Contains explicit requirements and constraints

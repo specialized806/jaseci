@@ -2,9 +2,7 @@ Assert statements validate conditions at runtime, making your code fail fast whe
 
 **Basic Assert Syntax**
 
-The simplest form of assert checks if a condition is true. Line 5 shows the basic usage:
-
-If the condition is false, an AssertionError is raised. Line 6 prints a confirmation message after the assertion passes.
+The simplest form of assert checks if a condition is true. Line 5 shows the basic usage. If the condition is false, an AssertionError is raised. Line 6 prints a confirmation message after the assertion passes.
 
 **Assertions with Expressions**
 
@@ -12,9 +10,7 @@ Lines 9-11 demonstrate using expressions in assertions. After setting `x = 10`, 
 
 **Assertions with Custom Messages**
 
-Line 14 shows how to add a descriptive error message to your assertion:
-
-The message after the comma appears when the assertion fails, making it easier to understand what went wrong. This is particularly helpful when debugging complex conditions.
+Line 14 shows how to add a descriptive error message to your assertion. The message after the comma appears when the assertion fails, making it easier to understand what went wrong. This is particularly helpful when debugging complex conditions.
 
 **Handling Assertion Failures**
 
@@ -29,15 +25,11 @@ When `assert False` on line 19 executes, it raises an AssertionError. The except
 
 **Capturing Error Messages**
 
-Lines 25-29 show how to access the error message from a failed assertion:
-
-The `as e` clause captures the exception object, allowing you to print or log the custom message. This is useful for creating informative error reports.
+Lines 25-29 show how to access the error message from a failed assertion. The `as e` clause captures the exception object, allowing you to print or log the custom message. This is useful for creating informative error reports.
 
 **Assertions with Function Calls**
 
-Line 32 demonstrates using function calls within assertions:
-
-The assertion evaluates the entire expression. First `len([1, 2, 3])` returns 3, then checks if it equals 3. This pattern is common for validating data structures.
+Line 32 demonstrates using function calls within assertions. The assertion evaluates the entire expression. First `len([1, 2, 3])` returns 3, then checks if it equals 3. This pattern is common for validating data structures.
 
 **Common Assertion Patterns**
 

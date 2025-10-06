@@ -23,7 +23,6 @@ Lines 7-14 demonstrate all eight builtin type keywords used as type annotations:
 
 The pattern for declaring a variable with a type annotation is:
 
-
 For example, line 7 shows `x: str = "string"`, which means:
 - `x` is the variable name
 - `str` is the type annotation (telling Jac this should be a string)

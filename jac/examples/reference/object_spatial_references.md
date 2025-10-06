@@ -37,10 +37,7 @@ graph LR
 
 **Typed Edge References**
 
-Lines 64-74 show filtering by edge type:
-
-
-The syntax `[->:Type:->]` traverses only edges of the specified type. Line 27 creates a Friend edge to Bob, and line 28 creates a Colleague edge to Charlie. Line 64 finds only Bob (Friend connections), while line 70 finds only Charlie (Colleague connections).
+Lines 64-74 show filtering by edge type. The syntax `[->:Type:->]` traverses only edges of the specified type. Line 27 creates a Friend edge to Bob, and line 28 creates a Colleague edge to Charlie. Line 64 finds only Bob (Friend connections), while line 70 finds only Charlie (Colleague connections).
 
 | Pattern | Matches | Example |
 |---------|---------|---------|
@@ -52,10 +49,7 @@ The type name between colons filters which edges to traverse.
 
 **Filtered Edge References**
 
-Lines 79-87 demonstrate filtering on edge attributes:
-
-
-The syntax `[->:Type:condition:->]` filters edges based on their attributes:
+Lines 79-87 demonstrate filtering on edge attributes. The syntax `[->:Type:condition:->]` filters edges based on their attributes:
 - Line 79: Only Friend edges where the `since` attribute is less than 2018
 - Line 82: Only Colleague edges where `years` attribute is greater than 2
 - Line 86: Multiple conditions combined with AND logic (years between 1 and 5)
@@ -65,7 +59,6 @@ The filters apply to EDGE attributes, not node attributes. Line 27 creates `Frie
 **Edge vs Node Retrieval**
 
 Lines 92-97 show retrieving edge objects instead of nodes:
-
 
 | Keyword | Returns | Use When |
 |---------|---------|----------|
@@ -77,10 +70,7 @@ Line 92 returns edge objects that have attributes like `since` (Friend edges) or
 
 **Chained Edge References for Multi-Hop Traversal**
 
-Lines 114-120 demonstrate chaining to traverse multiple hops:
-
-
-Chaining syntax: `[start ->:Type1:-> ->:Type2:->]`
+Lines 114-120 demonstrate chaining to traverse multiple hops. Chaining syntax: `[start ->:Type1:-> ->:Type2:->]`
 
 Line 114 performs a two-hop traversal:
 1. Start at `here` (Alice)

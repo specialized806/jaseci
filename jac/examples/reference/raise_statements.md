@@ -8,10 +8,7 @@ Think of exceptions as a way to say "something went wrong" and jump directly to 
 
 **Basic Raise Syntax**
 
-Lines 3-5 demonstrate the simplest form:
-
-
-Line 4 breaks down as:
+Lines 3-5 demonstrate the simplest form. Line 4 breaks down as:
 - `raise` - the keyword that throws an exception
 - `ValueError` - the exception type/class
 - `"error message"` - descriptive message about what went wrong
@@ -32,10 +29,7 @@ Choose the exception type that best describes the error condition.
 
 **Raise with Expressions**
 
-Lines 7-10 show using expressions in the error message:
-
-
-Line 9 uses an f-string to include the value of `x` in the error message. This makes debugging easier by providing context about the error:
+Lines 7-10 show using expressions in the error message. Line 9 uses an f-string to include the value of `x` in the error message. This makes debugging easier by providing context about the error:
 
 ```mermaid
 graph TD
@@ -48,10 +42,7 @@ When caught on lines 48-50, the error message will be "value is 10", helping ide
 
 **Exception Chaining with raise...from**
 
-Lines 12-18 demonstrate exception chaining:
-
-
-Line 16 uses `raise ... from` to chain exceptions:
+Lines 12-18 demonstrate exception chaining. Line 16 uses `raise ... from` to chain exceptions:
 - A `ZeroDivisionError` occurs on line 14 (division by zero)
 - Line 16 catches it and raises a new `RuntimeError`
 - The `from e` part links the new exception to the original
@@ -70,10 +61,7 @@ This creates an exception chain showing both:
 
 **Bare Raise (Re-raising)**
 
-Lines 20-27 demonstrate re-raising an exception:
-
-
-Line 25 shows `raise;` without any arguments - this is a "bare raise". It can only be used inside an `except` clause and re-raises the currently active exception.
+Lines 20-27 demonstrate re-raising an exception. Line 25 shows `raise;` without any arguments - this is a "bare raise". It can only be used inside an `except` clause and re-raises the currently active exception.
 
 **Bare raise is useful when you want to:**
 1. Log or inspect an exception
@@ -88,10 +76,7 @@ Lines 61-64 show this in action:
 
 **Conditional Raise for Validation**
 
-Lines 29-36 demonstrate using `raise` for input validation:
-
-
-This pattern validates input and raises exceptions for invalid values:
+Lines 29-36 demonstrate using `raise` for input validation. This pattern validates input and raises exceptions for invalid values:
 - Line 30-31: Checks if value is negative
 - Line 33-34: Checks if value exceeds maximum
 

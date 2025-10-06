@@ -8,10 +8,7 @@ Lines 3-5 define a function that takes four integer parameters (`a`, `b`, `c`, `
 
 **List Unpacking with Asterisk**
 
-Lines 9-11 demonstrate list unpacking using `*`:
-
-
-Line 11 shows `[*list1, *list2]`, which unpacks both lists into a new list:
+Lines 9-11 demonstrate list unpacking using `*`. Line 11 shows `[*list1, *list2]`, which unpacks both lists into a new list:
 - `*list1` expands to elements: `1, 2, 3`
 - `*list2` expands to elements: `4, 5, 6`
 - Combined result: `[1, 2, 3, 4, 5, 6]`
@@ -20,10 +17,7 @@ This provides a clean way to concatenate lists without using the `+` operator or
 
 **Dictionary Unpacking with Double Asterisk**
 
-Lines 14-16 demonstrate dictionary unpacking using `**`:
-
-
-Line 16 shows `{**dict1, **dict2}`, which unpacks both dictionaries into a new dictionary:
+Lines 14-16 demonstrate dictionary unpacking using `**`. Line 16 shows `{**dict1, **dict2}`, which unpacks both dictionaries into a new dictionary:
 - `**dict1` expands to key-value pairs: `'a': 1, 'b': 2`
 - `**dict2` expands to key-value pairs: `'c': 3, 'd': 4`
 - Merged result: `{'a': 1, 'b': 2, 'c': 3, 'd': 4}`
@@ -32,9 +26,7 @@ If both dictionaries had the same key, the rightmost dictionary's value would ta
 
 **Unpacking in Function Calls**
 
-Lines 19-20 demonstrate unpacking dictionaries as keyword arguments:
-
-Line 19: `result1 = compute(**merged);`
+Lines 19-20 demonstrate unpacking dictionaries as keyword arguments. Line 19: `result1 = compute(**merged);`
 - `merged` is `{'a': 1, 'b': 2, 'c': 3, 'd': 4}`
 - `**merged` unpacks to keyword arguments: `a=1, b=2, c=3, d=4`
 - Calls: `compute(a=1, b=2, c=3, d=4)`
@@ -64,7 +56,6 @@ You can unpack multiple collections in a single expression:
 **Literal Collection Building**
 
 Unpacking is powerful for building collections with mixed content:
-
 
 **Common Use Cases**
 

@@ -48,9 +48,7 @@ All three variables are then available in the case body (line 17).
 
 **Star Pattern - Capturing Variable-Length Sequences**
 
-Lines 21-25 introduce the star pattern (`*`) for matching sequences of variable length:
-
-Pattern: `case [first, *middle, last]:`
+Lines 21-25 introduce the star pattern (`*`) for matching sequences of variable length. Pattern: `case [first, *middle, last]:`
 
 ```mermaid
 graph LR
@@ -71,9 +69,7 @@ The star pattern can capture any number of elements, including zero:
 
 **Star Pattern at Beginning**
 
-Lines 28-32 show placing the star pattern at the start:
-
-Pattern: `case [*start, 4]:`
+Lines 28-32 show placing the star pattern at the start. Pattern: `case [*start, 4]:`
 
 | Component | What It Captures | Example (nums = [1,2,3,4]) |
 |-----------|------------------|----------------------------|
@@ -84,9 +80,7 @@ This is useful when you know how the sequence ends but not how it begins.
 
 **Star Pattern in Middle**
 
-Lines 35-39 demonstrate using star pattern with specific values on both ends:
-
-Pattern: `case [10, *rest, 50]:`
+Lines 35-39 demonstrate using star pattern with specific values on both ends. Pattern: `case [10, *rest, 50]:`
 
 ```mermaid
 graph TD
