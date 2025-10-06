@@ -6,16 +6,21 @@ use_directory_urls: true
 nav:
   - Learn:
     # - Getting Started: "learn/getting_started.md"
-    - Tour of Jac/Jaseci: "learn/introduction.md"
+    - Tour of Jac/Jaseci: "learn/tour.md"
     - Installation: "learn/installation.md"
-    - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
+    - Jac as Your First Language: "learn/beginners_guide_to_jac.md"
     - Native Superset of Python: "learn/superset_python.md"
-    - Jac Playground: "learn/jac_playground.md"
+    - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
+    - Full Language Specification: "learn/jac_ref.md"
+    - Run Jac In Browser: "learn/jac_playground.md"
     - Learn By Example:
       - LittleX (your own twitter): "learn/examples/littleX/tutorial.md"
       - Jac MCP Conversational Chatbot: "learn/examples/rag_chatbot/Overview.md"
       - RPG game with AI Genarated Maps: "learn/examples/mtp_examples/rpg_game.md"
       - Agentic Fantasy Trading Game: "learn/examples/mtp_examples/fantasy_trading_game.md"
+      - Friendzone Lite: "learn/examples/agentic_ai/friendzone-lite/friendzone-lite.md"
+      - Aider Genius Lite: "learn/examples/agentic_ai/aider-genius-lite/aider-genius-lite.md"
+      - Task Manager Lite: "learn/examples/agentic_ai/task-manager-lite/task-manager-lite.md"
     - Learn Jac Language (WIP):
       - Introduction: "jac_book/index.md"
       - 1. Welcome to Jac: "jac_book/chapter_1.md"
@@ -70,7 +75,6 @@ nav:
     - Specifications:
       - Jac Keywords: "learn/keywords.md"
       - Object-Spatial Programming Specification: "learn/dspfoundation.md"
-      - Full Language Specification: "learn/jac_ref.md"
     - Misc Docs:
       - Understanding Object-Spatial:
         - "learn/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
@@ -80,8 +84,8 @@ nav:
       - FAQ: "learn/data_spatial/FAQ.md" # faq
 
 
-  - Community Hub:
-    - Roadmap: "communityhub/roadmap.md"
+  - Contributor Hub:
+    - Contributing: "internals/contrib.md"
     - Release Notes: "communityhub/release_notes.md"
     - Breaking Changes: "communityhub/breaking_changes.md"
     - Leaderboard: "communityhub/top_contributors.md"
@@ -93,7 +97,8 @@ nav:
         - "communityhub/fun/p3.md"
       - Content Pieces: "communityhub/content_pieces.md"
     - Internals:
-      - Contributing: "internals/contrib.md"
+      - Lang Ref Coverage: "internals/refs_coverage_report.md"
+      - Roadmap: "communityhub/roadmap.md"
       - Design Docs and Guides:
         - Compiler/Runtime Design: "internals/internals.md"
         - Static Compilation:
@@ -228,7 +233,7 @@ plugins:
       video_controls: False
   - redirects:
       redirect_maps:
-        index.md: learn/introduction.md
+        index.md: learn/tour.md
 
 hooks:
   - scripts/handle_jac_compile_data.py

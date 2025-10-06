@@ -874,6 +874,12 @@ class Module(AstDocNode, UniScopeNode):
         self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
+        # We continue to parse a module even if there are syntax errors
+        # so that we can report more errors in a single pass and support
+        # features like code completion, lsp, format etc. This flag
+        # indicates if there were syntax errors during parsing.
+        self.has_syntax_errors: bool = False
+
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name)
@@ -2687,31 +2693,6 @@ class AssertStmt(CodeBlockStmt):
         return res
 
 
-class CheckStmt(CodeBlockStmt):
-    """CheckStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: Expr,
-        kid: Sequence[UniNode],
-    ) -> None:
-        self.target = target
-        UniNode.__init__(self, kid=kid)
-        CodeBlockStmt.__init__(self)
-
-    def normalize(self, deep: bool = False) -> bool:
-        res = True
-        if deep:
-            res = self.target.normalize(deep)
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.KW_CHECK),
-            self.target,
-            self.gen_token(Tok.SEMI),
-        ]
-        self.set_kids(nodes=new_kid)
-        return res
-
-
 class CtrlStmt(CodeBlockStmt):
     """CtrlStmt node type for Jac Ast."""
 
@@ -3248,13 +3229,21 @@ class FString(AtomExpr):
             for part in self.parts:
                 res = res and part.normalize(deep)
         new_kid: list[UniNode] = []
-        is_single_quote = (
-            isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
-        )
-        if is_single_quote:
-            new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
+        # Determine quote type from first token
+        start_token = self.kid[0] if isinstance(self.kid[0], Token) else None
+        if start_token:
+            if start_token.name == Tok.FSTR_SQ_TRIPLE_START:
+                start_tok, end_tok = Tok.FSTR_SQ_TRIPLE_START, Tok.FSTR_SQ_TRIPLE_END
+            elif start_token.name == Tok.FSTR_TRIPLE_START:
+                start_tok, end_tok = Tok.FSTR_TRIPLE_START, Tok.FSTR_TRIPLE_END
+            elif start_token.name == Tok.FSTR_SQ_START:
+                start_tok, end_tok = Tok.FSTR_SQ_START, Tok.FSTR_SQ_END
+            else:
+                start_tok, end_tok = Tok.FSTR_START, Tok.FSTR_END
         else:
-            new_kid.append(self.gen_token(Tok.FSTR_START))
+            start_tok, end_tok = Tok.FSTR_START, Tok.FSTR_END
+
+        new_kid.append(self.gen_token(start_tok))
         for i in self.parts:
             if isinstance(i, String):
                 i.value = (
@@ -3265,10 +3254,7 @@ class FString(AtomExpr):
                 new_kid.append(self.gen_token(Tok.LBRACE))
                 new_kid.append(i)
                 new_kid.append(self.gen_token(Tok.RBRACE))
-        if is_single_quote:
-            new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
-        else:
-            new_kid.append(self.gen_token(Tok.FSTR_END))
+        new_kid.append(self.gen_token(end_tok))
         self.set_kids(nodes=new_kid)
         return res
 

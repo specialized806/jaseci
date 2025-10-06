@@ -64,7 +64,6 @@ TOKEN_AST_MAP: dict[Tok, type[ast3.AST]] = {
     Tok.MINUS: ast3.Sub,
     Tok.SUB_EQ: ast3.Sub,
     Tok.BW_NOT: ast3.Invert,
-    Tok.BW_NOT_EQ: ast3.Invert,
     Tok.NOT: ast3.Not,
     Tok.EQ: ast3.NotEq,
     Tok.EE: ast3.Eq,
@@ -93,8 +92,10 @@ class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:
+        self.child_passes: list[PyastGenPass] = []
         for i in self.ir_in.impl_mod + self.ir_in.test_mod:
-            PyastGenPass(ir_in=i, prog=self.prog)
+            child_pass = PyastGenPass(ir_in=i, prog=self.prog)
+            self.child_passes.append(child_pass)
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
         self.preamble: list[ast3.AST] = [
@@ -123,23 +124,6 @@ class PyastGenPass(UniPass):
                     jac_node=self.ir_out,
                 )
             ),
-            (
-                self.sync(
-                    ast3.ImportFrom(
-                        module="jaclang",
-                        names=[
-                            self.sync(
-                                ast3.alias(
-                                    name="JacMachineInterface",
-                                    asname=settings.pyout_jaclib_alias,
-                                )
-                            ),
-                        ],
-                        level=0,
-                    ),
-                    jac_node=self.ir_out,
-                )
-            ),
         ]
 
     def enter_node(self, node: uni.UniNode) -> None:
@@ -161,6 +145,7 @@ class PyastGenPass(UniPass):
 
     def jaclib_obj(self, obj_name: str) -> ast3.Name | ast3.Attribute:
         """Return the object from jaclib as ast node based on the import config."""
+        self.needs_jaclib()
         return self.sync(
             ast3.Attribute(
                 value=self.sync(
@@ -217,6 +202,24 @@ class PyastGenPass(UniPass):
             ast3.ImportFrom(
                 module="concurrent.futures",
                 names=[self.sync(ast3.alias(name="Future", asname=None))],
+                level=0,
+            ),
+        )
+
+    def needs_jaclib(self) -> None:
+        """Ensure JacMachineInterface is imported only once."""
+        self._add_preamble_once(
+            self.needs_jaclib.__name__,
+            ast3.ImportFrom(
+                module="jaclang",
+                names=[
+                    self.sync(
+                        ast3.alias(
+                            name="JacMachineInterface",
+                            asname=settings.pyout_jaclib_alias,
+                        )
+                    )
+                ],
                 level=0,
             ),
         )
@@ -417,6 +420,11 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = node.tag.gen.py_ast
 
     def exit_module(self, node: uni.Module) -> None:
+        # Check if any child passes (impl_mod or test_mod) needed jaclib
+        for child_pass in self.child_passes:
+            if "needs_jaclib" in child_pass.already_added:
+                self.needs_jaclib()
+                break
         clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
         pre_body: list[uni.UniNode] = []
         for pbody in node.impl_mod:
@@ -1474,20 +1482,23 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
-        node.gen.py_ast = [
-            self.sync(
-                ast3.Assert(
-                    test=cast(ast3.expr, node.condition.gen.py_ast[0]),
-                    msg=(
-                        cast(ast3.expr, node.error_msg.gen.py_ast[0])
-                        if node.error_msg
-                        else None
-                    ),
+        if isinstance(node.parent, uni.Test):
+            self.assert_helper(node)
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Assert(
+                        test=cast(ast3.expr, node.condition.gen.py_ast[0]),
+                        msg=(
+                            cast(ast3.expr, node.error_msg.gen.py_ast[0])
+                            if node.error_msg
+                            else None
+                        ),
+                    )
                 )
-            )
-        ]
+            ]
 
-    def exit_check_stmt(self, node: uni.CheckStmt) -> None:
+    def assert_helper(self, node: uni.AssertStmt) -> None:
         """Sub objects.
 
         target: ExprType,
@@ -1543,16 +1554,16 @@ class PyastGenPass(UniPass):
 
         # By default the check expression will become assertTrue(<expr>), unless any pattern detected.
         assert_func_name = "assertTrue"
-        assert_args_list = node.target.gen.py_ast
+        assert_args_list = node.condition.gen.py_ast
 
         # Compare operations. Note that We're only considering the compare
         # operation with a single operation ie. a < b < c is  ignored here.
         if (
-            isinstance(node.target, uni.CompareExpr)
-            and isinstance(node.target.gen.py_ast[0], ast3.Compare)
-            and len(node.target.ops) == 1
+            isinstance(node.condition, uni.CompareExpr)
+            and isinstance(node.condition.gen.py_ast[0], ast3.Compare)
+            and len(node.condition.ops) == 1
         ):
-            expr: uni.CompareExpr = node.target
+            expr: uni.CompareExpr = node.condition
             opty: uni.Token = expr.ops[0]
 
             optype2fn = {
@@ -1586,10 +1597,10 @@ class PyastGenPass(UniPass):
                     assert_args_list.pop()
 
         # Check if 'isinstance' is called.
-        elif isinstance(node.target, uni.FuncCall) and isinstance(
-            node.target.gen.py_ast[0], ast3.Call
+        elif isinstance(node.condition, uni.FuncCall) and isinstance(
+            node.condition.gen.py_ast[0], ast3.Call
         ):
-            res = check_node_isinstance_call(node.target)
+            res = check_node_isinstance_call(node.condition)
             if res.isit:
                 # These assertions will make mypy happy.
                 assert isinstance(res.inst, ast3.AST)
@@ -1599,12 +1610,12 @@ class PyastGenPass(UniPass):
 
         # Check if 'not isinstance(<expr>, <expr>)' is called.
         elif (
-            isinstance(node.target, uni.UnaryExpr)
-            and isinstance(node.target, uni.UnaryExpr)
-            and isinstance(node.target.operand, uni.FuncCall)
-            and isinstance(node.target.operand, uni.UnaryExpr)
+            isinstance(node.condition, uni.UnaryExpr)
+            and isinstance(node.condition, uni.UnaryExpr)
+            and isinstance(node.condition.operand, uni.FuncCall)
+            and isinstance(node.condition.operand, uni.UnaryExpr)
         ):
-            res = check_node_isinstance_call(node.target.operand)
+            res = check_node_isinstance_call(node.condition.operand)
             if res.isit:
                 # These assertions will make mypy happy.
                 assert isinstance(res.inst, ast3.AST)
@@ -1617,14 +1628,14 @@ class PyastGenPass(UniPass):
         # the almost equal functionality (snice there is no almost equal operator in jac and never needed ig.).
 
         # Check if 'almostEqual' is called.
-        if isinstance(node.target, uni.FuncCall) and isinstance(
-            node.target.gen.py_ast[0], ast3.Call
+        if isinstance(node.condition, uni.FuncCall) and isinstance(
+            node.condition.gen.py_ast[0], ast3.Call
         ):
-            func = node.target.target
+            func = node.condition.target
             if isinstance(func, uni.Name) and func.value == "almostEqual":
                 assert_func_name = "assertAlmostEqual"
                 assert_args_list = []
-                for param in node.target.params:
+                for param in node.condition.params:
                     assert_args_list.append(param.gen.py_ast[0])
 
         # assert_func_expr = "Con.JAC_CHECK.value.assertXXX"

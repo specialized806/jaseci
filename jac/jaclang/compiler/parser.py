@@ -5,12 +5,14 @@ from __future__ import annotations
 import keyword
 import logging
 import os
+import sys
 from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler import jac_lark as jl
+from jaclang.compiler import TOKEN_MAP, jac_lark as jl
 from jaclang.compiler.constant import EdgeDir, Tokens as Tok
 from jaclang.compiler.passes.main import Transform
+from jaclang.utils.helpers import ANSIColors
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 if TYPE_CHECKING:
@@ -39,22 +41,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
             tree, comments = JacParser.parse(ir_in.value, on_error=self.error_callback)
             mod = JacParser.TreeToAST(parser=self).transform(tree)
             ir_in.comments = [self.proc_comment(i, mod) for i in comments]
-            if isinstance(mod, uni.Module):
-                self.ir_out = mod
-                return mod
-            else:
+            if not isinstance(mod, uni.Module):
                 raise self.ice()
+            if len(self.errors_had) != 0:
+                mod.has_syntax_errors = True
+                self.report_errors()
+            self.ir_out = mod
+            return mod
         except jl.UnexpectedInput as e:
-            catch_error = uni.EmptyToken()
-            catch_error.orig_src = ir_in
-            catch_error.line_no = e.line
-            catch_error.end_line = e.line
-            catch_error.c_start = e.column
-            catch_error.c_end = e.column + 1
-            catch_error.pos_start = e.pos_in_stream or 0
-            catch_error.pos_end = catch_error.pos_start + 1
+            catch_error = self.error_to_token(e)
+            error_msg = self.error_to_message(e)
 
-            error_msg = "Syntax Error"
             if len(e.args) >= 1 and isinstance(e.args[0], str):
                 error_msg += e.args[0]
             self.log_error(error_msg, node_override=catch_error)
@@ -62,7 +59,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
         except Exception as e:
             raise e
 
-        return uni.Module.make_stub(inject_src=ir_in)
+        # If we reach here, there was a syntax error, mark the module as such
+        # and report errors.
+        self.report_errors()
+        mod = uni.Module.make_stub(inject_src=ir_in)
+        mod.has_syntax_errors = True
+        return mod
 
     @staticmethod
     def proc_comment(token: jl.Token, mod: uni.UniNode) -> uni.CommentToken:
@@ -80,9 +82,113 @@ class JacParser(Transform[uni.Source, uni.Module]):
             kid=[],
         )
 
+    _MISSING_TOKENS = [
+        Tok.SEMI,
+        Tok.COMMA,
+        Tok.COLON,
+        Tok.RPAREN,
+        Tok.RBRACE,
+        Tok.RSQUARE,
+        Tok.RETURN_HINT,
+    ]
+
     def error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
+        iparser = e.interactive_parser
+
+        def try_feed_missing_token(iparser: jl.InteractiveParser) -> Tok | None:
+            """Feed a missing token to the parser."""
+            # If any of the below token is missing, insert them and continue parsing.
+            accepts = iparser.accepts()
+            for tok in JacParser._MISSING_TOKENS:
+                if tok.name in accepts:
+                    iparser.feed_token(jl.Token(tok.name, TOKEN_MAP[tok.name]))
+                    return tok
+            return None
+
+        def feed_current_token(iparser: jl.InteractiveParser, tok: jl.Token) -> bool:
+            """Feed the current token to the parser."""
+            max_attempts = 100  # Prevent infinite loops
+            attempts = 0
+            while tok.type not in iparser.accepts():
+                if attempts >= max_attempts:
+                    return False  # Give up after too many attempts
+                if not try_feed_missing_token(iparser):
+                    return False
+                attempts += 1
+            iparser.feed_token(tok)
+            return True
+
+        if isinstance(e, jl.UnexpectedToken):
+            # If last token is DOT and we expect a NAME, insert a NAME token
+            last_tok: jl.Token | None = (
+                e.token_history[-1]
+                if e.token_history and len(e.token_history) >= 1
+                else None
+            )
+            if (
+                last_tok
+                and last_tok.type == Tok.DOT.name
+                and (Tok.NAME.name in e.accepts)
+            ):
+                self.log_error("Incomplete member access", self.error_to_token(e))
+                iparser.feed_token(jl.Token(Tok.NAME.name, "recover_name_token"))
+                return feed_current_token(iparser, e.token)
+
+            # We're calling try_feed_missing_token twice here because the first missing
+            # will be reported as such and we don't for the consequent missing token.
+            if tk := try_feed_missing_token(iparser):
+                self.log_error(f"Missing {tk.name}", self.error_to_token(e))
+                return feed_current_token(iparser, e.token)
+
+            # Ignore unexpected tokens and continue parsing till we reach a known state.
+            self.log_error(
+                f"Unexpected token '{e.token.value}'", self.error_to_token(e)
+            )
+            return True
+
         return False
+
+    def error_to_message(self, e: jl.UnexpectedInput) -> str:
+        """Return an error message based on the exception."""
+        # TODO: Match more specific errors with lark's example based matching.
+        # Reference: https://github.com/lark-parser/lark/blob/master/examples/advanced/error_reporting_lalr.py
+        # e.match_examples()
+        if isinstance(e, jl.UnexpectedToken):
+            return f"Unexpected token '{e.token.value}'"
+        return "Syntax Error"
+
+    def error_to_token(self, e: jl.UnexpectedInput) -> uni.Token:
+        """Convert error to token."""
+        catch_error = uni.EmptyToken()
+        catch_error.orig_src = self.ir_in
+        catch_error.line_no = e.line
+        catch_error.end_line = e.line
+        catch_error.c_start = e.column
+        catch_error.pos_start = e.pos_in_stream or 0
+        if isinstance(e, jl.UnexpectedToken) and e.token:
+            catch_error.c_end = e.token.end_column or (e.column + 1)
+            catch_error.pos_end = e.token.end_pos or (catch_error.pos_start + 1)
+        else:
+            catch_error.c_end = e.column + 1
+            catch_error.pos_end = catch_error.pos_start + 1
+        return catch_error
+
+    def report_errors(self, *, colors: bool = True) -> None:
+        """Report errors to the user."""
+        # TODO: Write a better IO system.
+        # NOTE: Currently it writes all the errors to stderr cause LSP JsonRPC uses stdout for IPC.
+        if not sys.stderr.isatty():
+            # FIXME: If we're outputting to a file (pipe, redirection, etc) other
+            # than a terminal we disable colors however we should be able to force
+            # colors with a configuration.
+            colors = False
+        for alrt in self.errors_had:
+            error_label = (
+                "Error:" if not colors else f"{ANSIColors.RED}Error:{ANSIColors.END}"
+            )
+            print(error_label, end=" ", file=sys.stderr)
+            print(alrt.pretty_print(colors=colors), file=sys.stderr)
 
     @staticmethod
     def _comment_callback(comment: jl.Token) -> None:
@@ -1113,7 +1219,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     | (yield_expr | KW_YIELD) SEMI
                     | raise_stmt SEMI
                     | assert_stmt SEMI
-                    | check_stmt SEMI
                     | assignment SEMI
                     | delete_stmt SEMI
                     | report_stmt SEMI
@@ -1392,18 +1497,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def check_stmt(self, _: None) -> uni.CheckStmt:
-            """Grammar rule.
-
-            check_stmt: KW_CHECK expression
-            """
-            self.consume_token(Tok.KW_CHECK)
-            target = self.consume(uni.Expr)
-            return uni.CheckStmt(
-                target=target,
-                kid=self.cur_nodes,
-            )
-
         def ctrl_stmt(self, _: None) -> uni.CtrlStmt | uni.DisengageStmt:
             """Grammar rule.
 
@@ -1617,15 +1710,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
             lambda_expr: KW_LAMBDA func_decl_params? (RETURN_HINT expression)? COLON expression
             """
             return_type: uni.Expr | None = None
+            return_hint_tok: uni.Token | None = None
             sig_kid: list[uni.UniNode] = []
             self.consume_token(Tok.KW_LAMBDA)
             params = self.match(list)
-            if self.match_token(Tok.RETURN_HINT):
+            if return_hint_tok := self.match_token(Tok.RETURN_HINT):
                 return_type = self.consume(uni.Expr)
             self.consume_token(Tok.COLON)
             body = self.consume(uni.Expr)
             if params:
                 sig_kid.extend(params)
+            if return_hint_tok:
+                sig_kid.append(return_hint_tok)
             if return_type:
                 sig_kid.append(return_type)
             signature = (
@@ -1643,7 +1739,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 if params or return_type
                 else None
             )
-            new_kid = [i for i in self.cur_nodes if i != params and i != return_type]
+            new_kid = [
+                i
+                for i in self.cur_nodes
+                if i != params and i != return_type and i != return_hint_tok
+            ]
             new_kid.insert(1, signature) if signature else None
             return uni.LambdaExpr(
                 signature=signature,
@@ -1903,7 +2003,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             aug_op: RSHIFT_EQ
                    | LSHIFT_EQ
-                   | BW_NOT_EQ
                    | BW_XOR_EQ
                    | BW_OR_EQ
                    | BW_AND_EQ
@@ -2100,10 +2199,22 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             fstring: FSTR_START fstr_parts FSTR_END
                 | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
+                | FSTR_TRIPLE_START fstr_triple_parts FSTR_TRIPLE_END
+                | FSTR_SQ_TRIPLE_START fstr_sq_triple_parts FSTR_SQ_TRIPLE_END
             """
-            self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
+            (
+                self.match_token(Tok.FSTR_TRIPLE_START)
+                or self.match_token(Tok.FSTR_SQ_TRIPLE_START)
+                or self.match_token(Tok.FSTR_START)
+                or self.consume_token(Tok.FSTR_SQ_START)
+            )
             target = self.match(list)
-            self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
+            (
+                self.match_token(Tok.FSTR_TRIPLE_END)
+                or self.match_token(Tok.FSTR_SQ_TRIPLE_END)
+                or self.match_token(Tok.FSTR_END)
+                or self.consume_token(Tok.FSTR_SQ_END)
+            )
             return uni.FString(
                 parts=(
                     self.extract_from_list(target, (uni.String, uni.ExprStmt))
@@ -2136,6 +2247,44 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            """
+            valid_parts: list[uni.UniNode] = [
+                (
+                    i
+                    if isinstance(i, uni.String)
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
+                )
+                for i in self.cur_nodes
+            ]
+            return valid_parts
+
+        def fstr_triple_parts(self, _: None) -> list[uni.UniNode]:
+            """Grammar rule.
+
+            fstr_triple_parts: (FSTR_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            """
+            valid_parts: list[uni.UniNode] = [
+                (
+                    i
+                    if isinstance(i, uni.String)
+                    else (
+                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+                        if isinstance(i, uni.Expr)
+                        else i
+                    )
+                )
+                for i in self.cur_nodes
+            ]
+            return valid_parts
+
+        def fstr_sq_triple_parts(self, _: None) -> list[uni.UniNode]:
+            """Grammar rule.
+
+            fstr_sq_triple_parts: (FSTR_SQ_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
             """
             valid_parts: list[uni.UniNode] = [
                 (
@@ -2380,7 +2529,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def assignment_list(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
 
-            assignment_list: (assignment_list COMMA)? (assignment | NAME)
+            assignment_list: (assignment | named_ref) (COMMA (assignment | named_ref))* COMMA?
             """
 
             def name_to_assign(name_consume: uni.NameAtom) -> uni.Assignment:
@@ -2388,15 +2537,23 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     target=[name_consume], value=None, type_tag=None, kid=[name_consume]
                 )
 
-            if self.match(list):
-                self.consume_token(Tok.COMMA)
+            # Match first (assignment | named_ref)
             if self.match(uni.Assignment):
                 pass
             elif name_consume := self.match(uni.NameAtom):
                 self.cur_nodes[self.node_idx - 1] = name_to_assign(name_consume)
             else:
-                assign = self.consume(uni.Assignment)
-                self.cur_nodes[self.node_idx - 1] = assign
+                raise self.ice()
+
+            # Match (COMMA (assignment | named_ref))* COMMA?
+            while self.match_token(Tok.COMMA):
+                if self.match(uni.Assignment):
+                    pass
+                elif name_consume := self.match(uni.NameAtom):
+                    self.cur_nodes[self.node_idx - 1] = name_to_assign(name_consume)
+                else:
+                    break  # trailing comma
+
             return self.flat_cur_nodes
 
         def type_ref(self, kid: list[uni.UniNode]) -> uni.TypeRef:
@@ -2964,6 +3121,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.FSTR_SQ_PIECE,
+                Tok.FSTR_TRIPLE_PIECE,
+                Tok.FSTR_SQ_TRIPLE_PIECE,
             ]:
                 ret_type = uni.String
                 if token.type == Tok.FSTR_BESC:
