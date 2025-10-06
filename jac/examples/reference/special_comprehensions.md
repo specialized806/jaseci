@@ -101,10 +101,6 @@ Order matters - each filter receives output of the previous filter. Line 86 show
 
 Lines 115-117 demonstrate the critical spatial programming pattern:
 
-```
-all_reports = [-->];
-high_paid = all_reports(?salary > 75000);
-```
 
 This is where comprehensions become essential for OSP:
 - `[-->]` traverses outgoing edges, returns target nodes
@@ -123,10 +119,6 @@ graph LR
 
 Lines 121-123 combine edge type filtering with node attribute filtering:
 
-```
-reports_via_edge = [->:ReportsTo:->];
-engineering = reports_via_edge(?department == "Engineering");
-```
 
 Workflow:
 - `[->:ReportsTo:->]` - Traverse only ReportsTo-typed edges
@@ -139,9 +131,6 @@ This dual-level filtering (structural + property) is a hallmark of Jac's spatial
 
 Lines 129-130 demonstrate spatial bulk updates:
 
-```
-all_reports(=department="Updated");
-```
 
 Pattern:
 1. Get nodes via edge traversal: `[-->]`
@@ -153,11 +142,6 @@ This enables graph-wide updates: traverse to find nodes, then update them. Commo
 
 Lines 137-141 show the quintessential three-step pattern:
 
-```
-targets = [-->];                      # 1. Traverse
-high_earners = targets(?salary >= 75000);  # 2. Filter
-high_earners(=salary=90000);          # 3. Modify
-```
 
 This can be written as one expression: `[-->](?salary >= 75000)(=salary=90000);`
 
@@ -167,10 +151,6 @@ The pattern is: navigate, filter, act.
 
 Lines 177-180 show edge cases:
 
-```
-filtered_empty = empty(?x > 5);    # Returns: []
-assigned_empty = empty(=x=10);     # Returns: []
-```
 
 Both comprehensions handle empty collections gracefully without errors.
 
@@ -199,14 +179,8 @@ Supported composition patterns based on the examples:
 **Comparison with Python**
 
 Traditional Python list comprehension:
-```python
-filtered = [obj for obj in items if obj.x >= 10 and obj.y < 15]
-```
 
 Jac filter comprehension:
-```jac
-filtered = items(?x >= 10, y < 15);
-```
 
 Differences:
 - Jac: More concise, no explicit iteration
@@ -215,16 +189,8 @@ Differences:
 - Jac: Special assign syntax for bulk updates
 
 For assignment, Python requires explicit loop:
-```python
-for obj in objs:
-    obj.y = 100
-    obj.z = 200
-```
 
 Jac:
-```jac
-objs(=y=100, z=200);
-```
 
 **Use Cases**
 

@@ -6,15 +6,6 @@ Jac supports embedding Python code blocks using the `::py::` delimiter syntax, e
 
 Lines 4-10 demonstrate the simplest Python embedding:
 
-```
-::py::
-def python_hello():
-    return "Hello from Python!"
-
-def python_add(a, b):
-    return a + b
-::py::
-```
 
 Python code is delimited by `::py::` markers at the beginning and end. Functions defined in Python blocks are directly callable from Jac code (lines 14-15).
 
@@ -30,26 +21,6 @@ The `::py::` delimiter:
 
 Lines 19-41 show Python methods within a Jac object:
 
-```
-obj DataProcessor {
-    has data: list = [];
-
-    ::py::
-    def process(self):
-        """Process data using Python libraries."""
-        if not self.data:
-            return []
-        return [x * 2 for x in self.data if x > 0]
-
-    def analyze(self):
-        # Python statistical analysis
-        return {
-            "mean": sum(self.data) / len(self.data),
-            "sum": sum(self.data)
-        }
-    ::py::
-}
-```
 
 Python methods:
 - Use `self` to access Jac member variables (line 25: `self.data`)
@@ -61,15 +32,6 @@ Python methods:
 
 Lines 55-76 demonstrate Jac-Python data exchange:
 
-```
-::py::
-def python_process_list(jac_list):
-    return [x ** 2 for x in jac_list]
-
-def python_process_dict(jac_dict):
-    return {k: v * 2 for k, v in jac_dict.items()}
-::py::
-```
 
 Data structures seamlessly pass between Jac and Python:
 - Jac lists work as Python lists (line 70)
@@ -80,22 +42,6 @@ Data structures seamlessly pass between Jac and Python:
 
 Lines 79-106 show importing and using Python libraries:
 
-```
-::py::
-import json
-import math
-
-def format_json(data):
-    return json.dumps(data, indent=2)
-
-def math_operations(x):
-    return {
-        "sqrt": math.sqrt(x),
-        "log": math.log(x),
-        "sin": math.sin(x)
-    }
-::py::
-```
 
 Standard Python libraries and third-party packages are fully available within `::py::` blocks. Import statements work normally (lines 80-81).
 
@@ -103,24 +49,6 @@ Standard Python libraries and third-party packages are fully available within `:
 
 Lines 109-135 demonstrate Python methods in node definitions:
 
-```
-node MathNode {
-    has value: float = 0.0;
-    has computed: dict = {};
-
-    ::py::
-    def compute_all(self):
-        import math
-        v = self.value
-        self.computed = {
-            "square": v ** 2,
-            "cube": v ** 3,
-            "sqrt": math.sqrt(abs(v))
-        }
-        return self.computed
-    ::py::
-}
-```
 
 Python methods in nodes can:
 - Access node state via `self.value` (line 117)
@@ -132,32 +60,6 @@ Python methods in nodes can:
 
 Lines 166-205 show combining Jac and Python methods in the same object:
 
-```
-obj Calculator {
-    has history: list = [];
-
-    # Jac method
-    def add_jac(value: int) {
-        self.history.append(value);
-        return sum(self.history);
-    }
-
-    ::py::
-    # Python method
-    def add_python(self, value):
-        self.history.append(value)
-        return sum(self.history)
-
-    def get_stats(self):
-        if not self.history:
-            return {"avg": 0, "total": 0}
-        return {
-            "avg": sum(self.history) / len(self.history),
-            "total": sum(self.history)
-        }
-    ::py::
-}
-```
 
 Objects can have both Jac methods (lines 170-173) and Python methods (lines 177-191). Both types:
 - Access the same `self.history` attribute
@@ -216,80 +118,18 @@ flowchart TD
 **Best Practices**
 
 **Organize imports at the top of Python blocks:**
-```
-::py::
-import json
-import math
-from collections import defaultdict
-
-def process():
-    # Use imports
-::py::
-```
 
 **Use Python for library integration:**
-```
-::py::
-import pandas as pd
-
-def analyze_dataframe(data):
-    df = pd.DataFrame(data)
-    return df.describe().to_dict()
-::py::
-```
 
 **Mix Python and Jac strategically:**
-```
-obj Processor {
-    # Jac for OSP operations
-    def traverse(node: Node) {
-        visit [-->];
-    }
-
-    ::py::
-    # Python for computation
-    def compute_stats(self, values):
-        return {
-            "mean": sum(values) / len(values),
-            "std": statistics.stdev(values)
-        }
-    ::py::
-}
-```
 
 **Common Patterns**
 
 **State modification from Python:**
-```
-obj Counter {
-    has count: int = 0;
-
-    ::py::
-    def increment(self, by=1):
-        self.count += by
-        return self.count
-    ::py::
-}
-```
 
 **Using Python libraries:**
-```
-::py::
-import json
-
-def load_config(path):
-    with open(path) as f:
-        return json.load(f)
-::py::
-```
 
 **Python comprehensions:**
-```
-::py::
-def filter_and_transform(data):
-    return [x * 2 for x in data if x > 0]
-::py::
-```
 
 **Key Points**
 

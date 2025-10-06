@@ -6,13 +6,6 @@ Yield statements transform a regular function into a generator, enabling lazy ev
 
 Lines 3-7 demonstrate the fundamental yield syntax:
 
-```
-def simple_generator {
-    yield 1;
-    yield 2;
-    yield 3;
-}
-```
 
 Instead of returning a single value and terminating, this function yields three values one at a time. When called on line 47, `simple_generator()` doesn't execute the function body immediately. It returns a generator object that can be iterated.
 
@@ -20,12 +13,6 @@ Instead of returning a single value and terminating, this function yields three 
 
 Lines 46-49 show consuming a generator:
 
-```
-print("simple_generator:");
-for val in simple_generator() {
-    print(val);
-}
-```
 
 Each iteration:
 1. Resumes the generator from where it last yielded
@@ -39,13 +26,6 @@ This prints: 1, 2, 3 (each on a separate line).
 
 Lines 9-13 demonstrate yielding various value types:
 
-```
-def yield_values {
-    yield "hello";
-    yield 42;
-    yield [1, 2, 3];
-}
-```
 
 Generators can yield any type:
 - Line 10: String
@@ -58,11 +38,6 @@ Lines 52-55 iterate this generator, printing: "hello", 42, [1, 2, 3].
 
 Lines 15-17 show yielding None:
 
-```
-def yield_none {
-    yield;
-}
-```
 
 Line 16 uses `yield;` without an expression, producing `None`. Lines 58-61 iterate this generator, printing: None.
 
@@ -70,13 +45,6 @@ Line 16 uses `yield;` without an expression, producing `None`. Lines 58-61 itera
 
 Lines 19-23 demonstrate yielding in a loop:
 
-```
-def yield_in_loop(n: int) {
-    for i in range(n) {
-        yield i;
-    }
-}
-```
 
 This is a common pattern for generating sequences. Instead of building a complete list, values are generated one at a time. Lines 64-67 call with `n=5`, yielding: 0, 1, 2, 3, 4.
 
@@ -86,12 +54,6 @@ This is memory-efficient because values are generated on demand rather than stor
 
 Lines 25-28 demonstrate delegating to another generator:
 
-```
-def yield_from_generator {
-    yield from [1, 2, 3];
-    yield from range(4, 7);
-}
-```
 
 `yield from` delegates to another iterable:
 - Line 26: Yields each element from the list [1, 2, 3]
@@ -105,15 +67,6 @@ Lines 70-73 iterate this generator, printing: 1, 2, 3, 4, 5, 6.
 
 Lines 30-36 show yielding based on conditions:
 
-```
-def conditional_yield(items: list) {
-    for item in items {
-        if item % 2 == 0 {
-            yield item;
-        }
-    }
-}
-```
 
 This iterates through items but only yields those satisfying the condition (even numbers). Lines 76-79 call with `[1, 2, 3, 4, 5, 6]`, yielding only: 2, 4, 6.
 
@@ -123,13 +76,6 @@ This pattern enables selective generation, filtering during iteration rather tha
 
 Lines 38-42 demonstrate yielding computed values:
 
-```
-def yield_with_expression {
-    x = 10;
-    yield x * 2;
-    yield x + 5;
-}
-```
 
 Yields can be arbitrary expressions:
 - Line 40: `x * 2` evaluates to 20
@@ -207,29 +153,7 @@ This allows generators in any iterable context: for loops, list comprehensions, 
 **Memory Comparison**
 
 Without generators (builds entire list):
-```
-def get_numbers(n):
-    result = [];
-    for i in range(n) {
-        result.append(i * 2);
-    }
-    return result;
-
-numbers = get_numbers(1000000);  # 1M integers in memory
-```
 
 With generators (one at a time):
-```
-def get_numbers(n) {
-    for i in range(n) {
-        yield i * 2;
-    }
-}
-
-numbers = get_numbers(1000000);  # No memory used yet
-for num in numbers {             # Generates on demand
-    process(num);
-}
-```
 
 Generators enable processing arbitrarily large or infinite sequences with constant memory usage, making them essential for efficient data processing in Jac.

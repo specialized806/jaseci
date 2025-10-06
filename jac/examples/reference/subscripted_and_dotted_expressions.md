@@ -104,11 +104,5 @@ Line 31 prints all the values extracted in lines 13-29:
 
 Combining dot and subscript notation enables powerful data access:
 
-```
-object.list_attribute[index]      # Access list element
-object.dict_attribute["key"]      # Access dict value
-object.attribute?.nested          # Null-safe chain
-object.data[start:end]            # Slice a collection
-```
 
 These expressions form the basis for navigating complex data structures in Jac programs.

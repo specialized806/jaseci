@@ -10,11 +10,6 @@ Think of exceptions as a way to say "something went wrong" and jump directly to 
 
 Lines 3-5 demonstrate the simplest form:
 
-```
-def raise_exception {
-    raise ValueError("error message");
-}
-```
 
 Line 4 breaks down as:
 - `raise` - the keyword that throws an exception
@@ -39,12 +34,6 @@ Choose the exception type that best describes the error condition.
 
 Lines 7-10 show using expressions in the error message:
 
-```
-def raise_with_expression {
-    x = 10;
-    raise RuntimeError(f"value is {x}");
-}
-```
 
 Line 9 uses an f-string to include the value of `x` in the error message. This makes debugging easier by providing context about the error:
 
@@ -61,15 +50,6 @@ When caught on lines 48-50, the error message will be "value is 10", helping ide
 
 Lines 12-18 demonstrate exception chaining:
 
-```
-def raise_from_exception {
-    try {
-        x = 5 / 0;
-    } except ZeroDivisionError as e {
-        raise RuntimeError("division failed") from e;
-    }
-}
-```
 
 Line 16 uses `raise ... from` to chain exceptions:
 - A `ZeroDivisionError` occurs on line 14 (division by zero)
@@ -92,16 +72,6 @@ This creates an exception chain showing both:
 
 Lines 20-27 demonstrate re-raising an exception:
 
-```
-def bare_raise {
-    try {
-        raise ValueError("original");
-    } except ValueError {
-        print("caught, re-raising");
-        raise;
-    }
-}
-```
 
 Line 25 shows `raise;` without any arguments - this is a "bare raise". It can only be used inside an `except` clause and re-raises the currently active exception.
 
@@ -120,16 +90,6 @@ Lines 61-64 show this in action:
 
 Lines 29-36 demonstrate using `raise` for input validation:
 
-```
-def conditional_raise(value: int) {
-    if value < 0 {
-        raise ValueError("must be non-negative");
-    }
-    if value > 100 {
-        raise ValueError("must be <= 100");
-    }
-}
-```
 
 This pattern validates input and raises exceptions for invalid values:
 - Line 30-31: Checks if value is negative
@@ -191,42 +151,12 @@ The example tests various scenarios:
 **Common Patterns**
 
 **Pattern 1: Input validation** (lines 29-36)
-```
-def validate_input(value: int) {
-    if value < 0 {
-        raise ValueError("must be non-negative");
-    }
-    # Continue with valid input
-}
-```
 
 **Pattern 2: Error context** (lines 7-10)
-```
-def process(data: dict) {
-    if "required_field" not in data {
-        raise ValueError(f"missing field in {data}");
-    }
-}
-```
 
 **Pattern 3: Exception wrapping** (lines 12-18)
-```
-try {
-    low_level_operation();
-} except LowLevelError as e {
-    raise HighLevelError("operation failed") from e;
-}
-```
 
 **Pattern 4: Logging and re-raising** (lines 20-27)
-```
-try {
-    risky_operation();
-} except SomeError {
-    log_error("operation failed");
-    raise;  # Let caller handle it
-}
-```
 
 **Best Practices**
 

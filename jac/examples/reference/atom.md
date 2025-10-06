@@ -5,38 +5,24 @@ Atoms are the fundamental building blocks of expressions - the smallest, indivis
 Line 7 shows a basic string literal: `s = "string";`. Strings are sequences of characters enclosed in double quotes.
 
 Lines 42-43 demonstrate multistring concatenation:
-```
-multi = "Hello " "World";
-```
 
 When you place string literals next to each other, Jac automatically concatenates them into a single string "Hello World". This is useful for splitting long strings across multiple lines in your code.
 
 **F-Strings (Formatted Strings)**
 
 Lines 45-46 introduce f-strings for embedding expressions within strings:
-```
-name = "Alice";
-fstr = f"Hello {name}";
-```
 
 The `f` prefix before the string makes it a formatted string literal. Expressions inside curly braces `{}` are evaluated and their values are inserted into the string. This creates "Hello Alice".
 
 **Boolean Literals**
 
 Lines 8-9 show the two boolean values:
-```
-b1 = True;
-b2 = False;
-```
 
 These represent truth values. Note they're capitalized - `True` and `False` are keywords.
 
 **None Literal**
 
 Line 10 introduces the None literal:
-```
-n = None;
-```
 
 None represents the absence of a value, similar to null in other languages. It's commonly used as a default value or to indicate "no result".
 
@@ -76,37 +62,24 @@ graph LR
 **Ellipsis Literal**
 
 Line 23 shows the ellipsis literal:
-```
-ellip = ...;
-```
 
 The `...` (three dots) is a special literal used as a placeholder in various contexts, such as slice notation or to indicate "to be implemented".
 
 **Parenthesized Expressions**
 
 Line 26 demonstrates using parentheses to group expressions:
-```
-result = (5 + 3) * 2;
-```
 
 Parentheses control evaluation order. Without them, this would be `5 + (3 * 2) = 11`. With parentheses, it becomes `(5 + 3) * 2 = 16`.
 
 **Named References**
 
 Line 29 shows a simple variable reference:
-```
-var = 100;
-```
 
 Once a variable has a value, you can use its name to reference that value in expressions.
 
 **Type Objects as Values**
 
 Lines 32-33 demonstrate that types themselves can be values:
-```
-type1 = str;
-type2 = int;
-```
 
 This assigns the type objects for strings and integers to variables. You can use these to create instances or check types at runtime.
 
@@ -126,9 +99,6 @@ Tuples use parentheses and can't be changed after creation. Lists use square bra
 **Enum Member Access**
 
 Line 48 demonstrates accessing an enum's value:
-```
-print(... NumEnum.aa.value);
-```
 
 The enum `NumEnum` defined at line 3 has members. You access a member with dot notation (`NumEnum.aa`), then get its numeric value with `.value`. According to line 3, `aa = 67`, so this prints 67.
 

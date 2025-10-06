@@ -6,12 +6,6 @@ If statements provide conditional control flow through `if`, `elif`, and `else` 
 
 Lines 4-8 demonstrate the simplest conditional:
 
-```
-x = 10;
-if x > 5 {
-    print("x is greater than 5");
-}
-```
 
 When the condition `x > 5` evaluates to true, the block executes.
 
@@ -19,14 +13,6 @@ When the condition `x > 5` evaluates to true, the block executes.
 
 Lines 11-16 show binary choice logic:
 
-```
-age = 18;
-if age >= 18 {
-    print("adult");
-} else {
-    print("minor");
-}
-```
 
 Exactly one block executes: the `if` block when true, otherwise the `else` block.
 
@@ -34,18 +20,6 @@ Exactly one block executes: the `if` block when true, otherwise the `else` block
 
 Lines 19-28 demonstrate multiple exclusive conditions:
 
-```
-score = 85;
-if score >= 90 {
-    print("A");
-} elif score >= 80 {
-    print("B");
-} elif score >= 70 {
-    print("C");
-} else {
-    print("F");
-}
-```
 
 Evaluation is top-down. The first true condition executes, then the entire chain terminates.
 
@@ -57,19 +31,6 @@ Lines 31-42 show extended conditional chains with many branches. Each `elif` pro
 
 Lines 45-55 demonstrate if statements within if statements:
 
-```
-a = 15;
-b = 20;
-if a > 10 {
-    print("a > 10");
-    if b > 15 {
-        print("b > 15");
-        if a + b > 30 {
-            print("a + b > 30");
-        }
-    }
-}
-```
 
 Inner conditions only evaluate if outer conditions are true.
 
@@ -78,38 +39,18 @@ Inner conditions only evaluate if outer conditions are true.
 Lines 58-72 show combining conditions with logical operators:
 
 **AND operator** (line 58-60):
-```
-if a > 5 and b > 10 {
-    print("both conditions true");
-}
-```
 
 Both conditions must be true.
 
 **OR operator** (line 62-64):
-```
-if a > 100 or b > 15 {
-    print("at least one true");
-}
-```
 
 At least one condition must be true.
 
 **NOT operator** (line 66-68):
-```
-if not (a > 50) {
-    print("negation true");
-}
-```
 
 Negates the condition.
 
 **Combined operators** (line 70-72):
-```
-if (a > 5 and b > 10) or (a < 20) {
-    print("complex expression true");
-}
-```
 
 Parentheses control precedence.
 
@@ -117,12 +58,6 @@ Parentheses control precedence.
 
 Lines 75-78 demonstrate Python-style chained comparisons:
 
-```
-temp = 25;
-if 20 <= temp <= 30 {
-    print("comfortable temperature");
-}
-```
 
 Equivalent to `20 <= temp and temp <= 30`, but evaluates `temp` only once.
 
@@ -130,16 +65,6 @@ Equivalent to `20 <= temp and temp <= 30`, but evaluates `temp` only once.
 
 Lines 81-88 show `in` and `not in` operators:
 
-```
-fruits = ["apple", "banana"];
-if "apple" in fruits {
-    print("apple found");
-}
-
-if "grape" not in fruits {
-    print("grape not found");
-}
-```
 
 Works with any iterable: lists, tuples, sets, dictionaries (checks keys), strings.
 
@@ -147,18 +72,6 @@ Works with any iterable: lists, tuples, sets, dictionaries (checks keys), string
 
 Lines 91-100 demonstrate `is` and `is not` for identity checking:
 
-```
-val = None;
-if val is None {
-    print("val is None");
-}
-
-if val is not None {
-    print("val is not None");
-} else {
-    print("val is None");
-}
-```
 
 Use `is` for None checks, not `==`.
 
@@ -221,65 +134,23 @@ Jac follows Python's truthiness rules:
 - Everything else
 
 Example:
-```
-empty_list = [];
-if empty_list {
-    print("not reached");
-} else {
-    print("list is empty");
-}
-```
 
 **Common Patterns**
 
 **Guard pattern (early return):**
-```
-def process(val: int) {
-    if val < 0 {
-        return;
-    }
-    # Process positive values
-}
-```
 
 **Range checking:**
-```
-if 0 <= index < len(items) {
-    item = items[index];
-}
-```
 
 **None checking:**
-```
-if result is not None {
-    process(result);
-}
-```
 
 **Membership filtering:**
-```
-if item not in processed {
-    process(item);
-    processed.append(item);
-}
-```
 
 **Multi-condition validation:**
-```
-if user and user.is_active and user.has_permission {
-    allow_access();
-}
-```
 
 **Short-Circuit Evaluation**
 
 `and` and `or` use short-circuit evaluation:
 
-```
-if x != 0 and y / x > 5 {
-    # Safe: if x == 0, y/x never evaluates
-}
-```
 
 If `x != 0` is false, `y / x` doesn't execute (preventing division by zero).
 
@@ -287,10 +158,6 @@ If `x != 0` is false, `y / x` doesn't execute (preventing division by zero).
 
 Jac supports if expressions for value selection:
 
-```
-status = "adult" if age >= 18 else "minor"
-grade = "A" if score >= 90 else ("B" if score >= 80 else "C")
-```
 
 **If expressions must have an else clause** and return a value.
 

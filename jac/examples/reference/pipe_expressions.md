@@ -13,9 +13,6 @@ The key advantage is readability, especially when chaining multiple operations.
 
 Line 9 demonstrates the basic form:
 
-```
-result1 = 5 |> square;
-```
 
 This breaks down as:
 - `5` is the value on the left
@@ -45,9 +42,6 @@ These demonstrate how pipe works with different operations.
 
 Line 12 demonstrates the real power - chaining multiple operations:
 
-```
-result2 = 3 |> add_ten |> double |> square;
-```
 
 This creates a transformation pipeline that evaluates left to right:
 
@@ -74,15 +68,9 @@ Each operation feeds its result to the next, creating a clean left-to-right flow
 Compare the readability:
 
 **Traditional (nested calls)**:
-```
-result = square(double(add_ten(3)));
-```
 Reads inside-out (confusing): "square of double of add_ten of 3"
 
 **Forward pipe (chained)**:
-```
-result = 3 |> add_ten |> double |> square;
-```
 Reads left-to-right (natural): "3, add ten, double, square"
 
 The piped version eliminates nested parentheses and makes the data flow explicit.
@@ -91,9 +79,6 @@ The piped version eliminates nested parentheses and makes the data flow explicit
 
 Line 15 shows using pipe with built-in functions:
 
-```
-total = [1, 2, 3, 4, 5] |> sum;
-```
 
 This pipes a list into the `sum` function, producing 15. The pipe operator works with:
 - User-defined functions (lines 3-5)
@@ -105,9 +90,6 @@ This pipes a list into the `sum` function, producing 15. The pipe operator works
 
 Line 18 demonstrates piping to inline lambda functions:
 
-```
-result3 = 10 |> (lambda n: int : n * 3);
-```
 
 This breaks down as:
 - `10` is the input value
@@ -117,9 +99,6 @@ This breaks down as:
 
 The lambda must be wrapped in parentheses when used with pipe. This pattern is useful for one-off transformations in the middle of a pipeline:
 
-```
-value |> process |> (lambda x: int : x * 2) |> validate;
-```
 
 **Forward Pipe vs Pipe Back**
 
@@ -131,14 +110,8 @@ Understanding the relationship between the two pipe operators:
 | `<\|` (backward) | Right to left | `function <\| value` | Function-first | - |
 
 **Forward pipe** (this example):
-```
-result = 5 |> square;  # Reads: "5, pipe to square"
-```
 
 **Pipe back** (covered in pipe_back_expressions.md):
-```
-result = square <| 5;  # Reads: "square, taking 5"
-```
 
 Both produce the same result, but emphasize different aspects:
 - Forward pipe emphasizes the data and its transformation journey
@@ -149,63 +122,22 @@ Both produce the same result, but emphasize different aspects:
 Forward pipe is particularly useful when:
 
 1. **Chaining transformations**:
-```
-data |> clean |> validate |> process |> save;
-```
 
 2. **Making data flow visible**:
-```
-user_input |> parse |> normalize |> store;
-```
 
 3. **Avoiding nested calls**:
-```
-# Instead of: save(process(validate(clean(data))))
-data |> clean |> validate |> process |> save;
-```
 
 4. **Step-by-step transformations**:
-```
-price
-    |> apply_discount
-    |> add_tax
-    |> round_to_cents;
-```
 
 **Practical Examples**
 
 **Example 1: Data processing pipeline**
-```
-result = raw_data
-    |> remove_nulls
-    |> normalize_values
-    |> calculate_statistics;
-```
 
 **Example 2: String manipulation**
-```
-formatted = user_input
-    |> trim
-    |> lowercase
-    |> validate_format;
-```
 
 **Example 3: Numerical computation**
-```
-final_score = base_score
-    |> apply_multiplier
-    |> add_bonus
-    |> clamp_to_max;
-```
 
 **Example 4: Mixing functions and lambdas**
-```
-result = value
-    |> process
-    |> (lambda x: int : x * 2)
-    |> validate
-    |> (lambda x: int : x + 100);
-```
 
 **Advantages of Forward Pipe**
 

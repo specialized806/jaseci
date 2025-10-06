@@ -159,46 +159,22 @@ Line 22: `print(x, status, grade, square(5), add(3, 4), multiply(6, 7), get_five
 **Common Ternary Patterns**
 
 Default values:
-```
-value = user_input if user_input else default_value
-```
 
 Type conversion:
-```
-result = int(x) if x.isdigit() else 0
-```
 
 Boundary checking:
-```
-clamped = value if value <= max_val else max_val
-```
 
 Status strings:
-```
-msg = "success" if count > 0 else "no results"
-```
 
 **Common Lambda Patterns**
 
 Sorting key:
-```
-sorted_items = sorted(items, key=lambda x: x.priority)
-```
 
 Filter predicate:
-```
-filtered = list(filter(lambda x: x > 0, numbers))
-```
 
 Map transformation:
-```
-doubled = list(map(lambda x: x * 2, values))
-```
 
 Callback:
-```
-button.on_click(lambda: print("Clicked!"))
-```
 
 **Best Practices**
 
@@ -249,40 +225,19 @@ Avoid when:
 Both ternary and lambda support lazy evaluation:
 
 **Ternary**:
-```
-result = expensive_a() if condition else expensive_b()
-# Only one function is called
-```
 
 **Lambda**:
-```
-deferred = lambda: expensive_computation()
-# Computation happens when called, not when defined
-```
 
 **Expression Composition**
 
 Ternary in lambda:
-```
-clamp = lambda x, lo, hi: (lo if x < lo else (hi if x > hi else x))
-```
 
 Lambda in ternary:
-```
-func = (lambda x: x * 2) if use_double else (lambda x: x * 3)
-```
 
 **Type Safety**
 
 Both expressions maintain type safety:
 
-```
-# Ternary with types
-result: int = 10 if condition else 20
-
-# Lambda with full type annotation
-process: callable = lambda x: int, y: int -> int : x + y
-```
 
 **Performance Considerations**
 

@@ -140,43 +140,12 @@ In regular object methods (lines 7-10):
 **Common Patterns**
 
 **Pattern 1: Walker state accumulation** (lines 88-92)
-```
-# Walker collects data as it traverses
-walker TaskWalker {
-    can process with Task entry {
-        self.visited_names.append(here.name);  # self=walker, here=node
-        visit [-->];
-    }
-}
-```
 
 **Pattern 2: Node responding to walker** (lines 43-46)
-```
-# Node customizes behavior based on walker
-node Interactive {
-    can track with TaskWalker entry {
-        self.visitor_name = visitor.__class__.__name__;  # visitor=walker
-    }
-}
-```
 
 **Pattern 3: Persistence via root** (lines 88-92)
-```
-# Create data and connect to root to persist
-task = Task(name="test");
-root ++> task;  # Connected to root = persists
-```
 
 **Pattern 4: Parent method delegation** (lines 21-24)
-```
-# Call parent method, then add own behavior
-obj Dog(Animal) {
-    def speak {
-        super.speak();  # Do parent behavior
-        print("woof");  # Add own behavior
-    }
-}
-```
 
 **Understanding the Execution Model**
 

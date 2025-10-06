@@ -3,13 +3,6 @@ Jac modules organize code with docstrings for documentation and entry points for
 **Module-Level Docstrings**
 
 Lines 1-5 show the module docstring - a string literal at the very beginning of the file:
-```
-"""Base module structure: Module and element docstrings, entry points.
-
-This is the module-level docstring.
-It describes the purpose of the entire module.
-"""
-```
 
 This triple-quoted string documents what the entire module does. It appears before any code elements (functions, classes, etc.). Module docstrings are used by documentation tools and can be accessed at runtime to provide help text.
 
@@ -27,11 +20,6 @@ Both functions use type annotations (`a: int, b: int -> int`) to specify paramet
 **Default Entry Point**
 
 Lines 16-18 define the default entry point using `with entry`:
-```
-with entry {
-    print("Default entry:", add(5, subtract(8, 3)));
-}
-```
 
 This code block executes when the module runs. Let's trace the execution:
 
@@ -52,11 +40,6 @@ The nested call evaluates from inside out:
 **Named Entry Point**
 
 Lines 21-23 define a named entry point using `with entry:__main__`:
-```
-with entry:__main__ {
-    print("Named entry:", add(1, subtract(3, 1)));
-}
-```
 
 The `:__main__` label creates a conditional entry point that only executes when the module is run directly as the main program (not when imported by another module).
 

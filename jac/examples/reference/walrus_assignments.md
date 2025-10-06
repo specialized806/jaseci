@@ -6,11 +6,6 @@ The walrus operator `:=` enables assignment within expressions, allowing you to 
 
 Lines 5-7 demonstrate using walrus in an if statement:
 
-```
-if (x := 10) > 5 {
-    print(f"x = {x}");
-}
-```
 
 Execution flow:
 1. Assign 10 to `x`
@@ -24,14 +19,6 @@ Without walrus, you'd need: `x = 10; if x > 5 { ... }`. The walrus combines assi
 
 Lines 10-15 demonstrate walrus in a while condition:
 
-```
-i = 0;
-data = [1, 2, 3, 4, 5];
-while (item := data[i] if i < len(data) else None) and i < 3 {
-    print(f"item: {item}");
-    i += 1;
-}
-```
 
 Line 12 assigns and tests in one expression:
 1. Evaluate ternary: `data[i] if i < len(data) else None`
@@ -45,10 +32,6 @@ This pattern processes items until a sentinel value (None) or condition limit.
 
 Lines 18-19 demonstrate walrus in a regular expression:
 
-```
-result = (y := 20) + 10;
-print(f"y = {y}, result = {result}");
-```
 
 Execution:
 1. Assign 20 to `y`
@@ -62,11 +45,6 @@ After this, `y` equals 20 and `result` equals 30. The walrus returns the assigne
 
 Lines 22-24 show multiple walrus operators:
 
-```
-if (a := 5) and (b := 10) {
-    print(f"a = {a}, b = {b}");
-}
-```
 
 Execution:
 1. Assign 5 to `a` (evaluates to 5, which is truthy)
@@ -78,15 +56,6 @@ Execution:
 
 Lines 27-33 demonstrate walrus with function calls:
 
-```
-def process(value: int) -> int {
-    return value * 2;
-}
-
-if (z := process(7)) > 10 {
-    print(f"z = {z}");
-}
-```
 
 Line 31 assigns the function result and tests it:
 1. Call `process(7)` which returns 14
@@ -100,12 +69,6 @@ This avoids calling the function twice or storing in a temporary variable.
 
 Lines 36-39 show walrus with built-in functions:
 
-```
-numbers = [1, 2, 3, 4, 5];
-if (total := sum(numbers)) > 10 {
-    print(f"total = {total}");
-}
-```
 
 Line 37 computes sum and assigns in one step:
 1. Calculate `sum(numbers)` which returns 15
@@ -117,13 +80,6 @@ Line 37 computes sum and assigns in one step:
 
 Lines 42-46 demonstrate nesting:
 
-```
-if (m := 5) {
-    if (n := m * 2) > 8 {
-        print(f"m = {m}, n = {n}");
-    }
-}
-```
 
 Nested walrus assignments:
 1. Outer: assign 5 to `m`, test truthiness (true)
@@ -176,30 +132,9 @@ Unlike regular assignment `=`, the walrus operator `:=`:
 **Common Patterns**
 
 Avoiding duplicate calls:
-```
-# Without walrus (calls twice or needs temp variable)
-if expensive_function() > 10 {
-    use(expensive_function());
-}
-
-# With walrus (calls once)
-if (result := expensive_function()) > 10 {
-    use(result);
-}
-```
 
 Loop with sentinel:
-```
-while (line := file.readline()) {
-    process(line);
-}
-```
 
 Test and use:
-```
-if (match := regex.search(text)) {
-    print(match.group(0));
-}
-```
 
 The walrus operator makes code more concise by combining assignment and usage in a single expression, particularly valuable in conditional contexts where you need to both compute and test a value.

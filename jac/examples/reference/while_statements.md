@@ -6,13 +6,6 @@ While statements provide condition-based iteration, continuing execution as long
 
 Lines 5-9 demonstrate fundamental while syntax:
 
-```
-x = 0;
-while x < 5 {
-    print(x);
-    x += 1;
-}
-```
 
 The loop evaluates `x < 5` before each iteration. If true, the body executes. Line 8 increments `x` to eventually make the condition false, preventing an infinite loop. This loop prints 0, 1, 2, 3, 4.
 
@@ -20,15 +13,6 @@ The loop evaluates `x < 5` before each iteration. If true, the body executes. Li
 
 Lines 12-18 show combining multiple conditions:
 
-```
-a = 0;
-b = 10;
-while a < 5 and b > 5 {
-    print(f"a={a}, b={b}");
-    a += 1;
-    b -= 1;
-}
-```
 
 Line 14 combines two conditions with `and`. Both must be true for the loop to continue. As `a` increases and `b` decreases, eventually one condition fails and the loop stops.
 
@@ -36,15 +20,6 @@ Line 14 combines two conditions with `and`. Both must be true for the loop to co
 
 Lines 21-27 demonstrate the else clause:
 
-```
-count = 0;
-while count < 3 {
-    print(count);
-    count += 1;
-} else {
-    print("completed");
-}
-```
 
 The else block (lines 25-26) executes only if the loop completes normally (condition becomes false) without encountering `break`. This is useful for distinguishing between normal completion and early exit.
 
@@ -52,18 +27,6 @@ The else block (lines 25-26) executes only if the loop completes normally (condi
 
 Lines 30-39 show `break` exiting the loop:
 
-```
-i = 0;
-while i < 10 {
-    if i == 3 {
-        break;
-    }
-    print(i);
-    i += 1;
-} else {
-    print("not reached");
-}
-```
 
 When `break` executes on line 33, the loop terminates immediately. The else clause (lines 37-38) is skipped. The loop prints 0, 1, 2, then exits.
 
@@ -71,16 +34,6 @@ When `break` executes on line 33, the loop terminates immediately. The else clau
 
 Lines 42-49 show `continue` skipping to the next iteration:
 
-```
-num = 0;
-while num < 5 {
-    num += 1;
-    if num % 2 == 0 {
-        continue;
-    }
-    print(num);
-}
-```
 
 Important: Line 44 increments `num` **before** the continue check. If incremented after, even numbers would cause an infinite loop. The continue statement skips line 48 for even numbers, printing only odd numbers: 1, 3, 5.
 
@@ -88,16 +41,6 @@ Important: Line 44 increments `num` **before** the continue check. If incremente
 
 Lines 52-59 show the `while True` pattern:
 
-```
-counter = 0;
-while True {
-    print(counter);
-    counter += 1;
-    if counter >= 3 {
-        break;
-    }
-}
-```
 
 `while True` creates an infinite loop. Line 56 checks the exit condition and breaks when met. This pattern is clearer than complex loop conditions when you have multiple exit criteria checked within the body.
 
@@ -105,17 +48,6 @@ while True {
 
 Lines 62-70 demonstrate nesting:
 
-```
-outer = 0;
-while outer < 2 {
-    inner = 0;
-    while inner < 2 {
-        print(f"{outer},{inner}");
-        inner += 1;
-    }
-    outer += 1;
-}
-```
 
 The inner loop (lines 64-67) completes fully for each iteration of the outer loop (lines 63-69). This prints: 0,0 then 0,1 then 1,0 then 1,1.
 
@@ -173,44 +105,12 @@ graph TD
 **Common Patterns**
 
 Countdown:
-```
-while count > 0 {
-    print(count);
-    count -= 1;
-}
-```
 
 Search with early exit:
-```
-idx = 0;
-while idx < len(items) {
-    if items[idx] == target {
-        break;
-    }
-    idx += 1;
-} else {
-    print("not found");
-}
-```
 
 Process until sentinel:
-```
-while True {
-    item = get_next();
-    if item == SENTINEL {
-        break;
-    }
-    process(item);
-}
-```
 
 Polling/waiting:
-```
-while not condition_met() {
-    wait();
-    check_again();
-}
-```
 
 **Important Considerations**
 

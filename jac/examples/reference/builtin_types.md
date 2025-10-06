@@ -3,27 +3,18 @@ Jac provides a rich set of built-in types for representing different kinds of da
 **String Type**
 
 Lines 5-6 demonstrate the string type `str`:
-```
-s: str = "hello";
-```
 
 Strings hold text data - sequences of characters. The type annotation `: str` documents that `s` should contain a string value.
 
 **Integer Type**
 
 Lines 9-10 show the integer type `int`:
-```
-i: int = 42;
-```
 
 Integers are whole numbers without decimal points. They can be positive, negative, or zero.
 
 **Float Type**
 
 Lines 13-14 demonstrate the floating-point type `float`:
-```
-f: float = 3.14;
-```
 
 Floats represent numbers with decimal points, used for measurements, calculations requiring precision, and scientific notation.
 
@@ -44,36 +35,24 @@ Jac provides four main collection types for organizing multiple values:
 **List Type**
 
 Lines 17-18 show lists - mutable, ordered sequences:
-```
-lst: list = [1, 2, 3];
-```
 
 Lists can grow, shrink, and have elements modified. Use square brackets `[]` to create them.
 
 **Tuple Type**
 
 Lines 21-22 demonstrate tuples - immutable, ordered sequences:
-```
-tup: tuple = (1, 2, 3);
-```
 
 Once created, tuples cannot be changed. Use parentheses `()` to create them. Tuples are faster than lists and can be used as dictionary keys.
 
 **Set Type**
 
 Lines 25-26 show sets - unordered collections of unique values:
-```
-st: set = {1, 2, 3};
-```
 
 Sets automatically remove duplicates and provide fast membership testing. Use curly braces `{}` with just values.
 
 **Dictionary Type**
 
 Lines 29-30 demonstrate dictionaries - key-value mappings:
-```
-dct: dict = {"key": "value"};
-```
 
 Dictionaries store associations between keys and values. Use curly braces with `key: value` pairs.
 
@@ -101,18 +80,12 @@ graph TD
 **Boolean Type**
 
 Lines 33-34 show the boolean type `bool`:
-```
-b: bool = True;
-```
 
 Booleans have exactly two values: `True` and `False`. They're used for conditions, flags, and logic. Note the capitalization - these are keywords.
 
 **Bytes Type**
 
 Lines 37-38 demonstrate the bytes type:
-```
-byt: bytes = b"binary";
-```
 
 Bytes represent binary data - sequences of integers from 0-255. The `b` prefix before the string creates bytes. This type is essential for:
 - Reading/writing binary files
@@ -125,21 +98,12 @@ Bytes represent binary data - sequences of integers from 0-255. The `b` prefix b
 **Any Type**
 
 Lines 41-44 introduce the `any` type:
-```
-a: any = "anything";
-print(a);
-a = 123;
-print(a);
-```
 
 The `any` type accepts values of any type. Variable `a` starts as a string, then becomes an integer. This provides flexibility but sacrifices type safety.
 
 **Type Type**
 
 Lines 47-48 show the `type` type:
-```
-t: type = str;
-```
 
 The `type` type holds type objects themselves. This allows you to:
 - Store types in variables
@@ -150,13 +114,6 @@ The `type` type holds type objects themselves. This allows you to:
 **Type Annotations in Functions**
 
 Lines 51-56 demonstrate function type annotations:
-```
-def typed_func(x: int, y: str) -> tuple {
-    return (x, y);
-}
-
-result = typed_func(10, "test");
-```
 
 Function signatures can specify:
 - Parameter types: `x: int, y: str`

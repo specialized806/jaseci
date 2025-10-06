@@ -25,12 +25,6 @@ The `by` keyword handles delegation to the AI. Jac automatically extracts meanin
 
 Lines 11-14 use the `sem` keyword to provide additional semantic context:
 
-```
-sem generate_password = """
-Password is at least 8 characters, has one uppercase letter,
-one lowercase letter, one digit, and one special character.
-""";
-```
 
 The syntax pattern is `sem function_name = """description""";` where:
 - `sem` - Keyword indicating a semantic annotation

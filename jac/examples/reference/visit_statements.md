@@ -21,18 +21,6 @@ This tells the walker to visit all nodes reachable via outgoing edges from the c
 
 Lines 8-17 define a walker that demonstrates basic visiting:
 
-```
-walker BasicVisitor {
-    can start with `root entry {
-        print("visiting outgoing");
-        visit [-->];
-    }
-
-    can visit_person with Person entry {
-        print(f"at {here.name}");
-    }
-}
-```
 
 Line 9 defines an ability that triggers when entering the root node. Line 11 executes the visit statement, queueing connected nodes. Lines 14-16 define an ability that triggers when entering Person nodes, using `here.name` to access the current node's attribute.
 
@@ -40,11 +28,6 @@ Line 9 defines an ability that triggers when entering the root node. Line 11 exe
 
 Lines 23-24 demonstrate the else clause:
 
-```
-visit [-->] else {
-    print("no outgoing edges");
-}
-```
 
 The else block executes when the edge expression matches zero edges. This is useful for:
 - Detecting terminal/leaf nodes
@@ -68,16 +51,6 @@ Line 11 uses `[-->]` for outgoing traversal, the most common pattern.
 
 Lines 37-49 demonstrate visiting a specific node:
 
-```
-walker DirectVisit {
-    has target: Person;
-
-    can start with `root entry {
-        print("direct visit to target");
-        visit self.target;
-    }
-}
-```
 
 Line 42 shows `visit self.target;` - instead of an edge expression, this visits the specific node stored in the walker's `target` attribute. Line 106 spawns this walker with `DirectVisit(target=charlie)`, passing the target node as a parameter.
 
@@ -85,16 +58,6 @@ Line 42 shows `visit self.target;` - instead of an edge expression, this visits 
 
 Lines 52-59 demonstrate visiting through specific edge types:
 
-```
-edge Friend {}
-
-walker TypedVisit {
-    can start with Person entry {
-        print(f"at {here.name}, visiting Friend edges");
-        visit [->:Friend:->];
-    }
-}
-```
 
 Line 57 uses `[->:Friend:->]` to traverse only Friend-typed edges. The pattern is:
 - `->` - Outgoing direction indicator
@@ -107,18 +70,6 @@ This allows structural queries: "follow only these types of connections."
 
 Lines 62-71 demonstrate edge attribute filtering:
 
-```
-edge Colleague {
-    has strength: int;
-}
-
-walker FilteredVisit {
-    can start with Person entry {
-        print(f"visiting strong colleagues from {here.name}");
-        visit [->:Colleague:strength > 5:->];
-    }
-}
-```
 
 Line 69 uses `[->:Colleague:strength > 5:->]` to traverse only Colleague edges where the `strength` attribute exceeds 5. The pattern is:
 - `->:Colleague:` - Edge type
@@ -131,20 +82,6 @@ This combines structural and property-based filtering.
 
 Lines 74-85 show a walker with multiple visit statements:
 
-```
-walker MultiVisit {
-    can start with `root entry {
-        print("first visit");
-        visit [-->];
-    }
-
-    can continue_visit with Person entry {
-        print(f"at {here.name}");
-        print("second visit");
-        visit [-->];
-    }
-}
-```
 
 When this walker executes:
 1. Line 77 visits from root

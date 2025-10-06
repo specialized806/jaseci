@@ -6,11 +6,6 @@ Implementation blocks (`impl`) provide bodies for forward-declared elements, sep
 
 Lines 4-6 show forward declarations using semicolons to declare signatures without bodies:
 
-```
-def compute(x: int, y: int) -> int;
-obj Vehicle;
-enum Priority;
-```
 
 Line 4: Function signature without implementation
 Line 5: Object declaration without members
@@ -22,11 +17,6 @@ Forward declarations establish names and interfaces early, allowing references b
 
 Lines 9-11 implement the forward-declared function:
 
-```
-impl compute(x: int, y: int) -> int {
-    return x + y;
-}
-```
 
 The `impl` keyword introduces the implementation block. The signature must match the forward declaration exactly.
 
@@ -34,13 +24,6 @@ The `impl` keyword introduces the implementation block. The signature must match
 
 Lines 14-18 implement the forward-declared object:
 
-```
-impl Vehicle {
-    has name: str = "Car";
-    has speed: int = 0;
-    def accelerate { self.speed += 10; }
-}
-```
 
 The implementation adds the object's structure: member variables and methods.
 
@@ -48,13 +31,6 @@ The implementation adds the object's structure: member variables and methods.
 
 Lines 21-25 implement the forward-declared enum:
 
-```
-impl Priority {
-    LOW = 1,
-    MEDIUM = 2,
-    HIGH = 3
-}
-```
 
 Enum implementations provide member names and their associated values.
 
@@ -62,16 +38,6 @@ Enum implementations provide member names and their associated values.
 
 Lines 27-35 demonstrate using the implemented elements:
 
-```
-with entry {
-    result = compute(5, 3);      # Uses implemented function
-    v = Vehicle();               # Creates instance of implemented object
-    v.accelerate();              # Calls method from implementation
-    p = Priority.HIGH;           # Uses enum member
-
-    print(result, v.name, v.speed, p.value);
-}
-```
 
 All elements work normally after implementation, as if they were defined in a single step.
 
@@ -123,59 +89,10 @@ flowchart LR
 **Common Patterns**
 
 **Separating interface from implementation:**
-```
-# Forward declarations (interface)
-def process_data(data: list) -> dict;
-def validate_input(input: str) -> bool;
-
-# Later in file or separate module
-impl process_data(data: list) -> dict {
-    # Implementation details
-    return {"result": data};
-}
-
-impl validate_input(input: str) -> bool {
-    return len(input) > 0;
-}
-```
 
 **Resolving circular dependencies:**
-```
-# Forward declarations
-obj NodeA;
-obj NodeB;
-
-# Implementations can reference each other
-impl NodeA {
-    has neighbor: NodeB;
-}
-
-impl NodeB {
-    has neighbor: NodeA;
-}
-```
 
 **Organizing complex types:**
-```
-# Declare all types first
-enum Status;
-obj Request;
-obj Response;
-
-# Implement later, in any order
-impl Status {
-    PENDING = 1,
-    COMPLETE = 2
-}
-
-impl Request {
-    has status: Status;
-}
-
-impl Response {
-    has request: Request;
-}
-```
 
 **Key Points**
 

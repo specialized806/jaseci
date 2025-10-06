@@ -46,11 +46,6 @@ Line 20: `print(int(Circle(radius=10).area()))` - Demonstrates chained operation
 
 Lines 24-26 show a named entry point using `with entry:custom`:
 
-```
-with entry:custom {
-    print("Named entry point");
-}
-```
 
 Named entry points allow conditional or selective execution. The `:custom` label can be used to execute this block specifically.
 

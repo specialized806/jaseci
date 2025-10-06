@@ -19,9 +19,6 @@ These represent geometric objects, perfect for demonstrating pattern matching.
 
 The general form of a class pattern is:
 
-```
-case ClassName(positional_patterns, keyword=value_patterns):
-```
 
 Line 17 shows a complete example: `case Point(int(a), y = 0):`
 
@@ -103,9 +100,6 @@ Lines 42-46 demonstrate one of the most powerful features: nested class patterns
 
 Line 42 creates a Circle with a Point as its center. Line 44 shows the nested pattern:
 
-```
-case Circle(center=Point(x=cx, y=cy), radius=r):
-```
 
 This breaks down as:
 

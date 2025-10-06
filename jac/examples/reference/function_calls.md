@@ -6,29 +6,16 @@ Jac supports flexible function calling with positional arguments, keyword argume
 
 Lines 3-5 define a function with three parameters, the last having a default value:
 
-```
-def compute(x: int, y: int, z: int = 10) -> tuple {
-    return (x * y, y * z);
-}
-```
 
 The parameter `z` defaults to 10 if not provided. The function returns a tuple of two computed values.
 
 Lines 7-9 define a variadic function accepting both *args and **kwargs:
 
-```
-def variadic(*args: int, **kwargs: int) -> int {
-    return sum(args) + sum(kwargs.values());
-}
-```
 
 **Positional Arguments**
 
 Line 13 demonstrates the most basic calling pattern - positional arguments:
 
-```
-r1 = compute(2, 3, 4);
-```
 
 Arguments are matched to parameters by position: `x=2`, `y=3`, `z=4`. The order matters.
 
@@ -36,9 +23,6 @@ Arguments are matched to parameters by position: `x=2`, `y=3`, `z=4`. The order 
 
 Line 16 shows calling with all keyword arguments:
 
-```
-r2 = compute(x=5, y=6, z=7);
-```
 
 Each argument explicitly specifies which parameter it's for. This allows:
 - Arguments in any order
@@ -49,9 +33,6 @@ Each argument explicitly specifies which parameter it's for. This allows:
 
 Line 19 demonstrates combining both styles:
 
-```
-r3 = compute(8, y=9, z=10);
-```
 
 **Rules for mixing:**
 1. Positional arguments must come first
@@ -63,9 +44,6 @@ r3 = compute(8, y=9, z=10);
 
 Line 22 shows omitting parameters with default values:
 
-```
-r4 = compute(2, 3);
-```
 
 Only `x` and `y` are provided. The parameter `z` automatically uses its default value of 10.
 
@@ -73,9 +51,6 @@ Only `x` and `y` are provided. The parameter `z` automatically uses its default 
 
 Line 25 demonstrates calling a function with *args and **kwargs:
 
-```
-r5 = variadic(1, 2, 3, a=4, b=5);
-```
 
 In this call:
 - Positional arguments (1, 2, 3) are collected into `args` tuple

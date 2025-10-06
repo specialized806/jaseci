@@ -32,9 +32,6 @@ The walker-first form (line 24) can be more readable when:
 - You're chaining operations on the walker
 
 For example:
-```
-ComplexWalker(param1=x, param2=y, param3=z) spawn starting_node;
-```
 
 This makes it clear what's being created before showing where it's being spawned.
 
@@ -113,27 +110,9 @@ Choose the form that makes your code most readable for the specific situation.
 
 The walker-first syntax shines when:
 
-```
-# Complex construction parameters
-DataAnalyzer(
-    filters=["type_a", "type_b"],
-    max_depth=5,
-    collect_stats=True
-) spawn root;
-
-# Chained with other operations
-walker = AdvancedProcessor(config=cfg);
-walker.setup();
-walker spawn start_node;
-```
 
 The node-first syntax is better for simple cases:
 
-```
-# Simple, straightforward
-root spawn SimpleWalker();
-node spawn QuickCheck();
-```
 
 **Key Takeaways**
 

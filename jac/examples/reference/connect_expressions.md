@@ -25,23 +25,14 @@ Lines 21-23: `Colleague` edge with `department` attribute
 These create generic edges without specifying an edge type:
 
 **Forward connection (Line 34)**:
-```
-alice ++> bob;  # Creates edge from alice to bob
-```
 - Arrow points right: alice → bob
 - Line 35 prints confirmation
 
 **Backward connection (Line 37)**:
-```
-bob <++ charlie;  # Creates edge from charlie to bob
-```
 - Arrow points left: charlie → bob (not bob → charlie!)
 - Line 38 notes the actual direction
 
 **Bidirectional connection (Line 40)**:
-```
-alice <++> charlie;  # Creates edges in both directions
-```
 - Creates alice → charlie AND charlie → alice
 - Line 41 confirms both directions created
 
@@ -63,24 +54,15 @@ graph LR
 These specify the edge archetype during connection:
 
 **Forward typed (Line 51)**:
-```
-diana +>:LivesIn:+> nyc;
-```
 - Creates `LivesIn` edge from diana to nyc
 - Edge type is explicitly `LivesIn`
 - Line 52 shows the syntax
 
 **Backward typed (Line 54)**:
-```
-eve <+:LivesIn:<+ london;
-```
 - Creates `LivesIn` edge from london to eve (not eve to london!)
 - Line 55 clarifies the actual direction
 
 **Bidirectional typed (Line 57)**:
-```
-diana <+:Friend:+> eve;
-```
 - Creates `Friend` edges in both directions
 - Both diana → eve and eve → diana are `Friend` type
 
@@ -89,24 +71,15 @@ diana <+:Friend:+> eve;
 Initialize edge attributes during connection:
 
 **Forward with attributes (Line 66)**:
-```
-grace +>: Friend(since=2015) :+> henry;
-```
 - Creates `Friend` edge from grace to henry
 - Sets `since` attribute to 2015
 - Line 67 shows the full syntax
 
 **Backward with attributes (Line 69)**:
-```
-henry <+: Friend(since=2018) :<+ iris;
-```
 - Creates `Friend` edge from iris to henry
 - Edge has `since=2018`
 
 **Bidirectional with attributes (Line 72)**:
-```
-grace <+: Colleague(department="Engineering") :+> iris;
-```
 - Creates `Colleague` edges in both directions
 - Both edges have `department="Engineering"`
 
@@ -148,11 +121,6 @@ Line 91: `nina +>: Friend(since=2010) :+> Person(name="InlineNode3", age=45);`
 One node can connect to multiple targets:
 
 Lines 100-102:
-```
-oscar ++> paula;
-oscar ++> quinn;
-oscar +>:Friend:+> Person(name="Rita", age=30);
-```
 - Oscar connects to three different nodes
 - Creates a hub/star pattern
 - Line 103 confirms all connections
@@ -178,10 +146,6 @@ Line 107: `node del [-->] target`
 Connect expressions return values and integrate with other expressions:
 
 Lines 115-116:
-```
-steve ++> tina;
-print(f"Connect used in expression: {steve.name} ++> {tina.name}");
-```
 - Connect can be part of larger expressions
 - Returns a value that can be used in subsequent code
 
@@ -190,16 +154,8 @@ print(f"Connect used in expression: {steve.name} ++> {tina.name}");
 The example demonstrates how created edges are traversed:
 
 **Building the graph (Lines 133-136)**:
-```
-a +>: Friend(since=2010) :+> b;
-a +>: Colleague(department="Sales") :+> c;
-b +>: Friend(since=2015) :+> c;
-```
 
 **Traversing edges (Line 140)**:
-```
-visit [-->];
-```
 - Visits all outgoing edges from current node
 - Uses edge reference syntax (different from connect operators)
 
@@ -230,28 +186,12 @@ graph TD
 **Common Graph Patterns**
 
 Linear chain (line 82):
-```
-n1 ++> n2 ++> n3 ++> n4;
-```
 
 Star/hub (lines 100-102):
-```
-center ++> spoke1;
-center ++> spoke2;
-center ++> spoke3;
-```
 
 Bidirectional network:
-```
-node1 <++> node2 <++> node3;
-```
 
 Heterogeneous typed graph (lines 134-136):
-```
-person +>:LivesIn:+> city;
-person +>:WorksAt:+> company;
-person <+:Friend:+> other;
-```
 
 **Operator Directionality Guide**
 
@@ -277,19 +217,5 @@ Understanding arrow direction is critical:
 Connect expressions work seamlessly with walkers:
 
 Building during traversal:
-```
-walker GraphBuilder {
-    can build with Node entry {
-        new_node = DataNode(...);
-        here ++> new_node;  # Create edge during walk
-        visit [-->];         # Continue traversal
-    }
-}
-```
 
 Conditional connections:
-```
-if should_connect(here, target) {
-    here +>:EdgeType:+> target;
-}
-```

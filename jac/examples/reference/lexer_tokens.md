@@ -23,9 +23,6 @@ Lines 7-14 demonstrate all eight builtin type keywords used as type annotations:
 
 The pattern for declaring a variable with a type annotation is:
 
-```
-variable_name: type = value
-```
 
 For example, line 7 shows `x: str = "string"`, which means:
 - `x` is the variable name

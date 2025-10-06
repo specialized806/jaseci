@@ -8,9 +8,6 @@ Lambda expressions are a way to create small, unnamed functions without using th
 
 The general structure of a lambda expression follows this pattern:
 
-```
-lambda parameters -> return_type : expression
-```
 
 | Component | Description | Required |
 |-----------|-------------|----------|
@@ -24,11 +21,6 @@ lambda parameters -> return_type : expression
 
 Line 5 shows a lambda with complete type annotations. The expression `lambda a: int, b: int -> int : a + b` defines a function that takes two integer parameters and returns their sum. This is equivalent to:
 
-```
-def add(a: int, b: int) -> int {
-    return a + b;
-}
-```
 
 The lambda version is more concise and can be assigned to a variable (line 5) or passed directly as an argument.
 

@@ -6,10 +6,6 @@ Import statements control module dependencies, allowing code to access functiona
 
 Lines 4-5 demonstrate basic import patterns:
 
-```
-import os;
-import sys, json;
-```
 
 Line 4: Imports a single module (`os`)
 Line 5: Imports multiple modules in one statement, comma-separated (`sys`, `json`)
@@ -20,9 +16,6 @@ After importing, all module members are accessible via dot notation: `os.getcwd(
 
 Line 8 shows renaming a module during import:
 
-```
-import datetime as dt;
-```
 
 The module is imported but referenced by the shorter name `dt` instead of `datetime`. Use this for:
 - Shorter names (convenience)
@@ -35,9 +28,6 @@ Line 26 demonstrates usage: `dt.datetime.now().year`
 
 Line 11 demonstrates selective imports using `import from`:
 
-```
-import from math { sqrt, pi, log as logarithm }
-```
 
 This syntax:
 - Imports only specific items from a module (`sqrt`, `pi`, `log`)
@@ -51,9 +41,6 @@ Lines 23-25 show usage: `sqrt(16)`, `pi`, `logarithm(10)` - no `math.` prefix ne
 
 Line 14 shows that trailing commas are allowed:
 
-```
-import from collections { defaultdict as ddict, Counter, }
-```
 
 The trailing comma after `Counter` is valid and useful for version control (adding/removing items creates cleaner diffs).
 
@@ -61,11 +48,6 @@ The trailing comma after `Counter` is valid and useful for version control (addi
 
 Lines 17-19 (commented) show relative import syntax for package-relative imports:
 
-```
-# import from . { sibling_module };
-# import from .. { parent_module };
-# import from ... { grandparent_module };
-```
 
 The dot notation indicates package hierarchy:
 - `.` - Current package
@@ -112,15 +94,6 @@ flowchart TD
 
 Lines 21-27 demonstrate using imported items:
 
-```
-with entry {
-    print(f"CWD: {os.getcwd()}");           # os module
-    print(f"Sqrt(16): {sqrt(16)}");         # Direct from math
-    print(f"Pi: {pi}");                     # Direct from math
-    print(f"Log(10): {logarithm(10)}");     # Aliased from math
-    print(f"Now: {dt.datetime.now().year}"); # Aliased module
-}
-```
 
 **When to Use Each Pattern**
 
@@ -147,39 +120,12 @@ with entry {
 **Import Best Practices**
 
 **At module top:**
-```
-import os;
-import sys;
-import from math { sqrt, pi };
-import from collections { defaultdict };
-```
 
 **Group by category:**
-```
-# Standard library
-import os, sys;
-
-# Third-party
-import numpy as np;
-
-# Local modules
-import from . { utils };
-```
 
 **Use aliases for clarity:**
-```
-import datetime as dt;
-import from math { sqrt as square_root };
-```
 
 **Import only what you need:**
-```
-# Good: selective import
-import from math { sqrt, pi };
-
-# Less ideal: import everything
-import math;  # When you only need sqrt and pi
-```
 
 **Key Points**
 

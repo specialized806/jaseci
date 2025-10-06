@@ -96,11 +96,6 @@ Line 33: `matrix = [[i * j for j in range(3)] for i in range(3)]`
 - Creates a 2D matrix (list of lists)
 - Outer comprehension creates rows, inner creates columns
 - Results:
-  ```
-  [[0, 0, 0],    # i=0: 0*0, 0*1, 0*2
-   [0, 1, 2],    # i=1: 1*0, 1*1, 1*2
-   [0, 2, 4]]    # i=2: 2*0, 2*1, 2*2
-  ```
 
 **Dictionary Unpacking (Line 36)**
 
@@ -122,25 +117,9 @@ Line 36: `merged = {**dct, "c": 3}`
 **Common Patterns**
 
 Transform and filter:
-```
-# From line 17
-evens = [x for x in range(10) if x % 2 == 0]
-```
 
 Create lookup tables:
-```
-# From line 20
-lookup = {x: x ** 2 for x in range(5)}
-```
 
 Flatten nested structures:
-```
-# From line 29 concept
-flattened = [item for sublist in nested for item in sublist]
-```
 
 Matrix operations:
-```
-# From line 33
-transpose = [[row[i] for row in matrix] for i in range(len(matrix[0]))]
-```

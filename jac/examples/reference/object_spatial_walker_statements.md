@@ -59,49 +59,10 @@ Line 12 shows `root spawn Visitor()`, which:
 The `disengage` statement is useful when you want to:
 
 1. **Stop searching after finding a target**:
-```
-walker Searcher {
-    has target: str;
-    has found: bool = False;
-
-    can search with Node entry {
-        if here.id == self.target {
-            self.found = True;
-            disengage;  # Stop searching
-        }
-        visit [-->];
-    }
-}
-```
 
 2. **Exit early on error conditions**:
-```
-walker Validator {
-    can validate with DataNode entry {
-        if not here.is_valid {
-            print("Invalid data found!");
-            disengage;  # Stop processing
-        }
-        visit [-->];
-    }
-}
-```
 
 3. **Limit traversal depth or count**:
-```
-walker LimitedWalker {
-    has max_visits: int = 10;
-    has visit_count: int = 0;
-
-    can process with Node entry {
-        self.visit_count += 1;
-        if self.visit_count >= self.max_visits {
-            disengage;  # Stop after max visits
-        }
-        visit [-->];
-    }
-}
-```
 
 **disengage vs Other Control Flow**
 
@@ -122,12 +83,6 @@ When `disengage` executes:
 - The walker's execution is completely finished
 
 For example:
-```
-can process with Node entry {
-    visit [-->];  # Queues all outgoing nodes
-    disengage;    # Those queued nodes never get visited
-}
-```
 
 The queued nodes are abandoned when `disengage` runs.
 
@@ -135,22 +90,6 @@ The queued nodes are abandoned when `disengage` runs.
 
 Even though the walker terminates early, you can still access its state:
 
-```
-walker Counter {
-    has count: int = 0;
-
-    can process with Node entry {
-        self.count += 1;
-        if self.count >= 5 {
-            disengage;
-        }
-        visit [-->];
-    }
-}
-
-result = root spawn Counter();
-print(result.count);  # Can still access walker's state
-```
 
 The walker instance persists after `disengage`, so you can read its attributes.
 
@@ -158,25 +97,6 @@ The walker instance persists after `disengage`, so you can read its attributes.
 
 A very common pattern combines `disengage` with a search:
 
-```
-walker FindUser {
-    has target_name: str;
-    has result: User? = None;
-
-    can search with User entry {
-        if here.name == self.target_name {
-            self.result = here;
-            disengage;  # Found it, stop searching
-        }
-        visit [-->];
-    }
-}
-
-finder = root spawn FindUser(target_name="Alice");
-if finder.result {
-    print(f"Found user: {finder.result}");
-}
-```
 
 This searches the graph until finding the target, then stops immediately rather than continuing to traverse.
 

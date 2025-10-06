@@ -42,9 +42,6 @@ These demonstrate how pipe back works with different functions.
 
 Line 13 demonstrates using pipe back with inline lambda functions:
 
-```
-result3 = (lambda n: int : n * 3) <| 10;
-```
 
 This breaks down as:
 - `(lambda n: int : n * 3)` creates an inline function that multiplies by 3
@@ -58,9 +55,6 @@ The lambda must be wrapped in parentheses when used with pipe back. This pattern
 
 Line 16 shows using pipe back with built-in functions:
 
-```
-total = sum <| [1, 2, 3, 4, 5];
-```
 
 This applies the built-in `sum` function to the list, producing 15. The pipe back operator works with any callable:
 - User-defined functions (lines 3-5)
@@ -72,10 +66,6 @@ This applies the built-in `sum` function to the list, producing 15. The pipe bac
 
 Lines 19-20 show sequential pipe back operations:
 
-```
-temp = double <| 2;      # temp = 4
-result4 = triple <| temp; # result4 = 12
-```
 
 While you can't chain pipe back operators in a single expression (unlike forward pipe), you can sequence them across statements. This applies transformations step by step.
 
@@ -89,14 +79,8 @@ Understanding the relationship between the two pipe operators:
 | `<\|` (backward) | Right to left | `function <\| value` | Function-first | 9, 10 |
 
 **Forward pipe** (covered in pipe_expressions.md):
-```
-result = 5 |> double;  # Reads: "5, pipe to double"
-```
 
 **Pipe back**:
-```
-result = double <| 5;  # Reads: "double, taking 5"
-```
 
 Both produce the same result, but emphasize different aspects:
 - Forward pipe emphasizes the data being transformed
@@ -107,18 +91,11 @@ Both produce the same result, but emphasize different aspects:
 Pipe back is particularly useful when:
 
 1. **Function is more important than data**:
-```
-processor <| input_data;  # Emphasizes the processor
-```
 
 2. **Familiar with functional languages**:
 Pipe back is common in languages like Haskell (`$`), F# (`<|`), and Elm (`<|`).
 
 3. **Function has descriptive name**:
-```
-validate_email <| user_input;
-calculate_discount <| price;
-```
 
 **Comparison with Traditional Syntax**
 
@@ -138,35 +115,19 @@ Choose based on what you want to emphasize:
 **Practical Examples**
 
 **Example 1: Validation pipeline**
-```
-valid = validate_format <| user_input;
-```
 Emphasizes that validation is being performed.
 
 **Example 2: Processing with built-ins**
-```
-length = len <| filtered_items;
-maximum = max <| scores;
-```
 Makes the operation clear before showing the data.
 
 **Example 3: Lambda transformations**
-```
-scaled = (lambda x: float : x * 0.01) <| percentage;
-```
 Inline transformation with pipe back style.
 
 **Key Differences from Forward Pipe**
 
 Forward pipe (`|>`) supports chaining:
-```
-result = value |> func1 |> func2 |> func3;  # Chains left to right
-```
 
 Pipe back (`<|`) doesn't chain in the same way:
-```
-result = func3 <| func2 <| func1 <| value;  # Would need nesting
-```
 
 For chaining multiple operations, forward pipe is typically more natural.
 

@@ -7,18 +7,12 @@ Line 5 shows the most basic assignment: `x = 10;`. The equals sign `=` takes the
 **Chain Assignment**
 
 Line 9 demonstrates chaining assignments to give multiple variables the same value:
-```
-a = b = c = 20;
-```
 
 This evaluates right-to-left: first 20 is assigned to c, then to b, then to a. All three variables now hold the value 20, as confirmed by printing them on line 10.
 
 **The let Keyword**
 
 Lines 13-14 introduce the `let` keyword for explicit variable declaration:
-```
-let value = 100;
-```
 
 While `let` is optional, it makes your intent clear - you're creating a new variable. This improves code readability, especially in complex scopes.
 
@@ -77,36 +71,24 @@ Lines 42-48 demonstrate bitwise augmented assignments:
 **Tuple Unpacking**
 
 Lines 51-52 show unpacking a tuple into multiple variables:
-```
-(x, y) = (10, 20);
-```
 
 The tuple `(10, 20)` on the right is unpacked, assigning 10 to x and 20 to y in a single statement. This is much cleaner than two separate assignments.
 
 **The Swap Pattern**
 
 Line 55 demonstrates the classic swap using tuple unpacking:
-```
-(x, y) = (y, x);
-```
 
 This swaps the values of x and y without needing a temporary variable. If x was 10 and y was 20, they become 20 and 10 respectively.
 
 **List Unpacking**
 
 Lines 59-60 show that lists can also be unpacked:
-```
-[p, q, r] = [1, 2, 3];
-```
 
 This works identically to tuple unpacking - the values from the list are distributed to the variables in order.
 
 **Nested Unpacking**
 
 Lines 63-64 demonstrate unpacking nested structures:
-```
-(m, (n, o)) = (5, (6, 7));
-```
 
 The outer tuple contains 5 and another tuple (6, 7). Variable m gets 5, while the inner tuple is unpacked with n getting 6 and o getting 7.
 

@@ -15,14 +15,6 @@ Control statements alter the normal flow of execution within loops, providing me
 The `break` keyword immediately exits the innermost loop:
 
 Lines 5-10:
-```
-for i in range(10) {
-    if i > 3 {
-        break;
-    }
-    print(i);
-}
-```
 - Loop starts with `i` from 0 to 9
 - Line 6: When `i > 3` (i.e., when i=4), condition is true
 - Line 7: `break` executes, exiting the loop
@@ -46,14 +38,6 @@ graph TD
 The `continue` keyword skips the rest of the current iteration and proceeds to the next:
 
 Lines 13-18:
-```
-for j in range(5) {
-    if j == 2 {
-        continue;
-    }
-    print(j);
-}
-```
 - Loop iterates j from 0 to 4
 - Line 14: When `j == 2`, condition is true
 - Line 15: `continue` skips to next iteration
@@ -79,16 +63,6 @@ graph TD
 Break works the same in while loops:
 
 Lines 21-28:
-```
-count = 0;
-while True {
-    count += 1;
-    if count > 3 {
-        break;
-    }
-    print(count);
-}
-```
 - Line 22: Infinite loop (`while True`)
 - Line 23: Increment counter
 - Line 24: When count exceeds 3, break executes
@@ -100,16 +74,6 @@ while True {
 Continue skips iterations in while loops:
 
 Lines 31-38:
-```
-n = 0;
-while n < 5 {
-    n += 1;
-    if n % 2 == 0 {
-        continue;
-    }
-    print(n);
-}
-```
 - Line 33: Increment n first (important!)
 - Line 34: If n is even, skip print
 - Line 37: Only odd numbers are printed
@@ -118,13 +82,6 @@ while n < 5 {
 **Skip Statement - Walker-Specific (Lines 40-45)**
 
 Line 41-44:
-```
-walker SkipWalker {
-    can process with entry {
-        skip;
-    }
-}
-```
 - `skip` is used in walker contexts (not regular loops)
 - Stops processing current node
 - Walker continues to next queued node
@@ -143,16 +100,6 @@ walker SkipWalker {
 **Nested Loops with Break (Lines 47-55)**
 
 Lines 48-55:
-```
-for x in range(3) {
-    for y in range(3) {
-        if x == y == 1 {
-            break;
-        }
-        print(f"{x},{y}");
-    }
-}
-```
 - Nested loops: outer (x) and inner (y)
 - Line 50: When x=1 and y=1, break executes
 - **Break only exits inner loop**, not outer loop
@@ -177,16 +124,6 @@ graph TD
 **Nested Loops with Continue (Lines 57-65)**
 
 Lines 58-65:
-```
-for a in range(3) {
-    for b in range(3) {
-        if a == b {
-            continue;
-        }
-        print(f"{a},{b}");
-    }
-}
-```
 - Line 60: When a equals b, skip that iteration
 - **Continue only affects inner loop**
 - Prints all pairs where a ≠ b
@@ -195,48 +132,12 @@ for a in range(3) {
 **Common Patterns**
 
 Early exit on condition:
-```
-for item in items {
-    if found_what_we_need(item) {
-        break;
-    }
-    process(item);
-}
-```
 
 Filter during iteration:
-```
-for item in items {
-    if should_skip(item) {
-        continue;
-    }
-    process(item);
-}
-```
 
 Bounded loop:
-```
-count = 0;
-while True {
-    count += 1;
-    if count > MAX_ITERATIONS {
-        break;
-    }
-    do_work();
-}
-```
 
 Skip diagonal in matrix:
-```
-for row in range(n) {
-    for col in range(n) {
-        if row == col {
-            continue;  # Skip diagonal
-        }
-        matrix[row][col] = value;
-    }
-}
-```
 
 **Best Practices**
 

@@ -6,37 +6,17 @@ Functions and abilities are the core computational units in Jac. Functions provi
 
 Lines 6-8 show a function with typed parameters and return type:
 
-```
-def add(x: int, y: int) -> int {
-    return x + y;
-}
-```
 
 Lines 11-13 demonstrate a function with only a return type (no parameters):
 
-```
-def get_default -> int {
-    return 42;
-}
-```
 
 Lines 16-18 use the generic `object` type when flexible typing is needed:
 
-```
-def multiply(a: object, b: object) -> object {
-    return a * b;
-}
-```
 
 **Static Functions**
 
 Lines 26-28 define a static function that belongs to the class, not instances:
 
-```
-static def square(x: int) -> int {
-    return x * x;
-}
-```
 
 Call static functions directly on the class: `Calculator.square(5)` (line 307).
 
@@ -56,9 +36,6 @@ Access tags can be combined with `static`: `static def:priv internal_helper` (li
 
 Line 49 demonstrates abstract method declaration:
 
-```
-def compute(x: int, y: int) -> int abs;
-```
 
 The `abs` keyword marks it as abstract - subclasses must implement it. Lines 63-65 show implementation in `ConcreteCalculator`.
 
@@ -66,11 +43,6 @@ The `abs` keyword marks it as abstract - subclasses must implement it. Lines 63-
 
 Lines 52, 55, 58 show forward declarations - signatures without bodies:
 
-```
-def process(value: float) -> float;
-def aggregate(*numbers: tuple) -> float;
-def configure(**options: dict) -> dict;
-```
 
 Forward declarations allow separating interface from implementation, useful for circular dependencies.
 
@@ -78,11 +50,6 @@ Forward declarations allow separating interface from implementation, useful for 
 
 Lines 70-72 implement forward-declared methods using `impl`:
 
-```
-impl AbstractCalculator.process(value: float) -> float {
-    return value * 1.5;
-}
-```
 
 The pattern: `impl ClassName.method_name(params) -> return_type { body }`
 
@@ -90,25 +57,12 @@ The pattern: `impl ClassName.method_name(params) -> return_type { body }`
 
 Lines 86-88 show positional variadic (*args):
 
-```
-def sum_all(*values: tuple) -> int {
-    return sum(values);
-}
-```
 
 Lines 91-93 show keyword variadic (**kwargs):
 
-```
-def collect_options(**opts: dict) -> dict {
-    return opts;
-}
-```
 
 Lines 96-102 combine regular parameters, *args, and **kwargs:
 
-```
-def combined(base: int, *extras: tuple, **options: dict) -> dict
-```
 
 **Parameter order must be: regular, *args, **kwargs**
 
@@ -116,11 +70,6 @@ def combined(base: int, *extras: tuple, **options: dict) -> dict
 
 Lines 106-108 show async function declaration:
 
-```
-async def fetch_remote(url: str) -> dict {
-    return {"url": url, "status": "fetched"};
-}
-```
 
 Async functions enable concurrent operations and must be awaited when called.
 
@@ -128,22 +77,9 @@ Async functions enable concurrent operations and must be awaited when called.
 
 Lines 128-130 show single decorator application:
 
-```
-@logger
-def logged_func(x: int) -> int {
-    return x + 1;
-}
-```
 
 Lines 134-137 demonstrate multiple decorators (applied bottom-up):
 
-```
-@logger
-@tracer
-def double_decorated(x: int) -> int {
-    return x * 2;
-}
-```
 
 Equivalent to: `double_decorated = logger(tracer(double_decorated))`
 
@@ -151,20 +87,9 @@ Equivalent to: `double_decorated = logger(tracer(double_decorated))`
 
 Lines 145-147 show an entry ability that triggers when a walker spawns:
 
-```
-can initialize with entry {
-    self.counter = 0;
-    print("BasicWalker: initialized");
-}
-```
 
 Lines 151-153 show an exit ability that triggers when the walker completes:
 
-```
-can finalize with exit {
-    print(f"BasicWalker: done, counter={self.counter}");
-}
-```
 
 **Abilities use `can` instead of `def` and specify event clauses with `with`.**
 
@@ -172,22 +97,9 @@ can finalize with exit {
 
 Lines 172-175 show root-specific ability:
 
-```
-can start with `root entry {
-    print("TypedWalker: Starting at root");
-    visit [-->];
-}
-```
 
 Lines 178-182 show typed node ability (triggers only for Person nodes):
 
-```
-can handle_person with Person entry {
-    self.people_visited += 1;
-    print(f"  Visiting person: {here.name}, age {here.age}");
-    visit [-->];
-}
-```
 
 The `here` reference accesses the current node being visited.
 
@@ -212,20 +124,6 @@ flowchart TD
 
 Lines 201-212 demonstrate multiple abilities for the same node type:
 
-```
-can first_pass with Person entry {
-    if self.stage == "initial" {
-        print(f"  First pass: {here.name}");
-        self.stage = "processed";
-    }
-}
-
-can second_pass with Person entry {
-    if self.stage == "processed" {
-        print(f"  Second pass: {here.name}");
-    }
-}
-```
 
 **Both abilities execute sequentially in definition order.** Walker state persists across both.
 
@@ -233,12 +131,6 @@ can second_pass with Person entry {
 
 Lines 225-228 show abilities defined on nodes (not walkers):
 
-```
-can greet_typed with TypedWalker entry {
-    print(f"    {self.name} says: Hello TypedWalker!");
-    self.greeted = True;
-}
-```
 
 When a TypedWalker visits, both the walker's ability AND the node's ability execute. The `self` in node abilities refers to the node.
 
@@ -246,39 +138,19 @@ When a TypedWalker visits, both the walker's ability AND the node's ability exec
 
 Lines 237-240 show async walker and async abilities:
 
-```
-async walker AsyncWalker {
-    async can process with entry {
-        print("AsyncWalker: async processing");
-    }
-}
-```
 
 **Abstract Abilities**
 
 Line 251 declares abstract ability:
 
-```
-can must_override with entry abs;
-```
 
 Lines 256-258 show implementation in subclass:
 
-```
-can must_override with entry {
-    print("ConcreteWalker: implemented abstract ability");
-}
-```
 
 **Static Abilities**
 
 Lines 266-268 show static abilities (rare but allowed):
 
-```
-static can class_level with entry {
-    print("Static ability executed");
-}
-```
 
 Static abilities belong to the walker class, not instances. Cannot access `self`.
 
@@ -286,12 +158,6 @@ Static abilities belong to the walker class, not instances. Cannot access `self`
 
 Lines 284-287 demonstrate `disengage` for early termination:
 
-```
-if self.current_depth >= self.max_depth {
-    print("  Max depth reached - stopping");
-    disengage;
-}
-```
 
 The `disengage` statement immediately terminates walker execution.
 
@@ -344,47 +210,12 @@ flowchart TD
 **Practical Patterns**
 
 **Search with disengage:**
-```
-walker Searcher {
-    has found: Node? = None;
-    can search with TargetType entry {
-        self.found = here;
-        disengage;
-    }
-}
-```
 
 **Multi-stage processing:**
-```
-walker Processor {
-    can validate with Data entry { /* validate */ }
-    can transform with Data entry { /* transform */ }
-    can persist with Data entry { /* save */ }
-}
-```
 
 **Node-walker interaction:**
-```
-node Document {
-    can log_access with Auditor entry {
-        self.access_log.append(visitor.timestamp);
-    }
-}
-```
 
 **Polymorphic traversal:**
-```
-walker Printer {
-    can print_person with Person entry {
-        print(f"Person: {here.name}");
-        visit [-->];
-    }
-    can print_city with City entry {
-        print(f"City: {here.name}");
-        visit [-->];
-    }
-}
-```
 
 **Key Insights**
 

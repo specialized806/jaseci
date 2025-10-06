@@ -111,27 +111,8 @@ For most literals, this doesn't matter. But for booleans and None, singleton pat
 These are equivalent:
 
 **Using match with literals:**
-```
-match value {
-    case 1:
-        print("one");
-    case 2:
-        print("two");
-    case _:
-        print("other");
-}
-```
 
 **Using if-elif-else:**
-```
-if value == 1 {
-    print("one");
-} elif value == 2 {
-    print("two");
-} else {
-    print("other");
-}
-```
 
 Match is more concise and clearer when you have many cases to check.
 

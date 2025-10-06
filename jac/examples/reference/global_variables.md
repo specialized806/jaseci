@@ -6,10 +6,6 @@ Global variables are module-level declarations that can have access control tags
 
 Lines 4-5 demonstrate `let` declarations with access tags:
 
-```
-let:priv private_val = 5;
-let:pub public_val = 10;
-```
 
 Line 4: `let:priv` creates a private module-level variable accessible only within the current module.
 Line 5: `let:pub` creates a public module-level variable accessible from other modules.
@@ -18,10 +14,6 @@ Line 5: `let:pub` creates a public module-level variable accessible from other m
 
 Lines 8-9 show `glob` declarations with access control:
 
-```
-glob:protect protected_var = 15;
-glob shared_var = 20;
-```
 
 Line 8: `glob:protect` creates a protected variable with restricted access.
 Line 9: `glob shared_var` creates a global variable with default visibility.
@@ -30,9 +22,6 @@ Line 9: `glob shared_var` creates a global variable with default visibility.
 
 Line 12 demonstrates declaring multiple globals in one statement:
 
-```
-glob x = 1, y = 2, z = 3;
-```
 
 This comma-separated syntax declares three global variables simultaneously.
 
@@ -40,9 +29,6 @@ This comma-separated syntax declares three global variables simultaneously.
 
 Line 15 shows a typed global declaration:
 
-```
-glob counter: int = 0;
-```
 
 The type annotation `: int` specifies that `counter` must be an integer.
 
@@ -59,11 +45,6 @@ The type annotation `: int` specifies that `counter` must be an integer.
 
 Lines 17-19 show accessing all declared globals in an entry block:
 
-```
-with entry {
-    print(private_val, public_val, protected_var, shared_var, x, y, z, counter);
-}
-```
 
 All module-level globals are accessible within the module's entry blocks and functions.
 
@@ -114,28 +95,12 @@ Both `let` and `glob` create module-level variables:
 **Common Patterns**
 
 **Configuration constants:**
-```
-let:pub VERSION = "1.0.0";
-let:pub DEBUG_MODE = False;
-glob:pub config_path = "./config.json";
-```
 
 **Module state:**
-```
-glob:priv _internal_counter = 0;
-glob:pub request_count = 0;
-```
 
 **Typed globals:**
-```
-glob:pub active_users: list = [];
-glob:priv cache: dict = {};
-```
 
 **Multiple related globals:**
-```
-glob:pub width = 800, height = 600, fps = 60;
-```
 
 **Key Points**
 

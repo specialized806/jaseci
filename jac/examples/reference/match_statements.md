@@ -101,22 +101,7 @@ Match statements are ideal when you need to:
 Compare these equivalent approaches:
 
 Using if-else (more verbose):
-```
-if x == 7:
-    print("seven")
-elif x == 8:
-    print("eight")
-else:
-    print("other")
-```
 
 Using match (more declarative):
-```
-match x {
-    case 7: print("seven");
-    case 8: print("eight");
-    case _: print("other");
-}
-```
 
 The match version makes the structure clearer and allows for more complex patterns like list destructuring that would be awkward with if-else.

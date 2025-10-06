@@ -3,31 +3,18 @@ Code blocks organize sequences of statements within curly braces, providing stru
 **Entry Point Code Block**
 
 Lines 3-20 show an entry code block - the starting point when the module executes:
-```
-with entry {
-    # Statements go here
-}
-```
 
 The `with entry` construct creates a code block that runs when the program starts. Everything inside the curly braces `{ }` is part of this block.
 
 **Expression Statements**
 
 Line 5 demonstrates an expression statement:
-```
-print("Welcome to the world of Jaseci!");
-```
 
 An expression followed by a semicolon becomes a statement. The expression is evaluated for its side effect (in this case, printing output). The semicolon is required to mark the end of the statement.
 
 **Function Definitions Inside Blocks**
 
 Lines 8-10 show that you can define functions inside code blocks:
-```
-def add(x: int, y: int) -> int {
-    return (x + y);
-}
-```
 
 This function is defined within the entry block's scope. The function itself contains its own code block (lines 9-10) with a return statement.
 
@@ -53,9 +40,6 @@ Every code block has:
 **Function Call Statements**
 
 Line 13 shows a function call as a statement:
-```
-print(add(10, 89));
-```
 
 The function call `add(10, 89)` is evaluated, its result is passed to `print()`, and then the statement completes. Function calls can be statements when their return value isn't assigned.
 
@@ -76,11 +60,6 @@ Lines 17-19 contain an if statement with its own nested code block. The conditio
 **Nested Code Blocks**
 
 The if statement on lines 17-19 creates a nested structure:
-```
-if x > 0 {
-    print("Positive");
-}
-```
 
 The outer code block (entry block) contains an if statement, which itself contains a code block. Code blocks can nest arbitrarily deep:
 

@@ -14,12 +14,6 @@ The `del` statement removes bindings, deletes collection elements, or removes ob
 **Deleting List Elements (Lines 4-8)**
 
 Lines 5-8:
-```
-x = [1, 2, 3, 4, 5];
-print(x);
-del x[2];
-print(x);
-```
 - Line 5: Creates list `[1, 2, 3, 4, 5]`
 - Line 7: `del x[2]` removes element at index 2 (value 3)
 - Result: `[1, 2, 4, 5]`
@@ -39,11 +33,6 @@ graph LR
 **Deleting Variables (Lines 10-13)**
 
 Lines 11-13:
-```
-y = 100;
-print(y);
-del y;
-```
 - Line 11: Creates variable binding `y = 100`
 - Line 13: `del y` removes the binding completely
 - Variable name no longer exists in scope
@@ -53,12 +42,6 @@ del y;
 **Deleting Dictionary Items (Lines 15-19)**
 
 Lines 16-19:
-```
-d = {"a": 1, "b": 2, "c": 3};
-print(d);
-del d["b"];
-print(d);
-```
 - Line 16: Creates dictionary with three key-value pairs
 - Line 18: `del d["b"]` removes the key "b" and its value
 - Result: `{"a": 1, "c": 3}`
@@ -67,12 +50,6 @@ print(d);
 **Deleting Slices (Lines 21-25)**
 
 Lines 22-25:
-```
-numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-print(numbers);
-del numbers[2:5];
-print(numbers);
-```
 - Line 22: Creates list with 10 elements
 - Line 24: `del numbers[2:5]` removes elements at indices 2, 3, 4
 - Slice syntax: `[start:stop]` removes range [start, stop)
@@ -93,12 +70,6 @@ graph TD
 **Deleting Nested Elements (Lines 27-31)**
 
 Lines 28-31:
-```
-matrix = [[1, 2], [3, 4], [5, 6]];
-print(matrix);
-del matrix[1];
-print(matrix);
-```
 - Line 28: Creates 2D list (list of lists)
 - Line 30: `del matrix[1]` removes entire second row `[3, 4]`
 - Result: `[[1, 2], [5, 6]]`
@@ -107,11 +78,6 @@ print(matrix);
 **Multiple Sequential Deletions (Lines 33-36)**
 
 Lines 34-36:
-```
-lst = [10, 20, 30];
-del lst[1];
-print(lst);
-```
 - Line 34: Initial list `[10, 20, 30]`
 - Line 35: `del lst[1]` removes 20
 - Result: `[10, 30]`
@@ -120,12 +86,6 @@ print(lst);
 **Multiple Deletions with Index Shifts (Lines 38-42)**
 
 Lines 39-42:
-```
-data = [0, 1, 2, 3, 4, 5];
-del data[0];
-del data[2];
-print(data);
-```
 - Line 39: Initial `[0, 1, 2, 3, 4, 5]`
 - Line 40: `del data[0]` removes 0 → `[1, 2, 3, 4, 5]`
 - Line 41: `del data[2]` removes element at index 2 (which is now 3) → `[1, 2, 4, 5]`
@@ -168,31 +128,14 @@ graph TD
 **Common Patterns**
 
 Remove by index:
-```
-del items[index]
-```
 
 Remove range:
-```
-del items[start:end]
-```
 
 Clear dictionary entry:
-```
-del config[key]
-```
 
 Free variable reference:
-```
-large_data = load_data()
-# ... use large_data ...
-del large_data  # Free memory
-```
 
 Remove from end (efficient):
-```
-del items[-1]  # Remove last element
-```
 
 **Best Practices**
 
@@ -223,30 +166,8 @@ Deleting a variable removes the binding, not necessarily the object:
 
 Attempting to delete non-existent items raises errors:
 
-```
-# IndexError
-del list[100]  # Index out of range
-
-# KeyError
-del dict["missing_key"]  # Key doesn't exist
-
-# NameError
-del undefined_var  # Variable not defined
-```
 
 Safe deletion patterns:
-```
-# List: Check bounds
-if 0 <= index < len(items):
-    del items[index]
-
-# Dict: Check key exists
-if key in data:
-    del data[key]
-
-# Or use pop with default
-value = data.pop(key, None)
-```
 
 **When to Use Del**
 

@@ -53,11 +53,6 @@ Once nodes are in the queue, they're always processed FIFO regardless of how the
 
 Lines 219-221 demonstrate accessing walker state after execution:
 
-```
-collector = root spawn DataCollector();
-print(f"  Collected: {collector.collected}");
-print(f"  Sum of priorities: {collector.sum}");
-```
 
 The spawn operator returns the walker instance, allowing you to:
 - Access accumulated data (lines 71-72: `collected` and `sum` attributes)
@@ -118,10 +113,6 @@ Lines 125-135 show the walker using these parameters to control its behavior, st
 
 Lines 232-238 demonstrate running different walkers on the same graph structure:
 
-```
-counter = root spawn Counter();
-analyzer = root spawn Analyzer();
-```
 
 Each walker traverses independently:
 - `Counter` (lines 139-150) counts total tasks
@@ -152,12 +143,6 @@ This structure is then traversed by various walkers throughout the example.
 
 Lines 257-281 demonstrate how different visit patterns affect traversal order:
 
-```
-# Build graph:
-root -> A -> B -> D
-    \   \-> E
-     \-> C
-```
 
 The key insight: traversal order is controlled by HOW you structure your visit statements, not by the spawn operator used.
 
@@ -196,51 +181,12 @@ When a walker spawns, this sequence occurs:
 **Practical Patterns**
 
 **Pattern 1: Data Collection** (lines 70-83, 219-221)
-```
-walker DataCollector {
-    has collected: list = [];
-    can collect with Task entry {
-        self.collected.append(here.name);
-        visit [-->];
-    }
-}
-result = root spawn DataCollector();
-process(result.collected);  # Access collected data
-```
 
 **Pattern 2: Graph Search** (stopping early with disengage)
-```
-walker Searcher {
-    has target: str;
-    has found: Node? = None;
-    can search with Node entry {
-        if here.id == self.target {
-            self.found = here;
-            disengage;  # Stop searching
-        }
-        visit [-->];
-    }
-}
-```
 
 **Pattern 3: Multi-Walker Analysis** (lines 232-238)
-```
-stats = root spawn StatCollector();
-issues = root spawn IssueDetector();
-# Multiple walkers analyze same graph from different perspectives
-```
 
 **Pattern 4: Hierarchical Processing** (lines 85-112)
-```
-walker ParentTask {
-    can process with WorkNode entry {
-        if here.needs_detail {
-            here spawn DetailScanner();  # Spawn child walker
-        }
-        visit [-->];
-    }
-}
-```
 
 **Common Mistakes to Avoid**
 
@@ -265,22 +211,8 @@ walker ParentTask {
 Object spatial calls invert traditional programming:
 
 Traditional approach (data comes to computation):
-```
-for node in graph.get_nodes() {
-    process(node);
-}
-```
 
 OSP approach (computation goes to data):
-```
-walker Processor {
-    can process with Node entry {
-        # Process at each location
-        visit [-->];
-    }
-}
-root spawn Processor();
-```
 
 This inversion enables:
 - **Locality**: Computation executes where data resides

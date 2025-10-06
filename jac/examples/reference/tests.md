@@ -14,29 +14,14 @@ Components:
 **Test Examples**
 
 Lines 4-6 define `test1`:
-```
-test test1 {
-    assert almostEqual(4.99999, 4.99999);
-}
-```
 
 This test uses `almostEqual()` to check if two floating-point numbers are approximately equal. This function is useful for comparing floats where exact equality might fail due to precision issues.
 
 Lines 9-11 define `test2`:
-```
-test test2 {
-    assert 5 == 5;
-}
-```
 
 This uses a simple equality assertion to verify that 5 equals itself.
 
 Lines 14-16 define `test3`:
-```
-test test3 {
-    assert "e" in "qwerty";
-}
-```
 
 This uses a membership assertion to verify that the character "e" exists in the string "qwerty".
 

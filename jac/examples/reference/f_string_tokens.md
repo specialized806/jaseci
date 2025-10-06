@@ -5,24 +5,14 @@ F-strings (formatted string literals) provide powerful string interpolation, all
 **Basic F-String Syntax (Lines 7-11)**
 
 Lines 4-5 define variables for interpolation:
-```
-x = "World";
-y = 42;
-```
 
 **Double-quoted f-strings (Line 8)**:
-```
-print(f"Hello {x}! Number: {y}");
-```
 - `f` prefix marks the string as formatted
 - `{x}` evaluates variable x and inserts "World"
 - `{y}` evaluates variable y and inserts 42
 - Output: "Hello World! Number: 42"
 
 **Single-quoted f-strings (Line 11)**:
-```
-print(f'Value: {y}');
-```
 - Works with single quotes too
 - Same interpolation behavior
 - Output: "Value: 42"
@@ -38,12 +28,6 @@ print(f'Value: {y}');
 **Triple-Quoted F-Strings (Lines 13-18)**
 
 Lines 14-17:
-```
-msg = f"""
-Multi-line
-Value: {y}
-""";
-```
 - Triple quotes allow multi-line strings
 - Preserves line breaks and formatting
 - Interpolation works across lines
@@ -93,10 +77,6 @@ graph TD
 **Method Calls (Lines 26-28)**
 
 Lines 27-28:
-```
-text = "hello";
-print(f"Upper: {text.upper()}");
-```
 - `{text.upper()}` calls method on object
 - Method executes and returns "HELLO"
 - Result interpolated into string
@@ -105,10 +85,6 @@ print(f"Upper: {text.upper()}");
 **Dictionary Access (Lines 30-32)**
 
 Lines 31-32:
-```
-d = {"name": "Alice", "age": 30};
-print(f"Name: {d['name']}, Age: {d['age']}");
-```
 - `{d['name']}` accesses dictionary key
 - Uses quotes inside f-string (different quote types)
 - `{d['age']}` gets age value
@@ -117,10 +93,6 @@ print(f"Name: {d['name']}, Age: {d['age']}");
 **Conditionals in F-Strings (Lines 34-36)**
 
 Lines 35-36:
-```
-age = 20;
-print(f"Status: {('Adult' if age >= 18 else 'Minor')}");
-```
 - Ternary expression inside braces
 - Parentheses for clarity
 - Evaluates to "Adult" (age >= 18)
@@ -140,10 +112,6 @@ print(f"Status: {('Adult' if age >= 18 else 'Minor')}");
 **Nested F-Strings (Lines 38-40)**
 
 Lines 39-40:
-```
-val = 100;
-print(f"Nested: {f'{val}'}");
-```
 - F-string inside f-string interpolation
 - Inner f-string evaluated first
 - Result inserted into outer f-string
@@ -154,38 +122,16 @@ print(f"Nested: {f'{val}'}");
 
 Different quote combinations work:
 
-```
-# Double quotes with single inside
-f"Value: {d['key']}"
-
-# Single quotes with double inside
-f'Value: {d["key"]}'
-
-# Triple quotes with both
-f"""Both: {d['key']} and {d["other"]}"""
-```
 
 **Complex Expression Examples**
 
 Chained method calls:
-```
-f"Result: {text.strip().upper().replace('X', 'Y')}"
-```
 
 List comprehension:
-```
-f"Squares: {[x**2 for x in range(5)]}"
-```
 
 Multiple operations:
-```
-f"Calc: {(x + y) * 2 / 3:.2f}"
-```
 
 Function with arguments:
-```
-f"Max: {max(a, b, c)}"
-```
 
 **Best Practices**
 
@@ -208,24 +154,12 @@ f"Max: {max(a, b, c)}"
 **Common Patterns**
 
 Debug printing:
-```
-print(f"Debug: x={x}, y={y}, result={x+y}")
-```
 
 Formatted output:
-```
-f"Name: {name:20} Age: {age:3}"  # With width specifiers
-```
 
 Building messages:
-```
-error_msg = f"Error at line {line_num}: {error_text}"
-```
 
 Template strings:
-```
-html = f"<div class='{cls}'>{content}</div>"
-```
 
 **Performance Notes**
 
@@ -264,17 +198,8 @@ Avoid when:
 F-string errors occur at different times:
 
 **Syntax errors (parse time)**:
-```
-f"Unclosed {x"  # SyntaxError
-f"Empty {}"     # SyntaxError
-```
 
 **Runtime errors (execution time)**:
-```
-f"{undefined_var}"    # NameError
-f"{d['missing']}"     # KeyError
-f"{None.method()}"    # AttributeError
-```
 
 **Type Conversion**
 
@@ -285,9 +210,6 @@ F-strings automatically convert to string:
 - Custom objects use `__str__()` or `__repr__()`
 
 Objects without string representation may show:
-```
-f"{object}"  # <object object at 0x...>
-```
 
 **Advanced Usage**
 

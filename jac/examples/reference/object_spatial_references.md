@@ -39,10 +39,6 @@ graph LR
 
 Lines 64-74 show filtering by edge type:
 
-```
-friends = [->:Friend:->];        # Line 64
-colleagues = [->:Colleague:->];  # Line 70
-```
 
 The syntax `[->:Type:->]` traverses only edges of the specified type. Line 27 creates a Friend edge to Bob, and line 28 creates a Colleague edge to Charlie. Line 64 finds only Bob (Friend connections), while line 70 finds only Charlie (Colleague connections).
 
@@ -58,11 +54,6 @@ The type name between colons filters which edges to traverse.
 
 Lines 79-87 demonstrate filtering on edge attributes:
 
-```
-old_friends = [->:Friend:since < 2018:->];                # Line 79
-experienced = [->:Colleague:years > 2:->];                # Line 82
-specific = [->:Colleague:years >= 1, years <= 5:->];      # Line 86
-```
 
 The syntax `[->:Type:condition:->]` filters edges based on their attributes:
 - Line 79: Only Friend edges where the `since` attribute is less than 2018
@@ -75,10 +66,6 @@ The filters apply to EDGE attributes, not node attributes. Line 27 creates `Frie
 
 Lines 92-97 show retrieving edge objects instead of nodes:
 
-```
-edge_objs = [edge -->];   # Line 92 - Returns edge objects
-node_objs = [node -->];   # Line 96 - Returns node objects (default)
-```
 
 | Keyword | Returns | Use When |
 |---------|---------|----------|
@@ -92,10 +79,6 @@ Line 92 returns edge objects that have attributes like `since` (Friend edges) or
 
 Lines 114-120 demonstrate chaining to traverse multiple hops:
 
-```
-two_hop = [here ->:Friend:-> ->:Friend:->];        # Line 114
-mixed = [here ->:Friend:-> ->:Colleague:->];       # Line 119
-```
 
 Chaining syntax: `[start ->:Type1:-> ->:Type2:->]`
 
@@ -166,38 +149,16 @@ The workflow: First connect to build the graph, then reference to traverse it.
 **Common Edge Reference Patterns**
 
 **Pattern 1: Neighbor Query** (line 47)
-```
-neighbors = [-->];  # All adjacent nodes
-```
 
 **Pattern 2: Typed Relationship Query** (line 64)
-```
-friends = [->:Friend:->];  # Only via Friend edges
-```
 
 **Pattern 3: Filtered Relationship Query** (line 79)
-```
-close_friends = [->:Friend:since < 2020:->];  # Long-time friends
-```
 
 **Pattern 4: Multi-Hop Query** (line 114)
-```
-friends_of_friends = [here ->:Friend:-> ->:Friend:->];
-```
 
 **Pattern 5: Existence Check** (line 132)
-```
-if [->:Manager:->] {  # Has manager?
-    # Process managed nodes
-}
-```
 
 **Pattern 6: Edge Inspection** (line 92)
-```
-for edge in [edge ->:Collaborates:->] {
-    print(edge.project);  # Access edge attributes
-}
-```
 
 **Complete Syntax Reference**
 
@@ -225,30 +186,12 @@ The example's summary walker (lines 152-185) provides a comprehensive syntax ref
 **Common Usage Patterns**
 
 **In visit statements** (most common):
-```
-visit [-->];                  # Visit all outgoing
-visit [->:Type:->];          # Visit via typed edges
-visit [->:Type:filter:->];   # Visit via filtered edges
-```
 
 **In for loops**:
-```
-for n in [-->] {             # Iterate over neighbors
-    process(n);
-}
-```
 
 **In conditionals**:
-```
-if [-->] {                   # Check if edges exist
-    # Handle connected case
-}
-```
 
 **In assignments**:
-```
-targets = [->:Type:->];      # Store results for later
-```
 
 **Understanding Return Values**
 

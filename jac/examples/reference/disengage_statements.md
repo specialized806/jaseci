@@ -20,12 +20,6 @@ The example defines `BasicDisengage` walker to demonstrate core functionality:
 - Lines 14-21: `visit_person` ability with `Person entry` - executes when visiting Person nodes
 
 **Disengage execution (Lines 16-18)**:
-```
-if here.name == "Bob" {
-    print("found Bob, disengaging");
-    disengage;
-}
-```
 - Line 16: Checks if current node's name is "Bob"
 - Line 17: Prints message
 - Line 18: `disengage` stops the walker immediately
@@ -74,13 +68,6 @@ The `SearchWalker` demonstrates a common pattern - searching for a specific node
 - `found: bool = False` - whether we found it
 
 **Search logic (Lines 53-60)**:
-```
-if here.name == self.target_name {
-    print(f"found {here.name}!");
-    self.found = True;
-    disengage;
-}
-```
 - Line 55: Compares current node name to target
 - Line 56: Prints success message
 - Line 57: Updates walker state
@@ -89,12 +76,6 @@ if here.name == self.target_name {
 **Graph Construction (Lines 64-74)**
 
 Lines 66-74 build a test graph:
-```
-root ++> alice;
-alice ++> bob;
-alice ++> charlie;
-bob ++> diana;
-```
 
 **Graph Structure Visualization**
 
@@ -126,10 +107,6 @@ graph TD
 - Limit reached, walker stops
 
 **SearchWalker execution (Lines 83-84)**:
-```
-w = root spawn SearchWalker(target_name="Charlie");
-print(f"found: {w.found}");
-```
 - Line 83: Spawns walker looking for "Charlie"
 - Walker visits nodes until finding Charlie or exhausting graph
 - Line 84: Prints result from walker's state
@@ -176,11 +153,6 @@ When a walker is spawned:
 
 The walker object persists after disengage:
 
-```
-# From line 83-84
-w = root spawn SearchWalker(target_name="Charlie");
-print(f"found: {w.found}");  # Access walker's state
-```
 
 After disengage:
 - All `has` attributes accessible
@@ -191,43 +163,14 @@ After disengage:
 **Common Disengage Patterns**
 
 **Search pattern** (lines 55-58):
-```
-if is_target(here) {
-    self.result = here;
-    disengage;
-}
-```
 
 **Depth limit** (lines 36-38):
-```
-if self.depth >= MAX_DEPTH {
-    disengage;
-}
-```
 
 **Error condition**:
-```
-if here.is_invalid() {
-    self.error = "Invalid node found";
-    disengage;
-}
-```
 
 **Resource limit**:
-```
-if self.nodes_visited > 1000 {
-    self.timeout = True;
-    disengage;
-}
-```
 
 **Goal achievement**:
-```
-if self.collected.count() >= required {
-    self.success = True;
-    disengage;
-}
-```
 
 **Best Practices**
 
@@ -251,25 +194,6 @@ if self.collected.count() >= required {
 
 A walker can have multiple conditional disengage points:
 
-```
-can explore with Node entry {
-    if found_error(here) {
-        self.error = True;
-        disengage;  # Path 1: Error
-    }
-
-    if found_target(here) {
-        self.result = here;
-        disengage;  # Path 2: Success
-    }
-
-    if self.budget_exceeded() {
-        disengage;  # Path 3: Resource limit
-    }
-
-    visit [-->];  # Only if no disengage
-}
-```
 
 The walker stops at the first matching condition.
 
@@ -281,43 +205,13 @@ Lines 11 and 20 show `visit` statements:
 - Walker stops immediately without processing queue
 
 **Before disengage**:
-```
-can process with Node entry {
-    visit [-->];  # Queues nodes
-    // ... more processing ...
-    visit [->:Type:->];  # Queues more nodes
-    // Queue contains multiple nodes
-}
-```
 
 **After disengage**:
-```
-can process with Node entry {
-    if condition {
-        disengage;  # Clears all queued visits
-    }
-    visit [-->];  # Never executes if disengage called
-}
-```
 
 **Walker Abilities Execution Order**
 
 If multiple abilities match a node type, they execute in definition order:
 
-```
-walker Multi {
-    can first with Person entry {
-        // Executes first
-        if should_stop {
-            disengage;  // Stops here
-        }
-    }
-
-    can second with Person entry {
-        // Only executes if first didn't disengage
-    }
-}
-```
 
 If `first` disengages, `second` never executes.
 
@@ -336,30 +230,10 @@ Disengage returns control to the spawn statement:
 Disengage works in any walker ability:
 
 **Root entry** (lines 9-12):
-```
-can start with `root entry {
-    if should_not_start {
-        disengage;  // Stop before even starting
-    }
-    visit [-->];
-}
-```
 
 **Node entry** (lines 14-21):
-```
-can visit_person with Person entry {
-    if condition {
-        disengage;  // Stop during traversal
-    }
-}
-```
 
 **Exit ability** (if defined):
-```
-can cleanup with exit {
-    // Cleanup runs even after disengage
-}
-```
 
 Note: Exit abilities may still run after disengage, depending on implementation.
 

@@ -107,51 +107,16 @@ Under the hood, Jac's `flow`/`wait` uses Python's `ThreadPoolExecutor`:
 **Timing Analysis**
 
 Without concurrency (sequential):
-```
-compute(5, 10): 1 second
-compute(3, 7): 1 second
-slow_task(42): 1 second
-Total: ~3 seconds
-```
 
 With concurrency (lines 20-29):
-```
-All three tasks start simultaneously
-All run in parallel for ~1 second
-Total: ~1 second
-```
 
 **Common Patterns**
 
 Parallel I/O operations:
-```
-# Multiple network requests
-results = []
-tasks = [flow fetch_url(url) for url in urls]
-results = [wait task for task in tasks]
-```
 
 Concurrent processing:
-```
-# Process items in parallel
-data = [1, 2, 3, 4, 5]
-tasks = [flow process(item) for item in data]
-results = [wait task for task in tasks]
-```
 
 Mix of serial and concurrent:
-```
-# Prepare data (serial)
-data = prepare_data()
-# Process concurrently
-task1 = flow process_a(data)
-task2 = flow process_b(data)
-# Continue other work
-do_something_else()
-# Collect results when needed
-a_result = wait task1
-b_result = wait task2
-```
 
 **Comparison: flow/wait vs async/await**
 
@@ -175,12 +140,3 @@ b_result = wait task2
 **Exception Handling**
 
 If a flow task raises an exception, `wait` will re-raise it:
-```
-task = flow might_fail()
-# ... do other work ...
-try:
-    result = wait task
-except SomeError as e:
-    # Handle error from background task
-    print(f"Task failed: {e}")
-```

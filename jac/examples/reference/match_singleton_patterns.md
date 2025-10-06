@@ -76,13 +76,6 @@ This is crucial to understand about singleton patterns:
 
 Singleton patterns use identity (`is`), which means:
 
-```
-case True:    # Only matches the actual True singleton
-              # Does NOT match 1, "True", or other truthy values
-
-case None:    # Only matches the actual None singleton
-              # Does NOT match 0, "", [], or other falsy values
-```
 
 **Why Use Singleton Patterns?**
 

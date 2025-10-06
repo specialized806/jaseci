@@ -110,13 +110,6 @@ If you had a different walker type (e.g., `Consumer`), the `make` ability wouldn
 
 You can have multiple abilities for different type combinations:
 
-```
-node Product {
-    can make with Producer entry;      # Runs when Producer visits
-    can inspect with Inspector entry;  # Runs when Inspector visits
-    can analyze with Analyzer entry;   # Runs when Analyzer visits
-}
-```
 
 Each ability executes only when the matching walker type visits.
 
@@ -135,20 +128,6 @@ Entry abilities (like lines 4, 10) run when visiting begins. Exit abilities run 
 
 The typed context system enables polymorphic behavior:
 
-```
-walker Inspector;
-walker Producer;
-
-node Product {
-    can make with Producer entry {
-        # Production-specific logic
-    }
-
-    can inspect with Inspector entry {
-        # Inspection-specific logic
-    }
-}
-```
 
 The same node type can respond differently to different walker types, creating flexible, extensible systems.
 

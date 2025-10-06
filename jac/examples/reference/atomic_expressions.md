@@ -3,9 +3,6 @@ The atomic forward pipe operator `:>` enables elegant data pipelines by passing 
 **Basic Atomic Pipe Syntax**
 
 Line 5 introduces the atomic forward pipe operator:
-```
-"Hello" :> print;
-```
 
 This takes the string "Hello" on the left and pipes it to the `print` function on the right. It's equivalent to `print("Hello")`, but the pipe syntax emphasizes the flow of data from source to destination.
 
@@ -14,9 +11,6 @@ The `:>` operator reads naturally: "take this value and send it to this function
 **Chaining Multiple Pipes**
 
 Line 8 demonstrates the real power of pipes - chaining transformations:
-```
-"Test" :> type :> print;
-```
 
 This creates a pipeline:
 
@@ -38,9 +32,6 @@ Compare this to the nested function call equivalent: `print(type("Test"))`. The 
 **Pipes with Lambda Functions**
 
 Lines 11-12 show using pipes with lambda expressions for custom transformations:
-```
-result = 5 :> (lambda x: int : x * 2) :> (lambda x: int : x + 10);
-```
 
 This creates a computation pipeline:
 
@@ -67,26 +58,14 @@ The atomic pipe operator is called "atomic" because it passes the complete value
 Pipes make code more readable when you have multiple transformations:
 
 Without pipes (nested):
-```
-print(type("Test"))
-```
 
 With pipes (linear):
-```
-"Test" :> type :> print
-```
 
 For longer chains, the difference is even more dramatic:
 
 Without pipes:
-```
-final = func3(func2(func1(value)))
-```
 
 With pipes:
-```
-final = value :> func1 :> func2 :> func3
-```
 
 The piped version reads like a recipe: "Take the value, apply func1, then func2, then func3."
 

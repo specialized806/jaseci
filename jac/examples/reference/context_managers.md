@@ -66,21 +66,11 @@ The example defines a `Printer` class implementing the context manager protocol:
 **Using Custom Context Managers (Lines 26-33)**
 
 **Without as binding (Lines 26-28)**:
-```
-with Printer() {
-    print("inside");
-}
-```
 - Line 26: Creates Printer, enters context
 - Prints: "entering", "inside", "exiting"
 - The `as` clause is optional when you don't need to reference the resource
 
 **With as binding (Lines 31-33)**:
-```
-with Printer() as p {
-    print("with binding");
-}
-```
 - Line 31: Binds the returned object to `p`
 - Can use `p` within the block
 - Still automatically calls cleanup
@@ -88,13 +78,6 @@ with Printer() as p {
 **Nested Context Managers (Lines 36-40)**
 
 Lines 36-40:
-```
-with Printer() as p1 {
-    with Printer() as p2 {
-        print("nested");
-    }
-}
-```
 - Outer context entered first (p1)
 - Inner context entered second (p2)
 - Cleanup happens in reverse: p2 exits, then p1 exits
@@ -133,11 +116,6 @@ Line 43: `async def test_async_with {`
   - Can perform async cleanup
 
 **Using async context managers (Lines 55-57)**:
-```
-async with AsyncContext() as ac {
-    print("async inside");
-}
-```
 - Uses `async with` instead of `with`
 - Only works in async functions
 - Allows await operations in setup/cleanup
@@ -157,52 +135,16 @@ The key benefit of context managers is guaranteed cleanup:
 
 The `__exit__` method receives exception details:
 
-```
-def __exit__(self, exc_type, exc_val, exc_tb):
-    if exc_type is not None:
-        # An exception occurred
-        print(f"Handling {exc_type.__name__}: {exc_val}")
-        # Return True to suppress the exception
-        # Return False/None to propagate it
-    # Always perform cleanup
-    self.cleanup()
-    return False  # Don't suppress exceptions
-```
 
 **Common Use Cases**
 
 File I/O (line 5):
-```
-with open("data.txt", 'r') as f {
-    content = f.read();
-}
-# File automatically closed here
-```
 
 Database connections:
-```
-with database.connect() as conn {
-    conn.execute("SELECT ...");
-}
-# Connection automatically closed
-```
 
 Locks and synchronization:
-```
-with lock {
-    # Critical section
-    shared_data.modify();
-}
-# Lock automatically released
-```
 
 Temporary state changes:
-```
-with Timer() as t {
-    expensive_operation();
-}
-print(f"Took {t.elapsed} seconds");
-```
 
 **Best Practices**
 

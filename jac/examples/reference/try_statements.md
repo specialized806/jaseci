@@ -6,13 +6,6 @@ Try statements provide structured exception handling, allowing you to catch and 
 
 Lines 5-9 demonstrate fundamental exception handling:
 
-```
-try {
-    x = 5 / 0;
-} except Exception {
-    print("caught exception");
-}
-```
 
 The try block (lines 5-6) contains code that might raise an exception. When division by zero occurs on line 6, execution jumps to the except block (lines 7-9). Line 8 prints a message instead of crashing.
 
@@ -20,13 +13,6 @@ The try block (lines 5-6) contains code that might raise an exception. When divi
 
 Lines 12-16 show binding the exception to a variable:
 
-```
-try {
-    x = 5 / 0;
-} except Exception as e {
-    print(f"error: {e}");
-}
-```
 
 Line 14 uses `as e` to bind the exception object to variable `e`, making it accessible in the handler. Line 15 prints the exception details. The variable is only available within the except block's scope.
 
@@ -51,15 +37,6 @@ Only the first matching except clause executes.
 
 Lines 30-36 demonstrate the `else` clause:
 
-```
-try {
-    result = 10 / 2;
-} except ZeroDivisionError {
-    print("division by zero");
-} else {
-    print(f"success: {result}");
-}
-```
 
 The else block (lines 34-35) executes only if no exception occurred in the try block. Line 31 succeeds, so line 35 executes. The else clause is useful for:
 - Code that should only run on success
@@ -70,15 +47,6 @@ The else block (lines 34-35) executes only if no exception occurred in the try b
 
 Lines 39-45 demonstrate the `finally` clause:
 
-```
-try {
-    x = 5 / 1;
-} except Exception {
-    print("error");
-} finally {
-    print("cleanup");
-}
-```
 
 The finally block (lines 43-44) always executes, whether an exception occurred or not. Line 44 runs after the try block completes successfully. Finally clauses are essential for:
 - Cleanup operations (closing files, releasing resources)
@@ -111,13 +79,6 @@ In this example, line 50 accesses a valid list index (no exception), so line 54 
 
 Lines 60-64 show try-finally without exception handling:
 
-```
-try {
-    print("operation");
-} finally {
-    print("always runs");
-}
-```
 
 This pattern ensures cleanup code runs even if an exception propagates up. The finally block executes before the exception is re-raised.
 
@@ -125,17 +86,6 @@ This pattern ensures cleanup code runs even if an exception propagates up. The f
 
 Lines 67-75 demonstrate nested exception handling:
 
-```
-try {
-    try {
-        x = 5 / 0;
-    } except ValueError {
-        print("inner ValueError");
-    }
-} except Exception as e {
-    print(f"outer caught: {e}");
-}
-```
 
 Line 69 raises `ZeroDivisionError`. The inner except (line 70) only catches `ValueError`, so it doesn't match. The exception propagates to the outer try, where line 73 catches it as `Exception`.
 
@@ -173,30 +123,3 @@ The examples demonstrate several best practices:
 
 Try-except patterns for different scenarios:
 
-```
-# Resource cleanup
-try {
-    file = open("data.txt");
-    # process file
-} finally {
-    file.close();
-}
-
-# Multiple error types
-try {
-    # operation
-} except ValueError as ve {
-    # handle value errors
-} except TypeError as te {
-    # handle type errors
-}
-
-# Success-only code
-try {
-    result = risky_operation();
-} except Error {
-    handle_error();
-} else {
-    use_result(result);
-}
-```

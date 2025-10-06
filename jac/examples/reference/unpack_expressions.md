@@ -10,11 +10,6 @@ Lines 3-5 define a function that takes four integer parameters (`a`, `b`, `c`, `
 
 Lines 9-11 demonstrate list unpacking using `*`:
 
-```
-list1 = [1, 2, 3];
-list2 = [4, 5, 6];
-combined = [*list1, *list2];
-```
 
 Line 11 shows `[*list1, *list2]`, which unpacks both lists into a new list:
 - `*list1` expands to elements: `1, 2, 3`
@@ -27,11 +22,6 @@ This provides a clean way to concatenate lists without using the `+` operator or
 
 Lines 14-16 demonstrate dictionary unpacking using `**`:
 
-```
-dict1 = {'a': 1, 'b': 2};
-dict2 = {'c': 3, 'd': 4};
-merged = {**dict1, **dict2};
-```
 
 Line 16 shows `{**dict1, **dict2}`, which unpacks both dictionaries into a new dictionary:
 - `**dict1` expands to key-value pairs: `'a': 1, 'b': 2`
@@ -75,16 +65,6 @@ You can unpack multiple collections in a single expression:
 
 Unpacking is powerful for building collections with mixed content:
 
-```
-# Combining lists with literals
-combined = [*base_list, new_item, *other_list]
-
-# Merging dictionaries with overrides
-config = {**defaults, **user_settings}
-
-# Mixed content
-result = [1, 2, *middle_values, 9, 10]
-```
 
 **Common Use Cases**
 
@@ -113,23 +93,9 @@ When unpacking creates a new collection, it performs a shallow copy:
 **Practical Examples**
 
 Combining configuration:
-```
-defaults = {'timeout': 30, 'retries': 3};
-user_config = {'timeout': 60};
-final_config = {**defaults, **user_config};  # timeout becomes 60
-```
 
 Building lists with interspersed values:
-```
-header = [1, 2, 3];
-footer = [8, 9, 10];
-result = [0, *header, 4, 5, 6, 7, *footer, 11];
-```
 
 Passing function arguments:
-```
-params = {'a': 1, 'b': 2, 'c': 3, 'd': 4};
-result = compute(**params);  # Cleaner than compute(a=1, b=2, c=3, d=4)
-```
 
 These unpacking operators make collection manipulation more concise and expressive in Jac.

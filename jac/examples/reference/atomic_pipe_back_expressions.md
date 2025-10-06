@@ -3,9 +3,6 @@ The atomic backward pipe operator `<:` provides right-to-left data flow, offerin
 **Basic Backward Pipe Syntax**
 
 Line 5 introduces the atomic backward pipe operator:
-```
-print <: "Hello";
-```
 
 This takes the value on the right ("Hello") and pipes it backward to the function on the left (print). It's equivalent to `print("Hello")`, but with reversed syntax.
 
@@ -28,11 +25,6 @@ The choice between operators is often stylistic:
 **Mixing Pipe Directions**
 
 Lines 8-10 demonstrate combining both pipe operators in a single expression:
-```
-a = [2, 4, 5];
-b = [6, 7, 8];
-c = len <: a + b :> len;
-```
 
 Let's trace the evaluation:
 
@@ -47,9 +39,6 @@ However, step 3 would cause an error because `len()` expects a sequence, not an 
 **Backward Pipe with Lambda**
 
 Lines 13-14 show using the backward pipe with a lambda expression:
-```
-result = (lambda x: int : x * 3) <: 10;
-```
 
 The value `10` on the right flows backward to the lambda function on the left:
 
