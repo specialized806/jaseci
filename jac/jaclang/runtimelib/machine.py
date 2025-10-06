@@ -1345,6 +1345,11 @@ class JacByLLM:
     """Jac byLLM integration."""
 
     @staticmethod
+    def get_mtir(caller: Callable, args: dict, call_params: dict) -> object:
+        """Get byLLM library."""
+        return None
+
+    @staticmethod
     def sem(semstr: str, inner_semstr: dict[str, str]) -> Callable:
         """Attach the semstring to the given object."""
 
