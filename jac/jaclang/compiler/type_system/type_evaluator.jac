@@ -881,7 +881,7 @@ class TypeEvaluator {
                 }
             } except Exception as e {
                 self.add_diagnostic(arg, str(e));
-                argument_errors = true;
+                argument_errors = True;
             }
         }
 
