@@ -886,7 +886,7 @@ class TypeEvaluator {
         }
 
         if unmatched_params := param_tracker.get_unmatched_required_params() {
-            names = [ ", ".join(f"'{p.name}'") for p in unmatched_params ];
+            names = ", ".join([ f"'{p.name}'" for p in unmatched_params ]);
             argument_errors = True;
             self.add_diagnostic(
                 expr,
