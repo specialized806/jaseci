@@ -3717,7 +3717,7 @@ class FuncCall(Expr):
             res = self.target.normalize(deep)
             for prm in self.params:
                 res = res and prm.normalize(deep)
-        new_kids = [self.target]
+        new_kids: list[UniNode] = [self.target]
         if not (len(self.params) == 1 and isinstance(self.params[0], GenCompr)):
             new_kids.append(self.gen_token(Tok.LPAREN))
         for i, prm in enumerate(self.params):
