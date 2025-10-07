@@ -3,7 +3,7 @@
 This document provides a summary of new features, improvements, and bug fixes in each version of Jac and Jaseci. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](./breaking_changes.md) page.
 
 
-## jaclang 0.8.10 / jac-cloud 0.2.10 / byllm 0.4.5 (Unreleased)
+## jaclang 0.8.10 / jac-cloud 0.2.9 / byllm 0.4.5 (Unreleased)
 
 ## jaclang 0.8.9 / jac-cloud 0.2.8 / byllm 0.4.4 (Latest Release)
 
