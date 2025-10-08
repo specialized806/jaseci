@@ -71,7 +71,7 @@ class JacProgram:
         self.warnings_had: list[Alert] = []
         self.type_evaluator: TypeEvaluator | None = None
 
-    def get_type_evaluator(self) -> "TypeEvaluator":
+    def get_type_evaluator(self) -> TypeEvaluator:
         """Return the type evaluator."""
         from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
 
