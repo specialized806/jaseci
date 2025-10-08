@@ -528,7 +528,7 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("def greet2( **kwargs: Any) {", output)
         self.assertEqual(output.count("with entry {"), 14)
-        self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)
+        self.assertIn("assert (x == 5) , 'x should be equal to 5';", output)
         self.assertIn("if not (x == y) {", output)
         self.assertIn("squares_dict = {x : (x ** 2) for x in numbers};", output)
         self.assertIn(
@@ -623,6 +623,27 @@ class JacLanguageTests(TestCase):
         self.assertIn(
             "def len(<>obj: Sized, astt: Any, /, z: int, j: str, a: Any = 90) -> int {",
             output,
+        )
+
+    def test_py2jac_empty_file(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as ast
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py2jac_empty.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            converted_ast = PyastBuildPass(
+                ir_in=ast.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=ast.Source(file_source, py_out_path),
+                ),
+                prog=None,
+            ).ir_out
+        self.assertIsInstance(
+            converted_ast,
+            ast.Module
         )
 
     def test_refs_target(self) -> None:
@@ -1555,3 +1576,39 @@ class JacLanguageTests(TestCase):
             self.assertIn("😀😍", result)
         finally:
             os.unlink(temp_path)
+
+    def test_known_builtins_matches_actual(self) -> None:
+        """Test that KNOWN_BUILTINS in PyastGenPass matches actual builtins."""
+        from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
+        import jaclang.runtimelib.builtin as builtin_module
+
+        # Get actual builtins from the module (excluding private members)
+        actual_builtins = {
+            name for name in builtin_module.__all__
+            if not name.startswith('_')
+        }
+
+        # Exceptions: builtins that are imported from other sources
+        # - Enum: imported via needs_enum() from standard library's enum module
+        exceptions = {'Enum'}
+        actual_builtins_to_check = actual_builtins - exceptions
+
+        # Get the KNOWN_BUILTINS set from PyastGenPass
+        known_builtins = PyastGenPass.KNOWN_BUILTINS
+
+        # Find missing and extra builtins
+        missing = actual_builtins_to_check - known_builtins
+        extra = known_builtins - actual_builtins_to_check
+
+        # Build error message
+        error_msg = []
+        if missing:
+            error_msg.append(f"Missing from KNOWN_BUILTINS: {sorted(missing)}")
+        if extra:
+            error_msg.append(f"Extra in KNOWN_BUILTINS (not in builtin module): {sorted(extra)}")
+
+        # Assert they match
+        self.assertEqual(
+            known_builtins, actual_builtins_to_check,
+            "\n".join(error_msg) if error_msg else ""
+        )
