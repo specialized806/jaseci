@@ -205,3 +205,23 @@ def get_node_info(self: JacLangServer, sym_node: uni.AstSymbolNode) -> Optional[
     }
     return node_info.strip();
 }
+
+
+class foo {
+    """Get information about a node."""
+    def get_node_info(
+        self: JacLangServer, sym_node: uni.AstSymbolNode
+    ) -> Optional[str] {
+        if isinstance(sym_node, uni.AstVarNode) {
+            var_name = sym_node.name;
+            var_type = sym_node.var_type if sym_node.var_type else 'unknown';
+            return f" 'Variable: ' {var_name} ', Type: ' {var_type} ";
+        } elif isinstance(sym_node, uni.AstFuncNode) {
+            func_name = sym_node.name;
+            params = ', '.join(
+                [f" {p.name} ': ' {p.param_type} " for p in sym_node.params]
+            );
+            return f" 'Function: ' {func_name} '(' {params} ')' ";
+        }
+    }
+}
