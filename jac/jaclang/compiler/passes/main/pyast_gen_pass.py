@@ -91,6 +91,32 @@ UNARY_OP_MAP: dict[Tok, type[ast3.unaryop]] = {
 class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
+    # Builtins that should be imported from jaclang.runtimelib.builtin
+    KNOWN_BUILTINS = {
+        "abstractmethod",
+        "override",
+        "jid",
+        "jobj",
+        "allroots",
+        "grant",
+        "revoke",
+        "save",
+        "commit",
+        "printgraph",
+        "collect_node_connections",
+        "AccessLevelEnum",
+        "ConnectPerm",
+        "NoPerm",
+        "ReadPerm",
+        "WritePerm",
+        "Jac",
+        "NodeArchetype",
+        "ClassVar",
+        "Optional",
+        "annotations",
+        "json",
+    }
+
     def before_pass(self) -> None:
         self.child_passes: list[PyastGenPass] = []
         for i in self.ir_in.impl_mod + self.ir_in.test_mod:
@@ -99,6 +125,7 @@ class PyastGenPass(UniPass):
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
         self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
+        self.builtin_imports: set[str] = set()  # Track individual builtin imports
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -107,23 +134,6 @@ class PyastGenPass(UniPass):
                     level=0,
                 ),
                 jac_node=self.ir_out,
-            ),
-            (
-                self.sync(
-                    ast3.ImportFrom(
-                        module="jaclang.runtimelib.builtin",
-                        names=[
-                            self.sync(
-                                ast3.alias(
-                                    name="*",
-                                    asname=None,
-                                )
-                            )
-                        ],
-                        level=0,
-                    ),
-                    jac_node=self.ir_out,
-                )
             ),
         ]
 
@@ -160,6 +170,17 @@ class PyastGenPass(UniPass):
                     ctx=ast3.Load(),
                 )
             )
+
+    def builtin_name(self, name: str) -> ast3.Name:
+        """Return a builtin name and track it for importing.
+
+        Note: Some names like 'Enum' are provided by other imports (e.g., needs_enum)
+        and should not be added to builtin_imports.
+        """
+        # Enum is imported via needs_enum, not from builtins
+        if name not in ["Enum"]:
+            self.builtin_imports.add(name)
+        return self.sync(ast3.Name(id=name, ctx=ast3.Load()))
 
     def _add_preamble_once(self, key: str, node: ast3.AST) -> None:
         """Append an import statement to the preamble once."""
@@ -424,9 +445,26 @@ class PyastGenPass(UniPass):
             if "needs_jaclib" in child_pass.already_added:
                 self.needs_jaclib()
                 break
-            # Merge jaclib imports from child passes
+            # Merge jaclib and builtin imports from child passes
             if settings.library_mode:
                 self.jaclib_imports.update(child_pass.jaclib_imports)
+            self.builtin_imports.update(child_pass.builtin_imports)
+
+        # Add builtin imports if any were used
+        if self.builtin_imports:
+            self.preamble.append(
+                self.sync(
+                    ast3.ImportFrom(
+                        module="jaclang.runtimelib.builtin",
+                        names=[
+                            self.sync(ast3.alias(name=name, asname=None))
+                            for name in sorted(self.builtin_imports)
+                        ],
+                        level=0,
+                    ),
+                    jac_node=self.ir_out,
+                )
+            )
 
         # Add library mode imports at the end of preamble
         if settings.library_mode and self.jaclib_imports:
@@ -749,7 +787,7 @@ class PyastGenPass(UniPass):
             decorators.append(sem_decorator)
 
         base_classes = [cast(ast3.expr, i.gen.py_ast[0]) for i in node.base_classes]
-        base_classes.append(self.sync(ast3.Name(id="Enum", ctx=ast3.Load())))
+        base_classes.append(self.builtin_name("Enum"))
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -958,11 +996,9 @@ class PyastGenPass(UniPass):
                 )
             )
         if node.is_abstract:
-            decorator_list.append(
-                self.sync(ast3.Name(id="abstractmethod", ctx=ast3.Load()))
-            )
+            decorator_list.append(self.builtin_name("abstractmethod"))
         if node.is_override:
-            decorator_list.append(self.sync(ast3.Name(id="override", ctx=ast3.Load())))
+            decorator_list.append(self.builtin_name("override"))
         if node.is_static:
             decorator_list.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
@@ -3062,6 +3098,9 @@ class PyastGenPass(UniPass):
 
     def exit_name(self, node: uni.Name) -> None:
         name = node.sym_name
+        # Track if this name is a known builtin
+        if name in self.KNOWN_BUILTINS:
+            self.builtin_imports.add(name)
         node.gen.py_ast = [self.sync(ast3.Name(id=name, ctx=node.py_ctx_func()))]
 
     def exit_float(self, node: uni.Float) -> None:
