@@ -305,6 +305,14 @@ class Tokens(str, Enum):
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"
+    F_DQ_START = "F_DQ_START"
+    F_SQ_START = "F_SQ_START"
+    F_DQ_END = "F_DQ_END"
+    F_SQ_END = "F_SQ_END"
+    F_TEXT_DQ = "F_TEXT_DQ"
+    F_TEXT_SQ = "F_TEXT_SQ"
+    D_LBRACE = "D_LBRACE"
+    D_RBRACE = "D_RBRACE"
 
     def __str__(self) -> str:
         return self.value

@@ -2170,59 +2170,115 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def fstring(self, _: None) -> uni.FString:
             """Grammar rule.
-
-            fstring: FSTR_START fstr_parts FSTR_END
-                | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
+            fstring: F_DQ_START fstr_dq_parts* F_DQ_END
+                    | F_SQ_START fstr_sq_parts* F_SQ_END
             """
-            self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
-            target = self.match(list)
-            self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
+            if self.match_token(Tok.F_DQ_START):
+                parts = self.fstr_dq_parts(None)
+                self.consume_token(Tok.F_DQ_END)
+            else:
+                self.consume_token(Tok.F_SQ_START)
+                parts = self.fstr_sq_parts(None)
+                self.consume_token(Tok.F_SQ_END)
             return uni.FString(
-                parts=(
-                    self.extract_from_list(target, (uni.String, uni.ExprStmt))
-                    if target
-                    else []
-                ),
+                parts=parts,
                 kid=self.flat_cur_nodes,
             )
 
-        def fstr_parts(self, _: None) -> list[uni.UniNode]:
+        def fstr_dq_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
-
-            fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
             """
-            valid_parts: list[uni.UniNode] = [
-                (
-                    i
-                    if isinstance(i, uni.String)
-                    else (
-                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-                        if isinstance(i, uni.Expr)
-                        else i
-                    )
-                )
-                for i in self.cur_nodes
-            ]
+            valid_parts = []
+            while True:
+                if self.match_token(Tok.F_TEXT_DQ):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.D_LBRACE):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.D_RBRACE):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.LBRACE):
+                    self.consume_token(Tok.LBRACE)
+                    valid_parts.append(self.consume(uni.Expr))
+                    self.consume_token(Tok.RBRACE)
+                else:
+                    break
             return valid_parts
-
+        
         def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
-
-            fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+            fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
             """
-            valid_parts: list[uni.UniNode] = [
-                (
-                    i
-                    if isinstance(i, uni.String)
-                    else (
-                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-                        if isinstance(i, uni.Expr)
-                        else i
-                    )
-                )
-                for i in self.cur_nodes
-            ]
+            valid_parts = []
+            while True:
+                if self.match_token(Tok.F_TEXT_SQ):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.D_LBRACE):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.D_RBRACE):
+                    valid_parts.append(self.consume(uni.String))
+                elif self.match_token(Tok.LBRACE):
+                    valid_parts.append(self.consume(uni.Expr))
+                    self.consume_token(Tok.RBRACE)
+                else:
+                    break
             return valid_parts
+
+        # def fstring(self, _: None) -> uni.FString:
+        #     """Grammar rule.
+
+        #     fstring: FSTR_START fstr_parts FSTR_END
+        #         | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
+        #     """
+        #     self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
+        #     target = self.match(list)
+        #     self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
+        #     return uni.FString(
+        #         parts=(
+        #             self.extract_from_list(target, (uni.String, uni.ExprStmt))
+        #             if target
+        #             else []
+        #         ),
+        #         kid=self.flat_cur_nodes,
+        #     )
+
+        # def fstr_parts(self, _: None) -> list[uni.UniNode]:
+        #     """Grammar rule.
+
+        #     fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+        #     """
+        #     valid_parts: list[uni.UniNode] = [
+        #         (
+        #             i
+        #             if isinstance(i, uni.String)
+        #             else (
+        #                 uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+        #                 if isinstance(i, uni.Expr)
+        #                 else i
+        #             )
+        #         )
+        #         for i in self.cur_nodes
+        #     ]
+        #     return valid_parts
+
+        # def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
+        #     """Grammar rule.
+
+        #     fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
+        #     """
+        #     valid_parts: list[uni.UniNode] = [
+        #         (
+        #             i
+        #             if isinstance(i, uni.String)
+        #             else (
+        #                 uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
+        #                 if isinstance(i, uni.Expr)
+        #                 else i
+        #             )
+        #         )
+        #         for i in self.cur_nodes
+        #     ]
+        #     return valid_parts
 
         def list_val(self, _: None) -> uni.ListVal:
             """Grammar rule.
