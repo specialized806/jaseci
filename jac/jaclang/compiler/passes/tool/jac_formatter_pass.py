@@ -109,14 +109,6 @@ class JacFormatPass(Transform[uni.Module, uni.Module]):
         width_remaining: Optional[int] = None,
         is_broken: bool = False,
     ) -> str:
-        print(
-            type(doc_node),
-            "width_remaining=",
-            width_remaining,
-            "is_broken=",
-            is_broken,
-            doc_node,
-        )
         """Recursively print a Doc node or a list of Doc nodes."""
         if doc_node is None:
             doc_node = self.ir_in.gen.doc_ir
