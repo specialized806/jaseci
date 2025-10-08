@@ -3719,7 +3719,8 @@ class FuncCall(Expr):
             for prm in self.params:
                 res = res and prm.normalize(deep)
         new_kids: list[UniNode] = [self.target]
-        if not (len(self.params) == 1 and isinstance(self.params[0], GenCompr)):
+        is_gencompr = len(self.params) == 1 and isinstance(self.params[0], GenCompr)
+        if not is_gencompr:
             new_kids.append(self.gen_token(Tok.LPAREN))
         for i, prm in enumerate(self.params):
             new_kids.append(prm)
@@ -3728,7 +3729,7 @@ class FuncCall(Expr):
         if self.genai_call:
             new_kids.append(self.gen_token(Tok.KW_BY))
             new_kids.append(self.genai_call)
-        if not (len(self.params) == 1 and isinstance(self.params[0], GenCompr)):
+        if not is_gencompr:
             new_kids.append(self.gen_token(Tok.RPAREN, ")"))
         self.set_kids(nodes=new_kids)
         return res
