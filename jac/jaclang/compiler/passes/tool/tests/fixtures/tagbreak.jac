@@ -1,5 +1,5 @@
 #this file is part of formatter tests and is not meant to be run
- class SemTokManager {
+class SemTokManager {
     """Initialize semantic token manager."""
     def init(self: SemTokManager, ir: uni.Module) -> None {
         self.aaaaastatic_sem_tokens:
@@ -23,25 +23,23 @@ def walrus_example() {
 with entry {
     c = (
         a()
-        if 1 and
-        isinstance(a, int) and
-        isinstance(a, int) and
-        isinstance(a, int) and
-        isinstance(a, int) and
-        isinstance(a, int)
+        if 1
+        and isinstance(a, int)
+        and isinstance(a, int)
+        and isinstance(a, int)
+        and isinstance(a, int)
+        and isinstance(a, int)
         else (
             999
-            if isinstance(a, int) and
-            isinstance(a, int) and
-            isinstance(a, int) and
-            isinstance(4, bool)
+            if isinstance(a, int)
+            and isinstance(a, int)
+            and isinstance(a, int)
+            and isinstance(4, bool)
             else 7
         )
     );
-    print(
-        """This is a long
-        line of code."""
-    );
+    print("""This is a long
+        line of code.""");
 }
 
 
@@ -95,7 +93,7 @@ class ModuleManager {
 
 
 ## expr as item extra space issue
- with entry {
+with entry {
     with open(f"Apple{apple}.txt") as f {
         # Fix syntax highlighting
         print(
@@ -132,9 +130,9 @@ def func_with_short_params(a: int, b: int) -> None {
 
 with entry {
     if (
-        node_selected and
-        node_selected.find_parent_of_type(uni.Archetype) or
-        node_selected.find_parent_of_type(uni.ImplDef)
+        node_selected
+        and node_selected.find_parent_of_type(uni.Archetype)
+        or node_selected.find_parent_of_type(uni.ImplDef)
     ) {
         self_symbol = [
             lspt.CompletionItem(label='self', kind=lspt.CompletionItemKind.Variable)
@@ -143,8 +141,8 @@ with entry {
         self_symbol = [];
     }
     x = (
-        1222222222 and
-        2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
+        1222222222
+        and 2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
     );
     a = 4 if True else 4;
 }
@@ -163,15 +161,15 @@ def gen_diagnostics(
     from_path: str, errors: list[Alert], warnings: list[Alert]
 ) -> list[lspt.Diagnostic] {
     if (
-        isinstance(node_selected, uni.Name) and
-        node_selected.parent and
-        isinstance(node_selected.parent, uni.ModulePath)
+        isinstance(node_selected, uni.Name)
+        and node_selected.parent
+        and isinstance(node_selected.parent, uni.ModulePath)
     ) {
         node_selected = node_selected.name_of;
     } elif (
-        isinstance(node_selected, uni.Name) and
-        node_selected.parent and
-        isinstance(node_selected.parent, uni.ModulePath)
+        isinstance(node_selected, uni.Name)
+        and node_selected.parent
+        and isinstance(node_selected.parent, uni.ModulePath)
     ) {
         spec = node_selected.parent.parent.abs_path;
     }
@@ -179,13 +177,37 @@ def gen_diagnostics(
 
 
 @decorator
-def x() { }
+def x() {
+    assert gg == 7;
+}
 
 
 @decorator()
 class KK {}
 
 
+# kkk
+import pygame, random, math;
+
+
+# fff
+with entry {
+    # gg
+    a = 9;
+}
+
+
+# kkk
+class X {}
+
+
+# comment
+@decorator
+def xxx() { }
+
+
+# ddd
+glob a = 7;
 def get_node_info(self: JacLangServer, sym_node: uni.AstSymbolNode) -> Optional[str] {
     try {
         if isinstance(sym_node, uni.NameAtom) {
@@ -197,8 +219,8 @@ def get_node_info(self: JacLangServer, sym_node: uni.AstSymbolNode) -> Optional[
             node_info += f"': '{sym_node.name_spec.clean_type}";
         }
         if (
-            isinstance(sym_node, uni.AstSymbolNode) and
-            isinstance(sym_node.name_spec.type, ClassType)
+            isinstance(sym_node, uni.AstSymbolNode)
+            and isinstance(sym_node.name_spec.type, ClassType)
         ) {
             node_info += f"': '{sym_node.name_spec.type.shared.class_name}";
         }
@@ -240,13 +262,23 @@ def x3() {
         print("x");
     }
     if (
-        dest_type.is_class_instance() and
-        src_type.is_class_instance() and
-        src_type.is_class_instance()
+        dest_type.is_class_instance()
+        and src_type.is_class_instance()
+        and src_type.is_class_instance()
     ) {
         print("x");
     }
     if (dest_type.is_class_instance() and src_type.is_class_instance()) {
         print("x");
+    }
+}
+
+
+class HH {
+    def test()  -> Optional[str] {
+        a = """!
+hello
+hru
+""";
     }
 }
