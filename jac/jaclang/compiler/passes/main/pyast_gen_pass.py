@@ -2005,7 +2005,7 @@ class PyastGenPass(UniPass):
                 keywords.append(
                     self.sync(
                         ast3.keyword(
-                            arg="filter",
+                            arg="filter_on",
                             value=cast(
                                 ast3.expr,
                                 node.op.edge_spec.filter_cond.gen.py_ast[0],
@@ -2437,7 +2437,7 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.jaclib_obj("filter"),
+                        func=self.jaclib_obj("filter_on"),
                         args=[],
                         keywords=[
                             self.sync(
@@ -2460,7 +2460,7 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.jaclib_obj("assign"),
+                        func=self.jaclib_obj("assign_all"),
                         args=cast(
                             list[ast3.expr],
                             [node.target.gen.py_ast[0], node.right.gen.py_ast[0]],

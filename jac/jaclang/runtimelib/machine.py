@@ -1141,7 +1141,7 @@ class JacBasics:
         pass
 
     @staticmethod
-    def filter(
+    def filter_on(
         items: list[Archetype],
         func: Callable[[Archetype], bool],
     ) -> list[Archetype]:
@@ -1227,7 +1227,7 @@ class JacBasics:
         return disconnect_occurred
 
     @staticmethod
-    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
+    def assign_all(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         for obj in target:
             attrs, values = attr_val
