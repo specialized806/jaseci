@@ -377,12 +377,6 @@ D_LBRACE: "{{"
 F_TEXT_DQ: /[^"{}\n\\]+|\\./
 F_TEXT_SQ: /[^'{}\n\\]+|\\./
 
-// fstring: FSTR_START fstr_parts FSTR_END
-//        | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
-
-// fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-// fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-
 // [Heading]: Collection values.
 atom_collection: dict_compr
                | set_compr

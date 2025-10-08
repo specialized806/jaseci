@@ -2200,9 +2200,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
                     valid_parts.append(tok_d_rbrace)
                 elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
-                    valid_parts.append(tok_lbrace)
-                    valid_parts.append(self.consume(uni.Expr))
-                    valid_parts.append(self.consume_token(Tok.RBRACE))
+                    format_parts: list[uni.Expr | uni.Token] = [tok_lbrace]
+                    format_parts.append(expr:= self.consume(uni.Expr))
+                    format_parts.append(self.consume_token(Tok.RBRACE))
+                    valid_parts.append(uni.FormattedValue(format_parts=expr, kid=format_parts))
                 else:
                     break
             return valid_parts
@@ -2220,9 +2221,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
                     valid_parts.append(tok_d_rbrace)
                 elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
-                    valid_parts.append(tok_lbrace)
-                    valid_parts.append(self.consume(uni.Expr))
-                    valid_parts.append(self.consume_token(Tok.RBRACE))
+                    format_parts: list[uni.Expr | uni.Token] = [tok_lbrace]
+                    format_parts.append(expr:=self.consume(uni.Expr))
+                    format_parts.append(self.consume_token(Tok.RBRACE))
+                    valid_parts.append(uni.FormattedValue(format_parts=expr, kid=format_parts))
                 else:
                     break
             return valid_parts
@@ -3096,10 +3098,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.FSTR_SQ_PIECE,
+                Tok.D_LBRACE,
+                Tok.D_RBRACE,
+                Tok.F_TEXT_DQ,
+                Tok.F_TEXT_SQ,
             ]:
                 ret_type = uni.String
                 if token.type == Tok.FSTR_BESC:
                     token.value = token.value[1:]
+                elif token.type == Tok.D_LBRACE:
+                    token.value = "{"
+                elif token.type == Tok.D_RBRACE:
+                    token.value = "}"
             elif token.type == Tok.BOOL:
                 ret_type = uni.Bool
             elif token.type == Tok.PYNLINE and isinstance(token.value, str):
