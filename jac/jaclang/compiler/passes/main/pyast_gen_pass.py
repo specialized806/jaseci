@@ -282,7 +282,10 @@ class PyastGenPass(UniPass):
                 else {}
             )
 
-        if not semstr and not inner_semstr:
+        # Only add sem decorator if there's actual semantic content
+        if not semstr and (
+            not inner_semstr or all(not v for v in inner_semstr.values())
+        ):
             return None
 
         return self.sync(
