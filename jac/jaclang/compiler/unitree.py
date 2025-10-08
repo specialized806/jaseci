@@ -7,6 +7,7 @@ import builtins
 import os
 from copy import copy
 from dataclasses import dataclass
+from enum import IntEnum
 from hashlib import md5
 from types import EllipsisType
 from typing import (
@@ -873,6 +874,12 @@ class Module(AstDocNode, UniScopeNode):
         self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
+        # We continue to parse a module even if there are syntax errors
+        # so that we can report more errors in a single pass and support
+        # features like code completion, lsp, format etc. This flag
+        # indicates if there were syntax errors during parsing.
+        self.has_syntax_errors: bool = False
+
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name)
@@ -1392,23 +1399,12 @@ class Archetype(
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_category=(
-                SymbolType.OBJECT_ARCH
-                if arch_type.name == Tok.KW_OBJECT
-                else (
-                    SymbolType.NODE_ARCH
-                    if arch_type.name == Tok.KW_NODE
-                    else (
-                        SymbolType.EDGE_ARCH
-                        if arch_type.name == Tok.KW_EDGE
-                        else (
-                            SymbolType.WALKER_ARCH
-                            if arch_type.name == Tok.KW_WALKER
-                            else SymbolType.TYPE
-                        )
-                    )
-                )
-            ),
+            sym_category={
+                Tok.KW_OBJECT.value: SymbolType.OBJECT_ARCH,
+                Tok.KW_NODE.value: SymbolType.NODE_ARCH,
+                Tok.KW_EDGE.value: SymbolType.EDGE_ARCH,
+                Tok.KW_WALKER.value: SymbolType.WALKER_ARCH,
+            }.get(arch_type.name, SymbolType.TYPE),
         )
         AstImplNeedingNode.__init__(self, body=body)
         AstAccessNode.__init__(self, access=access)
@@ -1892,14 +1888,20 @@ class FuncSignature(UniNode):
 
     def __init__(
         self,
-        params: Sequence[ParamVar] | None,
-        return_type: Optional[Expr],
         posonly_params: Sequence[ParamVar],
+        params: Sequence[ParamVar] | None,
+        varargs: Optional[ParamVar],
+        kwonlyargs: Sequence[ParamVar],
+        kwargs: Optional[ParamVar],
+        return_type: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        self.params: list[ParamVar] = list(params) if params else []
-        self.return_type = return_type
         self.posonly_params: list[ParamVar] = list(posonly_params)
+        self.params: list[ParamVar] = list(params) if params else []
+        self.varargs = varargs
+        self.kwonlyargs: list[ParamVar] = list(kwonlyargs)
+        self.kwargs = kwargs
+        self.return_type = return_type
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -1912,11 +1914,30 @@ class FuncSignature(UniNode):
                 res = res and prm.normalize(deep)
             res = res and self.return_type.normalize(deep) if self.return_type else res
         new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)] if not is_lambda else []
-        total_params = list(self.posonly_params) + list(self.params)
-        for idx, prm in enumerate(total_params):
-            new_kid.append(prm)
-            if idx < len(total_params) - 1:
+        if self.posonly_params:
+            for prm in self.posonly_params:
+                new_kid.append(prm)
                 new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(self.gen_token(Tok.DIV))
+            new_kid.append(self.gen_token(Tok.COMMA))
+        if self.params:
+            for prm in self.params:
+                new_kid.append(prm)
+                new_kid.append(self.gen_token(Tok.COMMA))
+        if self.varargs:
+            new_kid.append(self.varargs)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        elif self.kwonlyargs:
+            new_kid.append(self.gen_token(Tok.STAR_MUL))
+            new_kid.append(self.gen_token(Tok.COMMA))
+        for prm in self.kwonlyargs:
+            new_kid.append(prm)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        if self.kwargs:
+            new_kid.append(self.kwargs)
+            new_kid.append(self.gen_token(Tok.COMMA))
+        if new_kid and isinstance(new_kid[-1], Token) and new_kid[-1].name == Tok.COMMA:
+            new_kid = new_kid[:-1]
         if not is_lambda:
             new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
@@ -1924,6 +1945,16 @@ class FuncSignature(UniNode):
             new_kid.append(self.return_type)
         self.set_kids(nodes=new_kid)
         return res
+
+    def get_parameters(self) -> list[ParamVar]:
+        """Return all parameters in the declared order."""
+        params = self.posonly_params + self.params
+        if self.varargs:
+            params.append(self.varargs)
+        params += self.kwonlyargs
+        if self.kwargs:
+            params.append(self.kwargs)
+        return params
 
     @property
     def is_static(self) -> bool:
@@ -1981,6 +2012,16 @@ class EventSignature(WalkerStmtOnlyNode):
         return res
 
 
+class ParamKind(IntEnum):
+    """Parameter kinds."""
+
+    POSONLY = 0
+    NORMAL = 1
+    VARARG = 2
+    KWONLY = 3
+    KWARG = 4
+
+
 class ParamVar(AstSymbolNode, AstTypedVarNode):
     """ParamVar node type for Jac Ast."""
 
@@ -1994,6 +2035,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
     ) -> None:
         self.name = name
         self.unpack = unpack
+        self.param_kind = ParamKind.NORMAL
         self.value = value
         UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
@@ -2003,6 +2045,14 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
             sym_category=SymbolType.VAR,
         )
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+
+    @property
+    def is_vararg(self) -> bool:
+        return bool((self.unpack) and (self.unpack.name == Tok.STAR_MUL.name))
+
+    @property
+    def is_kwargs(self) -> bool:
+        return bool((self.unpack) and (self.unpack.name == Tok.STAR_POW.name))
 
     def normalize(self, deep: bool = True) -> bool:
         res = True
@@ -2117,7 +2167,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode):
         return res
 
 
-class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
+class TypedCtxBlock(CodeBlockStmt, WalkerStmtOnlyNode, UniScopeNode):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
@@ -2131,6 +2181,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
+        WalkerStmtOnlyNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -2639,31 +2690,6 @@ class AssertStmt(CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.error_msg)
         new_kid.append(self.gen_token(Tok.SEMI))
-        self.set_kids(nodes=new_kid)
-        return res
-
-
-class CheckStmt(CodeBlockStmt):
-    """CheckStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        target: Expr,
-        kid: Sequence[UniNode],
-    ) -> None:
-        self.target = target
-        UniNode.__init__(self, kid=kid)
-        CodeBlockStmt.__init__(self)
-
-    def normalize(self, deep: bool = False) -> bool:
-        res = True
-        if deep:
-            res = self.target.normalize(deep)
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.KW_CHECK),
-            self.target,
-            self.gen_token(Tok.SEMI),
-        ]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3204,13 +3230,21 @@ class FString(AtomExpr):
             for part in self.parts:
                 res = res and part.normalize(deep)
         new_kid: list[UniNode] = []
-        is_single_quote = (
-            isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
-        )
-        if is_single_quote:
-            new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
+        # Determine quote type from first token
+        start_token = self.kid[0] if isinstance(self.kid[0], Token) else None
+        if start_token:
+            if start_token.name == Tok.FSTR_SQ_TRIPLE_START:
+                start_tok, end_tok = Tok.FSTR_SQ_TRIPLE_START, Tok.FSTR_SQ_TRIPLE_END
+            elif start_token.name == Tok.FSTR_TRIPLE_START:
+                start_tok, end_tok = Tok.FSTR_TRIPLE_START, Tok.FSTR_TRIPLE_END
+            elif start_token.name == Tok.FSTR_SQ_START:
+                start_tok, end_tok = Tok.FSTR_SQ_START, Tok.FSTR_SQ_END
+            else:
+                start_tok, end_tok = Tok.FSTR_START, Tok.FSTR_END
         else:
-            new_kid.append(self.gen_token(Tok.FSTR_START))
+            start_tok, end_tok = Tok.FSTR_START, Tok.FSTR_END
+
+        new_kid.append(self.gen_token(start_tok))
         for i in self.parts:
             if isinstance(i, String):
                 i.value = (
@@ -3221,10 +3255,7 @@ class FString(AtomExpr):
                 new_kid.append(self.gen_token(Tok.LBRACE))
                 new_kid.append(i)
                 new_kid.append(self.gen_token(Tok.RBRACE))
-        if is_single_quote:
-            new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
-        else:
-            new_kid.append(self.gen_token(Tok.FSTR_END))
+        new_kid.append(self.gen_token(end_tok))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3787,10 +3818,12 @@ class EdgeRefTrailer(Expr):
         self,
         chain: list[Expr | FilterCompr],
         edges_only: bool,
+        is_async: bool,
         kid: Sequence[UniNode],
     ) -> None:
         self.chain = chain
         self.edges_only = edges_only
+        self.is_async = is_async
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
@@ -3800,6 +3833,8 @@ class EdgeRefTrailer(Expr):
             res = res and expr.normalize(deep)
         new_kid: list[UniNode] = []
         new_kid.append(self.gen_token(Tok.LSQUARE))
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
         if self.edges_only:
             new_kid.append(self.gen_token(Tok.KW_EDGE))
         new_kid.extend(self.chain)

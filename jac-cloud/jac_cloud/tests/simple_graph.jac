@@ -272,7 +272,7 @@ walker visit_nested_node {
 walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        _.destroy(nested);
+        _jl.destroy(nested);
 
         report [-->(`?Nested)];
     }
@@ -281,7 +281,7 @@ walker delete_nested_node {
 walker delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = [edge -->][0];
-        _.destroy(nested_edge);
+        _jl.destroy(nested_edge);
 
         report [-->(`?Nested)];
     }
@@ -292,19 +292,19 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.perm_grant(here, self.level);
+            _jl.perm_grant(here, self.level);
         } else {
             import from jac_cloud.core.archetype {BaseAnchor}
-            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _jl.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.perm_grant(here, self.level);
+            _jl.perm_grant(here, self.level);
         } else {
             import from jac_cloud.core.archetype {BaseAnchor}
-            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _jl.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 }
@@ -314,19 +314,19 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.perm_revoke(here);
+            _jl.perm_revoke(here);
         } else {
             import from jac_cloud.core.archetype {BaseAnchor}
-            _.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _jl.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.perm_revoke(here);
+            _jl.perm_revoke(here);
         } else {
             import from jac_cloud.core.archetype {BaseAnchor}
-            _.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _jl.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 }
@@ -483,7 +483,7 @@ walker custom_status_code {
     has status: int;
 
     can enter with `root entry {
-        _.get_context().status = self.status;
+        _jl.get_context().status = self.status;
     }
 }
 
@@ -528,7 +528,7 @@ walker manual_create_nested_node {
         commit(here);
 
         # simulate no auto save
-        jsrc = _.get_context().mem;
+        jsrc = _jl.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -554,7 +554,7 @@ walker manual_update_nested_node {
         commit(nested);
 
         # simulate no auto save
-        jsrc = _.get_context().mem;
+        jsrc = _jl.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -566,11 +566,11 @@ walker manual_detach_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         detached = here del--> [-->(`?Nested)];
-        _.destroy(nested);
+        _jl.destroy(nested);
         commit(nested);
 
         # simulate no auto save
-        jsrc = _.get_context().mem;
+        jsrc = _jl.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -581,11 +581,11 @@ walker manual_detach_nested_node {
 walker manual_delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        _.destroy(nested);
+        _jl.destroy(nested);
         commit(nested);
 
         # simulate no auto save
-        jsrc = _.get_context().mem;
+        jsrc = _jl.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -596,11 +596,11 @@ walker manual_delete_nested_node {
 walker manual_delete_nested_edge {
     can enter_root with `root entry {
         nested_edge = [edge-->][0];
-        _.destroy(nested_edge);
+        _jl.destroy(nested_edge);
         commit(nested_edge);
 
         # simulate no auto save
-        jsrc = _.get_context().mem;
+        jsrc = _jl.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -618,7 +618,7 @@ walker custom_report {
         report 2;
         report 3;
 
-        _.report(CustomResponse(value=1), True);
+        _jl.report(CustomResponse(value=1), True);
     }
 
     class __specs__ {
@@ -664,7 +664,7 @@ walker html_response {
 
     can enter with `root entry {
         html = """<!DOCTYPE html><html lang="en"><body>HELLO WORLD</body></html>""";
-        _.report(HTMLResponse(html), custom=True);
+        _jl.report(HTMLResponse(html), custom=True);
     }
 }
 
@@ -682,7 +682,7 @@ walker stream_response {
                 yield str(i);
             }
         }
-        _.report(
+        _jl.report(
             StreamingResponse(
                 generator(),
                 media_type="text/event-stream"
@@ -791,7 +791,7 @@ walker traverse_populated_graph {
 
 walker purge_populated_graph {
     can purge with `root entry {
-        report _.reset_graph();
+        report _jl.reset_graph();
     }
 }
 
@@ -892,11 +892,11 @@ walker delete_custom_object {
 
     can enter1 with `root entry {
         import from jac_cloud.core.archetype {BaseAnchor}
-        _.destroy(&(self.object_id));
+        _jl.destroy(&(self.object_id));
 
         # This is similar to
         #
-        # _.destroy(BaseAnchor.ref(self.object_id));
+        # _jl.destroy(BaseAnchor.ref(self.object_id));
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference
@@ -1202,7 +1202,7 @@ walker generate_walker {
     can enter with `root entry {
         type(
             "generated_walker",
-            (_.Walker,),
+            (_jl.Walker,),
             {
                 "enter": generate_walker.enter2,
                 "__specs__": generate_walker.__specs__

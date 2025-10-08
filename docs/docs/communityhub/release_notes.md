@@ -2,11 +2,43 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of Jac and Jaseci. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](./breaking_changes.md) page.
 
-## jaclang 0.8.8 / jac-cloud 0.2.8 / byllm 0.4.3 (Unreleased)
 
+## jaclang 0.8.9 / jac-cloud 0.2.9 / byllm 0.4.4 (Unreleased)
+
+- **Typed Context Blocks (OSP)**: Fully implemented typed context blocks (`-> NodeType { }` and `-> WalkerType { }`) for Object-Spatial Programming, enabling conditional code execution based on runtime types.
+- **Triple Quoted F-String Support**: Added support for triple quoted f-strings in the language, enabling multi-line formatted strings with embedded expressions (e.g., `f"""Hello {name}"""`).
+- **`is` Keyword for Semstrings**: Added support for using `is` as an alternative to `=` in semantic string declarations (e.g., `sem MyObject.value is "A value stored in MyObject"`).
+- **Library Mode Interface**: Added new `jaclang.lib` module that provides a clean, user-friendly interface for accessing JacMachine functionality in library mode. This module auto-exposes all static methods from `JacMachineInterface` as module-level functions, making it easier to use Jac as a Python library.
+- **New `jac2lib` CLI Command**: Introduced `jac2lib` command that generates cleaner Python code suitable for library use. Unlike `jac2py` which uses aliased imports (e.g., `_jl.Walker`), `jac2lib` generates direct imports from `jaclang.lib` (e.g., `from jaclang.lib import Walker`), producing more readable and maintainable Python output.
+- **byLLM Plugin Interface Improved**: Enhanced the byLLM plugin interface with `get_mtir` function hook interface and refactored the `by` decorator to use the plugin system, improving integration and extensibility.
+
+## jaclang 0.8.8 / jac-cloud 0.2.8 / byllm 0.4.3
+
+- **Better Syntax Error Messages**: Initial improvements to syntax error diagnostics, providing clearer and more descriptive messages that highlight the location and cause of errors (e.g., `Missing semicolon`).
+- **Check Statements Removed**: The `check` keyword has been removed from Jaclang. All testing functionality previously provided by `check` statements is now handled by `assert` statements within test blocks. Assert statements now behave differently depending on context: in regular code they raise `AssertionError` exceptions, while within `test` blocks they integrate with Jac's testing framework to report test failures. This unification simplifies the language by using a single construct for both validation and testing purposes.
 - **Jac Import of Python Files**: This upgrade allows Python files in the current working directory to be imported using the Jac import system by running `export JAC_PYFILE_RAISE=true`. To extend Jac import functionality to all Python files, including those in site-packages, developers can enable it by running `export JAC_PYFILE_RAISE_ALL=true`.
-- **Support Positional-Only Parameters in Function Signatures**: Positional-only parameters were not being captured in function signatures during `py2jac`. (Ex: `def func(a, b, /, c): ...`)
 - **Consistent Jac Code Execution**: Fixed an issue allowing Jac code to be executed both as a standalone program and as an application. Running `jac run` now executes the `main()` function, while `jac serve` launches the application without invoking `main()`.
+- **Run transformed pytorch codes**: With `export JAC_PREDYNAMO_PASS=true`, pytorch breaking if statements will be transformed into non breaking torch.where statements. It improves the efficiency of pytorch programs.
+- **Complete Python Function Parameter Syntax Support**: Added full support for advanced Python function parameter patterns including positional-only parameters (`/` separator), keyword-only parameters (`*` separator without type hints), and complex parameter combinations (e.g., `def foo(a, b, /, *, c, d=1, **kwargs): ...`). This enhancement enables seamless Python-to-Jac conversion (`py2jac`) by supporting the complete Python function signature syntax.
+- **Type Checking Enhancements**:
+  - Added support for `Self` type resolution
+  - Enabled method type checking for tools
+  - Improved inherited symbol resolution (e.g., `Cat` recognized as subtype of `Animal`)
+  - Added float type validation
+  - Implemented parameter–argument matching in function calls
+  - Enhanced call expression parameter type checking
+  - Enhanced import symbol type resolution for better type inference and error detection
+- **VSCE Improvements**:
+  - Language Server can now be restarted without requiring a full VS Code window reload
+  - Improved environment handling: prompts users to select a valid Jac environment instead of showing long error messages
+- **Formatter Bug Fixes**:
+  - Fixed `if/elif/else` expression formatting
+  - Improved comprehension formatting (list/dict/set/gen)
+  - Corrected decorator and boolean operator formatting
+  - Fixed function args/calls formatting (removed extra commas/spaces)
+  - Fixed index slice spacing and redundant atom units
+- **byLLM Enhancements**:
+  - Fixed bug with Enums without values not being properly included in prompts (e.g., `enum Tell { YES, NO }` now works correctly).
 
 ## jaclang 0.8.7 / jac-cloud 0.2.7 / byllm 0.4.2 (Latest Release)
 
@@ -102,4 +134,5 @@ This document provides a summary of new features, improvements, and bug fixes in
 - **Object-Spatial Arrow Notation Update**: Typed arrow notations `-:MyEdge:->` and `+:MyEdge:+>` are now `->:MyEdge:->` and `+>:MyEdge:+>` respectively, to avoid conflicts with Python-style list slicing.
 - **Import `from` Syntax Update**: The syntax for importing specific modules from a package now uses curly braces (e.g., `import from utils { helper, math_utils }`) for improved clarity.
 - **Auto-Resolved Imports**: Removed the need for explicit language annotations (`:py`, `:jac`) in import statements; the compiler now automatically resolves imports.
+- **Permission API Renaming**: The `Jac.restrict` and `Jac.unrestrict` interfaces have been renamed to `Jac.perm_revoke` and `Jac.perm_grant` respectively, for better clarity on their actions.
 - **Permission API Renaming**: The `Jac.restrict` and `Jac.unrestrict` interfaces have been renamed to `Jac.perm_revoke` and `Jac.perm_grant` respectively, for better clarity on their actions.

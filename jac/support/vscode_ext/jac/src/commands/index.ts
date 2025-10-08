@@ -1,18 +1,13 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 import { runJacCommandForCurrentFile } from '../utils';
 import { COMMANDS } from '../constants';
+import { getLspManager } from '../extension';
+import { EnvManager } from '../environment/manager';
 
-export function registerAllCommands(context: vscode.ExtensionContext, envManager: any) {
+export function registerAllCommands(context: vscode.ExtensionContext, envManager: EnvManager) {
     context.subscriptions.push(
         vscode.commands.registerCommand(COMMANDS.SELECT_ENV, () => {
             envManager.promptEnvironmentSelection();
-        })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand(COMMANDS.REFRESH_ENV, () => {
-            envManager.refreshEnvironments();
         })
     );
     context.subscriptions.push(
@@ -31,15 +26,9 @@ export function registerAllCommands(context: vscode.ExtensionContext, envManager
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {
+        vscode.commands.registerCommand(COMMANDS.GET_JAC_PATH, () => {
             // Use envManager to get the selected jac path
             return envManager.getJacPath();
-        })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('extension.jaclang-extension.getPythonPath', () => {
-            // Use the new method from your EnvManager
-            return envManager.getPythonPath();
         })
     );
     context.subscriptions.push(
@@ -49,6 +38,21 @@ export function registerAllCommands(context: vscode.ExtensionContext, envManager
             
             // Toggle the mode
             await config.update('developerMode', !currentMode, vscode.ConfigurationTarget.Global);
+        })
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(COMMANDS.RESTART_LSP, async () => {
+            const lspManager = getLspManager();
+            if (lspManager) {
+                try {
+                    vscode.window.showInformationMessage('Restarting Jac Language Server...');
+                    await lspManager.restart();
+                } catch (error: any) {
+                    vscode.window.showErrorMessage(`Failed to restart Jac Language Server: ${error.message || error}`);
+                }
+            } else {
+                vscode.window.showErrorMessage('Language Server not available for restart.');
+            }
         })
     );
 }

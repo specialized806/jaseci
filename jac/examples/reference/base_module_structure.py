@@ -1,20 +1,27 @@
-"""A Docstring can be added the head of any module.
+"""Base module structure: Module and element docstrings, entry points.
 
-Any element in the module can also have a docstring.
-If there is only one docstring before the first element,
-it is assumed to be a module docstring.
+This is the module-level docstring.
+It describes the purpose of the entire module.
 """
+from __future__ import annotations
+from jaclang.lib import Obj, jac_test, sem
+import math
+global_value: int = 42
 
-"""A docstring for add function"""
-
+@sem('', {'value': 'A value stored in MyObject'})
+class MyObject(Obj):
+    value: int = 0
 
 def add(a: int, b: int) -> int:
     return a + b
+print('Default entry:', add(5, 8))
+if __name__ == '__main__':
+    print('Named entry:', add(1, 2))
 
+def python_multiply(x, y):
+    return x * y
 
-def subtract(a: int, b: int) -> int:
-    return a - b
-
-
-if __name__ == "__main__":
-    print(add(1, subtract(3, 1)))
+@jac_test
+def test_basic_test(_check) -> None:
+    result = add(2, 3)
+    _check.assertEqual(result, 5)

@@ -133,8 +133,17 @@ class JacLanguageTests(TestCase):
 
         for edge in edges:
             label = edge["label"]
-            self.assertIn(label, ["E(val=1)", "E(val=1)", "E(val=1)", "E(val=0)", "E(val=0)", "E(val=0)"])
-
+            self.assertIn(
+                label,
+                [
+                    "E(val=1)",
+                    "E(val=1)",
+                    "E(val=1)",
+                    "E(val=0)",
+                    "E(val=0)",
+                    "E(val=0)",
+                ],
+            )
 
     def test_printgraph_mermaid(self) -> None:
         """Test the mermaid gen of builtin function."""
@@ -201,10 +210,25 @@ class JacLanguageTests(TestCase):
         )
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.gen.py_ast[0], "test.py", "exec"))
+        exec(compile(prog.gen.py_ast[0], "test.jac", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
+
+    def test_assignment_list_no_infinite_loop(self) -> None:
+        """Test that assignment list parsing doesn't cause infinite loop."""
+        # This syntax previously caused an infinite loop in two places:
+        # 1. Grammar: assignment_list: (assignment_list COMMA)? (assignment | named_ref)
+        #    Fixed by: assignment_list: (assignment | named_ref) (COMMA (assignment | named_ref))* COMMA?
+        # 2. Error recovery: feed_current_token() had unbounded while loop
+        #    Fixed by: adding max_attempts limit in parser.py
+        code = "with entry { p1, p2 = (10, 20); }"
+        # Compilation should complete quickly (even though syntax is invalid)
+        jac_prog = JacProgram()
+        result = jac_prog.compile(use_str=code, file_path="test.jac")
+        # Should have errors (invalid syntax) but not hang
+        self.assertIsNotNone(result)  # Returns a Module object
+        self.assertGreater(len(jac_prog.errors_had), 0)  # Check errors on program
 
     def test_need_import(self) -> None:
         """Test importing python."""
@@ -214,18 +238,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("<module 'pyfunc' from", stdout_value)
-
-    def test_filter_compr(self) -> None:
-        """Testing filter comprehension."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(
-            "reference.special_comprehensions",
-            base_path=self.examples_abs_path(""),
-        )
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("True", stdout_value)
 
     def test_gen_dot_bubble(self) -> None:
         """Test the dot gen of nodes and edges of bubblesort."""
@@ -514,14 +526,13 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("def greet2(**kwargs: Any)", output)
+        self.assertIn("def greet2( **kwargs: Any) {", output)
         self.assertEqual(output.count("with entry {"), 14)
         self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)
         self.assertIn("if not (x == y) {", output)
-        self.assertIn("def greet2(**kwargs: Any) {", output)
-        self.assertIn("squares_dict = { x : (x ** 2) for x in numbers };", output)
+        self.assertIn("squares_dict = {x : (x ** 2) for x in numbers};", output)
         self.assertIn(
-            '\n\n"""Say hello"""\n@ my_decorator\n\n def say_hello() {', output
+            '\n\n"""Say hello"""\n@my_decorator\n\n def say_hello() {', output
         )
 
     def test_pyfunc_2(self) -> None:
@@ -605,8 +616,14 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=None,
             ).ir_out.unparse()
-        self.assertIn("isinstance( <>obj: object , class_or_tuple: _ClassInfo)", output)
-        self.assertIn("len(<>obj: Sized, astt: Any, z: int, j: str, a: Any = 90)", output)
+        self.assertIn(
+            "def isinstance( <>obj: object , class_or_tuple: _ClassInfo , /)  -> bool {",
+            output,
+        )
+        self.assertIn(
+            "def len(<>obj: Sized, astt: Any, /, z: int, j: str, a: Any = 90) -> int {",
+            output,
+        )
 
     def test_refs_target(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -765,6 +782,53 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("i work", stdout_value)
+
+    def test_kwonly_params(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            "test_kwonly_params", base_path=self.fixture_abs_path("./params")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("KW_SIMPLE: 42", stdout_value[0])
+        self.assertEqual("KW_DEF: 10-def 20-def", stdout_value[1])
+        self.assertEqual("REG_KW: 10|test", stdout_value[2])
+        self.assertEqual("MIXED_KW: 1-def-2.5-True 2-custom-3.5-False", stdout_value[3])
+        self.assertEqual("ALL_KW: 100:test:1.0 200:hi:9.9", stdout_value[4])
+
+    def test_complex_params(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            "test_complex_params", base_path=self.fixture_abs_path("./params")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertEqual("ULTIMATE_MIN: 1|def|2.5|0|test|100|0", stdout_value[0])
+        self.assertEqual("ULTIMATE_FULL: 1|custom|3.14|3|req|200|1", stdout_value[1])
+        self.assertEqual("SEPARATORS: 42", stdout_value[2])
+        self.assertEqual("EDGE_MIX: 1-test-2-True-1", stdout_value[3])
+        self.assertEqual("RECURSIVE: 7 11", stdout_value[4])
+        self.assertEqual(
+            "VALIDATION: x:1,y:2.5,z:10,args:1,w:True,kwargs:1", stdout_value[5]
+        )
+
+    def test_param_failing(self) -> None:
+        """Test importing python."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        for i in [
+            "test_failing_posonly",
+            "test_failing_kwonly",
+            "test_failing_varargs",
+        ]:
+            Jac.jac_import(i, base_path=self.fixture_abs_path("./params"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertNotIn("FAILED", stdout_value)
 
     def test_double_import_exec(self) -> None:
         """Test importing python."""
@@ -1258,9 +1322,9 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("(prev_token_index is None)", output)
         self.assertIn("(next_token_index is None)", output)
-        self.assertIn("(tok[ 0 ] > change_end_line)", output)
-        self.assertIn("(tok[ 0 ] == change_end_line)", output)
-        self.assertIn("(tok[ 1 ] > change_end_char)", output)
+        self.assertIn("(tok[0] > change_end_line)", output)
+        self.assertIn("(tok[0] == change_end_line)", output)
+        self.assertIn("(tok[1] > change_end_char)", output)
 
     def test_here_visitor_usage(self) -> None:
         """Test visitor, here keyword usage in jaclang."""
@@ -1277,9 +1341,11 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
-        cli.run(self.fixture_abs_path("here_usage_error.jac"))
+        with self.assertRaises(SystemExit) as cm:
+            cli.run(self.fixture_abs_path("here_usage_error.jac"))
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
+        self.assertEqual(cm.exception.code, 1)
         stdout_value = captured_output.getvalue()
         self.assertIn("'here' is not defined", stdout_value)
 
@@ -1394,11 +1460,11 @@ class JacLanguageTests(TestCase):
 
     def test_read_file_with_encoding_utf8(self) -> None:
         """Test reading UTF-8 encoded file."""
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
             test_content = "Hello, 世界! 🌍 Testing UTF-8 encoding."
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1407,11 +1473,13 @@ class JacLanguageTests(TestCase):
 
     def test_read_file_with_encoding_utf16(self) -> None:
         """Test reading UTF-16 encoded file when UTF-8 fails."""
-        with tempfile.NamedTemporaryFile(delete=False, mode="w", encoding="utf-16") as f:
+        with tempfile.NamedTemporaryFile(
+            delete=False, mode="w", encoding="utf-16"
+        ) as f:
             test_content = "Hello, 世界! UTF-16 encoding test."
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1420,11 +1488,13 @@ class JacLanguageTests(TestCase):
 
     def test_read_file_with_encoding_utf8_bom(self) -> None:
         """Test reading UTF-8 with BOM encoded file."""
-        with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8-sig') as f:
+        with tempfile.NamedTemporaryFile(
+            delete=False, mode="w", encoding="utf-8-sig"
+        ) as f:
             test_content = "Hello, UTF-8 BOM test! 🚀"
             f.write(test_content)
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertEqual(result, test_content)
@@ -1451,9 +1521,9 @@ class JacLanguageTests(TestCase):
         with tempfile.NamedTemporaryFile(delete=False) as f:
             binary_data = bytes([0xFF, 0xFE, 0x00, 0x48, 0x65, 0x6C, 0x6C, 0x6F])
             f.write(binary_data)
-            f.flush()  
+            f.flush()
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
             self.assertIsInstance(result, str)
@@ -1463,18 +1533,18 @@ class JacLanguageTests(TestCase):
 
     def test_read_file_with_encoding_special_characters(self) -> None:
         """Test reading file with various special characters."""
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
             test_content = (
                 "Special chars: åäö ñ ü ç é\n"
-                "Symbols: ©®™ §¶†‡•\n" 
+                "Symbols: ©®™ §¶†‡•\n"
                 "Math: ∑∏∫√±≤≥≠\n"
                 "Arrows: ←→↑↓↔\n"
                 "Emoji: 😀😍🎉🔥💯\n"
             )
             f.write(test_content)
-            f.flush()  
+            f.flush()
             temp_path = f.name
-        
+
         try:
             result = read_file_with_encoding(temp_path)
 
@@ -1485,3 +1555,39 @@ class JacLanguageTests(TestCase):
             self.assertIn("😀😍", result)
         finally:
             os.unlink(temp_path)
+
+    def test_known_builtins_matches_actual(self) -> None:
+        """Test that KNOWN_BUILTINS in PyastGenPass matches actual builtins."""
+        from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
+        import jaclang.runtimelib.builtin as builtin_module
+
+        # Get actual builtins from the module (excluding private members)
+        actual_builtins = {
+            name for name in builtin_module.__all__
+            if not name.startswith('_')
+        }
+
+        # Exceptions: builtins that are imported from other sources
+        # - Enum: imported via needs_enum() from standard library's enum module
+        exceptions = {'Enum'}
+        actual_builtins_to_check = actual_builtins - exceptions
+
+        # Get the KNOWN_BUILTINS set from PyastGenPass
+        known_builtins = PyastGenPass.KNOWN_BUILTINS
+
+        # Find missing and extra builtins
+        missing = actual_builtins_to_check - known_builtins
+        extra = known_builtins - actual_builtins_to_check
+
+        # Build error message
+        error_msg = []
+        if missing:
+            error_msg.append(f"Missing from KNOWN_BUILTINS: {sorted(missing)}")
+        if extra:
+            error_msg.append(f"Extra in KNOWN_BUILTINS (not in builtin module): {sorted(extra)}")
+
+        # Assert they match
+        self.assertEqual(
+            known_builtins, actual_builtins_to_check,
+            "\n".join(error_msg) if error_msg else ""
+        )

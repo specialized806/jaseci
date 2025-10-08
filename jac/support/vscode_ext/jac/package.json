@@ -1,6 +1,6 @@
 {
   "name": "jaclang-extension",
-  "version": "2025.7.17",
+  "version": "2025.10.6",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
   "publisher": "jaseci-labs",
@@ -48,22 +48,20 @@
       {
         "type": "jacdebug",
         "label": "Jac Debug",
-
         "initialConfigurations": [
           {
             "type": "debugpy",
             "request": "launch",
             "name": "Run a jac file",
             "program": "${command:extension.jaclang-extension.getJacPath}",
-            "args" : "run ${file}"
+            "args": "run ${file}"
           }
         ]
-
       }
     ],
     "commands": [
       {
-        "command": "jac.visualize",
+        "command": "jaclang-extension.visualizeGraph",
         "title": "jacvis: Visualize Jaclang Graph"
       },
       {
@@ -73,6 +71,11 @@
       {
         "command": "jaclang-extension.toggleDeveloperMode",
         "title": "Jac: Toggle Developer Mode"
+      },
+      {
+        "command": "jaclang-extension.restartLanguageServer",
+        "title": "Jac: Restart Language Server",
+        "icon": "$(refresh)"
       },
       {
         "command": "jaclang-extension.runCurrentFile",
@@ -104,6 +107,11 @@
         }
       ],
       "editor/title": [
+        {
+          "command": "jaclang-extension.restartLanguageServer",
+          "group": "navigation@98",
+          "when": "resourceLangId == jac && config.jaclang-extension.developerMode"
+        },
         {
           "command": "jaclang-extension.serveCurrentFile",
           "group": "navigation@99",
@@ -143,7 +151,8 @@
     "build": "vsce",
     "watch": "tsc -b -w",
     "deploy": "vsce publish --yarn",
-    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix",
+    "test": "jest"
   },
   "extensionDependencies": [
     "ms-python.python"
@@ -152,9 +161,12 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.14.1",
     "@types/vscode": "^1.96.0",
     "@vscode/vsce": "^2.27.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.4",
     "typescript": "^5.4.5"
   }
 }
