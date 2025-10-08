@@ -26,7 +26,7 @@ class Collaborates(_jl.Edge):
 
 class ComprehensionDemo(_jl.Walker):
 
-    @_jl.entry
+    @_jl.on_entry
     def demo_basic(self, here: _jl.Root) -> None:
         print('=== 1. Basic Filter Comprehension ===')
         random.seed(42)
@@ -71,7 +71,7 @@ class ComprehensionDemo(_jl.Walker):
         print('Graph built: Manager -> 3 Devs')
         _jl.visit(self, _jl.refs(_jl.Path(here)._out().visit()))
 
-    @_jl.entry
+    @_jl.on_entry
     def demo_edge_filters(self, here: Employee) -> None:
         print(f'\\n=== At {here.name} ===')
         print('=== 7. Filter Comprehension on Edge Results ===')

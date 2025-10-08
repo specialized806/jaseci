@@ -425,36 +425,6 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def ignore(
-        walker: WalkerArchetype,
-        expr: (
-            list[NodeArchetype | EdgeArchetype]
-            | list[NodeArchetype]
-            | list[EdgeArchetype]
-            | NodeArchetype
-            | EdgeArchetype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's ignore stmt feature."""
-        if isinstance(walker, WalkerArchetype):
-            wanch = walker.__jac__
-            before_len = len(wanch.ignores)
-            for anchor in (
-                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
-            ):
-                if anchor not in wanch.ignores:
-                    if isinstance(anchor, NodeAnchor):
-                        wanch.ignores.append(anchor)
-                    elif isinstance(anchor, EdgeAnchor):
-                        if target := anchor.target:
-                            wanch.ignores.append(target)
-                        else:
-                            raise ValueError("Edge has no target.")
-            return len(wanch.ignores) > before_len
-        else:
-            raise TypeError("Invalid walker object")
-
-    @staticmethod
     def spawn_call(
         walker: WalkerAnchor,
         node: NodeAnchor | EdgeAnchor,
@@ -1329,13 +1299,13 @@ class JacBasics:
                 JacMachineInterface.get_context().mem.remove(anchor.id)
 
     @staticmethod
-    def entry(func: Callable) -> Callable:
+    def on_entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
         setattr(func, "__jac_entry", None)  # noqa:B010
         return func
 
     @staticmethod
-    def exit(func: Callable) -> Callable:
+    def on_exit(func: Callable) -> Callable:
         """Mark a method as jac exit with this decorator."""
         setattr(func, "__jac_exit", None)  # noqa:B010
         return func

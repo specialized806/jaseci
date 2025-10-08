@@ -913,7 +913,9 @@ class PyastGenPass(UniPass):
         if isinstance(node.signature, uni.EventSignature):
             decorator_list.append(
                 self.jaclib_obj(
-                    "entry" if node.signature.event.name == Tok.KW_ENTRY else "exit"
+                    "on_entry"
+                    if node.signature.event.name == Tok.KW_ENTRY
+                    else "on_exit"
                 )
             )
 
