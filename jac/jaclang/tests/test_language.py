@@ -1555,3 +1555,12 @@ class JacLanguageTests(TestCase):
             self.assertIn("😀😍", result)
         finally:
             os.unlink(temp_path)
+
+    def test_attr_pattern_case(self) -> None:
+        """Test attribute pattern matching."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import("attr_pattern_case", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Matched a.b.c Hello Jaseci!", stdout_value[0])
