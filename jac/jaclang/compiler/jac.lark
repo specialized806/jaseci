@@ -359,11 +359,11 @@ type_ref: TYPE_OP (named_ref | builtin_type)
 
 multistring: (fstring | STRING)+
 
-fstring: F_DQ_START fstr_dq_parts* F_DQ_END
-       | F_SQ_START fstr_sq_parts* F_SQ_END
+fstring: F_DQ_START fstr_dq_parts F_DQ_END
+       | F_SQ_START fstr_sq_parts F_SQ_END
 
-?fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
-?fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
+fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
+fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
 
 F_DQ_START.9: /[fF]"/
 F_SQ_START.9: /[fF]'/

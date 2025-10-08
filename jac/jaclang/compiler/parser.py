@@ -2173,53 +2173,56 @@ class JacParser(Transform[uni.Source, uni.Module]):
             fstring: F_DQ_START fstr_dq_parts* F_DQ_END
                     | F_SQ_START fstr_sq_parts* F_SQ_END
             """
-            if self.match_token(Tok.F_DQ_START):
-                parts = self.fstr_dq_parts(None)
-                self.consume_token(Tok.F_DQ_END)
+            if (tok_start := self.match_token(Tok.F_DQ_START)):
+                parts = self.match(list) or []
+                tok_end = self.consume_token(Tok.F_DQ_END)
             else:
-                self.consume_token(Tok.F_SQ_START)
-                parts = self.fstr_sq_parts(None)
-                self.consume_token(Tok.F_SQ_END)
+                tok_start = self.consume_token(Tok.F_SQ_START)
+                parts = self.match(list) or []
+                tok_end = self.consume_token(Tok.F_SQ_END)
             return uni.FString(
+                start= tok_start,
                 parts=parts,
+                end= tok_end,
                 kid=self.flat_cur_nodes,
             )
 
         def fstr_dq_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
-            fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
+            fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
             """
             valid_parts = []
             while True:
-                if self.match_token(Tok.F_TEXT_DQ):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.D_LBRACE):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.D_RBRACE):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.LBRACE):
-                    self.consume_token(Tok.LBRACE)
+                if (tok_text_dq:=self.match_token(Tok.F_TEXT_DQ)):
+                    valid_parts.append(tok_text_dq)
+                elif (tok_d_lbrace:=self.match_token(Tok.D_LBRACE)):
+                    valid_parts.append(tok_d_lbrace)
+                elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
+                    valid_parts.append(tok_d_rbrace)
+                elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
+                    valid_parts.append(tok_lbrace)
                     valid_parts.append(self.consume(uni.Expr))
-                    self.consume_token(Tok.RBRACE)
+                    valid_parts.append(self.consume_token(Tok.RBRACE))
                 else:
                     break
             return valid_parts
         
         def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
             """Grammar rule.
-            fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )
+            fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
             """
             valid_parts = []
             while True:
-                if self.match_token(Tok.F_TEXT_SQ):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.D_LBRACE):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.D_RBRACE):
-                    valid_parts.append(self.consume(uni.String))
-                elif self.match_token(Tok.LBRACE):
+                if (tok_f_text_sq:=self.match_token(Tok.F_TEXT_SQ)):
+                    valid_parts.append(tok_f_text_sq)
+                elif (tok_d_lbrace:=self.match_token(Tok.D_LBRACE)):
+                    valid_parts.append(tok_d_lbrace)
+                elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
+                    valid_parts.append(tok_d_rbrace)
+                elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
+                    valid_parts.append(tok_lbrace)
                     valid_parts.append(self.consume(uni.Expr))
-                    self.consume_token(Tok.RBRACE)
+                    valid_parts.append(self.consume_token(Tok.RBRACE))
                 else:
                     break
             return valid_parts
