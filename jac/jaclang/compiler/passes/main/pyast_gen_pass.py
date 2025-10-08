@@ -98,6 +98,7 @@ class PyastGenPass(UniPass):
             self.child_passes.append(child_pass)
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
+        self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -145,16 +146,20 @@ class PyastGenPass(UniPass):
 
     def jaclib_obj(self, obj_name: str) -> ast3.Name | ast3.Attribute:
         """Return the object from jaclib as ast node based on the import config."""
-        self.needs_jaclib()
-        return self.sync(
-            ast3.Attribute(
-                value=self.sync(
-                    ast3.Name(id=settings.pyout_jaclib_alias, ctx=ast3.Load())
-                ),
-                attr=obj_name,
-                ctx=ast3.Load(),
+        if settings.library_mode:
+            self.jaclib_imports.add(obj_name)
+            return self.sync(ast3.Name(id=obj_name, ctx=ast3.Load()))
+        else:
+            self.needs_jaclib()
+            return self.sync(
+                ast3.Attribute(
+                    value=self.sync(
+                        ast3.Name(id=settings.pyout_jaclib_alias, ctx=ast3.Load())
+                    ),
+                    attr=obj_name,
+                    ctx=ast3.Load(),
+                )
             )
-        )
 
     def _add_preamble_once(self, key: str, node: ast3.AST) -> None:
         """Append an import statement to the preamble once."""
@@ -416,6 +421,26 @@ class PyastGenPass(UniPass):
             if "needs_jaclib" in child_pass.already_added:
                 self.needs_jaclib()
                 break
+            # Merge jaclib imports from child passes
+            if settings.library_mode:
+                self.jaclib_imports.update(child_pass.jaclib_imports)
+
+        # Add library mode imports at the end of preamble
+        if settings.library_mode and self.jaclib_imports:
+            self.preamble.append(
+                self.sync(
+                    ast3.ImportFrom(
+                        module="jaclang.lib",
+                        names=[
+                            self.sync(ast3.alias(name=name, asname=None))
+                            for name in sorted(self.jaclib_imports)
+                        ],
+                        level=0,
+                    ),
+                    jac_node=self.ir_out,
+                )
+            )
+
         clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
         pre_body: list[uni.UniNode] = []
         for pbody in node.impl_mod:
