@@ -233,3 +233,10 @@ class foo {
         }
     }
 }
+
+
+def x3() {
+    if dest_type.is_class_instance() and src_type.is_class_instance() {
+        print("x");
+    }
+}
