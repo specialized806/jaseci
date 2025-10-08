@@ -1362,10 +1362,38 @@ class JacByLLM:
 
     @staticmethod
     def call_llm(model: object, mtir: object) -> Any:  # noqa: ANN401
-        """Call the LLM model."""
+        """Call the LLM model.
+
+        Note: This is for future uses of the feature in contexts that cannot be decorated.
+        For most use cases, use the `by` decorator instead.
+        """
         raise ImportError(
             "byLLM is not installed. Please install it with `pip install byllm` and run `jac clean`."
         )
+
+    @staticmethod
+    def by(model: object) -> Callable:
+        """Python library mode decorator for Jac's by llm() syntax."""
+
+        def _decorator(caller: Callable) -> Callable:
+            def _wrapped_caller(*args: object, **kwargs: object) -> object:
+                invoke_args: dict[int | str, object] = {}
+                for i, arg in enumerate(args):
+                    invoke_args[i] = arg
+                for key, value in kwargs.items():
+                    invoke_args[key] = value
+                mtir = JacMachine.get_mtir(
+                    caller=caller,
+                    args=invoke_args,
+                    call_params=(
+                        model.call_params if hasattr(model, "call_params") else {}
+                    ),
+                )
+                return JacMachine.call_llm(model, mtir)
+
+            return _wrapped_caller
+
+        return _decorator
 
 
 class JacUtils:
