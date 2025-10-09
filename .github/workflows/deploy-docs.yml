@@ -131,23 +131,22 @@ jobs:
       - name: Prepare documentation for serving
         run: |
           echo "Preparing MkDocs for serving..."
-
+          
           # Create build info file
-          echo "Build Information:" > docs/build-info.txt
-          echo "Version: ${{ steps.tag.outputs.tag }}" >> docs/build-info.txt
-          echo "Built: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> docs/build-info.txt
-          echo "Commit: ${{ github.sha }}" >> docs/build-info.txt
-          echo "Branch: ${{ github.ref_name }}" >> docs/build-info.txt
-          echo "Trigger: ${{ github.event_name }}" >> docs/build-info.txt
+          echo "Build Information:" > build-info.txt
+          echo "Version: ${{ steps.tag.outputs.tag }}" >> build-info.txt
+          echo "Built: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> build-info.txt
+          echo "Commit: ${{ github.sha }}" >> build-info.txt
+          echo "Branch: ${{ github.ref_name }}" >> build-info.txt
+          echo "Trigger: ${{ github.event_name }}" >> build-info.txt
 
-          echo "Documentation prepared for serving"
-
-      # Build and push Docker image
+          echo "Documentation prepared for serving"      # Build and push Docker image
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: 776241927220.dkr.ecr.us-east-2.amazonaws.com
           ECR_REPOSITORY: jac-lang-website
           IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        working-directory: .
         run: |
           echo "Building and pushing to: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
