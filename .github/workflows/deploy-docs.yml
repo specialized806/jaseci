@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - feat/mkdocs-serve-playground-support
     paths:
       - 'docs/**'
       - '.github/workflows/deploy-docs.yml'
