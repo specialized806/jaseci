@@ -43,7 +43,7 @@ print(f"Name: {person.full_name}, Description: {person.description}, Year of Bir
 In Jaclang, hyper-parameters are set by passing them to the LLM model:
 
 ```jac linenums="1"
-import from byllm { Model }
+import from byllm.lib { Model }
 
 glob llm = Model(model_name="gpt-4o")
 

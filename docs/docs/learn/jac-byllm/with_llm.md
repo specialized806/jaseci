@@ -43,7 +43,7 @@ pip install byllm
 Consider building an application that translates english to other languages using an LLM. This can be simply built as follows:
 === "Jac"
     ```jac linenums="1"
-    import from byllm { Model }
+    import from byllm.lib { Model }
 
     glob llm = Model(model_name="gpt-4o");
 
@@ -75,7 +75,7 @@ Consider a program that detects the personality type of a historical figure from
 
 === "Jac"
     ```jac linenums="1"
-    import from byllm { Model }
+    import from byllm.lib { Model }
     glob llm = Model(model_name="gemini/gemini-2.0-flash");
 
     enum Personality {
@@ -119,7 +119,7 @@ Even if we are elimination prompt engineering entierly, we allow specific ways t
 
 === "Jac"
     ```jac linenums="1"
-    import from byllm { Model }
+    import from byllm.lib { Model }
     glob llm = Model(model_name="gemini/gemini-2.0-flash");
 
     """Represents the personal record of a person"""

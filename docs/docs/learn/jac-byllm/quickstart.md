@@ -44,7 +44,7 @@ The `by` keyword abstraction enables functions to process inputs of any type and
 #### Step 1: Configure LLM Model
 
 ```jac linenums="1"
-import from byllm {Model}
+import from byllm.lib {Model}
 
 glob llm = Model(model_name="gemini/gemini-2.0-flash");
 ```
