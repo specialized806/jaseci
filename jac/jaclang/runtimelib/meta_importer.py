@@ -13,8 +13,53 @@ from jaclang.settings import settings
 from jaclang.utils.module_resolver import get_jac_search_paths, get_py_search_paths
 
 
+class _ByllmFallbackClass:
+    """A fallback class that can be instantiated and returns None for any attribute."""
+
+    def __init__(self, *args, **kwargs):
+        """Accept any arguments and store them."""
+        pass
+
+    def __getattr__(self, name: str):
+        """Return None for any attribute access."""
+        return None
+
+    def __call__(self, *args, **kwargs):
+        """Return self when called to allow chaining."""
+        # Return a new instance when called as a constructor
+        return _ByllmFallbackClass()
+
+
+class ByllmFallbackLoader(importlib.abc.Loader):
+    """Fallback loader for byllm when it's not installed."""
+
+    def create_module(
+        self, spec: importlib.machinery.ModuleSpec
+    ) -> Optional[ModuleType]:
+        """Create a placeholder module."""
+        return None  # use default machinery
+
+    def exec_module(self, module: ModuleType) -> None:
+        """Populate the module with fallback classes."""
+        # Set common attributes
+        module.__all__ = []
+        module.__file__ = None
+        module.__path__ = []
+
+        # Use a custom __getattr__ to return fallback classes for any attribute access
+        def _getattr(name: str):
+            if not name.startswith("_"):
+                # Return a fallback class that can be instantiated
+                return _ByllmFallbackClass
+            raise AttributeError(f"module 'byllm' has no attribute '{name}'")
+
+        module.__getattr__ = _getattr  # type: ignore
+
+
 class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     """Meta path importer to load .jac modules via Python's import system."""
+
+    _byllm_warning_shown = False  # Class variable to track if warning was shown
 
     def find_spec(
         self,
@@ -23,6 +68,37 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         target: Optional[ModuleType] = None,
     ) -> Optional[importlib.machinery.ModuleSpec]:
         """Find the spec for the module."""
+        # Handle byllm lazy loading fallback
+        if fullname == "byllm" or fullname.startswith("byllm."):
+            # Check if byllm is actually installed by looking for it in sys.path
+            # We use importlib.util.find_spec with a custom path to avoid recursion
+            import sys
+            byllm_found = False
+            for finder in sys.meta_path:
+                # Skip ourselves to avoid infinite recursion
+                if isinstance(finder, JacMetaImporter):
+                    continue
+                if hasattr(finder, 'find_spec'):
+                    try:
+                        spec = finder.find_spec(fullname, path, target)
+                        if spec is not None:
+                            byllm_found = True
+                            break
+                    except (ImportError, ModuleNotFoundError, AttributeError):
+                        continue
+
+            if not byllm_found:
+                # If byllm is not installed, return a spec for our fallback loader
+                # Print warning only once
+                if not JacMetaImporter._byllm_warning_shown:
+                    print("Please install byllm, but for now using NonGPT")
+                    JacMetaImporter._byllm_warning_shown = True
+                return importlib.machinery.ModuleSpec(
+                    fullname,
+                    ByllmFallbackLoader(),
+                    is_package=fullname == "byllm",
+                )
+
         if path is None:
             # Top-level import
             paths_to_search = get_jac_search_paths()
