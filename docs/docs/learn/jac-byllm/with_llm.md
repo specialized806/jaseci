@@ -56,7 +56,7 @@ Consider building an application that translates english to other languages usin
     ```
 === "python"
     ```python linenums="1"
-    from byllm import Model, by
+    from byllm.lib import Model, by
 
     llm = Model(model_name="gpt-4o")
 
@@ -94,7 +94,7 @@ Consider a program that detects the personality type of a historical figure from
     ```
 === "Python"
     ```python linenums="1"
-    from byllm import Model, by
+    from byllm.lib import Model, by
     from enum import Enum
     llm =  Model(model_name="gemini/gemini-2.0-flash")
 
@@ -140,7 +140,7 @@ Even if we are elimination prompt engineering entierly, we allow specific ways t
     ```python linenums="1"
     from jaclang import JacMachineInterface as Jac
     from dataclasses import dataclass
-    from byllm import Model, by
+    from byllm.lib import Model, by
     llm =  Model(model_name="gemini/gemini-2.0-flash")
 
     @Jac.sem('', {  'name': 'Full name of the person',

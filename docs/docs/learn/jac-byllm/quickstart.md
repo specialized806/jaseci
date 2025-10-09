@@ -77,7 +77,7 @@ As byLLM is a python package, it can be natively used in jac. The following code
 
 ```python linenums="1"
 import jaclang
-from byllm import Model, by
+from byllm.lib import Model, by
 from enum import Enum
 
 llm = Model(model_name="gemini/gemini-2.0-flash")
