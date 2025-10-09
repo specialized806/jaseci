@@ -2229,62 +2229,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     break
             return valid_parts
 
-        # def fstring(self, _: None) -> uni.FString:
-        #     """Grammar rule.
-
-        #     fstring: FSTR_START fstr_parts FSTR_END
-        #         | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
-        #     """
-        #     self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
-        #     target = self.match(list)
-        #     self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
-        #     return uni.FString(
-        #         parts=(
-        #             self.extract_from_list(target, (uni.String, uni.ExprStmt))
-        #             if target
-        #             else []
-        #         ),
-        #         kid=self.flat_cur_nodes,
-        #     )
-
-        # def fstr_parts(self, _: None) -> list[uni.UniNode]:
-        #     """Grammar rule.
-
-        #     fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-        #     """
-        #     valid_parts: list[uni.UniNode] = [
-        #         (
-        #             i
-        #             if isinstance(i, uni.String)
-        #             else (
-        #                 uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-        #                 if isinstance(i, uni.Expr)
-        #                 else i
-        #             )
-        #         )
-        #         for i in self.cur_nodes
-        #     ]
-        #     return valid_parts
-
-        # def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
-        #     """Grammar rule.
-
-        #     fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-        #     """
-        #     valid_parts: list[uni.UniNode] = [
-        #         (
-        #             i
-        #             if isinstance(i, uni.String)
-        #             else (
-        #                 uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-        #                 if isinstance(i, uni.Expr)
-        #                 else i
-        #             )
-        #         )
-        #         for i in self.cur_nodes
-        #     ]
-        #     return valid_parts
-
         def list_val(self, _: None) -> uni.ListVal:
             """Grammar rule.
 
@@ -3095,18 +3039,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 ret_type = uni.Int
             elif token.type in [
                 Tok.STRING,
-                Tok.FSTR_BESC,
-                Tok.FSTR_PIECE,
-                Tok.FSTR_SQ_PIECE,
                 Tok.D_LBRACE,
                 Tok.D_RBRACE,
                 Tok.F_TEXT_DQ,
                 Tok.F_TEXT_SQ,
             ]:
                 ret_type = uni.String
-                if token.type == Tok.FSTR_BESC:
-                    token.value = token.value[1:]
-                elif token.type == Tok.D_LBRACE:
+                if token.type == Tok.D_LBRACE:
                     token.value = "{"
                 elif token.type == Tok.D_RBRACE:
                     token.value = "}"

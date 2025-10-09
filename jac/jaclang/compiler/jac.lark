@@ -466,15 +466,6 @@ TYPE_OP: /`/
 GLOBAL_OP: "global"
 NONLOCAL_OP: "nonlocal"
 
-// // [Heading]: f-string tokens.
-// FSTR_START.1: "f\""
-// FSTR_END: "\""
-// FSTR_SQ_START.1: "f'"
-// FSTR_SQ_END: "'"
-// FSTR_PIECE.-1: /[^\{\}\"]+/
-// FSTR_SQ_PIECE.-1: /[^\{\}\']+/
-// FSTR_BESC.1: /{{|}}/
-
 RETURN_HINT: "->"
 NULL_OK: "?"
 COLON: ":"
