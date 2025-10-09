@@ -3223,8 +3223,8 @@ class FString(AtomExpr):
 class FormattedValue(Expr):
     """FormattedValue node type for Jac Ast."""
 
-    def __init__(self, format_parts: Expr, kid: Sequence[UniNode]) -> None:
-        self.format_parts: Expr = format_parts
+    def __init__(self, format_part: Expr, kid: Sequence[UniNode]) -> None:
+        self.format_part: Expr = format_part
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 

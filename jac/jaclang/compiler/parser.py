@@ -2170,16 +2170,20 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def fstring(self, _: None) -> uni.FString:
             """Grammar rule.
-            fstring: F_DQ_START fstr_dq_parts* F_DQ_END
-                    | F_SQ_START fstr_sq_parts* F_SQ_END
+            fstring: F_DQ_START fstr_dq_part* F_DQ_END
+                    | F_SQ_START fstr_sq_part* F_SQ_END
             """
+            parts = []
             if (tok_start := self.match_token(Tok.F_DQ_START)):
-                parts = self.match(list) or []
+                while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    parts.append(part)
                 tok_end = self.consume_token(Tok.F_DQ_END)
             else:
                 tok_start = self.consume_token(Tok.F_SQ_START)
-                parts = self.match(list) or []
+                while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    parts.append(part)
                 tok_end = self.consume_token(Tok.F_SQ_END)
+            print(parts)
             return uni.FString(
                 start= tok_start,
                 parts=parts,
@@ -2187,47 +2191,49 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.flat_cur_nodes,
             )
 
-        def fstr_dq_parts(self, _: None) -> list[uni.UniNode]:
+        def fstr_dq_part(self, _: None) -> uni.Token | uni.FormattedValue:
             """Grammar rule.
-            fstr_dq_parts: (F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
+            fstr_dq_part: F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE fexpression RBRACE
             """
-            valid_parts = []
-            while True:
-                if (tok_text_dq:=self.match_token(Tok.F_TEXT_DQ)):
-                    valid_parts.append(tok_text_dq)
-                elif (tok_d_lbrace:=self.match_token(Tok.D_LBRACE)):
-                    valid_parts.append(tok_d_lbrace)
-                elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
-                    valid_parts.append(tok_d_rbrace)
-                elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
-                    format_parts: list[uni.Expr | uni.Token] = [tok_lbrace]
-                    format_parts.append(expr:= self.consume(uni.Expr))
-                    format_parts.append(self.consume_token(Tok.RBRACE))
-                    valid_parts.append(uni.FormattedValue(format_parts=expr, kid=format_parts))
-                else:
-                    break
-            return valid_parts
+            if (tok := self.match_token(Tok.F_TEXT_DQ)):
+                return tok
+            elif (tok := self.match_token(Tok.D_LBRACE)):
+                return tok
+            elif (tok := self.match_token(Tok.D_RBRACE)):
+                return tok
+            else:
+                self.consume_token(Tok.LBRACE)
+                expr = self.consume(uni.Expr)
+                self.consume_token(Tok.RBRACE)
+                return uni.FormattedValue(
+                    format_part=expr,
+                    kid=self.cur_nodes,
+                )
         
-        def fstr_sq_parts(self, _: None) -> list[uni.UniNode]:
+        def fstr_sq_part(self, _: None) -> uni.Token | uni.FormattedValue:
             """Grammar rule.
-            fstr_sq_parts: (F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression RBRACE )*
+            fstr_sq_part: F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE fexpression RBRACE
             """
-            valid_parts = []
-            while True:
-                if (tok_f_text_sq:=self.match_token(Tok.F_TEXT_SQ)):
-                    valid_parts.append(tok_f_text_sq)
-                elif (tok_d_lbrace:=self.match_token(Tok.D_LBRACE)):
-                    valid_parts.append(tok_d_lbrace)
-                elif (tok_d_rbrace:=self.match_token(Tok.D_RBRACE)):
-                    valid_parts.append(tok_d_rbrace)
-                elif (tok_lbrace:=self.match_token(Tok.LBRACE)):
-                    format_parts: list[uni.Expr | uni.Token] = [tok_lbrace]
-                    format_parts.append(expr:=self.consume(uni.Expr))
-                    format_parts.append(self.consume_token(Tok.RBRACE))
-                    valid_parts.append(uni.FormattedValue(format_parts=expr, kid=format_parts))
-                else:
-                    break
-            return valid_parts
+            if (tok := self.match_token(Tok.F_TEXT_SQ)):
+                return tok
+            elif (tok := self.match_token(Tok.D_LBRACE)):
+                return tok
+            elif (tok := self.match_token(Tok.D_RBRACE)):
+                return tok
+            else:
+                self.consume_token(Tok.LBRACE)
+                expr = self.consume(uni.Expr)
+                self.consume_token(Tok.RBRACE)
+                return uni.FormattedValue(
+                    format_part=expr,
+                    kid=self.cur_nodes,
+                )
+        
+        def fexpression(self, _: None) -> uni.Expr:
+            """Grammar rule.
+            fexpression: expression
+            """
+            return self.consume(uni.Expr)
 
         def list_val(self, _: None) -> uni.ListVal:
             """Grammar rule.
