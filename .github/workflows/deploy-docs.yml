@@ -131,7 +131,7 @@ jobs:
       - name: Prepare documentation for serving
         run: |
           echo "Preparing MkDocs for serving..."
-          
+
           # Create build info file
           echo "Build Information:" > build-info.txt
           echo "Version: ${{ steps.tag.outputs.tag }}" >> build-info.txt
