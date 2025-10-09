@@ -313,6 +313,8 @@ class Tokens(str, Enum):
     F_TEXT_SQ = "F_TEXT_SQ"
     D_LBRACE = "D_LBRACE"
     D_RBRACE = "D_RBRACE"
+    CONV = "CONV"
+    F_FORMAT_TEXT = "F_FORMAT_TEXT"
 
     def __str__(self) -> str:
         return self.value

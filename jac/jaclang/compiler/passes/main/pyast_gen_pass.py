@@ -2297,8 +2297,8 @@ class PyastGenPass(UniPass):
             self.sync(
                 ast3.FormattedValue(
                     value=cast(ast3.expr, node.format_part.gen.py_ast[0]),
-                    conversion=-1,
-                    format_spec=None,
+                    conversion=node.conversion,
+                    format_spec=cast(ast3.expr, node.format_spec.gen.py_ast[0]) if node.format_spec else None,
                 )
             )
         ]

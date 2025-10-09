@@ -362,9 +362,11 @@ multistring: (fstring | STRING)+
 fstring: F_DQ_START fstr_dq_part* F_DQ_END
        | F_SQ_START fstr_sq_part* F_SQ_END
 
-fstr_dq_part: F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE fexpression RBRACE 
-fstr_sq_part: F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE fexpression RBRACE
-fexpression: expression 
+fstr_dq_part: F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
+fstr_sq_part: F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
+fformat: F_FORMAT_TEXT | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
 F_DQ_START.9: /[fF]"/
 F_SQ_START.9: /[fF]'/
@@ -377,6 +379,9 @@ D_LBRACE: "{{"
 
 F_TEXT_DQ: /[^"{}\n\\]+|\\./
 F_TEXT_SQ: /[^'{}\n\\]+|\\./
+F_FORMAT_TEXT: /[^{}]+/
+
+CONV: /![rRsSaA]/
 
 // [Heading]: Collection values.
 atom_collection: dict_compr

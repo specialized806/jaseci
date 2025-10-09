@@ -3212,10 +3212,8 @@ class MultiString(AtomExpr):
 class FString(AtomExpr):
     """FString node type for Jac Ast."""
 
-    def __init__(self, start:Token, parts: Sequence[String | FormattedValue], end:Token, kid: Sequence[UniNode]) -> None:
-        self.start = start
+    def __init__(self, parts: Sequence[String | FormattedValue], kid: Sequence[UniNode]) -> None:
         self.parts: list[String | FormattedValue] = list(parts)
-        self.end = end
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
@@ -3223,8 +3221,10 @@ class FString(AtomExpr):
 class FormattedValue(Expr):
     """FormattedValue node type for Jac Ast."""
 
-    def __init__(self, format_part: Expr, kid: Sequence[UniNode]) -> None:
+    def __init__(self, format_part: Expr, conversion: int, format_spec: Expr | None, kid: Sequence[UniNode]) -> None:
         self.format_part: Expr = format_part
+        self.conversion: int = conversion
+        self.format_spec: Expr | None = format_spec
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
