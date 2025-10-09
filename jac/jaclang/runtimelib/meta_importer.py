@@ -59,8 +59,6 @@ class ByllmFallbackLoader(importlib.abc.Loader):
 class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     """Meta path importer to load .jac modules via Python's import system."""
 
-    _byllm_warning_shown = False  # Class variable to track if warning was shown
-
     def find_spec(
         self,
         fullname: str,
@@ -68,7 +66,7 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         target: Optional[ModuleType] = None,
     ) -> Optional[importlib.machinery.ModuleSpec]:
         """Find the spec for the module."""
-        # Handle byllm lazy loading fallback
+        # Handle case where no byllm plugin is installed
         if fullname == "byllm" or fullname.startswith("byllm."):
             # Check if byllm is actually installed by looking for it in sys.path
             # We use importlib.util.find_spec with a custom path to avoid recursion
@@ -89,10 +87,7 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
             if not byllm_found:
                 # If byllm is not installed, return a spec for our fallback loader
-                # Print warning only once
-                if not JacMetaImporter._byllm_warning_shown:
-                    print("Please install byllm, but for now using NonGPT")
-                    JacMetaImporter._byllm_warning_shown = True
+                print(f"Please install a byllm plugin, but for now patching {fullname} with NonGPT")
                 return importlib.machinery.ModuleSpec(
                     fullname,
                     ByllmFallbackLoader(),

@@ -86,6 +86,7 @@ def _random_primitive(tp):
 
 def random_value_for_type(tp: Any, *, _depth: int = 0, _max_depth: int = 10) -> Any:
     """Generate a random value that (best-effort) conforms to the type 'tp'."""
+    random.seed(42)  # for reproducibility in tests
     if _depth > _max_depth:
         # Depth cap to avoid infinite recursion on self-referential types
         origin = get_origin(tp)

@@ -1333,8 +1333,6 @@ class JacByLLM:
     def call_llm(model: object, mtir: MTIR) -> Any:  # noqa: ANN401
         """Call the LLM model."""
         from jaclang.utils.NonGPT import random_value_for_type
-
-        # Get the return type from the caller function
         try:
             type_hints = get_type_hints(
                 mtir.caller,
@@ -1344,7 +1342,6 @@ class JacByLLM:
             )
         except Exception:
             type_hints = getattr(mtir.caller, "__annotations__", {})
-
         return_type = type_hints.get("return", Any)
 
         # Generate and return a random value matching the return type
