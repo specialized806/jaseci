@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jac-cloud"
-version = "0.2.8"
+version = "0.2.9"
 description = ""
 authors = ["Jason Mars <jason@jaseci.org>"]
 readme = "README.md"
