@@ -702,7 +702,6 @@ def serve(
             Jac.jac_import(
                 target=mod,
                 base_path=base,
-                override_name="__main__" if main else None,
                 lng=lng,
             )
         except Exception as e:
@@ -716,7 +715,6 @@ def serve(
                 Jac.jac_import(
                     target=mod,
                     base_path=base,
-                    override_name="__main__" if main else None,
                     lng=lng,
                 )
         except Exception as e:

@@ -2,6 +2,7 @@
 
 import json
 import os
+import socket
 import threading
 import time
 from urllib.error import HTTPError
@@ -13,11 +14,17 @@ from jaclang.runtimelib.server import JacAPIServer, UserManager
 from jaclang.utils.test import TestCase
 
 
+def get_free_port() -> int:
+    """Get a free port by binding to port 0 and releasing it."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
+
+
 class TestServeCommand(TestCase):
     """Test jac serve REST API functionality."""
-
-    # Class variable to track next available port
-    _next_port = 9876
 
     def setUp(self) -> None:
         """Set up test."""
@@ -25,9 +32,8 @@ class TestServeCommand(TestCase):
         self.server = None
         self.server_thread = None
         self.httpd = None
-        # Use unique port for each test
-        self.port = TestServeCommand._next_port
-        TestServeCommand._next_port += 1
+        # Use dynamically allocated free port for each test
+        self.port = get_free_port()
         self.base_url = f"http://localhost:{self.port}"
         # Use unique session file for each test
         test_name = self._testMethodName
