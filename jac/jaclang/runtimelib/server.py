@@ -18,7 +18,9 @@ class UserManager:
     def __init__(self, session_path: str) -> None:
         """Initialize user manager."""
         self.session_path = session_path
-        self.users: dict[str, dict[str, Any]] = {}  # username -> {password_hash, token, root_id}
+        self.users: dict[str, dict[str, Any]] = (
+            {}
+        )  # username -> {password_hash, token, root_id}
         self.tokens: dict[str, str] = {}  # token -> username
 
     def create_user(self, username: str, password: str) -> dict[str, Any]:
@@ -153,7 +155,11 @@ class JacAPIServer:
                 param_info = {
                     "type": str(param_type),
                     "required": param.default == inspect.Parameter.empty,
-                    "default": None if param.default == inspect.Parameter.empty else str(param.default),
+                    "default": (
+                        None
+                        if param.default == inspect.Parameter.empty
+                        else str(param.default)
+                    ),
                 }
                 params[param_name] = param_info
 
@@ -180,12 +186,16 @@ class JacAPIServer:
                 field_info = {
                     "type": str(param_type),
                     "required": param.default == inspect.Parameter.empty,
-                    "default": None if param.default == inspect.Parameter.empty else str(param.default),
+                    "default": (
+                        None
+                        if param.default == inspect.Parameter.empty
+                        else str(param.default)
+                    ),
                 }
                 fields[param_name] = field_info
 
-        # Also add target_node field for walker spawning
-        fields["target_node"] = {
+        # Also add _jac_spawn_node field for walker spawning
+        fields["_jac_spawn_node"] = {
             "type": "str (node ID, optional)",
             "required": False,
             "default": "root",
@@ -229,8 +239,8 @@ class JacAPIServer:
         if not root_id:
             return {"error": "User not found"}
 
-        # Extract target_node if specified
-        target_node_id = fields.pop("target_node", None)
+        # Extract _jac_spawn_node if specified
+        target_node_id = fields.pop("_jac_spawn_node", None)
 
         # Create execution context for this user
         ctx = ExecutionContext(session=self.session_path, root=root_id)
@@ -259,6 +269,7 @@ class JacAPIServer:
             }
         except Exception as e:
             import traceback
+
             return {"error": str(e), "traceback": traceback.format_exc()}
         finally:
             ctx.close()
@@ -276,7 +287,9 @@ class JacAPIServer:
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                self.send_header(
+                    "Access-Control-Allow-Headers", "Content-Type, Authorization"
+                )
                 self.end_headers()
                 self.wfile.write(json.dumps(data).encode())
 
@@ -299,7 +312,9 @@ class JacAPIServer:
                 self.send_response(200)
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                self.send_header(
+                    "Access-Control-Allow-Headers", "Content-Type, Authorization"
+                )
                 self.end_headers()
 
             def do_GET(self) -> None:
@@ -402,7 +417,11 @@ class JacAPIServer:
 
                 # Read request body
                 content_length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(content_length).decode() if content_length > 0 else "{}"
+                body = (
+                    self.rfile.read(content_length).decode()
+                    if content_length > 0
+                    else "{}"
+                )
 
                 try:
                     data = json.loads(body)

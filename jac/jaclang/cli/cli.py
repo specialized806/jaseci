@@ -729,9 +729,7 @@ def serve(
 
     # Create and start the API server
     # Use session path for persistent storage across user sessions
-    session_path = (
-        session if session else os.path.join(base, f"{mod}.session")
-    )
+    session_path = session if session else os.path.join(base, f"{mod}.session")
 
     server = JacAPIServer(
         module_name="__main__" if main else mod,

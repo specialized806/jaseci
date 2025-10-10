@@ -382,7 +382,7 @@ class TestServeCommand(TestCase):
         self.assertIn("fields", info)
         self.assertIn("title", info["fields"])
         self.assertIn("priority", info["fields"])
-        self.assertIn("target_node", info["fields"])
+        self.assertIn("_jac_spawn_node", info["fields"])
 
         # Check that priority has a default
         self.assertFalse(info["fields"]["priority"]["required"])
