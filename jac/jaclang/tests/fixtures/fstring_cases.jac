@@ -17,9 +17,9 @@ with entry {
     print(f"Default: {name}");
     print(f"ASCII: {name!a}");
     value = "Hello\nWorld";
-    print(f"repr: {value!r}");   # same as repr(value)
-    print(f"str: {value!s}");    # same as str(value)
-    print(f"ascii: {value!a}");  # same as ascii(value)
+    print(f"repr: {value!r}");
+    print(f"str: {value!s}");
+    print(f"ascii: {value!a}");
     print(f"name is {name} {f'inner: {name}'}");
 
 }
