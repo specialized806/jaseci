@@ -1333,12 +1333,13 @@ class JacByLLM:
     def call_llm(model: object, mtir: MTIR) -> Any:  # noqa: ANN401
         """Call the LLM model."""
         from jaclang.utils.NonGPT import random_value_for_type
+
         try:
             type_hints = get_type_hints(
                 mtir.caller,
                 globalns=getattr(mtir.caller, "__globals__", {}),
                 localns=None,
-                include_extras=True
+                include_extras=True,
             )
         except Exception:
             type_hints = getattr(mtir.caller, "__annotations__", {})

@@ -71,12 +71,13 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
             # Check if byllm is actually installed by looking for it in sys.path
             # We use importlib.util.find_spec with a custom path to avoid recursion
             import sys
+
             byllm_found = False
             for finder in sys.meta_path:
                 # Skip ourselves to avoid infinite recursion
                 if isinstance(finder, JacMetaImporter):
                     continue
-                if hasattr(finder, 'find_spec'):
+                if hasattr(finder, "find_spec"):
                     try:
                         spec = finder.find_spec(fullname, path, target)
                         if spec is not None:
@@ -87,7 +88,9 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
             if not byllm_found:
                 # If byllm is not installed, return a spec for our fallback loader
-                print(f"Please install a byllm plugin, but for now patching {fullname} with NonGPT")
+                print(
+                    f"Please install a byllm plugin, but for now patching {fullname} with NonGPT"
+                )
                 return importlib.machinery.ModuleSpec(
                     fullname,
                     ByllmFallbackLoader(),
