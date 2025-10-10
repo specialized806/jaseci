@@ -3222,7 +3222,11 @@ class FString(AtomExpr):
     """FString node type for Jac Ast."""
 
     def __init__(
-        self, start: Optional[Token], parts: Sequence[String | FormattedValue], end: Optional[Token], kid: Sequence[UniNode]
+        self,
+        start: Optional[Token],
+        parts: Sequence[String | FormattedValue],
+        end: Optional[Token],
+        kid: Sequence[UniNode],
     ) -> None:
         self.start = start
         self.parts: list[String | FormattedValue] = list(parts)
@@ -3236,7 +3240,9 @@ class FString(AtomExpr):
         if deep:
             for part in self.parts:
                 res = res and part.normalize(deep)
-        new_kid: list[UniNode] = [self.gen_token(self.start)] if self.start is not None else []
+        new_kid: list[UniNode] = (
+            [self.gen_token(self.start)] if self.start is not None else []
+        )
         for part in self.parts:
             new_kid.append(part)
         if self.end is not None:
@@ -3260,7 +3266,7 @@ class FormattedValue(Expr):
         self.format_spec: Expr | None = format_spec
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
-    
+
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
