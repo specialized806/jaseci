@@ -1,5 +1,7 @@
 """Jac meta path importer."""
 
+from __future__ import annotations
+
 import importlib.abc
 import importlib.machinery
 import importlib.util
@@ -16,15 +18,15 @@ from jaclang.utils.module_resolver import get_jac_search_paths, get_py_search_pa
 class _ByllmFallbackClass:
     """A fallback class that can be instantiated and returns None for any attribute."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Accept any arguments and store them."""
         pass
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> None:
         """Return None for any attribute access."""
         return None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: object, **kwargs: object) -> _ByllmFallbackClass:
         """Return self when called to allow chaining."""
         # Return a new instance when called as a constructor
         return _ByllmFallbackClass()
@@ -42,12 +44,12 @@ class ByllmFallbackLoader(importlib.abc.Loader):
     def exec_module(self, module: ModuleType) -> None:
         """Populate the module with fallback classes."""
         # Set common attributes
-        module.__all__ = []
+        module.__dict__["__all__"] = []
         module.__file__ = None
         module.__path__ = []
 
         # Use a custom __getattr__ to return fallback classes for any attribute access
-        def _getattr(name: str):
+        def _getattr(name: str) -> type[_ByllmFallbackClass]:
             if not name.startswith("_"):
                 # Return a fallback class that can be instantiated
                 return _ByllmFallbackClass
@@ -83,7 +85,7 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                         if spec is not None:
                             byllm_found = True
                             break
-                    except (ImportError, ModuleNotFoundError, AttributeError):
+                    except (ImportError, AttributeError):
                         continue
 
             if not byllm_found:
