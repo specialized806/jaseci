@@ -208,7 +208,7 @@ class JacAPIServer:
         func: Callable,
         args: dict[str, Any],
         username: str,
-    ) -> Any:
+    ) -> dict[str, object]:
         """Call a function with the given arguments."""
         root_id = self.user_manager.get_user_root(username)
         if not root_id:
@@ -233,7 +233,7 @@ class JacAPIServer:
         walker_cls: type[WalkerArchetype],
         fields: dict[str, Any],
         username: str,
-    ) -> Any:
+    ) -> dict[str, object]:
         """Spawn a walker on a node."""
         root_id = self.user_manager.get_user_root(username)
         if not root_id:
@@ -307,7 +307,7 @@ class JacAPIServer:
                     return None
                 return server.user_manager.validate_token(token)
 
-            def do_OPTIONS(self) -> None:
+            def do_OPTIONS(self) -> None:  # noqa: N802
                 """Handle OPTIONS requests (CORS preflight)."""
                 self.send_response(200)
                 self.send_header("Access-Control-Allow-Origin", "*")
@@ -317,7 +317,7 @@ class JacAPIServer:
                 )
                 self.end_headers()
 
-            def do_GET(self) -> None:
+            def do_GET(self) -> None:  # noqa: N802
                 """Handle GET requests."""
                 parsed_path = urlparse(self.path)
                 path = parsed_path.path
@@ -410,7 +410,7 @@ class JacAPIServer:
 
                 self._send_json_response(404, {"error": "Not found"})
 
-            def do_POST(self) -> None:
+            def do_POST(self) -> None:  # noqa: N802
                 """Handle POST requests."""
                 parsed_path = urlparse(self.path)
                 path = parsed_path.path
@@ -502,7 +502,7 @@ class JacAPIServer:
 
                 self._send_json_response(404, {"error": "Not found"})
 
-            def log_message(self, format: str, *args: Any) -> None:
+            def log_message(self, format: str, *args: object) -> None:
                 """Log HTTP requests."""
                 print(f"{self.address_string()} - {format % args}")
 
