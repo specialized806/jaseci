@@ -891,6 +891,13 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
+    
+    def exit_formatted_value(self, node: uni.FormattedValue) -> None:
+        """Generate DocIR for formatted value expressions."""
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_if_else_expr(self, node: uni.IfElseExpr) -> None:
         """Generate DocIR for conditional expressions."""

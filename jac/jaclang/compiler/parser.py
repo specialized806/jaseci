@@ -2216,26 +2216,32 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     | F_SQ_START fstr_sq_part* F_SQ_END
             """
             parts = []
-            if self.match_token(Tok.F_DQ_START) or self.match_token(Tok.RF_DQ_START):
-                while (part := self.match(uni.String) or self.match(uni.FormattedValue)):
+            tok_start = None
+            tok_end = None
+            if (tok_start := (self.match_token(Tok.F_DQ_START) or self.match_token(Tok.RF_DQ_START))):
+                while (part := (self.match(uni.String) or self.match(uni.FormattedValue))):
                     parts.append(part)
-                self.consume_token(Tok.F_DQ_END)
-            elif self.match_token(Tok.F_SQ_START) or self.match_token(Tok.RF_SQ_START):
-                while (part := self.match(uni.String) or self.match(uni.FormattedValue)):
+                tok_end = self.consume_token(Tok.F_DQ_END)
+            elif (tok_start := (self.match_token(Tok.F_SQ_START) or self.match_token(Tok.RF_SQ_START))):
+                while (part := (self.match(uni.String) or self.match(uni.FormattedValue))):
                     parts.append(part)
-                self.consume_token(Tok.F_SQ_END)
-            elif self.match_token(Tok.F_TDQ_START) or self.match_token(Tok.RF_TDQ_START):
-                while (part := self.match(uni.String) or self.match(uni.FormattedValue)):
+                tok_end = self.consume_token(Tok.F_SQ_END)
+            elif (tok_start := (self.match_token(Tok.F_TDQ_START) or self.match_token(Tok.RF_TDQ_START))):
+                while (part := (self.match(uni.String) or self.match(uni.FormattedValue))):
                     parts.append(part)
-                self.consume_token(Tok.F_TDQ_END)
-            elif self.match_token(Tok.F_TSQ_START) or self.match_token(Tok.RF_TSQ_START):
-                while (part := self.match(uni.String) or self.match(uni.FormattedValue)):
+                tok_end = self.consume_token(Tok.F_TDQ_END)
+            elif (tok_start := (self.match_token(Tok.F_TSQ_START) or self.match_token(Tok.RF_TSQ_START))):
+                while (part := (self.match(uni.String) or self.match(uni.FormattedValue))):
                     parts.append(part)
-                self.consume_token(Tok.F_TSQ_END)
-            else:
-                print("FSTRING PARSING ERROR")
+                tok_end = self.consume_token(Tok.F_TSQ_END)
+            
+            if tok_start is None or tok_end is None:
+                raise self.ice()
+                
             return uni.FString(
+                start=tok_start,
                 parts=parts,
+                end=tok_end,
                 kid=self.flat_cur_nodes,
             )
 
@@ -2267,7 +2273,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2306,7 +2314,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2345,7 +2355,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2384,7 +2396,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2423,7 +2437,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2462,7 +2478,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2501,7 +2519,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2540,7 +2560,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2579,7 +2601,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         format_spec = parts[0]
                     elif parts:
                         format_spec = uni.FString(
+                            start=None,
                             parts=parts,
+                            end=None,
                             kid=parts,
                         )
                 self.consume_token(Tok.RBRACE)
@@ -2589,44 +2613,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     format_spec=format_spec,
                     kid=self.cur_nodes,
                 )
-
-        def fstr_triple_parts(self, _: None) -> list[uni.UniNode]:
-            """Grammar rule.
-
-            fstr_triple_parts: (FSTR_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-            """
-            valid_parts: list[uni.UniNode] = [
-                (
-                    i
-                    if isinstance(i, uni.String)
-                    else (
-                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-                        if isinstance(i, uni.Expr)
-                        else i
-                    )
-                )
-                for i in self.cur_nodes
-            ]
-            return valid_parts
-
-        def fstr_sq_triple_parts(self, _: None) -> list[uni.UniNode]:
-            """Grammar rule.
-
-            fstr_sq_triple_parts: (FSTR_SQ_TRIPLE_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
-            """
-            valid_parts: list[uni.UniNode] = [
-                (
-                    i
-                    if isinstance(i, uni.String)
-                    else (
-                        uni.ExprStmt(expr=i, in_fstring=True, kid=[i])
-                        if isinstance(i, uni.Expr)
-                        else i
-                    )
-                )
-                for i in self.cur_nodes
-            ]
-            return valid_parts
 
         def list_val(self, _: None) -> uni.ListVal:
             """Grammar rule.

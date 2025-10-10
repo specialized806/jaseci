@@ -3222,12 +3222,27 @@ class FString(AtomExpr):
     """FString node type for Jac Ast."""
 
     def __init__(
-        self, parts: Sequence[String | FormattedValue], kid: Sequence[UniNode]
+        self, start: Optional[Token], parts: Sequence[String | FormattedValue], end: Optional[Token], kid: Sequence[UniNode]
     ) -> None:
+        self.start = start
         self.parts: list[String | FormattedValue] = list(parts)
+        self.end = end
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            for part in self.parts:
+                res = res and part.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(self.start)] if self.start is not None else []
+        for part in self.parts:
+            new_kid.append(part)
+        if self.end is not None:
+            new_kid.append(self.gen_token(self.end))
+        self.set_kids(nodes=new_kid)
+        return res
 
 
 class FormattedValue(Expr):
@@ -3245,6 +3260,22 @@ class FormattedValue(Expr):
         self.format_spec: Expr | None = format_spec
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
+    
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.format_part.normalize(deep)
+            res = res and self.format_spec.normalize(deep) if self.format_spec else res
+        new_kid: list[UniNode] = [self.gen_token(Tok.LBRACE)]
+        new_kid.append(self.format_part)
+        if self.conversion != -1:
+            new_kid.append(self.gen_token(Tok.CONV, value="!" + chr(self.conversion)))
+        if self.format_spec:
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(self.format_spec)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        self.set_kids(nodes=new_kid)
+        return res
 
 
 class ListVal(AtomExpr):

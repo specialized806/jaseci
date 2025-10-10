@@ -1374,7 +1374,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             value for value in values if isinstance(value, (uni.String, uni.ExprStmt))
         ]
         fstr = uni.FString(
+            start=None,
             parts=valid,
+            end=None,
             kid=[*valid] if valid else [uni.EmptyToken()],
         )
         return uni.MultiString(strings=[fstr], kid=[fstr])
