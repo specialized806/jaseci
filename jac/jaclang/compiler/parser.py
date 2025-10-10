@@ -2211,6 +2211,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def fstring(self, _: None) -> uni.FString:
             """Grammar rule.
+
             fstring: F_DQ_START fstr_dq_part* F_DQ_END
                     | F_SQ_START fstr_sq_part* F_SQ_END
             """
@@ -2231,24 +2232,27 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
         def fstr_dq_part(self, _: None) -> uni.Token | uni.FormattedValue:
             """Grammar rule.
+
             fstr_dq_part: F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
             """
             format_spec = None
             conversion = -1
-            if (tok := self.match_token(Tok.F_TEXT_DQ)):
-                return tok
-            elif (tok := self.match_token(Tok.D_LBRACE)):
-                return tok
-            elif (tok := self.match_token(Tok.D_RBRACE)):
+            if (
+                tok := self.match_token(Tok.F_TEXT_DQ)
+                or self.match_token(Tok.D_LBRACE)
+                or self.match_token(Tok.D_RBRACE)
+            ):
                 return tok
             else:
                 self.consume_token(Tok.LBRACE)
                 expr = self.consume(uni.Expr)
-                if (conv_tok := self.match_token(Tok.CONV)):
+                if conv_tok := self.match_token(Tok.CONV):
                     conversion = ord(conv_tok.value[1:])
                 if self.match_token(Tok.COLON):
                     parts = []
-                    while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    while part := self.match(uni.String) or self.match(
+                        uni.FormattedValue
+                    ):
                         parts.append(part)
                     if len(parts) == 1 and isinstance(parts[0], uni.String):
                         format_spec = parts[0]
@@ -2264,27 +2268,30 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     format_spec=format_spec,
                     kid=self.cur_nodes,
                 )
-        
+
         def fstr_sq_part(self, _: None) -> uni.Token | uni.FormattedValue:
             """Grammar rule.
+
             fstr_sq_part: F_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
             """
             format_spec = None
             conversion = -1
-            if (tok := self.match_token(Tok.F_TEXT_SQ)):
-                return tok
-            elif (tok := self.match_token(Tok.D_LBRACE)):
-                return tok
-            elif (tok := self.match_token(Tok.D_RBRACE)):
+            if (
+                tok := self.match_token(Tok.F_TEXT_SQ)
+                or self.match_token(Tok.D_LBRACE)
+                or self.match_token(Tok.D_RBRACE)
+            ):
                 return tok
             else:
                 self.consume_token(Tok.LBRACE)
                 expr = self.consume(uni.Expr)
-                if (conv_tok := self.match_token(Tok.CONV)):
+                if conv_tok := self.match_token(Tok.CONV):
                     conversion = ord(conv_tok.value[1:])
                 if self.match_token(Tok.COLON):
                     parts = []
-                    while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    while part := self.match(uni.String) or self.match(
+                        uni.FormattedValue
+                    ):
                         parts.append(part)
                     if len(parts) == 1 and isinstance(parts[0], uni.String):
                         format_spec = parts[0]
@@ -2300,27 +2307,30 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     format_spec=format_spec,
                     kid=self.cur_nodes,
                 )
-        
+
         def fformat(self, _: None) -> uni.Token | uni.FormattedValue:
             """Grammar rule.
+
             fformat: F_FORMAT_TEXT | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
             """
             format_spec = None
             conversion = -1
-            if (tok := self.match_token(Tok.F_FORMAT_TEXT)):
-                return tok
-            elif (tok := self.match_token(Tok.D_LBRACE)):
-                return tok
-            elif (tok := self.match_token(Tok.D_RBRACE)):
+            if (
+                tok := self.match_token(Tok.F_FORMAT_TEXT)
+                or self.match_token(Tok.D_LBRACE)
+                or self.match_token(Tok.D_RBRACE)
+            ):
                 return tok
             else:
                 self.consume_token(Tok.LBRACE)
                 expr = self.consume(uni.Expr)
-                if (conv_tok := self.match_token(Tok.CONV)):
+                if conv_tok := self.match_token(Tok.CONV):
                     conversion = ord(conv_tok.value[1:])
                 if self.match_token(Tok.COLON):
                     parts = []
-                    while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    while part := self.match(uni.String) or self.match(
+                        uni.FormattedValue
+                    ):
                         parts.append(part)
                     if len(parts) == 1 and isinstance(parts[0], uni.String):
                         format_spec = parts[0]

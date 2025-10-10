@@ -3217,24 +3217,35 @@ class MultiString(AtomExpr):
         self.set_kids(nodes=new_kid)
         return res
 
+
 class FString(AtomExpr):
     """FString node type for Jac Ast."""
 
-    def __init__(self, parts: Sequence[String | FormattedValue], kid: Sequence[UniNode]) -> None:
+    def __init__(
+        self, parts: Sequence[String | FormattedValue], kid: Sequence[UniNode]
+    ) -> None:
         self.parts: list[String | FormattedValue] = list(parts)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
 
+
 class FormattedValue(Expr):
     """FormattedValue node type for Jac Ast."""
 
-    def __init__(self, format_part: Expr, conversion: int, format_spec: Expr | None, kid: Sequence[UniNode]) -> None:
+    def __init__(
+        self,
+        format_part: Expr,
+        conversion: int,
+        format_spec: Expr | None,
+        kid: Sequence[UniNode],
+    ) -> None:
         self.format_part: Expr = format_part
         self.conversion: int = conversion
         self.format_spec: Expr | None = format_spec
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
+
 
 class ListVal(AtomExpr):
     """ListVal node type for Jac Ast."""
