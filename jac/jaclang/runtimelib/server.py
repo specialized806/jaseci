@@ -457,9 +457,9 @@ class JacAPIServer:
                         )
                         return
 
-                    result = server.user_manager.authenticate(username, password)
-                    if result:
-                        self._send_json_response(200, result)
+                    login_result = server.user_manager.authenticate(username, password)
+                    if login_result:
+                        self._send_json_response(200, login_result)
                     else:
                         self._send_json_response(401, {"error": "Invalid credentials"})
                     return
