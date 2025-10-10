@@ -62,6 +62,6 @@ class SemanticAnalysisPass(UniPass):
 
     def _change_atom_trailer_ctx(self, node: uni.AtomTrailer) -> None:
         """Mark final element in trailer chain as a Store context."""
-        last = node.as_attr_list[-1].name_spec
-        if isinstance(last, uni.AstSymbolNode):
-            last.py_ctx_func = ast3.Store
+        last = node.right
+        if isinstance(last, uni.Name):
+            last.name_spec.py_ctx_func = ast3.Store
