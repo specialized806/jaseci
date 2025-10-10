@@ -662,6 +662,95 @@ def jac2py(filename: str) -> None:
 
 
 @cmd_registry.register
+def serve(
+    filename: str,
+    session: str = "",
+    port: int = 8000,
+    main: bool = True,
+) -> None:
+    """Start a REST API server for the specified .jac file.
+
+    Executes the target module and turns all functions into authenticated REST API
+    endpoints. Function signatures are introspected to create the API interface.
+    Walkers are converted to REST APIs where their fields become the interface,
+    with an additional target_node field for spawning location.
+
+    Each user gets their own persistent root node that persists across runs.
+    Users must create an account and authenticate to access the API.
+
+    Args:
+        filename: Path to the .jac file to serve
+        session: Session identifier for persistent state (default: auto-generated)
+        port: Port to run the server on (default: 8000)
+        main: Treat the module as __main__ (default: True)
+
+    Examples:
+        jac serve myprogram.jac
+        jac serve myprogram.jac --port 8080
+        jac serve myprogram.jac --session myapp.session
+    """
+    from jaclang.runtimelib.server import JacAPIServer
+
+    # Process file and session
+    base, mod, mach = proc_file_sess(filename, session)
+    lng = filename.split(".")[-1]
+    Jac.set_base_path(base)
+
+    # Import the module
+    if filename.endswith((".jac", ".py")):
+        try:
+            Jac.jac_import(
+                target=mod,
+                base_path=base,
+                override_name="__main__" if main else None,
+                lng=lng,
+            )
+        except Exception as e:
+            print(f"Error loading {filename}: {e}", file=sys.stderr)
+            mach.close()
+            exit(1)
+    elif filename.endswith(".jir"):
+        try:
+            with open(filename, "rb") as f:
+                Jac.attach_program(pickle.load(f))
+                Jac.jac_import(
+                    target=mod,
+                    base_path=base,
+                    override_name="__main__" if main else None,
+                    lng=lng,
+                )
+        except Exception as e:
+            print(f"Error loading {filename}: {e}", file=sys.stderr)
+            mach.close()
+            exit(1)
+
+    # Don't close the context - keep the module loaded for the server
+    # mach.close()
+
+    # Create and start the API server
+    # Use session path for persistent storage across user sessions
+    session_path = (
+        session if session else os.path.join(base, f"{mod}.session")
+    )
+
+    server = JacAPIServer(
+        module_name="__main__" if main else mod,
+        session_path=session_path,
+        port=port,
+    )
+
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+        mach.close()  # Close on shutdown
+    except Exception as e:
+        print(f"Server error: {e}", file=sys.stderr)
+        mach.close()
+        exit(1)
+
+
+@cmd_registry.register
 def jac2lib(filename: str) -> None:
     """Convert a Jac file to Python library code.
 
