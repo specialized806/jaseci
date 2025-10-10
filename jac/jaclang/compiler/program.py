@@ -5,13 +5,12 @@ from __future__ import annotations
 import ast as py_ast
 import marshal
 import types
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     Alert,
-    BinderPass,
     CFGBuildPass,
     DeclImplMatchPass,
     DefUsePass,
@@ -32,10 +31,12 @@ from jaclang.compiler.passes.tool import (
     FuseCommentsPass,
     JacFormatPass,
 )
-from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
 from jaclang.runtimelib.utils import read_file_with_encoding
 from jaclang.settings import settings
 from jaclang.utils.log import logging
+
+if TYPE_CHECKING:
+    from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,8 @@ class JacProgram:
 
     def get_type_evaluator(self) -> TypeEvaluator:
         """Return the type evaluator."""
+        from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
+
         if not self.type_evaluator:
             self.type_evaluator = TypeEvaluator(program=self)
         return self.type_evaluator
@@ -129,16 +132,9 @@ class JacProgram:
             self.run_schedule(mod=mod_targ, passes=type_check_sched)
         # If the module has syntax errors, we skip code generation.
         if (not mod_targ.has_syntax_errors) and (not no_cgen):
-            if settings.predynamo_pass:
+            if settings.predynamo_pass and PreDynamoPass not in py_code_gen:
                 py_code_gen.insert(0, PreDynamoPass)
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
-        return mod_targ
-
-    def bind(self, file_path: str, use_str: str | None = None) -> uni.Module:
-        """Bind the Jac module."""
-        keep_str = use_str or read_file_with_encoding(file_path)
-        mod_targ = self.parse_str(keep_str, file_path)
-        BinderPass(ir_in=mod_targ, prog=self)
         return mod_targ
 
     def build(

@@ -27,6 +27,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_type_hints,
 )
 from uuid import UUID
 
@@ -34,10 +35,10 @@ from uuid import UUID
 from jaclang.compiler.constant import Constants as Con, EdgeDir, colors
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.archetype import (
-    DataSpatialDestination,
-    DataSpatialFunction,
-    DataSpatialPath,
     GenericEdge as _GenericEdge,
+    ObjectSpatialDestination,
+    ObjectSpatialFunction,
+    ObjectSpatialPath,
     Root as _Root,
 )
 from jaclang.runtimelib.constructs import (
@@ -55,6 +56,7 @@ from jaclang.runtimelib.constructs import (
     WalkerArchetype,
 )
 from jaclang.runtimelib.memory import Memory, Shelf, ShelfStorage
+from jaclang.runtimelib.mtp import MTIR
 from jaclang.runtimelib.utils import (
     all_issubclass,
     traverse_graph,
@@ -85,32 +87,27 @@ class ExecutionContext:
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
         self.custom: Any = MISSING
-        if not isinstance(
-            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
-        ):
-            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
-            system_root.id = UUID(Con.SUPER_ROOT_UUID)
-            self.mem.set(system_root.id, system_root)
+        self.system_root = self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID))
+        if not isinstance(self.system_root, NodeAnchor):
+            self.system_root = cast(NodeAnchor, Root().__jac__)
+            self.system_root.id = UUID(Con.SUPER_ROOT_UUID)
+            self.mem.set(self.system_root.id, self.system_root)
+        self.entry_node = self.root_state = (
+            self._get_anchor(root) if root else self.system_root
+        )
 
-        self.system_root = system_root
-
-        self.entry_node = self.root_state = self.init_anchor(root, self.system_root)
-
-    def init_anchor(
-        self,
-        anchor_id: str | None,
-        default: NodeAnchor,
-    ) -> NodeAnchor:
-        """Load initial anchors."""
-        if anchor_id:
-            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
-                return anchor
+    def _get_anchor(self, anchor_id: str) -> NodeAnchor:
+        """Get anchor by ID or raise error."""
+        anchor = self.mem.find_by_id(UUID(anchor_id))
+        if not isinstance(anchor, NodeAnchor):
             raise ValueError(f"Invalid anchor id {anchor_id} !")
-        return default
+        return anchor
 
     def set_entry_node(self, entry_node: str | None) -> None:
-        """Override entry."""
-        self.entry_node = self.init_anchor(entry_node, self.root_state)
+        """Override entry node."""
+        self.entry_node = (
+            self._get_anchor(entry_node) if entry_node else self.root_state
+        )
 
     def close(self) -> None:
         """Close current ExecutionContext."""
@@ -267,7 +264,7 @@ class JacNode:
 
     @staticmethod
     def get_edges(
-        origin: list[NodeArchetype], destination: DataSpatialDestination
+        origin: list[NodeArchetype], destination: ObjectSpatialDestination
     ) -> list[EdgeArchetype]:
         """Get edges connected to this node."""
         edges: OrderedDict[EdgeAnchor, EdgeArchetype] = OrderedDict()
@@ -300,7 +297,7 @@ class JacNode:
     @staticmethod
     def get_edges_with_node(
         origin: list[NodeArchetype],
-        destination: DataSpatialDestination,
+        destination: ObjectSpatialDestination,
         from_visit: bool = False,
     ) -> list[EdgeArchetype | NodeArchetype]:
         """Get edges connected to this node and the node."""
@@ -337,7 +334,7 @@ class JacNode:
 
     @staticmethod
     def edges_to_nodes(
-        origin: list[NodeArchetype], destination: DataSpatialDestination
+        origin: list[NodeArchetype], destination: ObjectSpatialDestination
     ) -> list[NodeArchetype]:
         """Get set of nodes connected to this node."""
         nodes: OrderedDict[NodeAnchor, NodeArchetype] = OrderedDict()
@@ -421,36 +418,6 @@ class JacWalker:
                 insert_loc += len(wanch.next) + 1
             wanch.next = wanch.next[:insert_loc] + next + wanch.next[insert_loc:]
             return len(wanch.next) > before_len
-        else:
-            raise TypeError("Invalid walker object")
-
-    @staticmethod
-    def ignore(
-        walker: WalkerArchetype,
-        expr: (
-            list[NodeArchetype | EdgeArchetype]
-            | list[NodeArchetype]
-            | list[EdgeArchetype]
-            | NodeArchetype
-            | EdgeArchetype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's ignore stmt feature."""
-        if isinstance(walker, WalkerArchetype):
-            wanch = walker.__jac__
-            before_len = len(wanch.ignores)
-            for anchor in (
-                (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
-            ):
-                if anchor not in wanch.ignores:
-                    if isinstance(anchor, NodeAnchor):
-                        wanch.ignores.append(anchor)
-                    elif isinstance(anchor, EdgeAnchor):
-                        if target := anchor.target:
-                            wanch.ignores.append(target)
-                        else:
-                            raise ValueError("Edge has no target.")
-            return len(wanch.ignores) > before_len
         else:
             raise TypeError("Invalid walker object")
 
@@ -718,7 +685,7 @@ class JacClassReferences:
 
     TYPE_CHECKING: bool = TYPE_CHECKING
     EdgeDir: TypeAlias = EdgeDir
-    DSFunc: TypeAlias = DataSpatialFunction
+    DSFunc: TypeAlias = ObjectSpatialFunction
 
     Obj: TypeAlias = Archetype
     Node: TypeAlias = NodeArchetype
@@ -728,7 +695,7 @@ class JacClassReferences:
     Root: TypeAlias = _Root
     GenericEdge: TypeAlias = _GenericEdge
 
-    Path: TypeAlias = DataSpatialPath
+    Path: TypeAlias = ObjectSpatialPath
 
 
 class JacBuiltin:
@@ -1102,17 +1069,18 @@ class JacBasics:
         if custom:
             ctx.custom = expr
         else:
+            print(expr)
             ctx.reports.append(expr)
 
     @staticmethod
     def refs(
-        path: DataSpatialPath | NodeArchetype | list[NodeArchetype],
+        path: ObjectSpatialPath | NodeArchetype | list[NodeArchetype],
     ) -> (
         list[NodeArchetype] | list[EdgeArchetype] | list[NodeArchetype | EdgeArchetype]
     ):
         """Jac's apply_dir stmt feature."""
-        if not isinstance(path, DataSpatialPath):
-            path = DataSpatialPath(path, [DataSpatialDestination(EdgeDir.OUT)])
+        if not isinstance(path, ObjectSpatialPath):
+            path = ObjectSpatialPath(path, [ObjectSpatialDestination(EdgeDir.OUT)])
 
         origin = path.origin
 
@@ -1134,13 +1102,13 @@ class JacBasics:
 
     @staticmethod
     async def arefs(
-        path: DataSpatialPath | NodeArchetype | list[NodeArchetype],
+        path: ObjectSpatialPath | NodeArchetype | list[NodeArchetype],
     ) -> None:
         """Jac's apply_dir stmt feature."""
         pass
 
     @staticmethod
-    def filter(
+    def filter_on(
         items: list[Archetype],
         func: Callable[[Archetype], bool],
     ) -> list[Archetype]:
@@ -1226,7 +1194,7 @@ class JacBasics:
         return disconnect_occurred
 
     @staticmethod
-    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
+    def assign_all(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         for obj in target:
             attrs, values = attr_val
@@ -1328,16 +1296,27 @@ class JacBasics:
                 JacMachineInterface.get_context().mem.remove(anchor.id)
 
     @staticmethod
-    def entry(func: Callable) -> Callable:
+    def on_entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
         setattr(func, "__jac_entry", None)  # noqa:B010
         return func
 
     @staticmethod
-    def exit(func: Callable) -> Callable:
+    def on_exit(func: Callable) -> Callable:
         """Mark a method as jac exit with this decorator."""
         setattr(func, "__jac_exit", None)  # noqa:B010
         return func
+
+
+class JacByLLM:
+    """Jac byLLM integration."""
+
+    @staticmethod
+    def get_mtir(
+        caller: Callable, args: dict[int | str, object], call_params: dict[str, object]
+    ) -> MTIR:
+        """Get byLLM library."""
+        return MTIR(caller=caller, args=args, call_params=call_params)
 
     @staticmethod
     def sem(semstr: str, inner_semstr: dict[str, str]) -> Callable:
@@ -1351,11 +1330,47 @@ class JacBasics:
         return decorator
 
     @staticmethod
-    def call_llm(model: object, mtir: object) -> Any:  # noqa: ANN401
+    def call_llm(model: object, mtir: MTIR) -> Any:  # noqa: ANN401
         """Call the LLM model."""
-        raise ImportError(
-            "byLLM is not installed. Please install it with `pip install byllm` and run `jac clean`."
-        )
+        from jaclang.utils.NonGPT import random_value_for_type
+
+        try:
+            type_hints = get_type_hints(
+                mtir.caller,
+                globalns=getattr(mtir.caller, "__globals__", {}),
+                localns=None,
+                include_extras=True,
+            )
+        except Exception:
+            type_hints = getattr(mtir.caller, "__annotations__", {})
+        return_type = type_hints.get("return", Any)
+
+        # Generate and return a random value matching the return type
+        return random_value_for_type(return_type)
+
+    @staticmethod
+    def by(model: object) -> Callable:
+        """Python library mode decorator for Jac's by llm() syntax."""
+
+        def _decorator(caller: Callable) -> Callable:
+            def _wrapped_caller(*args: object, **kwargs: object) -> object:
+                invoke_args: dict[int | str, object] = {}
+                for i, arg in enumerate(args):
+                    invoke_args[i] = arg
+                for key, value in kwargs.items():
+                    invoke_args[key] = value
+                mtir = JacMachine.get_mtir(
+                    caller=caller,
+                    args=invoke_args,
+                    call_params=(
+                        model.call_params if hasattr(model, "call_params") else {}
+                    ),
+                )
+                return JacMachine.call_llm(model, mtir)
+
+            return _wrapped_caller
+
+        return _decorator
 
 
 class JacUtils:
@@ -1573,6 +1588,7 @@ class JacMachineInterface(
     JacBuiltin,
     JacCmd,
     JacBasics,
+    JacByLLM,
     JacUtils,
 ):
     """Jac Feature."""
@@ -1716,4 +1732,5 @@ class JacMachine(JacMachineInterface):
         JacMachine.base_path_dir = os.getcwd()
         JacMachine.program = JacProgram()
         JacMachine.pool = ThreadPoolExecutor()
+        JacMachine.exec_ctx.mem.close()
         JacMachine.exec_ctx = ExecutionContext()

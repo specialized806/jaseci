@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "jac-cloud"
-version = "0.2.7"
+version = "0.2.9"
 description = ""
-authors = ["Jason Mars <jason@jaseci.org>"]
+authors = ["Jason Mars <jason@mars.ninja>"]
 readme = "README.md"
 packages = [{include = "jac_cloud"}]
 
 [tool.poetry.dependencies]
 python = "^3.12.0"
-jaclang = "0.8.7"
+jaclang = "0.8.9"
 fastapi = "0.115.11"
 orjson = "3.10.15"
 uvicorn = {version = "0.34.0", extras = ["standard"]}

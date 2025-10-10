@@ -135,20 +135,53 @@ class DocIRGenPass(UniPass):
     def exit_import(self, node: uni.Import) -> None:
         """Exit import node."""
         parts: list[doc.DocType] = []
+        mod_items: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
+        is_in_items: bool = False
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
-                parts.pop()
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+                if is_in_items:
+                    mod_items.pop()
+                    mod_items.append(i.gen.doc_ir)
+                    mod_items.append(self.line())
+                else:
+                    parts.pop()
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.line())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.Token) and i.name == Tok.RBRACE:
+                is_in_items = False
+                mod_items.pop()
+                parts.append(
+                    self.group(
+                        self.concat(
+                            [
+                                self.indent(self.concat([self.line(), *mod_items])),
+                                self.line(),
+                            ]
+                        )
+                    )
+                )
+                parts.append(i.gen.doc_ir)
+            elif isinstance(i, uni.Token) and i.name == Tok.LBRACE:
+                is_in_items = True
                 parts.append(i.gen.doc_ir)
             else:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+                if is_in_items:
+                    mod_items.append(i.gen.doc_ir)
+                    mod_items.append(self.space())
+                else:
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
@@ -178,6 +211,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for archetypes."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         prev_item = None
         in_body = False
         for i in node.kid:
@@ -198,6 +232,10 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             elif isinstance(node.body, Sequence) and i in node.body:
                 if not in_body:
                     body_parts.append(self.hard_line())
@@ -220,16 +258,20 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif not in_body and isinstance(i, uni.Token) and i.name == Tok.DECOR_OP:
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         in_body = False
         for i in node.kid:
             if i == node.doc or (node.decorators and i in node.decorators):
@@ -257,10 +299,18 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
+            elif not in_body and isinstance(i, uni.Token) and i.name == Tok.DECOR_OP:
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         """Generate DocIR for function signatures."""
@@ -397,7 +447,7 @@ class DocIRGenPass(UniPass):
                         ]
                     )
                 )
-                parts.append(self.if_break(broken, flat))
+                parts.append(self.group(self.if_break(broken, flat)))
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -420,6 +470,21 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif i == node.condition and isinstance(i, uni.BoolExpr):
+                cond_str = i.gen.doc_ir
+                flat = self.concat([cond_str, self.space()])
+                broken = self.group(
+                    self.concat(
+                        [
+                            self.text("("),
+                            self.indent(self.concat([self.line(), cond_str])),
+                            self.line(),
+                            self.text(")"),
+                            self.space(),
+                        ]
+                    )
+                )
+                parts.append(self.if_break(broken, flat))
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -810,8 +875,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for inner comprehension clauses."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.KW_IF:
+                parts.append(self.hard_line())
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -877,10 +947,16 @@ class DocIRGenPass(UniPass):
                 return [expr]
 
         exprs = __flatten_bool_expr(node)
-        parts = [exprs[0].gen.doc_ir, self.line()]
-        for i in range(1, len(exprs[1:]), 2):
-            op, expr = exprs[i], exprs[i + 1]
-            parts += [op.gen.doc_ir, self.space(), expr.gen.doc_ir, self.line()]
+        parts += [exprs[0].gen.doc_ir, self.line()]
+        for i in range(1, len(exprs), 2):
+            (
+                op,
+                expr,
+            ) = (
+                exprs[i + 1],
+                exprs[i],
+            )
+            parts += [expr.gen.doc_ir, self.space(), op.gen.doc_ir, self.line()]
         parts.pop()
         flat = self.concat(parts)
         node.gen.doc_ir = self.group(flat)
@@ -1078,6 +1154,8 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assert statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI and len(parts):
+                parts.pop()
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
         parts.pop()
@@ -1095,6 +1173,7 @@ class DocIRGenPass(UniPass):
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Generate DocIR for global variables."""
         parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
@@ -1103,15 +1182,22 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_module_code(self, node: uni.ModuleCode) -> None:
         """Generate DocIR for module code."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         in_body = False
         for i in node.kid:
             if node.doc and i is node.doc:
@@ -1123,6 +1209,10 @@ class DocIRGenPass(UniPass):
             elif isinstance(i, uni.Token) and i.name == Tok.COLON:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             elif isinstance(node.body, Sequence) and i in node.body:
                 if not in_body:
                     parts.pop()
@@ -1145,6 +1235,8 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Generate DocIR for global statements."""
@@ -1234,7 +1326,9 @@ class DocIRGenPass(UniPass):
                 ]
             )
         )
-        if isinstance(node.parent, uni.Assignment):
+        if isinstance(node.parent, (uni.Assignment)) or (
+            isinstance(node.parent, uni.IfStmt) and isinstance(node.value, uni.BoolExpr)
+        ):
             node.gen.doc_ir = self.if_break(
                 flat_contents=self.group(self.concat(parts[1:-1])),
                 break_contents=broken,
@@ -1270,6 +1364,7 @@ class DocIRGenPass(UniPass):
     def exit_py_inline_code(self, node: uni.PyInlineCode) -> None:
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
@@ -1279,14 +1374,21 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text("::py::"))
                 parts.append(self.hard_line())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_test(self, node: uni.Test) -> None:
         """Generate DocIR for test nodes."""
         parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
@@ -1295,10 +1397,16 @@ class DocIRGenPass(UniPass):
                 if not i.value.startswith("_jac_gen_"):
                     parts.append(i.gen.doc_ir)
                     parts.append(self.space())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_match_stmt(self, node: uni.MatchStmt) -> None:
         """Generate DocIR for match statements."""
@@ -1482,6 +1590,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for implementation definitions."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         in_body = False
         for i in node.kid:
             if i == node.doc or (node.decorators and i in node.decorators):
@@ -1489,6 +1598,10 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             elif self.is_within(i, node.target):
                 parts.append(i.gen.doc_ir)
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             elif (
                 in_body
                 or isinstance(node.body, Sequence)
@@ -1516,10 +1629,13 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_sem_def(self, node: uni.SemDef) -> None:
         """Generate DocIR for semantic definitions."""
         parts: list[doc.DocType] = []
+        has_comment: Optional[doc.DocType] = None
         for i in node.kid:
             if i in node.target:
                 parts.append(i.gen.doc_ir)
@@ -1527,10 +1643,16 @@ class DocIRGenPass(UniPass):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif (
+                i == node.kid[0] and isinstance(i, uni.Token) and i.name == Tok.COMMENT
+            ):
+                has_comment = i.gen.doc_ir
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
+        if has_comment:
+            node.gen.doc_ir = self.concat([has_comment, node.gen.doc_ir])
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
         """Generate DocIR for event signatures."""
@@ -1584,14 +1706,6 @@ class DocIRGenPass(UniPass):
             and isinstance(node.parent, uni.FString)
         )
 
-        if "\n" in node.value:
-            lines = node.value.split("\n")
-            parts: list[doc.DocType] = [self.text(lines[0])]
-            for line in lines[1:]:
-                parts.append(self.hard_line())
-                parts.append(self.text(line.lstrip()))
-            node.gen.doc_ir = self.group(self.concat(parts))
-            return
         if is_escaped_curly:
             node.gen.doc_ir = self.concat(
                 [self.text(node.value), self.text(node.value)]

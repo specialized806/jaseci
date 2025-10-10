@@ -6,11 +6,13 @@ use_directory_urls: true
 nav:
   - Learn:
     # - Getting Started: "learn/getting_started.md"
-    - Tour of Jac/Jaseci: "learn/introduction.md"
     - Installation: "learn/installation.md"
-    - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
     - Native Superset of Python: "learn/superset_python.md"
-    - Jac Playground: "learn/jac_playground.md"
+    - Jac Library in Pure Python: "learn/library_mode.md"
+    - Tour of Jac/Jaseci: "learn/tour.md"
+    - Jac as Your First Programming Language: "learn/beginners_guide_to_jac.md"
+    - Learn Jac in 5 Minutes: "learn/jac_in_a_flash.md"
+    - Run Jac In Browser: "learn/jac_playground.md"
     - Learn By Example:
       - LittleX (your own twitter): "learn/examples/littleX/tutorial.md"
       - Jac MCP Conversational Chatbot: "learn/examples/rag_chatbot/Overview.md"
@@ -73,7 +75,6 @@ nav:
     - Specifications:
       - Jac Keywords: "learn/keywords.md"
       - Object-Spatial Programming Specification: "learn/dspfoundation.md"
-      - Full Language Specification: "learn/jac_ref.md"
     - Misc Docs:
       - Understanding Object-Spatial:
         - "learn/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
@@ -81,10 +82,67 @@ nav:
         - "learn/data_spatial/filtering.md" # Filtering
         - "learn/data_spatial/sequence.md"
       - FAQ: "learn/data_spatial/FAQ.md" # faq
+  - Full Jac Specification:
+    - Introduction: "learn/jac_ref.md"
+    - Base Module structure: "learn/jac_ref/base_module_structure.md"
+    - Import/Include Statements: "learn/jac_ref/import_include_statements.md"
+    - Class Archetypes: "learn/jac_ref/class_archetypes.md"
+    - Class Archetype bodies: "learn/jac_ref/class_archetype_bodies.md"
+    - Enumerations: "learn/jac_ref/enumerations.md"
+    - Functions and Abilities: "learn/jac_ref/functions_and_abilities.md"
+    - Implementations: "learn/jac_ref/implementations.md"
+    - Semstrings: "learn/jac_ref/semstrings.md"
+    - Global variables: "learn/jac_ref/global_variables.md"
+    - With entry blocks: "learn/jac_ref/with_entry_blocks.md"
+    - Inline python: "learn/jac_ref/inline_python.md"
+    - Tests: "learn/jac_ref/tests.md"
+    - Codeblocks and Statements: "learn/jac_ref/codeblocks_and_statements.md"
+    - If statements: "learn/jac_ref/if_statements.md"
+    - While statements: "learn/jac_ref/while_statements.md"
+    - For statements: "learn/jac_ref/for_statements.md"
+    - Try statements: "learn/jac_ref/try_statements.md"
+    - Match statements: "learn/jac_ref/match_statements.md"
+    - Context managers: "learn/jac_ref/context_managers.md"
+    - Global and nonlocal statements: "learn/jac_ref/global_and_nonlocal_statements.md"
+    - Typed context blocks (OSP): "learn/jac_ref/typed_context_blocks_(osp).md"
+    - Return statements: "learn/jac_ref/return_statements.md"
+    - Yield statements: "learn/jac_ref/yield_statements.md"
+    - Raise statements: "learn/jac_ref/raise_statements.md"
+    - Assert statements: "learn/jac_ref/assert_statements.md"
+    - Delete statements: "learn/jac_ref/delete_statements.md"
+    - Report statements: "learn/jac_ref/report_statements.md"
+    - Control statements: "learn/jac_ref/control_statements.md"
+    - Walker visit and disengage (OSP): "learn/jac_ref/walker_visit_and_disengage_(osp).md"
+    - Assignments: "learn/jac_ref/assignments.md"
+    - Expressions: "learn/jac_ref/expressions.md"
+    - Concurrent expressions: "learn/jac_ref/concurrent_expressions.md"
+    - Walrus assignments: "learn/jac_ref/walrus_assignments.md"
+    - Lambda expressions: "learn/jac_ref/lambda_expressions.md"
+    - Pipe expressions: "learn/jac_ref/pipe_expressions.md"
+    - Pipe back expressions: "learn/jac_ref/pipe_back_expressions.md"
+    - Bitwise expressions: "learn/jac_ref/bitwise_expressions.md"
+    - Logical and compare expressions: "learn/jac_ref/logical_and_compare_expressions.md"
+    - Arithmetic expressions: "learn/jac_ref/arithmetic_expressions.md"
+    - Connect expressions (OSP): "learn/jac_ref/connect_expressions_(osp).md"
+    - Pipe atomic expressions: "learn/jac_ref/pipe_atomic_expressions.md"
+    - Pipe back atomic expressions: "learn/jac_ref/pipe_back_atomic_expressions.md"
+    - Spawn expressions (OSP): "learn/jac_ref/spawn_expressions_(osp).md"
+    - Unpack expressions: "learn/jac_ref/unpack_expressions.md"
+    - References (OSP): "learn/jac_ref/references_(osp).md"
+    - Pipe-style function call: "learn/jac_ref/pipe_style_function_call.md"
+    - Attributes and Subscript expressions: "learn/jac_ref/attributes_and_subscript_expressions.md"
+    - Function calls: "learn/jac_ref/function_calls.md"
+    - Atomic expressions: "learn/jac_ref/atomic_expressions.md"
+    - Collection values: "learn/jac_ref/collection_values.md"
+    - Edge references (OSP): "learn/jac_ref/edge_references_(osp).md"
+    - Filter and assign comprehensions: "learn/jac_ref/filter_and_assign_comprehensions.md"
+    - Names and references: "learn/jac_ref/names_and_references.md"
+    - Builtin types: "learn/jac_ref/builtin_types.md"
+    - f-string tokens: "learn/jac_ref/f_string_tokens.md"
+    - Lexer Tokens: "learn/jac_ref/lexer_tokens.md"
 
-
-  - Community Hub:
-    - Roadmap: "communityhub/roadmap.md"
+  - Contributor Hub:
+    - Contributing: "internals/contrib.md"
     - Release Notes: "communityhub/release_notes.md"
     - Breaking Changes: "communityhub/breaking_changes.md"
     - Leaderboard: "communityhub/top_contributors.md"
@@ -96,7 +154,8 @@ nav:
         - "communityhub/fun/p3.md"
       - Content Pieces: "communityhub/content_pieces.md"
     - Internals:
-      - Contributing: "internals/contrib.md"
+      - Lang Ref Coverage: "internals/refs_coverage_report.md"
+      - Roadmap: "communityhub/roadmap.md"
       - Design Docs and Guides:
         - Compiler/Runtime Design: "internals/internals.md"
         - Static Compilation:
@@ -231,7 +290,7 @@ plugins:
       video_controls: False
   - redirects:
       redirect_maps:
-        index.md: learn/introduction.md
+        index.md: learn/installation.md
 
 hooks:
   - scripts/handle_jac_compile_data.py

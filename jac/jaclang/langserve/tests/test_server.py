@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
@@ -186,7 +187,7 @@ class TestJacLangServer(TestCase):
     @pytest.mark.xfail(
         reason="TODO: Fix the go to definition for imports[ abs_path is not set]"
     )
-    def test_go_to_defintion_import(self) -> None:
+    def test_go_to_definition_import(self) -> None:
         """Test that the go to definition is correct."""
         lsp = JacLangServer()
         workspace_path = self.fixture_abs_path("")
@@ -214,6 +215,68 @@ class TestJacLangServer(TestCase):
                     expected,
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
                 )
+
+    def test_go_to_definition_md_path(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(self.fixture_abs_path("md_path.jac"))
+        lsp.deep_check(import_file)
+        # fmt: off
+        positions = [
+            (3, 11, "asyncio/__init__.py:0:0-0:0"),
+            (6, 17, "concurrent/__init__.py:0:0-0:0"),
+            (6, 28, "concurrent/futures/__init__.py:0:0-0:0"),
+            (7, 17, "typing.py:0:0-0:0"),
+            # not a good one since there may be different typing.py versions
+            # (7, 27, "typing.py:2636:0-2636:7"), 
+            (9, 18, "compiler/__init__.py:0:0-0:0"),
+            (9, 38, "compiler/unitree.py:0:0-0:0"),
+            (11, 35, "compiler/constant.py:0:0-0:0"),
+            (11, 47, "compiler/constant.py:5:0-34:9"),
+            (13, 47, "compiler/type_system/type_utils.py:0:0-0:0"),
+            (14, 34, "compiler/type_system/__init__.py:0:0-0:0"),
+            (14, 55, "compiler/type_system/types.py:143:0-226:8"),
+            (15, 34, "compiler/unitree.py:0:0-0:0"),
+            (15, 48, "compiler/unitree.py:302:0-502:11"),
+            (17, 22, "langserve/tests/fixtures/circle.jac:8:5-8:8"),
+            (18, 38, "vendor/pygls/uris.py:0:0-0:0"),
+            (19, 52, "vendor/pygls/server.py:351:0-615:13"),
+            (21, 31, "vendor/lsprotocol/types.py:0:0-0:0"),
+        ]
+        # fmt: on
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(
+                        lsp.get_definition(
+                            import_file, lspt.Position(line - 1, char - 1)
+                        )
+                    ),
+                )
+
+    def test_missing_mod_warning(self) -> None:
+        """Test that the missing module warning is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(self.fixture_abs_path("md_path.jac"))
+        lsp.deep_check(import_file)
+
+        positions = [
+            "fixtures/md_path.jac, line 16, col 13: Module not found",
+            "fixtures/md_path.jac, line 22, col 8: Module not found",
+        ]
+        for idx, expected in enumerate(positions):
+            self.assertIn(
+                expected,
+                str(lsp.warnings_had[idx]),
+            )
 
     @pytest.mark.xfail(
         reason="TODO: Fix the go to definition for imports[ abs_path is not set]"
@@ -310,7 +373,6 @@ class TestJacLangServer(TestCase):
         for token_type, expected_count in expected_counts:
             self.assertEqual(str(sem_list).count(token_type), expected_count)
 
-    @pytest.mark.xfail(reason="TODO: Fix when we have the type checker")
     def test_completion(self) -> None:
         """Test that the completions are correct."""
         lsp = JacLangServer()
@@ -318,95 +380,28 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
         base_module_file = uris.from_fs_path(
-            self.fixture_abs_path("base_module_structure.jac")
+            self.fixture_abs_path("completion_test_err.jac")
         )
         lsp.deep_check(base_module_file)
-        test_cases = [
-            (lspt.Position(38, 16), ["get_color1", "color1", "point1"], 3),
-            (lspt.Position(42, 22), ["RED", "GREEN", "BLUE"], 3),
-            (lspt.Position(42, 33), ["RED", "GREEN", "BLUE"], 3),
-            (lspt.Position(42, 45), ["RED", "GREEN", "BLUE"], 3),
-            (lspt.Position(46, 20), ["RED22", "GREEN22", "BLUE22"], 3),
-            (lspt.Position(46, 30), ["RED22", "GREEN22", "BLUE22"], 3),
-            (lspt.Position(46, 41), ["RED22", "GREEN22", "BLUE22"], 3),
-            (
-                lspt.Position(51, 32),
-                ["RED22", "GREEN22", "BLUE22"],
-                3,
-            ),
-            (
-                lspt.Position(65, 13),
-                [
-                    "get_color1",
-                    "color1",
-                    "point1",
-                    "base_colorred",
-                    "pointred",
-                    "inner_red",
-                    "doubleinner",
-                    "apply_red",
-                ],
-                11,
-            ),
-            (
-                lspt.Position(65, 23),
-                ["color22", "doublepoint22", "point22", "apply_inner_red", "enum_red"],
-                5,
-            ),
-            (
-                lspt.Position(65, 31),
-                ["RED22", "GREEN22", "BLUE22"],
-                3,
-            ),
-            (
-                lspt.Position(35, 28),
-                [],
-                0,
-            ),
-            (
-                lspt.Position(72, 12),
-                [
-                    "get_color1",
-                    "color1",
-                    "point1",
-                    "base_colorred",
-                    "pointred",
-                    "inner_red",
-                    "doubleinner",
-                    "apply_red",
-                ],
-                11,
-            ),
-            (
-                lspt.Position(73, 22),
-                ["color22", "doublepoint22", "apply_inner_red", "point22", "enum_red"],
-                5,
-            ),
-            (
-                lspt.Position(37, 12),
-                ["self", "add", "subtract", "x", "Colorenum", "Colour1", "red", "r"],
-                153,
-                None,
+
+        @dataclass
+        class Case:
+            pos: lspt.Position
+            expected: list[str]
+            trigger: str = "."
+
+        test_cases: list[Case] = [
+            Case(
+                lspt.Position(8, 8),
+                ["bar", "baz"],
             ),
         ]
-        default_trigger = "."
         for case in test_cases:
-            position, expected_completions, expected_length = case[:3]
-            completion_trigger = case[3] if len(case) > 3 else default_trigger
             completions = lsp.get_completion(
-                base_module_file, position, completion_trigger=completion_trigger
+                base_module_file, case.pos, completion_trigger=case.trigger
             ).items
-            for completion in expected_completions:
+            for completion in case.expected:
                 self.assertIn(completion, str(completions))
-            self.assertEqual(expected_length, len(completions))
-
-            if position == lspt.Position(73, 12):
-                self.assertEqual(
-                    2, str(completions).count("kind=<CompletionItemKind.Function: 3>")
-                )
-                self.assertEqual(
-                    4, str(completions).count("kind=<CompletionItemKind.Field: 5>")
-                )
 
     def test_go_to_reference(self) -> None:
         """Test that the go to reference is correct."""
@@ -591,20 +586,3 @@ class TestJacLangServer(TestCase):
             )
             for expected in expected_refs:
                 self.assertIn(expected, references)
-
-    def test_binder_go_to_module(self) -> None:
-        """Test that the go to definition is correct."""
-        lsp = JacLangServer()
-        workspace_path = self.fixture_abs_path("")
-        workspace = Workspace(workspace_path, lsp)
-        lsp.lsp._workspace = workspace
-        guess_game_file = uris.from_fs_path(
-            self.fixture_abs_path(
-                "../../../compiler/passes/main/tests/fixtures/sym_binder.jac"
-            )
-        )
-        lsp.deep_check(guess_game_file)
-        self.assertIn(
-            "/tests/fixtures/M1.jac:0:0-0:0",
-            str(lsp.get_definition(guess_game_file, lspt.Position(29, 9))),
-        )

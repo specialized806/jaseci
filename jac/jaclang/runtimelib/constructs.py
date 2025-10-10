@@ -7,17 +7,18 @@ from .archetype import (
     AccessLevel,
     Anchor,
     Archetype,
-    DataSpatialFunction,
     EdgeAnchor,
     EdgeArchetype,
     GenericEdge,
     NodeAnchor,
     NodeArchetype,
+    ObjectSpatialFunction,
     Root,
     WalkerAnchor,
     WalkerArchetype,
 )
 from .memory import Memory, ShelfStorage
+from .mtp import MTIR
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 
 __all__ = [
@@ -32,7 +33,8 @@ __all__ = [
     "WalkerArchetype",
     "GenericEdge",
     "Root",
-    "DataSpatialFunction",
+    "MTIR",
+    "ObjectSpatialFunction",
     "Memory",
     "ShelfStorage",
     "JacTestResult",
