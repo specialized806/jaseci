@@ -22,9 +22,6 @@ from jaclang.settings import settings
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
-Jac.create_cmd()
-Jac.setup()
-
 
 @cmd_registry.register
 def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
@@ -662,6 +659,43 @@ def jac2py(filename: str) -> None:
 
 
 @cmd_registry.register
+def jac2lib(filename: str) -> None:
+    """Convert a Jac file to Python library code.
+
+    Translates Jac source code to equivalent Python code with library mode enabled.
+    In library mode, the generated Python uses direct imports from jaclang.lib
+    instead of aliased imports, making the output cleaner and more suitable for
+    use as a standalone library.
+
+    Args:
+        filename: Path to the .jac file to convert
+
+    Examples:
+        jac jac2lib myprogram.jac > mylib.py
+    """
+    if filename.endswith(".jac"):
+        # Temporarily enable library mode
+        original_library_mode = settings.library_mode
+        settings.library_mode = True
+        try:
+            code = JacProgram().compile(file_path=filename).gen.py
+            if code:
+                print(code)
+            else:
+                exit(1)
+        finally:
+            # Restore original setting
+            settings.library_mode = original_library_mode
+    else:
+        print("Not a .jac file.", file=sys.stderr)
+        exit(1)
+
+
+# Register core commands first (before plugins load)
+# These can be overridden by plugins with higher priority
+
+
+@cmd_registry.register
 def serve(
     filename: str,
     session: str = "",
@@ -746,37 +780,10 @@ def serve(
         exit(1)
 
 
-@cmd_registry.register
-def jac2lib(filename: str) -> None:
-    """Convert a Jac file to Python library code.
+Jac.create_cmd()
+Jac.setup()
 
-    Translates Jac source code to equivalent Python code with library mode enabled.
-    In library mode, the generated Python uses direct imports from jaclang.lib
-    instead of aliased imports, making the output cleaner and more suitable for
-    use as a standalone library.
-
-    Args:
-        filename: Path to the .jac file to convert
-
-    Examples:
-        jac jac2lib myprogram.jac > mylib.py
-    """
-    if filename.endswith(".jac"):
-        # Temporarily enable library mode
-        original_library_mode = settings.library_mode
-        settings.library_mode = True
-        try:
-            code = JacProgram().compile(file_path=filename).gen.py
-            if code:
-                print(code)
-            else:
-                exit(1)
-        finally:
-            # Restore original setting
-            settings.library_mode = original_library_mode
-    else:
-        print("Not a .jac file.", file=sys.stderr)
-        exit(1)
+cmd_registry.finalize()
 
 
 def start_cli() -> None:
