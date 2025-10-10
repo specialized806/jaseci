@@ -348,6 +348,10 @@ fstring: F_DQ_START fstr_dq_part* F_DQ_END
        | F_SQ_START fstr_sq_part* F_SQ_END
        | F_TDQ_START fstr_tdq_part* F_TDQ_END
        | F_TSQ_START fstr_tsq_part* F_TSQ_END
+       | RF_DQ_START rfstr_dq_part* F_DQ_END
+       | RF_SQ_START rfstr_sq_part* F_SQ_END
+       | RF_TDQ_START rfstr_tdq_part* F_TDQ_END
+       | RF_TSQ_START rfstr_tsq_part* F_TSQ_END
 
 fstr_dq_part: F_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
@@ -357,8 +361,21 @@ fstr_tdq_part: F_TEXT_TDQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON
 
 fstr_tsq_part: F_TEXT_TSQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
+// Add separate rules for raw f-strings
+rfstr_dq_part: RF_TEXT_DQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
+rfstr_sq_part: RF_TEXT_SQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
+rfstr_tdq_part: RF_TEXT_TDQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
+rfstr_tsq_part: RF_TEXT_TSQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
+
 fformat: F_FORMAT_TEXT | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
+RF_DQ_START.10: /[rR][fF]"|[fF][rR]"/
+RF_SQ_START.10: /[rR][fF]'|[fF][rR]'/
+RF_TDQ_START.10: /[rR][fF]"""|[fF][rR]"""/
+RF_TSQ_START.10: /[rR][fF]'''|[fF][rR]'''/
 F_DQ_START.9: /[fF]"/
 F_SQ_START.9: /[fF]'/
 F_TDQ_START.9: /[fF]"""/
@@ -376,6 +393,10 @@ F_TEXT_DQ: /[^"{}\n\\]+|\\./
 F_TEXT_SQ: /[^'{}\n\\]+|\\./
 F_TEXT_TDQ: /(?:[^"{}\\]|"(?!""))+|\\./s
 F_TEXT_TSQ: /(?:[^'{}\\]|'(?!''))+|\\./s
+RF_TEXT_DQ: /[^"{}]+/
+RF_TEXT_SQ: /[^'{}]+/
+RF_TEXT_TDQ: /(?:[^"{}]|"(?!""))+/s
+RF_TEXT_TSQ: /(?:[^'{}]|'(?!''))+/s
 F_FORMAT_TEXT: /[^{}]+/
 
 CONV: /![rRsSaA]/

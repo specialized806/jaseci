@@ -59,4 +59,40 @@ with entry {
     """;
     print(complex_format);
 
+   # Raw f-strings (rf or fr prefix)
+    path = "home";
+    file = "test.txt";
+    
+    # Raw f-string with double quotes
+    raw_path = rf"C:\Users\{name}\{path}\{file}";
+    print(raw_path);
+    
+    # Raw f-string with single quotes  
+    raw_path2 = fr'D:\Projects\{name}\{file}';
+    print(raw_path2);
+    
+    # Raw f-string with triple double quotes
+    raw_multiline = rf"""Path: C:\Users\{name}\Documents\
+    File: {file}
+    Full: C:\Users\{name}\Documents\{file}""";
+    print(raw_multiline);
+    
+    # Raw f-string with triple single quotes
+    raw_multiline2 = fr'''Regex pattern: \d+\.\d+
+    Name: {name}
+    Pattern for {name}: \b{name}\b''';
+    print(raw_multiline2);
+    
+    # Raw f-strings with formatting
+    regex_pattern = rf"\b{name}\w*\b";
+    print(regex_pattern);
+    
+    # Raw f-string with newline literals (not interpreted as actual newlines)
+    raw_with_newline = rf"Line 1\nLine 2 with {name}\tTabbed";
+    print(raw_with_newline);
+    
+    # Raw f-string with backslashes and formatting
+    windows_path = rf"\\server\share\{name}\documents\{file}";
+    print(windows_path);
+
 }
