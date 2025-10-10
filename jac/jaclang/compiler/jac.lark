@@ -344,6 +344,7 @@ type_ref: TYPE_OP (named_ref | builtin_type)
 
 multistring: (fstring | STRING)+
 
+// [Heading]: Formatted string literals.
 fstring: F_DQ_START fstr_dq_part* F_DQ_END
        | F_SQ_START fstr_sq_part* F_SQ_END
        | F_TDQ_START fstr_tdq_part* F_TDQ_END
