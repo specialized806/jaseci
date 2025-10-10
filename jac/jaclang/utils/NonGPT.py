@@ -4,13 +4,23 @@ import random
 import string
 import sys
 import types
-import typing
 from collections import deque
 from dataclasses import is_dataclass, fields as dc_fields, MISSING
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from functools import wraps
-from typing import Any, get_args, get_origin, TypeVar, NewType
+from typing import (
+    Any,
+    Annotated,
+    Callable,
+    Literal,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    TypeVar,
+    NewType,
+)
 from uuid import UUID, uuid4
 
 # -------------------------------
@@ -59,7 +69,7 @@ def _safe_subclasses(tp: Any) -> list[type]:
 
 
 def _unwrap_annotated(tp: Any) -> Any:
-    if get_origin(tp) is typing.Annotated:
+    if get_origin(tp) is Annotated:
         return get_args(tp)[0]
     return tp
 
@@ -133,12 +143,12 @@ def random_value_for_type(tp: Any, *, _depth: int = 0, _max_depth: int = 10) -> 
         return prim
 
     # Literal
-    if get_origin(tp) is typing.Literal:
+    if get_origin(tp) is Literal:
         choices = get_args(tp)
         return _choose_from(choices)
 
     # Union / Optional
-    if get_origin(tp) is typing.Union:
+    if get_origin(tp) is Union:
         options = list(get_args(tp))
         # Bias slightly away from None, if present
         if type(None) in options and len(options) > 1 and random.random() < 0.3:
@@ -233,7 +243,7 @@ def random_value_for_type(tp: Any, *, _depth: int = 0, _max_depth: int = 10) -> 
 
     # NamedTuple
     if _is_namedtuple(tp):
-        anns = typing.get_type_hints(tp, include_extras=True)
+        anns = get_type_hints(tp, include_extras=True)
         values = [
             random_value_for_type(anns[name], _depth=_depth + 1, _max_depth=_max_depth)
             for name in tp._fields
@@ -248,7 +258,7 @@ def random_value_for_type(tp: Any, *, _depth: int = 0, _max_depth: int = 10) -> 
     if is_dataclass(tp):
         # Resolve string annotations to actual types
         try:
-            type_hints = typing.get_type_hints(tp, include_extras=True)
+            type_hints = get_type_hints(tp, include_extras=True)
         except Exception:
             type_hints = {}
 
@@ -286,7 +296,7 @@ def random_value_for_type(tp: Any, *, _depth: int = 0, _max_depth: int = 10) -> 
         return random_value_for_type(Any, _depth=_depth + 1, _max_depth=_max_depth)
 
     # Callable[...] -> synthesize a dummy callable with compatible signature if possible
-    if get_origin(tp) is typing.Callable:
+    if get_origin(tp) is Callable:
         # Return a lambda that returns a random value for the annotated return type (or Any)
         args = get_args(tp)
         ret_t = Any
@@ -349,7 +359,7 @@ def returns_fake(func: Any):
     """Decorator that returns a random instance of the function's return type."""
     # Resolve forward refs and Annotated, NewType, etc.
     try:
-        type_hints = typing.get_type_hints(
+        type_hints = get_type_hints(
             func, globalns=func.__globals__, localns=None, include_extras=True
         )
     except Exception:
