@@ -171,7 +171,9 @@ class JSCodeGenerator:
         name = self.generate(node.id) if node.id else ""
         params = ", ".join(self.generate(p) for p in node.params)
         body = self.generate(node.body)
-        return f"{self.indent()}{async_str}function{generator_str} {name}({params}) {body}"
+        return (
+            f"{self.indent()}{async_str}function{generator_str} {name}({params}) {body}"
+        )
 
     def gen_VariableDeclaration(self, node: es.VariableDeclaration) -> str:
         """Generate variable declaration."""
@@ -188,14 +190,18 @@ class JSCodeGenerator:
     def gen_ClassDeclaration(self, node: es.ClassDeclaration) -> str:
         """Generate class declaration."""
         name = self.generate(node.id) if node.id else ""
-        extends = f" extends {self.generate(node.superClass)}" if node.superClass else ""
+        extends = (
+            f" extends {self.generate(node.superClass)}" if node.superClass else ""
+        )
         body = self.generate(node.body)
         return f"{self.indent()}class {name}{extends} {body}"
 
     def gen_ClassExpression(self, node: es.ClassExpression) -> str:
         """Generate class expression."""
         name = self.generate(node.id) if node.id else ""
-        extends = f" extends {self.generate(node.superClass)}" if node.superClass else ""
+        extends = (
+            f" extends {self.generate(node.superClass)}" if node.superClass else ""
+        )
         body = self.generate(node.body)
         return f"class {name}{extends} {body}"
 
@@ -257,9 +263,7 @@ class JSCodeGenerator:
 
     def gen_ArrayExpression(self, node: es.ArrayExpression) -> str:
         """Generate array expression."""
-        elements = ", ".join(
-            self.generate(e) if e else "" for e in node.elements
-        )
+        elements = ", ".join(self.generate(e) if e else "" for e in node.elements)
         return f"[{elements}]"
 
     def gen_ObjectExpression(self, node: es.ObjectExpression) -> str:
@@ -408,9 +412,7 @@ class JSCodeGenerator:
 
     def gen_ArrayPattern(self, node: es.ArrayPattern) -> str:
         """Generate array pattern."""
-        elements = ", ".join(
-            self.generate(e) if e else "" for e in node.elements
-        )
+        elements = ", ".join(self.generate(e) if e else "" for e in node.elements)
         return f"[{elements}]"
 
     def gen_ObjectPattern(self, node: es.ObjectPattern) -> str:

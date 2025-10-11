@@ -264,7 +264,10 @@ class AstTool:
                         else "Compile failed."
                     )
                 case "esast":
-                    from jaclang.compiler.emcascript import EsastGenPass, es_node_to_dict
+                    from jaclang.compiler.emcascript import (
+                        EsastGenPass,
+                        es_node_to_dict,
+                    )
                     import json
 
                     esast_pass = EsastGenPass(ir, prog)

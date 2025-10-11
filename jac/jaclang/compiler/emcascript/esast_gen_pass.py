@@ -62,7 +62,9 @@ class EsastGenPass(UniPass):
         )
         return es_node
 
-    def flatten(self, items: list[Union[es.Statement, list[es.Statement], None]]) -> list[es.Statement]:
+    def flatten(
+        self, items: list[Union[es.Statement, list[es.Statement], None]]
+    ) -> list[es.Statement]:
         """Flatten a list of items or lists into a single list."""
         result: list[es.Statement] = []
         for item in items:
@@ -128,7 +130,11 @@ class EsastGenPass(UniPass):
                     )
                     local = self.sync_loc(
                         es.Identifier(
-                            name=item.alias.sym_name if item.alias else item.name.sym_name
+                            name=(
+                                item.alias.sym_name
+                                if item.alias
+                                else item.name.sym_name
+                            )
                         ),
                         jac_node=item.alias if item.alias else item.name,
                     )
@@ -140,7 +146,8 @@ class EsastGenPass(UniPass):
                     )
 
             import_decl = self.sync_loc(
-                es.ImportDeclaration(specifiers=specifiers, source=source), jac_node=node
+                es.ImportDeclaration(specifiers=specifiers, source=source),
+                jac_node=node,
             )
             self.imports.append(import_decl)
             node.gen.es_ast = []  # Imports are added to module level
@@ -174,9 +181,7 @@ class EsastGenPass(UniPass):
                         body_stmts.append(stmt.gen.es_ast)
 
         # Create class body
-        class_body = self.sync_loc(
-            es.ClassBody(body=body_stmts), jac_node=node
-        )
+        class_body = self.sync_loc(es.ClassBody(body=body_stmts), jac_node=node)
 
         # Handle base classes
         super_class: Optional[es.Expression] = None
@@ -191,9 +196,7 @@ class EsastGenPass(UniPass):
         )
 
         class_decl = self.sync_loc(
-            es.ClassDeclaration(
-                id=class_id, superClass=super_class, body=class_body
-            ),
+            es.ClassDeclaration(id=class_id, superClass=super_class, body=class_body),
             jac_node=node,
         )
 
@@ -275,9 +278,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
-        block = self.sync_loc(
-            es.BlockStatement(body=body_stmts), jac_node=node
-        )
+        block = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         func_id = self.sync_loc(
             es.Identifier(name=node.name_ref.sym_name), jac_node=node.name_ref
@@ -335,7 +336,11 @@ class EsastGenPass(UniPass):
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Process if statement."""
-        test = node.condition.gen.es_ast if hasattr(node.condition.gen, "es_ast") else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        test = (
+            node.condition.gen.es_ast
+            if hasattr(node.condition.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        )
 
         consequent_stmts: list[es.Statement] = []
         if node.body:
@@ -363,7 +368,11 @@ class EsastGenPass(UniPass):
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Process else-if clause."""
-        test = node.condition.gen.es_ast if hasattr(node.condition.gen, "es_ast") else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        test = (
+            node.condition.gen.es_ast
+            if hasattr(node.condition.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        )
 
         consequent_stmts: list[es.Statement] = []
         if node.body:
@@ -399,7 +408,11 @@ class EsastGenPass(UniPass):
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
         """Process while statement."""
-        test = node.condition.gen.es_ast if hasattr(node.condition.gen, "es_ast") else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        test = (
+            node.condition.gen.es_ast
+            if hasattr(node.condition.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        )
 
         body_stmts: list[es.Statement] = []
         if node.body:
@@ -419,8 +432,18 @@ class EsastGenPass(UniPass):
 
     def exit_in_for_stmt(self, node: uni.InForStmt) -> None:
         """Process for-in statement."""
-        left = node.target.gen.es_ast if hasattr(node.target.gen, "es_ast") else self.sync_loc(es.Identifier(name="item"), jac_node=node.target)
-        right = node.collection.gen.es_ast if hasattr(node.collection.gen, "es_ast") else self.sync_loc(es.Identifier(name="collection"), jac_node=node.collection)
+        left = (
+            node.target.gen.es_ast
+            if hasattr(node.target.gen, "es_ast")
+            else self.sync_loc(es.Identifier(name="item"), jac_node=node.target)
+        )
+        right = (
+            node.collection.gen.es_ast
+            if hasattr(node.collection.gen, "es_ast")
+            else self.sync_loc(
+                es.Identifier(name="collection"), jac_node=node.collection
+            )
+        )
 
         body_stmts: list[es.Statement] = []
         if node.body:
@@ -511,16 +534,22 @@ class EsastGenPass(UniPass):
 
     def exit_raise_stmt(self, node: uni.RaiseStmt) -> None:
         """Process raise statement."""
-        argument = node.cause.gen.es_ast if node.cause and hasattr(node.cause.gen, "es_ast") else self.sync_loc(es.Identifier(name="Error"), jac_node=node)
-
-        throw_stmt = self.sync_loc(
-            es.ThrowStatement(argument=argument), jac_node=node
+        argument = (
+            node.cause.gen.es_ast
+            if node.cause and hasattr(node.cause.gen, "es_ast")
+            else self.sync_loc(es.Identifier(name="Error"), jac_node=node)
         )
+
+        throw_stmt = self.sync_loc(es.ThrowStatement(argument=argument), jac_node=node)
         node.gen.es_ast = throw_stmt
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
         """Process assert statement as if-throw."""
-        test = node.condition.gen.es_ast if hasattr(node.condition.gen, "es_ast") else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        test = (
+            node.condition.gen.es_ast
+            if hasattr(node.condition.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=True), jac_node=node.condition)
+        )
 
         # Negate the test (throw if condition is false)
         negated_test = self.sync_loc(
@@ -536,7 +565,9 @@ class EsastGenPass(UniPass):
             es.ThrowStatement(
                 argument=self.sync_loc(
                     es.NewExpression(
-                        callee=self.sync_loc(es.Identifier(name="Error"), jac_node=node),
+                        callee=self.sync_loc(
+                            es.Identifier(name="Error"), jac_node=node
+                        ),
                         arguments=[
                             self.sync_loc(es.Literal(value=error_msg), jac_node=node)
                         ],
@@ -564,9 +595,7 @@ class EsastGenPass(UniPass):
         if node.expr and hasattr(node.expr.gen, "es_ast"):
             argument = node.expr.gen.es_ast
 
-        ret_stmt = self.sync_loc(
-            es.ReturnStatement(argument=argument), jac_node=node
-        )
+        ret_stmt = self.sync_loc(es.ReturnStatement(argument=argument), jac_node=node)
         node.gen.es_ast = ret_stmt
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
@@ -579,7 +608,11 @@ class EsastGenPass(UniPass):
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
         """Process expression statement."""
-        expr = node.expr.gen.es_ast if hasattr(node.expr.gen, "es_ast") else self.sync_loc(es.Literal(value=None), jac_node=node.expr)
+        expr = (
+            node.expr.gen.es_ast
+            if hasattr(node.expr.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=None), jac_node=node.expr)
+        )
 
         expr_stmt = self.sync_loc(
             es.ExpressionStatement(expression=expr), jac_node=node
@@ -591,8 +624,16 @@ class EsastGenPass(UniPass):
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Process binary expression."""
-        left = node.left.gen.es_ast if hasattr(node.left.gen, "es_ast") else self.sync_loc(es.Literal(value=0), jac_node=node.left)
-        right = node.right.gen.es_ast if hasattr(node.right.gen, "es_ast") else self.sync_loc(es.Literal(value=0), jac_node=node.right)
+        left = (
+            node.left.gen.es_ast
+            if hasattr(node.left.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=0), jac_node=node.left)
+        )
+        right = (
+            node.right.gen.es_ast
+            if hasattr(node.right.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=0), jac_node=node.right)
+        )
 
         # Map Jac operators to JS operators
         op_map = {
@@ -654,10 +695,18 @@ class EsastGenPass(UniPass):
 
         # Build comparisons
         comparisons: list[es.Expression] = []
-        left = node.left.gen.es_ast if hasattr(node.left.gen, "es_ast") else self.sync_loc(es.Identifier(name="left"), jac_node=node.left)
+        left = (
+            node.left.gen.es_ast
+            if hasattr(node.left.gen, "es_ast")
+            else self.sync_loc(es.Identifier(name="left"), jac_node=node.left)
+        )
 
         for i, (op, right_node) in enumerate(zip(node.ops, node.rights)):
-            right = right_node.gen.es_ast if hasattr(right_node.gen, "es_ast") else self.sync_loc(es.Identifier(name="right"), jac_node=right_node)
+            right = (
+                right_node.gen.es_ast
+                if hasattr(right_node.gen, "es_ast")
+                else self.sync_loc(es.Identifier(name="right"), jac_node=right_node)
+            )
             operator = op_map.get(op.name, "===")
 
             # Handle 'not in' operator
@@ -696,7 +745,11 @@ class EsastGenPass(UniPass):
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         """Process unary expression."""
-        operand = node.operand.gen.es_ast if hasattr(node.operand.gen, "es_ast") else self.sync_loc(es.Literal(value=0), jac_node=node.operand)
+        operand = (
+            node.operand.gen.es_ast
+            if hasattr(node.operand.gen, "es_ast")
+            else self.sync_loc(es.Literal(value=0), jac_node=node.operand)
+        )
 
         op_map = {
             Tok.MINUS: "-",
@@ -717,8 +770,16 @@ class EsastGenPass(UniPass):
         """Process assignment expression."""
         # Handle first target
         if node.target:
-            left = node.target[0].gen.es_ast if hasattr(node.target[0].gen, "es_ast") else self.sync_loc(es.Identifier(name="temp"), jac_node=node.target[0])
-            right = node.value.gen.es_ast if node.value and hasattr(node.value.gen, "es_ast") else self.sync_loc(es.Literal(value=None), jac_node=node)
+            left = (
+                node.target[0].gen.es_ast
+                if hasattr(node.target[0].gen, "es_ast")
+                else self.sync_loc(es.Identifier(name="temp"), jac_node=node.target[0])
+            )
+            right = (
+                node.value.gen.es_ast
+                if node.value and hasattr(node.value.gen, "es_ast")
+                else self.sync_loc(es.Literal(value=None), jac_node=node)
+            )
 
             op_map = {
                 Tok.EQ: "=",
@@ -738,7 +799,11 @@ class EsastGenPass(UniPass):
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Process function call."""
-        callee = node.target.gen.es_ast if hasattr(node.target.gen, "es_ast") else self.sync_loc(es.Identifier(name="func"), jac_node=node.target)
+        callee = (
+            node.target.gen.es_ast
+            if hasattr(node.target.gen, "es_ast")
+            else self.sync_loc(es.Identifier(name="func"), jac_node=node.target)
+        )
 
         args: list[Union[es.Expression, es.SpreadElement]] = []
         for param in node.params:
@@ -760,21 +825,39 @@ class EsastGenPass(UniPass):
                 # Store slice info - will be used by AtomTrailer
                 node.gen.es_ast = {
                     "type": "slice",
-                    "start": first_slice.start.gen.es_ast if first_slice.start and hasattr(first_slice.start.gen, "es_ast") else None,
-                    "stop": first_slice.stop.gen.es_ast if first_slice.stop and hasattr(first_slice.stop.gen, "es_ast") else None,
+                    "start": (
+                        first_slice.start.gen.es_ast
+                        if first_slice.start
+                        and hasattr(first_slice.start.gen, "es_ast")
+                        else None
+                    ),
+                    "stop": (
+                        first_slice.stop.gen.es_ast
+                        if first_slice.stop and hasattr(first_slice.stop.gen, "es_ast")
+                        else None
+                    ),
                 }
             else:
                 # Store index info - will be used by AtomTrailer
                 node.gen.es_ast = {
                     "type": "index",
-                    "value": first_slice.start.gen.es_ast if first_slice.start and hasattr(first_slice.start.gen, "es_ast") else self.sync_loc(es.Literal(value=0), jac_node=node),
+                    "value": (
+                        first_slice.start.gen.es_ast
+                        if first_slice.start
+                        and hasattr(first_slice.start.gen, "es_ast")
+                        else self.sync_loc(es.Literal(value=0), jac_node=node)
+                    ),
                 }
         else:
             node.gen.es_ast = None
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Process attribute access."""
-        obj = node.target.gen.es_ast if hasattr(node.target.gen, "es_ast") else self.sync_loc(es.Identifier(name="obj"), jac_node=node.target)
+        obj = (
+            node.target.gen.es_ast
+            if hasattr(node.target.gen, "es_ast")
+            else self.sync_loc(es.Identifier(name="obj"), jac_node=node.target)
+        )
 
         if node.right and hasattr(node.right.gen, "es_ast"):
             # The right side is already processed (could be a call, etc.)
@@ -794,14 +877,20 @@ class EsastGenPass(UniPass):
                 if isinstance(slice_info, dict):
                     if slice_info.get("type") == "slice":
                         # Slice operation - convert to .slice() call
-                        start = slice_info.get("start") or self.sync_loc(es.Literal(value=0), jac_node=node)
-                        stop = slice_info.get("stop") or self.sync_loc(es.Identifier(name="undefined"), jac_node=node)
+                        start = slice_info.get("start") or self.sync_loc(
+                            es.Literal(value=0), jac_node=node
+                        )
+                        stop = slice_info.get("stop") or self.sync_loc(
+                            es.Identifier(name="undefined"), jac_node=node
+                        )
                         slice_call = self.sync_loc(
                             es.CallExpression(
                                 callee=self.sync_loc(
                                     es.MemberExpression(
                                         object=obj,
-                                        property=self.sync_loc(es.Identifier(name="slice"), jac_node=node),
+                                        property=self.sync_loc(
+                                            es.Identifier(name="slice"), jac_node=node
+                                        ),
                                         computed=False,
                                     ),
                                     jac_node=node,
@@ -813,9 +902,13 @@ class EsastGenPass(UniPass):
                         node.gen.es_ast = slice_call
                     elif slice_info.get("type") == "index":
                         # Index operation
-                        idx = slice_info.get("value") or self.sync_loc(es.Literal(value=0), jac_node=node)
+                        idx = slice_info.get("value") or self.sync_loc(
+                            es.Literal(value=0), jac_node=node
+                        )
                         member_expr = self.sync_loc(
-                            es.MemberExpression(object=obj, property=idx, computed=True),
+                            es.MemberExpression(
+                                object=obj, property=idx, computed=True
+                            ),
                             jac_node=node,
                         )
                         node.gen.es_ast = member_expr
@@ -834,9 +927,7 @@ class EsastGenPass(UniPass):
             if hasattr(item.gen, "es_ast") and item.gen.es_ast:
                 elements.append(item.gen.es_ast)
 
-        array_expr = self.sync_loc(
-            es.ArrayExpression(elements=elements), jac_node=node
-        )
+        array_expr = self.sync_loc(es.ArrayExpression(elements=elements), jac_node=node)
         node.gen.es_ast = array_expr
 
     def exit_set_val(self, node: uni.SetVal) -> None:
@@ -865,9 +956,7 @@ class EsastGenPass(UniPass):
             if hasattr(item.gen, "es_ast") and item.gen.es_ast:
                 elements.append(item.gen.es_ast)
 
-        array_expr = self.sync_loc(
-            es.ArrayExpression(elements=elements), jac_node=node
-        )
+        array_expr = self.sync_loc(es.ArrayExpression(elements=elements), jac_node=node)
         node.gen.es_ast = array_expr
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
@@ -875,8 +964,16 @@ class EsastGenPass(UniPass):
         properties: list[Union[es.Property, es.SpreadElement]] = []
         for kv_pair in node.kv_pairs:
             if isinstance(kv_pair, uni.KVPair):
-                key = kv_pair.key.gen.es_ast if hasattr(kv_pair.key.gen, "es_ast") else self.sync_loc(es.Literal(value="key"), jac_node=kv_pair.key)
-                value = kv_pair.value.gen.es_ast if hasattr(kv_pair.value.gen, "es_ast") else self.sync_loc(es.Literal(value=None), jac_node=kv_pair.value)
+                key = (
+                    kv_pair.key.gen.es_ast
+                    if hasattr(kv_pair.key.gen, "es_ast")
+                    else self.sync_loc(es.Literal(value="key"), jac_node=kv_pair.key)
+                )
+                value = (
+                    kv_pair.value.gen.es_ast
+                    if hasattr(kv_pair.value.gen, "es_ast")
+                    else self.sync_loc(es.Literal(value=None), jac_node=kv_pair.value)
+                )
 
                 prop = self.sync_loc(
                     es.Property(key=key, value=value, kind="init"), jac_node=kv_pair
@@ -898,9 +995,7 @@ class EsastGenPass(UniPass):
         # List comprehensions need to be converted to functional style
         # [x for x in list] -> list.map(x => x)
         # This is a simplified version
-        node.gen.es_ast = self.sync_loc(
-            es.ArrayExpression(elements=[]), jac_node=node
-        )
+        node.gen.es_ast = self.sync_loc(es.ArrayExpression(elements=[]), jac_node=node)
 
     # Literals and Atoms
     # ==================
@@ -939,9 +1034,7 @@ class EsastGenPass(UniPass):
 
     def exit_null(self, node: uni.Null) -> None:
         """Process null/None literal."""
-        null_lit = self.sync_loc(
-            es.Literal(value=None, raw=node.value), jac_node=node
-        )
+        null_lit = self.sync_loc(es.Literal(value=None, raw=node.value), jac_node=node)
         node.gen.es_ast = null_lit
 
     def exit_name(self, node: uni.Name) -> None:
@@ -985,9 +1078,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
-        block = self.sync_loc(
-            es.BlockStatement(body=body_stmts), jac_node=node
-        )
+        block = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         func_id = self.sync_loc(
             es.Identifier(name=node.name.sym_name), jac_node=node.name

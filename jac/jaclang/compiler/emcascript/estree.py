@@ -92,7 +92,9 @@ class ExpressionStatement(Node):
     """Expression statement."""
 
     expression: Optional["Expression"] = None
-    type: Literal["ExpressionStatement"] = field(default="ExpressionStatement", init=False)
+    type: Literal["ExpressionStatement"] = field(
+        default="ExpressionStatement", init=False
+    )
 
 
 @dataclass
@@ -277,7 +279,9 @@ class FunctionDeclaration(Node):
     body: Optional[BlockStatement] = None
     generator: bool = False
     async_: bool = False
-    type: Literal["FunctionDeclaration"] = field(default="FunctionDeclaration", init=False)
+    type: Literal["FunctionDeclaration"] = field(
+        default="FunctionDeclaration", init=False
+    )
 
 
 @dataclass
@@ -286,7 +290,9 @@ class VariableDeclaration(Node):
 
     declarations: list["VariableDeclarator"] = field(default_factory=list)
     kind: Literal["var", "let", "const"] = "var"
-    type: Literal["VariableDeclaration"] = field(default="VariableDeclaration", init=False)
+    type: Literal["VariableDeclaration"] = field(
+        default="VariableDeclaration", init=False
+    )
 
 
 @dataclass
@@ -295,7 +301,9 @@ class VariableDeclarator(Node):
 
     id: Optional["Pattern"] = None
     init: Optional["Expression"] = None
-    type: Literal["VariableDeclarator"] = field(default="VariableDeclarator", init=False)
+    type: Literal["VariableDeclarator"] = field(
+        default="VariableDeclarator", init=False
+    )
 
 
 # Expressions
@@ -313,7 +321,9 @@ class ThisExpression(Node):
 class ArrayExpression(Node):
     """Array expression."""
 
-    elements: list[Optional[Union["Expression", "SpreadElement"]]] = field(default_factory=list)
+    elements: list[Optional[Union["Expression", "SpreadElement"]]] = field(
+        default_factory=list
+    )
     type: Literal["ArrayExpression"] = field(default="ArrayExpression", init=False)
 
 
@@ -347,7 +357,9 @@ class FunctionExpression(Node):
     body: Optional[BlockStatement] = None
     generator: bool = False
     async_: bool = False
-    type: Literal["FunctionExpression"] = field(default="FunctionExpression", init=False)
+    type: Literal["FunctionExpression"] = field(
+        default="FunctionExpression", init=False
+    )
 
 
 @dataclass
@@ -358,7 +370,9 @@ class ArrowFunctionExpression(Node):
     body: Optional[Union[BlockStatement, "Expression"]] = None
     expression: bool = False
     async_: bool = False
-    type: Literal["ArrowFunctionExpression"] = field(default="ArrowFunctionExpression", init=False)
+    type: Literal["ArrowFunctionExpression"] = field(
+        default="ArrowFunctionExpression", init=False
+    )
 
 
 @dataclass
@@ -385,7 +399,9 @@ class UpdateExpression(Node):
 class BinaryExpression(Node):
     """Binary expression."""
 
-    operator: str = ""  # "==", "!=", "===", "!==", "<", "<=", ">", ">=", "<<", ">>", ">>>", "+", "-", "*", "/", "%", "|", "^", "&", "in", "instanceof"
+    operator: str = (
+        ""  # "==", "!=", "===", "!==", "<", "<=", ">", ">=", "<<", ">>", ">>>", "+", "-", "*", "/", "%", "|", "^", "&", "in", "instanceof"
+    )
     left: Optional["Expression"] = None
     right: Optional["Expression"] = None
     type: Literal["BinaryExpression"] = field(default="BinaryExpression", init=False)
@@ -395,10 +411,14 @@ class BinaryExpression(Node):
 class AssignmentExpression(Node):
     """Assignment expression."""
 
-    operator: str = "="  # "=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "|=", "^=", "&="
+    operator: str = (
+        "="  # "=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", ">>>=", "|=", "^=", "&="
+    )
     left: Optional[Union["Pattern", "Expression"]] = None
     right: Optional["Expression"] = None
-    type: Literal["AssignmentExpression"] = field(default="AssignmentExpression", init=False)
+    type: Literal["AssignmentExpression"] = field(
+        default="AssignmentExpression", init=False
+    )
 
 
 @dataclass
@@ -429,7 +449,9 @@ class ConditionalExpression(Node):
     test: Optional["Expression"] = None
     consequent: Optional["Expression"] = None
     alternate: Optional["Expression"] = None
-    type: Literal["ConditionalExpression"] = field(default="ConditionalExpression", init=False)
+    type: Literal["ConditionalExpression"] = field(
+        default="ConditionalExpression", init=False
+    )
 
 
 @dataclass
@@ -456,7 +478,9 @@ class SequenceExpression(Node):
     """Sequence expression."""
 
     expressions: list["Expression"] = field(default_factory=list)
-    type: Literal["SequenceExpression"] = field(default="SequenceExpression", init=False)
+    type: Literal["SequenceExpression"] = field(
+        default="SequenceExpression", init=False
+    )
 
 
 @dataclass
@@ -500,7 +524,9 @@ class TaggedTemplateExpression(Node):
 
     tag: Optional["Expression"] = None
     quasi: Optional[TemplateLiteral] = None
-    type: Literal["TaggedTemplateExpression"] = field(default="TaggedTemplateExpression", init=False)
+    type: Literal["TaggedTemplateExpression"] = field(
+        default="TaggedTemplateExpression", init=False
+    )
 
 
 @dataclass
@@ -552,7 +578,9 @@ class ArrayPattern(Node):
 class ObjectPattern(Node):
     """Object destructuring pattern."""
 
-    properties: list[Union["AssignmentProperty", "RestElement"]] = field(default_factory=list)
+    properties: list[Union["AssignmentProperty", "RestElement"]] = field(
+        default_factory=list
+    )
     type: Literal["ObjectPattern"] = field(default="ObjectPattern", init=False)
 
 
@@ -624,7 +652,9 @@ class MethodDefinition(Node):
 class ImportDeclaration(Node):
     """Import declaration."""
 
-    specifiers: list[Union["ImportSpecifier", "ImportDefaultSpecifier", "ImportNamespaceSpecifier"]] = field(default_factory=list)
+    specifiers: list[
+        Union["ImportSpecifier", "ImportDefaultSpecifier", "ImportNamespaceSpecifier"]
+    ] = field(default_factory=list)
     source: Optional[Literal] = None
     type: Literal["ImportDeclaration"] = field(default="ImportDeclaration", init=False)
 
@@ -643,7 +673,9 @@ class ImportDefaultSpecifier(Node):
     """Import default specifier."""
 
     local: Optional[Identifier] = None
-    type: Literal["ImportDefaultSpecifier"] = field(default="ImportDefaultSpecifier", init=False)
+    type: Literal["ImportDefaultSpecifier"] = field(
+        default="ImportDefaultSpecifier", init=False
+    )
 
 
 @dataclass
@@ -651,7 +683,9 @@ class ImportNamespaceSpecifier(Node):
     """Import namespace specifier."""
 
     local: Optional[Identifier] = None
-    type: Literal["ImportNamespaceSpecifier"] = field(default="ImportNamespaceSpecifier", init=False)
+    type: Literal["ImportNamespaceSpecifier"] = field(
+        default="ImportNamespaceSpecifier", init=False
+    )
 
 
 @dataclass
@@ -661,7 +695,9 @@ class ExportNamedDeclaration(Node):
     declaration: Optional[Union["Declaration", "Expression"]] = None
     specifiers: list["ExportSpecifier"] = field(default_factory=list)
     source: Optional[Literal] = None
-    type: Literal["ExportNamedDeclaration"] = field(default="ExportNamedDeclaration", init=False)
+    type: Literal["ExportNamedDeclaration"] = field(
+        default="ExportNamedDeclaration", init=False
+    )
 
 
 @dataclass
@@ -678,7 +714,9 @@ class ExportDefaultDeclaration(Node):
     """Export default declaration."""
 
     declaration: Optional[Union["Declaration", "Expression"]] = None
-    type: Literal["ExportDefaultDeclaration"] = field(default="ExportDefaultDeclaration", init=False)
+    type: Literal["ExportDefaultDeclaration"] = field(
+        default="ExportDefaultDeclaration", init=False
+    )
 
 
 @dataclass
@@ -687,7 +725,9 @@ class ExportAllDeclaration(Node):
 
     source: Optional[Literal] = None
     exported: Optional[Identifier] = None
-    type: Literal["ExportAllDeclaration"] = field(default="ExportAllDeclaration", init=False)
+    type: Literal["ExportAllDeclaration"] = field(
+        default="ExportAllDeclaration", init=False
+    )
 
 
 # Type Aliases for Union Types
@@ -788,8 +828,16 @@ def es_node_to_dict(node: Node) -> dict[str, Any]:
     if node.loc:
         result["loc"] = {
             "source": node.loc.source,
-            "start": {"line": node.loc.start.line, "column": node.loc.start.column} if node.loc.start else None,
-            "end": {"line": node.loc.end.line, "column": node.loc.end.column} if node.loc.end else None,
+            "start": (
+                {"line": node.loc.start.line, "column": node.loc.start.column}
+                if node.loc.start
+                else None
+            ),
+            "end": (
+                {"line": node.loc.end.line, "column": node.loc.end.column}
+                if node.loc.end
+                else None
+            ),
         }
 
     return result
