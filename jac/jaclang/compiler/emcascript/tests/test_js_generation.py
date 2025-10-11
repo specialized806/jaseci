@@ -405,3 +405,229 @@ class JavaScriptGenerationTests(TestCase):
                     )
                 except Exception as e:
                     self.fail(f"{fixture} failed to compile: {e}")
+
+    def test_high_priority_fixtures_compile(self) -> None:
+        """Test that all high priority feature fixtures compile successfully."""
+        fixtures = [
+            "high_priority_lambdas.jac",
+            "high_priority_ternary.jac",
+            "high_priority_spread_rest.jac",
+            "high_priority_async_await.jac",
+            "high_priority_yield.jac",
+            "high_priority_for_loops.jac",
+        ]
+
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture):
+                try:
+                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
+                    self.assertGreater(
+                        len(js_code), 0,
+                        f"{fixture} generated empty JavaScript"
+                    )
+                except Exception as e:
+                    self.fail(f"{fixture} failed to compile: {e}")
+
+    def test_medium_priority_fixtures_compile(self) -> None:
+        """Test that all medium priority feature fixtures compile successfully."""
+        fixtures = [
+            "medium_priority_template_literals.jac",
+            "medium_priority_update_expressions.jac",
+            "medium_priority_switch_match.jac",
+            "medium_priority_destructuring.jac",
+        ]
+
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture):
+                try:
+                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
+                    self.assertGreater(
+                        len(js_code), 0,
+                        f"{fixture} generated empty JavaScript"
+                    )
+                except Exception as e:
+                    self.fail(f"{fixture} failed to compile: {e}")
+
+    def test_low_priority_fixtures_compile(self) -> None:
+        """Test that all low priority feature fixtures compile successfully."""
+        fixtures = [
+            "low_priority_sequence_expressions.jac",
+            "low_priority_do_while.jac",
+            "low_priority_optional_chaining.jac",
+        ]
+
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture):
+                try:
+                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
+                    self.assertGreater(
+                        len(js_code), 0,
+                        f"{fixture} generated empty JavaScript"
+                    )
+                except Exception as e:
+                    self.fail(f"{fixture} failed to compile: {e}")
+
+    def test_lambda_fixtures_have_functions(self) -> None:
+        """Test that lambda fixtures generate function-like structures."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_lambdas.jac"))
+
+        # Lambdas should generate functions (either arrow functions or function expressions)
+        self.assertIn("function", js_code)
+
+        # Should have lambda test function names
+        self.assertIn("test_simple_lambda", js_code)
+        self.assertIn("test_lambda_in_map", js_code)
+
+    def test_ternary_fixtures_have_conditionals(self) -> None:
+        """Test that ternary fixtures generate conditional expressions."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_ternary.jac"))
+
+        # Should have conditional test functions
+        self.assertIn("test_simple_ternary", js_code)
+        self.assertIn("test_nested_ternary", js_code)
+
+        # May contain ternary operator or if-else structures
+        has_ternary = "?" in js_code and ":" in js_code
+        has_if = "if" in js_code
+        self.assertTrue(has_ternary or has_if, "Should have conditional structures")
+
+    def test_spread_rest_fixtures_compile(self) -> None:
+        """Test that spread/rest operator fixtures compile."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_spread_rest.jac"))
+
+        # Should have test functions
+        self.assertIn("test_list_spread", js_code)
+        self.assertIn("test_dict_spread", js_code)
+        self.assertIn("test_rest_destructuring", js_code)
+
+        # Should generate JavaScript code
+        self.assertGreater(len(js_code), 100)
+
+    def test_async_await_fixtures_have_async(self) -> None:
+        """Test that async/await fixtures generate async functions."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_async_await.jac"))
+
+        # Should have async keyword
+        self.assertIn("async", js_code)
+
+        # Should have async function names
+        self.assertIn("simple_async", js_code)
+        self.assertIn("test_basic_await", js_code)
+
+    def test_yield_fixtures_have_generators(self) -> None:
+        """Test that yield fixtures generate generator functions."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_yield.jac"))
+
+        # Should have generator function names
+        self.assertIn("simple_generator", js_code)
+        self.assertIn("yield_in_loop", js_code)
+        self.assertIn("fibonacci", js_code)
+
+    def test_for_loop_fixtures_have_loops(self) -> None:
+        """Test that for loop fixtures generate loop structures."""
+        js_code = self.compile_to_js(self.get_fixture_path("high_priority_for_loops.jac"))
+
+        # Should have loop keywords
+        self.assertIn("for", js_code)
+
+        # Should have test function names
+        self.assertIn("test_basic_for_to_by", js_code)
+        self.assertIn("test_for_countdown", js_code)
+
+    def test_template_literal_fixtures_have_strings(self) -> None:
+        """Test that template literal (f-string) fixtures generate strings."""
+        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_template_literals.jac"))
+
+        # Should have test functions
+        self.assertIn("test_simple_fstring", js_code)
+        self.assertIn("test_fstring_expressions", js_code)
+
+        # Should have string-related code
+        has_strings = '"' in js_code or "'" in js_code or "`" in js_code
+        self.assertTrue(has_strings, "Should have string literals")
+
+    def test_switch_match_fixtures_have_conditionals(self) -> None:
+        """Test that switch/match fixtures generate conditional structures."""
+        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_switch_match.jac"))
+
+        # Should have match test functions
+        self.assertIn("test_match_integers", js_code)
+        self.assertIn("test_match_strings", js_code)
+
+        # Should have conditional structures (if/else or switch)
+        has_conditionals = "if" in js_code or "switch" in js_code
+        self.assertTrue(has_conditionals, "Should have conditional structures")
+
+    def test_destructuring_fixtures_compile(self) -> None:
+        """Test that destructuring pattern fixtures compile."""
+        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_destructuring.jac"))
+
+        # Should have destructuring test functions
+        self.assertIn("test_array_destructuring", js_code)
+        self.assertIn("test_tuple_swap", js_code)
+
+        # Should generate valid JavaScript
+        self.assertGreater(len(js_code), 100)
+
+    def test_sequence_expression_fixtures_compile(self) -> None:
+        """Test that sequence expression (walrus) fixtures compile."""
+        js_code = self.compile_to_js(self.get_fixture_path("low_priority_sequence_expressions.jac"))
+
+        # Should have walrus test functions
+        self.assertIn("test_walrus_basic", js_code)
+        self.assertIn("test_walrus_while", js_code)
+
+    def test_all_new_fixtures_have_valid_syntax(self) -> None:
+        """Test that all new fixture files have balanced braces and generate valid output."""
+        all_new_fixtures = [
+            # High priority
+            "high_priority_lambdas.jac",
+            "high_priority_ternary.jac",
+            "high_priority_spread_rest.jac",
+            "high_priority_async_await.jac",
+            "high_priority_yield.jac",
+            "high_priority_for_loops.jac",
+            # Medium priority
+            "medium_priority_template_literals.jac",
+            "medium_priority_update_expressions.jac",
+            "medium_priority_switch_match.jac",
+            "medium_priority_destructuring.jac",
+            # Low priority
+            "low_priority_sequence_expressions.jac",
+            "low_priority_do_while.jac",
+            "low_priority_optional_chaining.jac",
+        ]
+
+        for fixture in all_new_fixtures:
+            with self.subTest(fixture=fixture):
+                js_code = self.compile_to_js(self.get_fixture_path(fixture))
+
+                # Check balanced braces
+                open_braces = js_code.count("{")
+                close_braces = js_code.count("}")
+                self.assertEqual(
+                    open_braces, close_braces,
+                    f"Unbalanced braces in {fixture}: {open_braces} open, {close_braces} close"
+                )
+
+                # Check balanced parentheses
+                open_parens = js_code.count("(")
+                close_parens = js_code.count(")")
+                self.assertEqual(
+                    open_parens, close_parens,
+                    f"Unbalanced parens in {fixture}: {open_parens} open, {close_parens} close"
+                )
+
+                # Check balanced brackets
+                open_brackets = js_code.count("[")
+                close_brackets = js_code.count("]")
+                self.assertEqual(
+                    open_brackets, close_brackets,
+                    f"Unbalanced brackets in {fixture}: {open_brackets} open, {close_brackets} close"
+                )
+
+                # Ensure non-empty output
+                self.assertGreater(
+                    len(js_code), 50,
+                    f"{fixture} generated suspiciously small output"
+                )

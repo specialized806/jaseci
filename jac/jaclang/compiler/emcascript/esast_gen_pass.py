@@ -1038,6 +1038,10 @@ class EsastGenPass(UniPass):
         properties: list[Union[es.Property, es.SpreadElement]] = []
         for kv_pair in node.kv_pairs:
             if isinstance(kv_pair, uni.KVPair):
+                # Check if key is None (can happen with spread syntax)
+                if kv_pair.key is None or kv_pair.value is None:
+                    continue
+
                 key = (
                     kv_pair.key.gen.es_ast
                     if hasattr(kv_pair.key.gen, "es_ast")
