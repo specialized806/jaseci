@@ -1731,32 +1731,15 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [self.sync(destroy_expr), self.sync(delete_stmt)]
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
-        # Extract args and keywords from the expression
-        # report() can have both positional args and keyword args like report(val, custom=True)
-        args: list[ast3.expr] = []
-        keywords: list[ast3.keyword] = []
-
-        if isinstance(node.expr, uni.TupleVal):
-            for val in node.expr.values:
-                if isinstance(val, uni.KWPair):
-                    # This is a keyword argument
-                    keywords.append(cast(ast3.keyword, val.gen.py_ast[0]))
-                else:
-                    # This is a positional argument
-                    args.append(cast(ast3.expr, val.gen.py_ast[0]))
-        else:
-            # Single value, treat as positional argument
-            args = cast(list[ast3.expr], node.expr.gen.py_ast)
-
         node.gen.py_ast = [
             self.sync(
                 ast3.Expr(
                     value=self.sync(
                         self.sync(
                             ast3.Call(
-                                func=self.jaclib_obj("report"),
-                                args=args,
-                                keywords=keywords,
+                                func=self.jaclib_obj("log_report"),
+                                args=cast(list[ast3.expr], node.expr.gen.py_ast),
+                                keywords=[],
                             )
                         )
                     )

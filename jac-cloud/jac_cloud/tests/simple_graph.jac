@@ -1,6 +1,6 @@
 """Example of simple walker walking nodes."""
 import sys;
-import from jaclang.lib { Walker, get_context, destroy, report, reset_graph, perm_grant, perm_revoke }
+import from jaclang.lib { Walker, get_context, destroy, reset_graph, perm_grant, perm_revoke, log_report }
 import from jac_cloud.core.context {JaseciContext}
 import from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import from jac_cloud.jaseci.utils {SendGridEmailer}
@@ -614,7 +614,7 @@ walker custom_report {
         report 2;
         report 3;
 
-        report(CustomResponse(value=1), True);
+        log_report(CustomResponse(value=1), True);
     }
 
     class __specs__ {
@@ -660,7 +660,7 @@ walker html_response {
 
     can enter with `root entry {
         html = """<!DOCTYPE html><html lang="en"><body>HELLO WORLD</body></html>""";
-        report(HTMLResponse(html), custom=True);
+        log_report(HTMLResponse(html), custom=True);
     }
 }
 
@@ -678,7 +678,7 @@ walker stream_response {
                 yield str(i);
             }
         }
-        report(
+        log_report(
             StreamingResponse(
                 generator(),
                 media_type="text/event-stream"

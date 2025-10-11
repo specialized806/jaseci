@@ -1063,7 +1063,7 @@ class JacBasics:
         return field(init=init)
 
     @staticmethod
-    def report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
+    def log_report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
         ctx = JacMachineInterface.get_context()
         if custom:
