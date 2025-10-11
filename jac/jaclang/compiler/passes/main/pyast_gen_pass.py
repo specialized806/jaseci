@@ -3160,6 +3160,10 @@ class PyastGenPass(UniPass):
         else:
             node.gen.py_ast = [self.sync(ast3.Constant(value=name_str), node)]
 
+    def exit_jsx_attribute(self, node: uni.JsxAttribute) -> None:
+        """Bases class for JSX attributes - handled by subclasses."""
+        pass
+
     def exit_jsx_spread_attribute(self, node: uni.JsxSpreadAttribute) -> None:
         """Generate Python AST for JSX spread attributes.
 
@@ -3189,6 +3193,10 @@ class PyastGenPass(UniPass):
                 node,
             )
         ]
+
+    def exit_jsx_child(self, node: uni.JsxChild) -> None:
+        """Bases class for JSX children - handled by subclasses."""
+        pass
 
     def exit_jsx_text(self, node: uni.JsxText) -> None:
         """Generate Python AST for JSX text nodes."""
