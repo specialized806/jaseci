@@ -13,7 +13,7 @@ Reference: https://github.com/estree/estree
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, Sequence, Union
+from typing import Any, Literal as LiteralType, Optional, Sequence, Union
 
 
 # Base Node Types
@@ -54,7 +54,7 @@ class Identifier(Node):
     """Identifier node."""
 
     name: str = ""
-    type: Literal["Identifier"] = field(default="Identifier", init=False)
+    type: LiteralType["Identifier"] = field(default="Identifier", init=False)
 
 
 @dataclass
@@ -63,7 +63,7 @@ class Literal(Node):
 
     value: Union[str, bool, None, int, float] = None
     raw: Optional[str] = None
-    type: Literal["Literal"] = field(default="Literal", init=False)
+    type: LiteralType["Literal"] = field(default="Literal", init=False)
 
 
 @dataclass
@@ -71,7 +71,7 @@ class RegExpLiteral(Literal):
     """Regular expression literal."""
 
     regex: dict[str, str] = field(default_factory=dict)  # {pattern: str, flags: str}
-    type: Literal["Literal"] = field(default="Literal", init=False)
+    type: LiteralType["Literal"] = field(default="Literal", init=False)
 
 
 # Program and Statements
@@ -83,8 +83,8 @@ class Program(Node):
     """Root node of an ESTree."""
 
     body: list[Union["Statement", "ModuleDeclaration"]] = field(default_factory=list)
-    sourceType: Literal["script", "module"] = "script"
-    type: Literal["Program"] = field(default="Program", init=False)
+    sourceType: LiteralType["script", "module"] = "script"
+    type: LiteralType["Program"] = field(default="Program", init=False)
 
 
 @dataclass
@@ -92,7 +92,7 @@ class ExpressionStatement(Node):
     """Expression statement."""
 
     expression: Optional["Expression"] = None
-    type: Literal["ExpressionStatement"] = field(
+    type: LiteralType["ExpressionStatement"] = field(
         default="ExpressionStatement", init=False
     )
 
@@ -102,21 +102,23 @@ class BlockStatement(Node):
     """Block statement."""
 
     body: list["Statement"] = field(default_factory=list)
-    type: Literal["BlockStatement"] = field(default="BlockStatement", init=False)
+    type: LiteralType["BlockStatement"] = field(default="BlockStatement", init=False)
 
 
 @dataclass
 class EmptyStatement(Node):
     """Empty statement (;)."""
 
-    type: Literal["EmptyStatement"] = field(default="EmptyStatement", init=False)
+    type: LiteralType["EmptyStatement"] = field(default="EmptyStatement", init=False)
 
 
 @dataclass
 class DebuggerStatement(Node):
     """Debugger statement."""
 
-    type: Literal["DebuggerStatement"] = field(default="DebuggerStatement", init=False)
+    type: LiteralType["DebuggerStatement"] = field(
+        default="DebuggerStatement", init=False
+    )
 
 
 @dataclass
@@ -125,7 +127,7 @@ class WithStatement(Node):
 
     object: Optional["Expression"] = None
     body: Optional["Statement"] = None
-    type: Literal["WithStatement"] = field(default="WithStatement", init=False)
+    type: LiteralType["WithStatement"] = field(default="WithStatement", init=False)
 
 
 @dataclass
@@ -133,7 +135,7 @@ class ReturnStatement(Node):
     """Return statement."""
 
     argument: Optional["Expression"] = None
-    type: Literal["ReturnStatement"] = field(default="ReturnStatement", init=False)
+    type: LiteralType["ReturnStatement"] = field(default="ReturnStatement", init=False)
 
 
 @dataclass
@@ -142,7 +144,9 @@ class LabeledStatement(Node):
 
     label: Optional[Identifier] = None
     body: Optional["Statement"] = None
-    type: Literal["LabeledStatement"] = field(default="LabeledStatement", init=False)
+    type: LiteralType["LabeledStatement"] = field(
+        default="LabeledStatement", init=False
+    )
 
 
 @dataclass
@@ -150,7 +154,7 @@ class BreakStatement(Node):
     """Break statement."""
 
     label: Optional[Identifier] = None
-    type: Literal["BreakStatement"] = field(default="BreakStatement", init=False)
+    type: LiteralType["BreakStatement"] = field(default="BreakStatement", init=False)
 
 
 @dataclass
@@ -158,7 +162,9 @@ class ContinueStatement(Node):
     """Continue statement."""
 
     label: Optional[Identifier] = None
-    type: Literal["ContinueStatement"] = field(default="ContinueStatement", init=False)
+    type: LiteralType["ContinueStatement"] = field(
+        default="ContinueStatement", init=False
+    )
 
 
 @dataclass
@@ -168,7 +174,7 @@ class IfStatement(Node):
     test: Optional["Expression"] = None
     consequent: Optional["Statement"] = None
     alternate: Optional["Statement"] = None
-    type: Literal["IfStatement"] = field(default="IfStatement", init=False)
+    type: LiteralType["IfStatement"] = field(default="IfStatement", init=False)
 
 
 @dataclass
@@ -177,7 +183,7 @@ class SwitchStatement(Node):
 
     discriminant: Optional["Expression"] = None
     cases: list["SwitchCase"] = field(default_factory=list)
-    type: Literal["SwitchStatement"] = field(default="SwitchStatement", init=False)
+    type: LiteralType["SwitchStatement"] = field(default="SwitchStatement", init=False)
 
 
 @dataclass
@@ -186,7 +192,7 @@ class SwitchCase(Node):
 
     test: Optional["Expression"] = None  # null for default case
     consequent: list["Statement"] = field(default_factory=list)
-    type: Literal["SwitchCase"] = field(default="SwitchCase", init=False)
+    type: LiteralType["SwitchCase"] = field(default="SwitchCase", init=False)
 
 
 @dataclass
@@ -194,7 +200,7 @@ class ThrowStatement(Node):
     """Throw statement."""
 
     argument: Optional["Expression"] = None
-    type: Literal["ThrowStatement"] = field(default="ThrowStatement", init=False)
+    type: LiteralType["ThrowStatement"] = field(default="ThrowStatement", init=False)
 
 
 @dataclass
@@ -204,7 +210,7 @@ class TryStatement(Node):
     block: Optional[BlockStatement] = None
     handler: Optional["CatchClause"] = None
     finalizer: Optional[BlockStatement] = None
-    type: Literal["TryStatement"] = field(default="TryStatement", init=False)
+    type: LiteralType["TryStatement"] = field(default="TryStatement", init=False)
 
 
 @dataclass
@@ -213,7 +219,7 @@ class CatchClause(Node):
 
     param: Optional["Pattern"] = None
     body: Optional[BlockStatement] = None
-    type: Literal["CatchClause"] = field(default="CatchClause", init=False)
+    type: LiteralType["CatchClause"] = field(default="CatchClause", init=False)
 
 
 @dataclass
@@ -222,7 +228,7 @@ class WhileStatement(Node):
 
     test: Optional["Expression"] = None
     body: Optional["Statement"] = None
-    type: Literal["WhileStatement"] = field(default="WhileStatement", init=False)
+    type: LiteralType["WhileStatement"] = field(default="WhileStatement", init=False)
 
 
 @dataclass
@@ -231,7 +237,9 @@ class DoWhileStatement(Node):
 
     body: Optional["Statement"] = None
     test: Optional["Expression"] = None
-    type: Literal["DoWhileStatement"] = field(default="DoWhileStatement", init=False)
+    type: LiteralType["DoWhileStatement"] = field(
+        default="DoWhileStatement", init=False
+    )
 
 
 @dataclass
@@ -242,7 +250,7 @@ class ForStatement(Node):
     test: Optional["Expression"] = None
     update: Optional["Expression"] = None
     body: Optional["Statement"] = None
-    type: Literal["ForStatement"] = field(default="ForStatement", init=False)
+    type: LiteralType["ForStatement"] = field(default="ForStatement", init=False)
 
 
 @dataclass
@@ -252,7 +260,7 @@ class ForInStatement(Node):
     left: Optional[Union["VariableDeclaration", "Pattern"]] = None
     right: Optional["Expression"] = None
     body: Optional["Statement"] = None
-    type: Literal["ForInStatement"] = field(default="ForInStatement", init=False)
+    type: LiteralType["ForInStatement"] = field(default="ForInStatement", init=False)
 
 
 @dataclass
@@ -263,7 +271,7 @@ class ForOfStatement(Node):
     right: Optional["Expression"] = None
     body: Optional["Statement"] = None
     await_: bool = False
-    type: Literal["ForOfStatement"] = field(default="ForOfStatement", init=False)
+    type: LiteralType["ForOfStatement"] = field(default="ForOfStatement", init=False)
 
 
 # Declarations
@@ -279,7 +287,7 @@ class FunctionDeclaration(Node):
     body: Optional[BlockStatement] = None
     generator: bool = False
     async_: bool = False
-    type: Literal["FunctionDeclaration"] = field(
+    type: LiteralType["FunctionDeclaration"] = field(
         default="FunctionDeclaration", init=False
     )
 
@@ -289,8 +297,8 @@ class VariableDeclaration(Node):
     """Variable declaration."""
 
     declarations: list["VariableDeclarator"] = field(default_factory=list)
-    kind: Literal["var", "let", "const"] = "var"
-    type: Literal["VariableDeclaration"] = field(
+    kind: LiteralType["var", "let", "const"] = "var"
+    type: LiteralType["VariableDeclaration"] = field(
         default="VariableDeclaration", init=False
     )
 
@@ -301,7 +309,7 @@ class VariableDeclarator(Node):
 
     id: Optional["Pattern"] = None
     init: Optional["Expression"] = None
-    type: Literal["VariableDeclarator"] = field(
+    type: LiteralType["VariableDeclarator"] = field(
         default="VariableDeclarator", init=False
     )
 
@@ -314,7 +322,7 @@ class VariableDeclarator(Node):
 class ThisExpression(Node):
     """This expression."""
 
-    type: Literal["ThisExpression"] = field(default="ThisExpression", init=False)
+    type: LiteralType["ThisExpression"] = field(default="ThisExpression", init=False)
 
 
 @dataclass
@@ -324,7 +332,7 @@ class ArrayExpression(Node):
     elements: list[Optional[Union["Expression", "SpreadElement"]]] = field(
         default_factory=list
     )
-    type: Literal["ArrayExpression"] = field(default="ArrayExpression", init=False)
+    type: LiteralType["ArrayExpression"] = field(default="ArrayExpression", init=False)
 
 
 @dataclass
@@ -332,7 +340,9 @@ class ObjectExpression(Node):
     """Object expression."""
 
     properties: list[Union["Property", "SpreadElement"]] = field(default_factory=list)
-    type: Literal["ObjectExpression"] = field(default="ObjectExpression", init=False)
+    type: LiteralType["ObjectExpression"] = field(
+        default="ObjectExpression", init=False
+    )
 
 
 @dataclass
@@ -341,11 +351,11 @@ class Property(Node):
 
     key: Optional[Union["Expression", Identifier, Literal]] = None
     value: Optional["Expression"] = None
-    kind: Literal["init", "get", "set"] = "init"
+    kind: LiteralType["init", "get", "set"] = "init"
     method: bool = False
     shorthand: bool = False
     computed: bool = False
-    type: Literal["Property"] = field(default="Property", init=False)
+    type: LiteralType["Property"] = field(default="Property", init=False)
 
 
 @dataclass
@@ -357,7 +367,7 @@ class FunctionExpression(Node):
     body: Optional[BlockStatement] = None
     generator: bool = False
     async_: bool = False
-    type: Literal["FunctionExpression"] = field(
+    type: LiteralType["FunctionExpression"] = field(
         default="FunctionExpression", init=False
     )
 
@@ -370,7 +380,7 @@ class ArrowFunctionExpression(Node):
     body: Optional[Union[BlockStatement, "Expression"]] = None
     expression: bool = False
     async_: bool = False
-    type: Literal["ArrowFunctionExpression"] = field(
+    type: LiteralType["ArrowFunctionExpression"] = field(
         default="ArrowFunctionExpression", init=False
     )
 
@@ -382,17 +392,19 @@ class UnaryExpression(Node):
     operator: str = ""  # "-", "+", "!", "~", "typeof", "void", "delete"
     prefix: bool = True
     argument: Optional["Expression"] = None
-    type: Literal["UnaryExpression"] = field(default="UnaryExpression", init=False)
+    type: LiteralType["UnaryExpression"] = field(default="UnaryExpression", init=False)
 
 
 @dataclass
 class UpdateExpression(Node):
     """Update expression."""
 
-    operator: Literal["++", "--"] = "++"
+    operator: LiteralType["++", "--"] = "++"
     argument: Optional["Expression"] = None
     prefix: bool = True
-    type: Literal["UpdateExpression"] = field(default="UpdateExpression", init=False)
+    type: LiteralType["UpdateExpression"] = field(
+        default="UpdateExpression", init=False
+    )
 
 
 @dataclass
@@ -404,7 +416,9 @@ class BinaryExpression(Node):
     )
     left: Optional["Expression"] = None
     right: Optional["Expression"] = None
-    type: Literal["BinaryExpression"] = field(default="BinaryExpression", init=False)
+    type: LiteralType["BinaryExpression"] = field(
+        default="BinaryExpression", init=False
+    )
 
 
 @dataclass
@@ -416,7 +430,7 @@ class AssignmentExpression(Node):
     )
     left: Optional[Union["Pattern", "Expression"]] = None
     right: Optional["Expression"] = None
-    type: Literal["AssignmentExpression"] = field(
+    type: LiteralType["AssignmentExpression"] = field(
         default="AssignmentExpression", init=False
     )
 
@@ -425,10 +439,12 @@ class AssignmentExpression(Node):
 class LogicalExpression(Node):
     """Logical expression."""
 
-    operator: Literal["||", "&&", "??"] = "&&"
+    operator: LiteralType["||", "&&", "??"] = "&&"
     left: Optional["Expression"] = None
     right: Optional["Expression"] = None
-    type: Literal["LogicalExpression"] = field(default="LogicalExpression", init=False)
+    type: LiteralType["LogicalExpression"] = field(
+        default="LogicalExpression", init=False
+    )
 
 
 @dataclass
@@ -439,7 +455,9 @@ class MemberExpression(Node):
     property: Optional["Expression"] = None
     computed: bool = False
     optional: bool = False
-    type: Literal["MemberExpression"] = field(default="MemberExpression", init=False)
+    type: LiteralType["MemberExpression"] = field(
+        default="MemberExpression", init=False
+    )
 
 
 @dataclass
@@ -449,7 +467,7 @@ class ConditionalExpression(Node):
     test: Optional["Expression"] = None
     consequent: Optional["Expression"] = None
     alternate: Optional["Expression"] = None
-    type: Literal["ConditionalExpression"] = field(
+    type: LiteralType["ConditionalExpression"] = field(
         default="ConditionalExpression", init=False
     )
 
@@ -461,7 +479,7 @@ class CallExpression(Node):
     callee: Optional[Union["Expression", "Super"]] = None
     arguments: list[Union["Expression", "SpreadElement"]] = field(default_factory=list)
     optional: bool = False
-    type: Literal["CallExpression"] = field(default="CallExpression", init=False)
+    type: LiteralType["CallExpression"] = field(default="CallExpression", init=False)
 
 
 @dataclass
@@ -470,7 +488,7 @@ class NewExpression(Node):
 
     callee: Optional["Expression"] = None
     arguments: list[Union["Expression", "SpreadElement"]] = field(default_factory=list)
-    type: Literal["NewExpression"] = field(default="NewExpression", init=False)
+    type: LiteralType["NewExpression"] = field(default="NewExpression", init=False)
 
 
 @dataclass
@@ -478,7 +496,7 @@ class SequenceExpression(Node):
     """Sequence expression."""
 
     expressions: list["Expression"] = field(default_factory=list)
-    type: Literal["SequenceExpression"] = field(
+    type: LiteralType["SequenceExpression"] = field(
         default="SequenceExpression", init=False
     )
 
@@ -489,7 +507,7 @@ class YieldExpression(Node):
 
     argument: Optional["Expression"] = None
     delegate: bool = False
-    type: Literal["YieldExpression"] = field(default="YieldExpression", init=False)
+    type: LiteralType["YieldExpression"] = field(default="YieldExpression", init=False)
 
 
 @dataclass
@@ -497,7 +515,7 @@ class AwaitExpression(Node):
     """Await expression (ES2017)."""
 
     argument: Optional["Expression"] = None
-    type: Literal["AwaitExpression"] = field(default="AwaitExpression", init=False)
+    type: LiteralType["AwaitExpression"] = field(default="AwaitExpression", init=False)
 
 
 @dataclass
@@ -506,7 +524,7 @@ class TemplateLiteral(Node):
 
     quasis: list["TemplateElement"] = field(default_factory=list)
     expressions: list["Expression"] = field(default_factory=list)
-    type: Literal["TemplateLiteral"] = field(default="TemplateLiteral", init=False)
+    type: LiteralType["TemplateLiteral"] = field(default="TemplateLiteral", init=False)
 
 
 @dataclass
@@ -515,7 +533,7 @@ class TemplateElement(Node):
 
     tail: bool = False
     value: dict[str, str] = field(default_factory=dict)  # {cooked: str, raw: str}
-    type: Literal["TemplateElement"] = field(default="TemplateElement", init=False)
+    type: LiteralType["TemplateElement"] = field(default="TemplateElement", init=False)
 
 
 @dataclass
@@ -524,7 +542,7 @@ class TaggedTemplateExpression(Node):
 
     tag: Optional["Expression"] = None
     quasi: Optional[TemplateLiteral] = None
-    type: Literal["TaggedTemplateExpression"] = field(
+    type: LiteralType["TaggedTemplateExpression"] = field(
         default="TaggedTemplateExpression", init=False
     )
 
@@ -534,14 +552,14 @@ class SpreadElement(Node):
     """Spread element (ES6)."""
 
     argument: Optional["Expression"] = None
-    type: Literal["SpreadElement"] = field(default="SpreadElement", init=False)
+    type: LiteralType["SpreadElement"] = field(default="SpreadElement", init=False)
 
 
 @dataclass
 class Super(Node):
     """Super keyword."""
 
-    type: Literal["Super"] = field(default="Super", init=False)
+    type: LiteralType["Super"] = field(default="Super", init=False)
 
 
 @dataclass
@@ -550,7 +568,7 @@ class MetaProperty(Node):
 
     meta: Optional[Identifier] = None
     property: Optional[Identifier] = None
-    type: Literal["MetaProperty"] = field(default="MetaProperty", init=False)
+    type: LiteralType["MetaProperty"] = field(default="MetaProperty", init=False)
 
 
 # Patterns (ES6)
@@ -563,7 +581,9 @@ class AssignmentPattern(Node):
 
     left: Optional["Pattern"] = None
     right: Optional["Expression"] = None
-    type: Literal["AssignmentPattern"] = field(default="AssignmentPattern", init=False)
+    type: LiteralType["AssignmentPattern"] = field(
+        default="AssignmentPattern", init=False
+    )
 
 
 @dataclass
@@ -571,7 +591,7 @@ class ArrayPattern(Node):
     """Array destructuring pattern."""
 
     elements: list[Optional["Pattern"]] = field(default_factory=list)
-    type: Literal["ArrayPattern"] = field(default="ArrayPattern", init=False)
+    type: LiteralType["ArrayPattern"] = field(default="ArrayPattern", init=False)
 
 
 @dataclass
@@ -581,7 +601,7 @@ class ObjectPattern(Node):
     properties: list[Union["AssignmentProperty", "RestElement"]] = field(
         default_factory=list
     )
-    type: Literal["ObjectPattern"] = field(default="ObjectPattern", init=False)
+    type: LiteralType["ObjectPattern"] = field(default="ObjectPattern", init=False)
 
 
 @dataclass
@@ -589,7 +609,7 @@ class AssignmentProperty(Property):
     """Assignment property in object pattern."""
 
     value: Optional["Pattern"] = None
-    type: Literal["Property"] = field(default="Property", init=False)
+    type: LiteralType["Property"] = field(default="Property", init=False)
 
 
 @dataclass
@@ -597,7 +617,7 @@ class RestElement(Node):
     """Rest element."""
 
     argument: Optional["Pattern"] = None
-    type: Literal["RestElement"] = field(default="RestElement", init=False)
+    type: LiteralType["RestElement"] = field(default="RestElement", init=False)
 
 
 # Classes (ES6)
@@ -611,7 +631,9 @@ class ClassDeclaration(Node):
     id: Optional[Identifier] = None
     superClass: Optional["Expression"] = None
     body: Optional["ClassBody"] = None
-    type: Literal["ClassDeclaration"] = field(default="ClassDeclaration", init=False)
+    type: LiteralType["ClassDeclaration"] = field(
+        default="ClassDeclaration", init=False
+    )
 
 
 @dataclass
@@ -621,7 +643,7 @@ class ClassExpression(Node):
     id: Optional[Identifier] = None
     superClass: Optional["Expression"] = None
     body: Optional["ClassBody"] = None
-    type: Literal["ClassExpression"] = field(default="ClassExpression", init=False)
+    type: LiteralType["ClassExpression"] = field(default="ClassExpression", init=False)
 
 
 @dataclass
@@ -629,7 +651,7 @@ class ClassBody(Node):
     """Class body."""
 
     body: list["MethodDefinition"] = field(default_factory=list)
-    type: Literal["ClassBody"] = field(default="ClassBody", init=False)
+    type: LiteralType["ClassBody"] = field(default="ClassBody", init=False)
 
 
 @dataclass
@@ -638,10 +660,12 @@ class MethodDefinition(Node):
 
     key: Optional[Union["Expression", Identifier]] = None
     value: Optional[FunctionExpression] = None
-    kind: Literal["constructor", "method", "get", "set"] = "method"
+    kind: LiteralType["constructor", "method", "get", "set"] = "method"
     computed: bool = False
     static: bool = False
-    type: Literal["MethodDefinition"] = field(default="MethodDefinition", init=False)
+    type: LiteralType["MethodDefinition"] = field(
+        default="MethodDefinition", init=False
+    )
 
 
 # Modules (ES6)
@@ -656,7 +680,9 @@ class ImportDeclaration(Node):
         Union["ImportSpecifier", "ImportDefaultSpecifier", "ImportNamespaceSpecifier"]
     ] = field(default_factory=list)
     source: Optional[Literal] = None
-    type: Literal["ImportDeclaration"] = field(default="ImportDeclaration", init=False)
+    type: LiteralType["ImportDeclaration"] = field(
+        default="ImportDeclaration", init=False
+    )
 
 
 @dataclass
@@ -665,7 +691,7 @@ class ImportSpecifier(Node):
 
     imported: Optional[Identifier] = None
     local: Optional[Identifier] = None
-    type: Literal["ImportSpecifier"] = field(default="ImportSpecifier", init=False)
+    type: LiteralType["ImportSpecifier"] = field(default="ImportSpecifier", init=False)
 
 
 @dataclass
@@ -673,7 +699,7 @@ class ImportDefaultSpecifier(Node):
     """Import default specifier."""
 
     local: Optional[Identifier] = None
-    type: Literal["ImportDefaultSpecifier"] = field(
+    type: LiteralType["ImportDefaultSpecifier"] = field(
         default="ImportDefaultSpecifier", init=False
     )
 
@@ -683,7 +709,7 @@ class ImportNamespaceSpecifier(Node):
     """Import namespace specifier."""
 
     local: Optional[Identifier] = None
-    type: Literal["ImportNamespaceSpecifier"] = field(
+    type: LiteralType["ImportNamespaceSpecifier"] = field(
         default="ImportNamespaceSpecifier", init=False
     )
 
@@ -695,7 +721,7 @@ class ExportNamedDeclaration(Node):
     declaration: Optional[Union["Declaration", "Expression"]] = None
     specifiers: list["ExportSpecifier"] = field(default_factory=list)
     source: Optional[Literal] = None
-    type: Literal["ExportNamedDeclaration"] = field(
+    type: LiteralType["ExportNamedDeclaration"] = field(
         default="ExportNamedDeclaration", init=False
     )
 
@@ -706,7 +732,7 @@ class ExportSpecifier(Node):
 
     exported: Optional[Identifier] = None
     local: Optional[Identifier] = None
-    type: Literal["ExportSpecifier"] = field(default="ExportSpecifier", init=False)
+    type: LiteralType["ExportSpecifier"] = field(default="ExportSpecifier", init=False)
 
 
 @dataclass
@@ -714,7 +740,7 @@ class ExportDefaultDeclaration(Node):
     """Export default declaration."""
 
     declaration: Optional[Union["Declaration", "Expression"]] = None
-    type: Literal["ExportDefaultDeclaration"] = field(
+    type: LiteralType["ExportDefaultDeclaration"] = field(
         default="ExportDefaultDeclaration", init=False
     )
 
@@ -725,7 +751,7 @@ class ExportAllDeclaration(Node):
 
     source: Optional[Literal] = None
     exported: Optional[Identifier] = None
-    type: Literal["ExportAllDeclaration"] = field(
+    type: LiteralType["ExportAllDeclaration"] = field(
         default="ExportAllDeclaration", init=False
     )
 
