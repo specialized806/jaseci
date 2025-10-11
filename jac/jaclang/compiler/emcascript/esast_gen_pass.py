@@ -812,10 +812,12 @@ class EsastGenPass(UniPass):
         """Process assignment expression."""
         # Handle first target
         if node.target:
+            # Get target identifier
+            target_node = node.target[0]
             left = (
-                node.target[0].gen.es_ast
-                if hasattr(node.target[0].gen, "es_ast")
-                else self.sync_loc(es.Identifier(name="temp"), jac_node=node.target[0])
+                target_node.gen.es_ast
+                if hasattr(target_node.gen, "es_ast")
+                else self.sync_loc(es.Identifier(name="temp"), jac_node=target_node)
             )
             right = (
                 node.value.gen.es_ast
@@ -823,22 +825,46 @@ class EsastGenPass(UniPass):
                 else self.sync_loc(es.Literal(value=None), jac_node=node)
             )
 
-            op_map = {
-                Tok.EQ: "=",
-                Tok.ADD_EQ: "+=",
-                Tok.SUB_EQ: "-=",
-                Tok.MUL_EQ: "*=",
-                Tok.DIV_EQ: "/=",
-                Tok.MOD_EQ: "%=",
-            }
+            # Check if this is a simple assignment (not augmented like +=, -=, etc.)
+            # and if the target is a simple identifier (not a property access)
+            is_simple_assignment = not node.aug_op
+            is_identifier = isinstance(left, es.Identifier)
 
-            operator = op_map.get(node.aug_op.name if node.aug_op else Tok.EQ, "=")
+            # For simple assignments to identifiers, create a variable declaration
+            # This ensures variables are declared with 'let' in JavaScript
+            if is_simple_assignment and is_identifier:
+                # Create variable declaration
+                var_decl = self.sync_loc(
+                    es.VariableDeclaration(
+                        declarations=[
+                            self.sync_loc(
+                                es.VariableDeclarator(id=left, init=right),
+                                jac_node=node,
+                            )
+                        ],
+                        kind="let",  # Use 'let' for mutable variables
+                    ),
+                    jac_node=node,
+                )
+                node.gen.es_ast = var_decl
+            else:
+                # For augmented assignments or property assignments, use assignment expression
+                op_map = {
+                    Tok.EQ: "=",
+                    Tok.ADD_EQ: "+=",
+                    Tok.SUB_EQ: "-=",
+                    Tok.MUL_EQ: "*=",
+                    Tok.DIV_EQ: "/=",
+                    Tok.MOD_EQ: "%=",
+                }
 
-            assign_expr = self.sync_loc(
-                es.AssignmentExpression(operator=operator, left=left, right=right),
-                jac_node=node,
-            )
-            node.gen.es_ast = assign_expr
+                operator = op_map.get(node.aug_op.name if node.aug_op else Tok.EQ, "=")
+
+                assign_expr = self.sync_loc(
+                    es.AssignmentExpression(operator=operator, left=left, right=right),
+                    jac_node=node,
+                )
+                node.gen.es_ast = assign_expr
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Process function call."""
@@ -1063,6 +1089,69 @@ class EsastGenPass(UniPass):
         )
         node.gen.es_ast = float_lit
 
+    def exit_multi_string(self, node: uni.MultiString) -> None:
+        """Process multi-string literal."""
+        # MultiString can contain multiple string parts (for concatenation)
+        # For now, concatenate them into a single string
+        if not node.strings:
+            null_lit = self.sync_loc(es.Literal(value="", raw='""'), jac_node=node)
+            node.gen.es_ast = null_lit
+            return
+
+        # If single string, just use it
+        if len(node.strings) == 1:
+            string_node = node.strings[0]
+            if hasattr(string_node.gen, "es_ast") and string_node.gen.es_ast:
+                node.gen.es_ast = string_node.gen.es_ast
+            else:
+                # Fallback: process the string directly (String only, not FString)
+                if isinstance(string_node, uni.String):
+                    value = string_node.value
+                    if value.startswith(('"""', "'''")):
+                        value = value[3:-3]
+                    elif value.startswith(('"', "'")):
+                        value = value[1:-1]
+                    str_lit = self.sync_loc(
+                        es.Literal(value=value, raw=string_node.value),
+                        jac_node=string_node,
+                    )
+                    node.gen.es_ast = str_lit
+                else:
+                    # FString should have been processed already
+                    node.gen.es_ast = self.sync_loc(es.Literal(value=""), jac_node=node)
+            return
+
+        # Multiple strings - create a concatenation expression
+        parts = []
+        for string_node in node.strings:
+            if hasattr(string_node.gen, "es_ast") and string_node.gen.es_ast:
+                parts.append(string_node.gen.es_ast)
+            elif isinstance(string_node, uni.String):
+                # Fallback for String nodes only
+                value = string_node.value
+                if value.startswith(('"""', "'''")):
+                    value = value[3:-3]
+                elif value.startswith(('"', "'")):
+                    value = value[1:-1]
+                str_lit = self.sync_loc(
+                    es.Literal(value=value, raw=string_node.value), jac_node=string_node
+                )
+                parts.append(str_lit)
+            # Skip FString nodes that haven't been processed
+
+        if not parts:
+            node.gen.es_ast = self.sync_loc(es.Literal(value=""), jac_node=node)
+            return
+
+        # Create binary expression for concatenation
+        result = parts[0]
+        for part in parts[1:]:
+            result = self.sync_loc(
+                es.BinaryExpression(operator="+", left=result, right=part),
+                jac_node=node,
+            )
+        node.gen.es_ast = result
+
     def exit_string(self, node: uni.String) -> None:
         """Process string literal."""
         # Remove quotes from the value
@@ -1074,6 +1163,35 @@ class EsastGenPass(UniPass):
 
         str_lit = self.sync_loc(es.Literal(value=value, raw=node.value), jac_node=node)
         node.gen.es_ast = str_lit
+
+    def exit_f_string(self, node: uni.FString) -> None:
+        """Process f-string literal as template literal."""
+        # F-strings need to be converted to template literals (backtick strings) in JS
+        # f"Hello {name}" -> `Hello ${name}`
+
+        # For now, convert to concatenation of strings and expressions
+        # This is a simplified version - proper template literals would be better
+        parts: list[es.Expression] = []
+
+        for part in node.parts:
+            if hasattr(part.gen, "es_ast") and part.gen.es_ast:
+                parts.append(part.gen.es_ast)
+
+        if not parts:
+            # Empty f-string
+            node.gen.es_ast = self.sync_loc(es.Literal(value=""), jac_node=node)
+        elif len(parts) == 1:
+            # Single part
+            node.gen.es_ast = parts[0]
+        else:
+            # Multiple parts - concatenate with +
+            result = parts[0]
+            for part in parts[1:]:
+                result = self.sync_loc(
+                    es.BinaryExpression(operator="+", left=result, right=part),
+                    jac_node=node,
+                )
+            node.gen.es_ast = result
 
     def exit_null(self, node: uni.Null) -> None:
         """Process null/None literal."""
