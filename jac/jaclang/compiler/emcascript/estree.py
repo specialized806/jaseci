@@ -58,11 +58,22 @@ class Identifier(Node):
 
 
 @dataclass
+class PrivateIdentifier(Node):
+    """Private identifier for class members (ES2022)."""
+
+    name: str = ""
+    type: LiteralType["PrivateIdentifier"] = field(
+        default="PrivateIdentifier", init=False
+    )
+
+
+@dataclass
 class Literal(Node):
-    """Literal value node."""
+    """Literal value node (supports BigInt in ES2020)."""
 
     value: Union[str, bool, None, int, float] = None
     raw: Optional[str] = None
+    bigint: Optional[str] = None  # ES2020: BigInt represented as string
     type: LiteralType["Literal"] = field(default="Literal", init=False)
 
 
@@ -92,6 +103,16 @@ class ExpressionStatement(Node):
     """Expression statement."""
 
     expression: Optional["Expression"] = None
+    type: LiteralType["ExpressionStatement"] = field(
+        default="ExpressionStatement", init=False
+    )
+
+
+@dataclass
+class Directive(ExpressionStatement):
+    """Directive (e.g., 'use strict') - ES5."""
+
+    directive: str = ""
     type: LiteralType["ExpressionStatement"] = field(
         default="ExpressionStatement", init=False
     )
@@ -483,6 +504,14 @@ class CallExpression(Node):
 
 
 @dataclass
+class ChainExpression(Node):
+    """Optional chaining expression (ES2020)."""
+
+    expression: Optional[Union[CallExpression, MemberExpression]] = None
+    type: LiteralType["ChainExpression"] = field(default="ChainExpression", init=False)
+
+
+@dataclass
 class NewExpression(Node):
     """New expression."""
 
@@ -648,17 +677,19 @@ class ClassExpression(Node):
 
 @dataclass
 class ClassBody(Node):
-    """Class body."""
+    """Class body (ES2022: supports methods, properties, and static blocks)."""
 
-    body: list["MethodDefinition"] = field(default_factory=list)
+    body: list[Union["MethodDefinition", "PropertyDefinition", "StaticBlock"]] = field(
+        default_factory=list
+    )
     type: LiteralType["ClassBody"] = field(default="ClassBody", init=False)
 
 
 @dataclass
 class MethodDefinition(Node):
-    """Method definition."""
+    """Method definition (ES2022: supports private identifiers)."""
 
-    key: Optional[Union["Expression", Identifier]] = None
+    key: Optional[Union["Expression", Identifier, "PrivateIdentifier"]] = None
     value: Optional[FunctionExpression] = None
     kind: LiteralType["constructor", "method", "get", "set"] = "method"
     computed: bool = False
@@ -666,6 +697,27 @@ class MethodDefinition(Node):
     type: LiteralType["MethodDefinition"] = field(
         default="MethodDefinition", init=False
     )
+
+
+@dataclass
+class PropertyDefinition(Node):
+    """Class field definition (ES2022)."""
+
+    key: Optional[Union["Expression", Identifier, "PrivateIdentifier"]] = None
+    value: Optional["Expression"] = None
+    computed: bool = False
+    static: bool = False
+    type: LiteralType["PropertyDefinition"] = field(
+        default="PropertyDefinition", init=False
+    )
+
+
+@dataclass
+class StaticBlock(Node):
+    """Static initialization block (ES2022)."""
+
+    body: list["Statement"] = field(default_factory=list)
+    type: LiteralType["StaticBlock"] = field(default="StaticBlock", init=False)
 
 
 # Modules (ES6)
@@ -682,6 +734,16 @@ class ImportDeclaration(Node):
     source: Optional[Literal] = None
     type: LiteralType["ImportDeclaration"] = field(
         default="ImportDeclaration", init=False
+    )
+
+
+@dataclass
+class ImportExpression(Node):
+    """Dynamic import expression (ES2020)."""
+
+    source: Optional["Expression"] = None
+    type: LiteralType["ImportExpression"] = field(
+        default="ImportExpression", init=False
     )
 
 
@@ -799,6 +861,7 @@ Expression = Union[
     MemberExpression,
     ConditionalExpression,
     CallExpression,
+    ChainExpression,  # ES2020
     NewExpression,
     SequenceExpression,
     YieldExpression,
@@ -806,6 +869,7 @@ Expression = Union[
     TemplateLiteral,
     TaggedTemplateExpression,
     ClassExpression,
+    ImportExpression,  # ES2020
 ]
 
 Pattern = Union[

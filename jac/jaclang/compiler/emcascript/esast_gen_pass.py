@@ -165,7 +165,9 @@ class EsastGenPass(UniPass):
 
     def exit_archetype(self, node: uni.Archetype) -> None:
         """Process archetype (class) declaration."""
-        body_stmts: list[es.MethodDefinition] = []
+        body_stmts: list[
+            Union[es.MethodDefinition, es.PropertyDefinition, es.StaticBlock]
+        ] = []
 
         # Process body
         inner: Sequence[uni.CodeBlockStmt] | None = None
@@ -179,7 +181,10 @@ class EsastGenPass(UniPass):
                 if (
                     hasattr(stmt.gen, "es_ast")
                     and stmt.gen.es_ast
-                    and isinstance(stmt.gen.es_ast, es.MethodDefinition)
+                    and isinstance(
+                        stmt.gen.es_ast,
+                        (es.MethodDefinition, es.PropertyDefinition, es.StaticBlock),
+                    )
                 ):
                     body_stmts.append(stmt.gen.es_ast)
 
