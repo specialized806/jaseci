@@ -333,3 +333,147 @@ class EsastGenPassTests(TestCase):
         )
         self.assertIn("function", result.stdout, "Output should contain 'function'")
 
+    def test_comprehensive_functions(self) -> None:
+        """Test comprehensive function features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_functions.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have multiple functions
+        self.assertIn("function", js_code)
+
+        # Check for different function features
+        func_decls = [
+            node for node in es_ast.body if isinstance(node, es.FunctionDeclaration)
+        ]
+        self.assertGreaterEqual(len(func_decls), 5, "Expected multiple function declarations")
+
+        # Verify function names exist
+        func_names = {func.id.name for func in func_decls if func.id}
+        self.assertIn("simple_function", func_names)
+        self.assertIn("with_params", func_names)
+        self.assertIn("with_return", func_names)
+
+    def test_comprehensive_classes(self) -> None:
+        """Test comprehensive class features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_classes.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have class declarations
+        class_decls = [
+            node for node in es_ast.body if isinstance(node, es.ClassDeclaration)
+        ]
+        self.assertGreaterEqual(len(class_decls), 2, "Expected multiple classes")
+
+        # Check for class keyword
+        self.assertIn("class", js_code)
+
+        # Verify class names
+        class_names = {cls.id.name for cls in class_decls if cls.id}
+        self.assertIn("Person", class_names)
+
+    def test_comprehensive_control_flow(self) -> None:
+        """Test comprehensive control flow features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_control_flow.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have control flow keywords
+        self.assertIn("if", js_code)
+        self.assertIn("while", js_code)
+        self.assertIn("for", js_code)
+        self.assertIn("break", js_code)
+        self.assertIn("continue", js_code)
+
+        # Check for elif (should become else if)
+        self.assertIn("else", js_code)
+
+    def test_comprehensive_expressions(self) -> None:
+        """Test comprehensive expression features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_expressions.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have arithmetic operators
+        self.assertIn("+", js_code)
+        self.assertIn("-", js_code)
+        self.assertIn("*", js_code)
+        self.assertIn("/", js_code)
+        self.assertIn("%", js_code)
+
+        # Should have comparison operators
+        self.assertIn("<", js_code)
+        self.assertIn(">", js_code)
+        self.assertIn("===", js_code)
+        self.assertIn("!==", js_code)
+
+        # Should have logical operators
+        self.assertIn("&&", js_code)
+        self.assertIn("||", js_code)
+        self.assertIn("!", js_code)
+
+        # Should have bitwise operators
+        self.assertIn("&", js_code)
+        self.assertIn("|", js_code)
+        self.assertIn("^", js_code)
+        self.assertIn("<<", js_code)
+        self.assertIn(">>", js_code)
+
+    def test_comprehensive_data_structures(self) -> None:
+        """Test comprehensive data structure features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_data_structures.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have arrays
+        self.assertIn("[", js_code)
+        self.assertIn("]", js_code)
+
+        # Should have objects
+        self.assertIn("{", js_code)
+        self.assertIn("}", js_code)
+
+        # Should have member access
+        self.assertIn(".", js_code)
+
+        # Check for array methods (from comprehensions)
+        # List comprehensions might be transformed to array operations
+
+    def test_comprehensive_enums(self) -> None:
+        """Test comprehensive enum features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_enums.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Enums should be converted to const declarations
+        self.assertIn("const", js_code)
+
+        # Should have multiple enum definitions
+        var_decls = [
+            node for node in es_ast.body if isinstance(node, es.VariableDeclaration)
+        ]
+        self.assertGreaterEqual(len(var_decls), 3, "Expected multiple enum declarations")
+
+    def test_comprehensive_exception_handling(self) -> None:
+        """Test comprehensive exception handling features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_exception_handling.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have try/catch/finally
+        self.assertIn("try", js_code)
+        self.assertIn("catch", js_code)
+        self.assertIn("finally", js_code)
+
+        # Should have throw statement (from raise)
+        self.assertIn("throw", js_code)
+
+    def test_comprehensive_assignments(self) -> None:
+        """Test comprehensive assignment features."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("comprehensive_assignments.jac"))
+        js_code = es_to_js(es_ast)
+
+        # Should have assignment operator
+        self.assertIn("=", js_code)
+
+        # Should have augmented assignments
+        self.assertIn("+=", js_code)
+        self.assertIn("-=", js_code)
+        self.assertIn("*=", js_code)
+        self.assertIn("/=", js_code)
+        self.assertIn("%=", js_code)
+

@@ -829,6 +829,7 @@ class EsastGenPass(UniPass):
                 Tok.SUB_EQ: "-=",
                 Tok.MUL_EQ: "*=",
                 Tok.DIV_EQ: "/=",
+                Tok.MOD_EQ: "%=",
             }
 
             operator = op_map.get(node.aug_op.name if node.aug_op else Tok.EQ, "=")
