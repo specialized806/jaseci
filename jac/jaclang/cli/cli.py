@@ -147,7 +147,9 @@ def run(
                 lng=lng,
             )
         except Exception as e:
-            print(f"Error running {filename}: {e}", file=sys.stderr)
+            from jaclang.utils.helpers import dump_traceback
+
+            print(dump_traceback(e), file=sys.stderr)
             mach.close()
             exit(1)
     elif filename.endswith(".jir"):
@@ -161,7 +163,9 @@ def run(
                     lng=lng,
                 )
         except Exception as e:
-            print(f"Error running {filename}: {e}", file=sys.stderr)
+            from jaclang.utils.helpers import dump_traceback
+
+            print(dump_traceback(e), file=sys.stderr)
             mach.close()
             exit(1)
 
