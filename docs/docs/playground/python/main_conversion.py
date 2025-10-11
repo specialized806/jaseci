@@ -5,7 +5,7 @@ import contextlib
 from pathlib import Path
 
 # If these variables are not set by the pyodide this will raise an exception.
-CONVERSION_TYPE = globals()["CONVERSION_TYPE"]  # "jac2lib" or "py2jac"
+CONVERSION_TYPE = globals()["CONVERSION_TYPE"]  # "jac2py" or "py2jac"
 INPUT_CODE = globals()["INPUT_CODE"]
 CB_STDOUT = globals()["CB_STDOUT"]
 CB_STDERR = globals()["CB_STDERR"]
@@ -31,21 +31,21 @@ with contextlib.redirect_stdout(stdout_buf:=JsIO(CB_STDOUT)), \
         contextlib.redirect_stderr(JsIO(CB_STDERR)):
 
     try:
-        if CONVERSION_TYPE == "jac2lib":            
+        if CONVERSION_TYPE == "jac2py":            
             # Create temporary file for Jac code
             with tempfile.NamedTemporaryFile(mode='w', suffix='.jac', delete=False) as temp_jac:
                 temp_jac.write(INPUT_CODE)
                 temp_jac_path = temp_jac.name
             
             try:
-                # Call jac2lib with just the input file path (like run function)
+                # Call jac2py with just the input file path (like run function)
                 code = \
-                    "from jaclang.cli.cli import jac2lib\n" \
-                    f"jac2lib('{temp_jac_path}')\n"
+                    "from jaclang.cli.cli import jac2py\n" \
+                    f"jac2py('{temp_jac_path}')\n"
 
                 exec(code)
                 result = stdout_buf.getvalue()
-                CB_RESULT(result if result else "# No output from jac2lib conversion")
+                CB_RESULT(result if result else "# No output from jac2py conversion")
                     
             finally:
                 try:
