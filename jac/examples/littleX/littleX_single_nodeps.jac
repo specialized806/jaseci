@@ -97,9 +97,8 @@ node Tweet {
 
     can get with load_feed entry {
         tweet_info = self.get_info();
-        similarity = search_tweets(visitor.search_query, tweet_info.content);
         visitor.results.append(
-            {"Tweet_Info" : tweet_info , "similarity" : similarity }
+            {"Tweet_Info" : tweet_info}
         );
     }
 }
@@ -223,7 +222,6 @@ walker load_feed(visit_profile) {
     }
 
     can report_feed with exit {
-        self.results.sort(key=lambda  x: dict: x['similarity'][0], reverse=True);
         report self.results ;
     }
 }
