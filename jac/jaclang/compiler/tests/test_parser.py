@@ -229,4 +229,52 @@ class TestLarkParser(TestCaseMicroSuite):
                 line = line.strip()
                 self.assertIn(line, pretty)
 
+    def test_jsx_basic(self) -> None:
+        """Test basic JSX parsing."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_basic.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
+    def test_jsx_expressions(self) -> None:
+        """Test JSX with expressions."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_expressions.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
+    def test_jsx_nested(self) -> None:
+        """Test nested JSX elements."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_nested.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
+    def test_jsx_components(self) -> None:
+        """Test JSX with component names."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_components.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
+    def test_jsx_fragments(self) -> None:
+        """Test JSX fragments."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_fragments.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
+    def test_jsx_spread(self) -> None:
+        """Test JSX with spread attributes."""
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("jsx_spread.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
+        self.assertFalse(prse.errors_had)
+
 TestLarkParser.self_attach_micro_tests()

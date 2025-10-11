@@ -18,6 +18,7 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    Union,
 )
 
 
@@ -4053,6 +4054,247 @@ class AssignCompr(AtomExpr):
                 if i < len(self.assigns) - 1:
                     new_kid.append(self.gen_token(Tok.COMMA))
             new_kid.append(self.gen_token(Tok.RPAREN))
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+# JSX Nodes
+# ---------
+
+
+class JsxElement(AtomExpr):
+    """JsxElement node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: Optional["JsxElementName"],
+        attributes: Optional[Sequence["JsxAttribute"]],
+        children: Optional[Sequence["JsxChild"]],
+        is_self_closing: bool,
+        is_fragment: bool,
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.name = name
+        self.attributes = list(attributes) if attributes else []
+        self.children = list(children) if children else []
+        self.is_self_closing = is_self_closing
+        self.is_fragment = is_fragment
+        UniNode.__init__(self, kid=kid)
+        Expr.__init__(self)
+        AstSymbolStubNode.__init__(self, sym_type=SymbolType.OBJECT_ARCH)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if self.is_fragment:
+            # Fragment: <>...</>
+            new_kid: list[UniNode] = [
+                self.gen_token(Tok.LT),
+                self.gen_token(Tok.GT),
+            ]
+            if self.children:
+                if deep:
+                    for child in self.children:
+                        res = res and child.normalize(deep)
+                for child in self.children:
+                    new_kid.append(child)
+            new_kid.extend(
+                [
+                    self.gen_token(Tok.LT),
+                    self.gen_token(Tok.DIV),
+                    self.gen_token(Tok.GT),
+                ]
+            )
+        elif self.is_self_closing:
+            # Self-closing: <Foo {...props} />
+            new_kid = [self.gen_token(Tok.LT)]
+            if self.name:
+                if deep:
+                    res = res and self.name.normalize(deep)
+                new_kid.append(self.name)
+            if self.attributes:
+                if deep:
+                    for attr in self.attributes:
+                        res = res and attr.normalize(deep)
+                for attr in self.attributes:
+                    new_kid.append(attr)
+            new_kid.extend([self.gen_token(Tok.DIV), self.gen_token(Tok.GT)])
+        else:
+            # Opening and closing: <Foo>...</Foo>
+            new_kid = [self.gen_token(Tok.LT)]
+            if self.name:
+                if deep:
+                    res = res and self.name.normalize(deep)
+                new_kid.append(self.name)
+            if self.attributes:
+                if deep:
+                    for attr in self.attributes:
+                        res = res and attr.normalize(deep)
+                for attr in self.attributes:
+                    new_kid.append(attr)
+            new_kid.append(self.gen_token(Tok.GT))
+            if self.children:
+                if deep:
+                    for child in self.children:
+                        res = res and child.normalize(deep)
+                for child in self.children:
+                    new_kid.append(child)
+            # Closing tag
+            new_kid.extend([self.gen_token(Tok.LT), self.gen_token(Tok.DIV)])
+            if self.name:
+                new_kid.append(self.name)
+            new_kid.append(self.gen_token(Tok.GT))
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class JsxElementName(UniNode):
+    """JsxElementName node type for Jac Ast."""
+
+    def __init__(
+        self,
+        parts: Sequence[Name],
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.parts = list(parts)
+        UniNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            for part in self.parts:
+                res = res and part.normalize(deep)
+        new_kid: list[UniNode] = []
+        for i, part in enumerate(self.parts):
+            new_kid.append(part)
+            if i < len(self.parts) - 1:
+                new_kid.append(self.gen_token(Tok.DOT))
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class JsxAttribute(UniNode):
+    """JsxAttribute node type for Jac Ast (base class)."""
+
+    def __init__(self, kid: Sequence[UniNode]) -> None:
+        UniNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize the node (base implementation)."""
+        # Base class normalize - subclasses should override if needed
+        return True
+
+
+class JsxSpreadAttribute(JsxAttribute):
+    """JsxSpreadAttribute node type for Jac Ast."""
+
+    def __init__(
+        self,
+        expr: Expr,
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.expr = expr
+        JsxAttribute.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.expr.normalize(deep)
+        new_kid: list[UniNode] = [
+            self.gen_token(Tok.LBRACE),
+            self.gen_token(Tok.ELLIPSIS),
+            self.expr,
+            self.gen_token(Tok.RBRACE),
+        ]
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class JsxNormalAttribute(JsxAttribute):
+    """JsxNormalAttribute node type for Jac Ast."""
+
+    def __init__(
+        self,
+        name: Name,
+        value: Optional[Union[String, Expr]],
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.name = name
+        self.value = value
+        JsxAttribute.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.name.normalize(deep)
+            if self.value:
+                res = res and self.value.normalize(deep)
+        new_kid: list[UniNode] = [self.name]
+        if self.value:
+            new_kid.append(self.gen_token(Tok.EQ))
+            if isinstance(self.value, String):
+                new_kid.append(self.value)
+            else:  # Expression in braces
+                new_kid.extend(
+                    [
+                        self.gen_token(Tok.LBRACE),
+                        self.value,
+                        self.gen_token(Tok.RBRACE),
+                    ]
+                )
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class JsxChild(UniNode):
+    """JsxChild node type for Jac Ast (base class)."""
+
+    def __init__(self, kid: Sequence[UniNode]) -> None:
+        UniNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize the node (base implementation)."""
+        # Base class normalize - subclasses should override if needed
+        return True
+
+
+class JsxText(JsxChild):
+    """JsxText node type for Jac Ast."""
+
+    def __init__(
+        self,
+        value: str,
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.value = value
+        JsxChild.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        # JSX text is represented as a token
+        new_kid: list[UniNode] = [self.gen_token(Tok.JSX_TEXT, value=self.value)]
+        self.set_kids(nodes=new_kid)
+        return True
+
+
+class JsxExpression(JsxChild):
+    """JsxExpression node type for Jac Ast."""
+
+    def __init__(
+        self,
+        expr: Expr,
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.expr = expr
+        JsxChild.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.expr.normalize(deep)
+        new_kid: list[UniNode] = [
+            self.gen_token(Tok.LBRACE),
+            self.expr,
+            self.gen_token(Tok.RBRACE),
+        ]
         self.set_kids(nodes=new_kid)
         return res
 
