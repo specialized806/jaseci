@@ -3083,6 +3083,121 @@ class PyastGenPass(UniPass):
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         node.gen.py_ast = [self.sync(ast3.Constant(value=...))]
 
+    def exit_jsx_element(self, node: uni.JsxElement) -> None:
+        """Generate Python AST for JSX elements.
+
+        JSX elements are compiled to function calls:
+        <div>Hello</div> -> jsx('div', {}, ['Hello'])
+        <MyComponent {...props} /> -> jsx(MyComponent, props, [])
+        """
+        # Generate tag argument
+        if node.is_fragment or not node.name:
+            tag_arg: ast3.expr = self.sync(ast3.Constant(value=None), node)
+        else:
+            tag_arg = cast(ast3.expr, node.name.gen.py_ast[0])
+
+        # Generate attributes dict
+        if not node.attributes:
+            attrs_expr = self.sync(ast3.Dict(keys=[], values=[]))
+        elif any(isinstance(attr, uni.JsxSpreadAttribute) for attr in node.attributes):
+            # With spread: build merged dict {**dict1, **dict2, key: val}
+            attrs_expr = self.sync(ast3.Dict(keys=[], values=[]))
+            for attr in node.attributes:
+                attr_ast = cast(ast3.expr, attr.gen.py_ast[0])
+                if isinstance(attr, uni.JsxSpreadAttribute):
+                    attrs_expr = self.sync(
+                        ast3.Dict(keys=[None, None], values=[attrs_expr, attr_ast]),
+                        attr,
+                    )
+                elif isinstance(attr, uni.JsxNormalAttribute):
+                    key_ast, value_ast = attr_ast.elts  # type: ignore
+                    attrs_expr = self.sync(
+                        ast3.Dict(keys=[None, key_ast], values=[attrs_expr, value_ast]),
+                        attr,
+                    )
+        else:
+            # No spreads: simple dict
+            keys: list[ast3.expr | None] = []
+            values: list[ast3.expr] = []
+            for attr in node.attributes:
+                if isinstance(attr, uni.JsxNormalAttribute):
+                    attr_ast = attr.gen.py_ast[0]
+                    key_ast, value_ast = attr_ast.elts  # type: ignore
+                    keys.append(key_ast)
+                    values.append(value_ast)
+            attrs_expr = self.sync(ast3.Dict(keys=keys, values=values))
+
+        # Generate children list
+        children_arg = (
+            self.sync(
+                ast3.List(
+                    elts=[cast(ast3.expr, c.gen.py_ast[0]) for c in node.children],
+                    ctx=ast3.Load(),
+                ),
+                node,
+            )
+            if node.children
+            else self.sync(ast3.List(elts=[], ctx=ast3.Load()))
+        )
+
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Call(
+                    func=self.sync(ast3.Name(id="jsx", ctx=ast3.Load())),
+                    args=[tag_arg, attrs_expr, children_arg],
+                    keywords=[],
+                ),
+                node,
+            )
+        ]
+
+    def exit_jsx_element_name(self, node: uni.JsxElementName) -> None:
+        """Generate Python AST for JSX element names."""
+        name_str = ".".join([part.value for part in node.parts])
+        # Components (capitalized) use identifier, HTML elements use string
+        if node.parts[0].value[0].isupper():
+            node.gen.py_ast = [self.sync(ast3.Name(id=name_str, ctx=ast3.Load()), node)]
+        else:
+            node.gen.py_ast = [self.sync(ast3.Constant(value=name_str), node)]
+
+    def exit_jsx_spread_attribute(self, node: uni.JsxSpreadAttribute) -> None:
+        """Generate Python AST for JSX spread attributes.
+
+        Returns the expression to be spread (the dict merge is handled by parent).
+        """
+        node.gen.py_ast = [cast(ast3.expr, node.expr.gen.py_ast[0])]
+
+    def exit_jsx_normal_attribute(self, node: uni.JsxNormalAttribute) -> None:
+        """Generate Python AST for JSX normal attributes.
+
+        Returns a tuple (key, value) for the attribute.
+        """
+        if not node.name:
+            return
+
+        key_ast = self.sync(ast3.Constant(value=node.name.value), node.name)
+        value_ast = (
+            cast(ast3.expr, node.value.gen.py_ast[0])
+            if node.value
+            else self.sync(ast3.Constant(value=True), node)
+        )
+
+        # Store as a tuple that parent can destructure
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Tuple(elts=[key_ast, value_ast], ctx=ast3.Load()),
+                node,
+            )
+        ]
+
+    def exit_jsx_text(self, node: uni.JsxText) -> None:
+        """Generate Python AST for JSX text nodes."""
+        node.gen.py_ast = [self.sync(ast3.Constant(value=node.value.value), node)]
+
+    def exit_jsx_expression(self, node: uni.JsxExpression) -> None:
+        """Generate Python AST for JSX expression children."""
+        node.gen.py_ast = [cast(ast3.expr, node.expr.gen.py_ast[0])]
+
     def exit_semi(self, node: uni.Semi) -> None:
         pass
 

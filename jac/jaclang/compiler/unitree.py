@@ -4084,66 +4084,22 @@ class JsxElement(AtomExpr):
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.OBJECT_ARCH)
 
     def normalize(self, deep: bool = False) -> bool:
+        """Normalize JSX element by recursively normalizing children.
+
+        Unlike most normalize methods, JSX elements don't need to rebuild
+        their kid structure since the parser already creates it correctly.
+        We just need to normalize child nodes if deep=True.
+        """
         res = True
-        if self.is_fragment:
-            # Fragment: <>...</>
-            new_kid: list[UniNode] = [
-                self.gen_token(Tok.LT),
-                self.gen_token(Tok.GT),
-            ]
-            if self.children:
-                if deep:
-                    for child in self.children:
-                        res = res and child.normalize(deep)
-                for child in self.children:
-                    new_kid.append(child)
-            new_kid.extend(
-                [
-                    self.gen_token(Tok.LT),
-                    self.gen_token(Tok.DIV),
-                    self.gen_token(Tok.GT),
-                ]
-            )
-        elif self.is_self_closing:
-            # Self-closing: <Foo {...props} />
-            new_kid = [self.gen_token(Tok.LT)]
+        if deep:
             if self.name:
-                if deep:
-                    res = res and self.name.normalize(deep)
-                new_kid.append(self.name)
+                res = res and self.name.normalize(deep)
             if self.attributes:
-                if deep:
-                    for attr in self.attributes:
-                        res = res and attr.normalize(deep)
                 for attr in self.attributes:
-                    new_kid.append(attr)
-            new_kid.extend([self.gen_token(Tok.DIV), self.gen_token(Tok.GT)])
-        else:
-            # Opening and closing: <Foo>...</Foo>
-            new_kid = [self.gen_token(Tok.LT)]
-            if self.name:
-                if deep:
-                    res = res and self.name.normalize(deep)
-                new_kid.append(self.name)
-            if self.attributes:
-                if deep:
-                    for attr in self.attributes:
-                        res = res and attr.normalize(deep)
-                for attr in self.attributes:
-                    new_kid.append(attr)
-            new_kid.append(self.gen_token(Tok.GT))
+                    res = res and attr.normalize(deep)
             if self.children:
-                if deep:
-                    for child in self.children:
-                        res = res and child.normalize(deep)
                 for child in self.children:
-                    new_kid.append(child)
-            # Closing tag
-            new_kid.extend([self.gen_token(Tok.LT), self.gen_token(Tok.DIV)])
-            if self.name:
-                new_kid.append(self.name)
-            new_kid.append(self.gen_token(Tok.GT))
-        self.set_kids(nodes=new_kid)
+                    res = res and child.normalize(deep)
         return res
 
 
@@ -4270,7 +4226,10 @@ class JsxText(JsxChild):
 
     def normalize(self, deep: bool = False) -> bool:
         # JSX text is represented as a token
-        new_kid: list[UniNode] = [self.gen_token(Tok.JSX_TEXT, value=self.value)]
+        if isinstance(self.value, Token):
+            new_kid: list[UniNode] = [self.value]
+        else:
+            new_kid = [self.gen_token(Tok.JSX_TEXT, value=str(self.value))]
         self.set_kids(nodes=new_kid)
         return True
 
