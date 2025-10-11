@@ -21,11 +21,11 @@ serialized to JavaScript source code or used by JavaScript tooling.
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Union, cast
+from typing import Optional, Sequence, Union
 
 import jaclang.compiler.emcascript.estree as es
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
 
 
@@ -176,9 +176,12 @@ class EsastGenPass(UniPass):
 
         if inner:
             for stmt in inner:
-                if hasattr(stmt.gen, "es_ast") and stmt.gen.es_ast:
-                    if isinstance(stmt.gen.es_ast, es.MethodDefinition):
-                        body_stmts.append(stmt.gen.es_ast)
+                if (
+                    hasattr(stmt.gen, "es_ast")
+                    and stmt.gen.es_ast
+                    and isinstance(stmt.gen.es_ast, es.MethodDefinition)
+                ):
+                    body_stmts.append(stmt.gen.es_ast)
 
         # Create class body
         class_body = self.sync_loc(es.ClassBody(body=body_stmts), jac_node=node)
@@ -356,9 +359,12 @@ class EsastGenPass(UniPass):
         )
 
         alternate: Optional[es.Statement] = None
-        if node.else_body:
-            if hasattr(node.else_body.gen, "es_ast") and node.else_body.gen.es_ast:
-                alternate = node.else_body.gen.es_ast
+        if (
+            node.else_body
+            and hasattr(node.else_body.gen, "es_ast")
+            and node.else_body.gen.es_ast
+        ):
+            alternate = node.else_body.gen.es_ast
 
         if_stmt = self.sync_loc(
             es.IfStatement(test=test, consequent=consequent, alternate=alternate),
@@ -484,9 +490,12 @@ class EsastGenPass(UniPass):
                 handler = except_node.gen.es_ast
 
         finalizer: Optional[es.BlockStatement] = None
-        if node.finally_body and hasattr(node.finally_body.gen, "es_ast"):
-            if isinstance(node.finally_body.gen.es_ast, es.BlockStatement):
-                finalizer = node.finally_body.gen.es_ast
+        if (
+            node.finally_body
+            and hasattr(node.finally_body.gen, "es_ast")
+            and isinstance(node.finally_body.gen.es_ast, es.BlockStatement)
+        ):
+            finalizer = node.finally_body.gen.es_ast
 
         try_stmt = self.sync_loc(
             es.TryStatement(block=block, handler=handler, finalizer=finalizer),
@@ -557,9 +566,12 @@ class EsastGenPass(UniPass):
         )
 
         error_msg = "Assertion failed"
-        if node.error_msg and hasattr(node.error_msg.gen, "es_ast"):
-            if isinstance(node.error_msg.gen.es_ast, es.Literal):
-                error_msg = str(node.error_msg.gen.es_ast.value)
+        if (
+            node.error_msg
+            and hasattr(node.error_msg.gen, "es_ast")
+            and isinstance(node.error_msg.gen.es_ast, es.Literal)
+        ):
+            error_msg = str(node.error_msg.gen.es_ast.value)
 
         throw_stmt = self.sync_loc(
             es.ThrowStatement(
@@ -672,6 +684,36 @@ class EsastGenPass(UniPass):
 
         node.gen.es_ast = bin_expr
 
+    def exit_bool_expr(self, node: uni.BoolExpr) -> None:
+        """Process boolean expression (and/or)."""
+        # BoolExpr has op and list of values
+        if not node.values or len(node.values) < 2:
+            node.gen.es_ast = self.sync_loc(es.Literal(value=None), jac_node=node)
+            return
+
+        # Get the operator
+        logical_op = "&&" if node.op.name == Tok.KW_AND else "||"
+
+        # Build the logical expression from left to right
+        result = (
+            node.values[0].gen.es_ast
+            if hasattr(node.values[0].gen, "es_ast")
+            else self.sync_loc(es.Literal(value=None), jac_node=node.values[0])
+        )
+
+        for val in node.values[1:]:
+            right = (
+                val.gen.es_ast
+                if hasattr(val.gen, "es_ast")
+                else self.sync_loc(es.Literal(value=None), jac_node=val)
+            )
+            result = self.sync_loc(
+                es.LogicalExpression(operator=logical_op, left=result, right=right),
+                jac_node=node,
+            )
+
+        node.gen.es_ast = result
+
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
         """Process compare expression."""
         # CompareExpr can have multiple comparisons chained: a < b < c
@@ -701,7 +743,7 @@ class EsastGenPass(UniPass):
             else self.sync_loc(es.Identifier(name="left"), jac_node=node.left)
         )
 
-        for i, (op, right_node) in enumerate(zip(node.ops, node.rights)):
+        for _, (op, right_node) in enumerate(zip(node.ops, node.rights)):
             right = (
                 right_node.gen.es_ast
                 if hasattr(right_node.gen, "es_ast")

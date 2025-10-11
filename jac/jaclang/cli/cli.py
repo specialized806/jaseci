@@ -691,6 +691,53 @@ def jac2lib(filename: str) -> None:
         exit(1)
 
 
+@cmd_registry.register
+def js(filename: str) -> None:
+    """Convert a Jac file to JavaScript code.
+
+    Translates Jac source code to equivalent JavaScript/ECMAScript code using
+    the ESTree AST specification. This allows Jac programs to run in JavaScript
+    environments like Node.js or web browsers.
+
+    Args:
+        filename: Path to the .jac file to convert
+
+    Examples:
+        jac js myprogram.jac > myprogram.js
+        jac js myprogram.jac
+    """
+    if filename.endswith(".jac"):
+        from jaclang.compiler.emcascript import EsastGenPass
+        from jaclang.compiler.emcascript.es_unparse import es_to_js
+
+        prog = JacProgram()
+        ir = prog.compile(file_path=filename, no_cgen=True)
+
+        if prog.errors_had:
+            for error in prog.errors_had:
+                print(f"Error: {error}", file=sys.stderr)
+            exit(1)
+
+        try:
+            esast_pass = EsastGenPass(ir, prog)
+            es_ir = esast_pass.ir_out
+            if hasattr(es_ir.gen, "es_ast") and es_ir.gen.es_ast:
+                js_code = es_to_js(es_ir.gen.es_ast)
+                print(js_code)
+            else:
+                print("ECMAScript code generation failed.", file=sys.stderr)
+                exit(1)
+        except Exception as e:
+            print(f"Error generating JavaScript: {e}", file=sys.stderr)
+            import traceback
+
+            traceback.print_exc()
+            exit(1)
+    else:
+        print("Not a .jac file.", file=sys.stderr)
+        exit(1)
+
+
 # Register core commands first (before plugins load)
 # These can be overridden by plugins with higher priority
 

@@ -341,6 +341,7 @@ class JacLexer(RegexLexer):
                         "raise",
                         "nonlocal",
                         "return",
+                        "report",
                         "try",
                         "while",
                         "yield",
