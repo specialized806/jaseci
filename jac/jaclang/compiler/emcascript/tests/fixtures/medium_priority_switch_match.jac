@@ -53,7 +53,7 @@ def test_match_or_pattern(code: int) -> str {
 }
 
 # Match with None
-def test_match_none(value) -> str {
+def test_match_none(value: any) -> str {
     match value {
         case None:
             return "No value";
