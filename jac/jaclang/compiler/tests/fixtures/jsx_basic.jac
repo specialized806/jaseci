@@ -9,4 +9,6 @@ with entry {
 
     # Element with attributes
     let elem3 = <button id="submit" disabled />;
+
+    v = <div id={name} data-age={age}>User Info</div>;
 }

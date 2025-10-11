@@ -3143,7 +3143,7 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Call(
-                    func=self.sync(ast3.Name(id="jsx", ctx=ast3.Load())),
+                    func=self.jaclib_obj("jsx"),
                     args=[tag_arg, attrs_expr, children_arg],
                     keywords=[],
                 ),

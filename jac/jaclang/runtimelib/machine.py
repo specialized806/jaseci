@@ -989,6 +989,28 @@ class JacBasics:
         return test_deco
 
     @staticmethod
+    def jsx(
+        tag: Any, attributes: dict[str, Any], children: list[Any]  # noqa: ANN401
+    ) -> Any:  # noqa: ANN401
+        """JSX interface for creating elements.
+
+        Args:
+            tag: Element tag (string for HTML elements, callable for components)
+            attributes: Element attributes/props
+            children: Child elements
+
+        Returns:
+            JSX element representation (implementation-defined)
+        """
+        # Default implementation returns a simple dict representation
+        # This can be overridden by plugins or custom implementations
+        return {
+            "tag": tag,
+            "attributes": attributes,
+            "children": children,
+        }
+
+    @staticmethod
     def run_test(
         filepath: str,
         func_name: Optional[str] = None,
