@@ -637,9 +637,10 @@ def py2jac(filename: str) -> None:
 def jac2py(filename: str) -> None:
     """Convert a Jac file to Python code.
 
-    Translates Jac source code to equivalent Python code. This is useful for
-    understanding how Jac code is executed or for integrating Jac components
-    with Python projects.
+    Translates Jac source code to equivalent Python code. The generated Python
+    uses direct imports from jaclang.lib, making the output clean and suitable
+    for use as a standalone library or for integrating Jac components with
+    Python projects.
 
     Args:
         filename: Path to the .jac file to convert
@@ -653,39 +654,6 @@ def jac2py(filename: str) -> None:
             print(code)
         else:
             exit(1)
-    else:
-        print("Not a .jac file.", file=sys.stderr)
-        exit(1)
-
-
-@cmd_registry.register
-def jac2lib(filename: str) -> None:
-    """Convert a Jac file to Python library code.
-
-    Translates Jac source code to equivalent Python code with library mode enabled.
-    In library mode, the generated Python uses direct imports from jaclang.lib
-    instead of aliased imports, making the output cleaner and more suitable for
-    use as a standalone library.
-
-    Args:
-        filename: Path to the .jac file to convert
-
-    Examples:
-        jac jac2lib myprogram.jac > mylib.py
-    """
-    if filename.endswith(".jac"):
-        # Temporarily enable library mode
-        original_library_mode = settings.library_mode
-        settings.library_mode = True
-        try:
-            code = JacProgram().compile(file_path=filename).gen.py
-            if code:
-                print(code)
-            else:
-                exit(1)
-        finally:
-            # Restore original setting
-            settings.library_mode = original_library_mode
     else:
         print("Not a .jac file.", file=sys.stderr)
         exit(1)
