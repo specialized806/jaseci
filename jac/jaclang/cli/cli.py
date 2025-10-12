@@ -22,9 +22,6 @@ from jaclang.settings import settings
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
-Jac.create_cmd()
-Jac.setup()
-
 
 @cmd_registry.register
 def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
@@ -150,7 +147,9 @@ def run(
                 lng=lng,
             )
         except Exception as e:
-            print(f"Error running {filename}: {e}", file=sys.stderr)
+            from jaclang.utils.helpers import dump_traceback
+
+            print(dump_traceback(e), file=sys.stderr)
             mach.close()
             exit(1)
     elif filename.endswith(".jir"):
@@ -164,7 +163,9 @@ def run(
                     lng=lng,
                 )
         except Exception as e:
-            print(f"Error running {filename}: {e}", file=sys.stderr)
+            from jaclang.utils.helpers import dump_traceback
+
+            print(dump_traceback(e), file=sys.stderr)
             mach.close()
             exit(1)
 
@@ -640,9 +641,10 @@ def py2jac(filename: str) -> None:
 def jac2py(filename: str) -> None:
     """Convert a Jac file to Python code.
 
-    Translates Jac source code to equivalent Python code. This is useful for
-    understanding how Jac code is executed or for integrating Jac components
-    with Python projects.
+    Translates Jac source code to equivalent Python code. The generated Python
+    uses direct imports from jaclang.lib, making the output clean and suitable
+    for use as a standalone library or for integrating Jac components with
+    Python projects.
 
     Args:
         filename: Path to the .jac file to convert
@@ -661,37 +663,99 @@ def jac2py(filename: str) -> None:
         exit(1)
 
 
-@cmd_registry.register
-def jac2lib(filename: str) -> None:
-    """Convert a Jac file to Python library code.
+# Register core commands first (before plugins load)
+# These can be overridden by plugins with higher priority
 
-    Translates Jac source code to equivalent Python code with library mode enabled.
-    In library mode, the generated Python uses direct imports from jaclang.lib
-    instead of aliased imports, making the output cleaner and more suitable for
-    use as a standalone library.
+
+@cmd_registry.register
+def serve(
+    filename: str,
+    session: str = "",
+    port: int = 8000,
+    main: bool = True,
+) -> None:
+    """Start a REST API server for the specified .jac file.
+
+    Executes the target module and turns all functions into authenticated REST API
+    endpoints. Function signatures are introspected to create the API interface.
+    Walkers are converted to REST APIs where their fields become the interface,
+    with an additional target_node field for spawning location.
+
+    Each user gets their own persistent root node that persists across runs.
+    Users must create an account and authenticate to access the API.
 
     Args:
-        filename: Path to the .jac file to convert
+        filename: Path to the .jac file to serve
+        session: Session identifier for persistent state (default: auto-generated)
+        port: Port to run the server on (default: 8000)
+        main: Treat the module as __main__ (default: True)
 
     Examples:
-        jac jac2lib myprogram.jac > mylib.py
+        jac serve myprogram.jac
+        jac serve myprogram.jac --port 8080
+        jac serve myprogram.jac --session myapp.session
     """
-    if filename.endswith(".jac"):
-        # Temporarily enable library mode
-        original_library_mode = settings.library_mode
-        settings.library_mode = True
+    from jaclang.runtimelib.server import JacAPIServer
+
+    # Process file and session
+    base, mod, mach = proc_file_sess(filename, session)
+    lng = filename.split(".")[-1]
+    Jac.set_base_path(base)
+
+    # Import the module
+    if filename.endswith((".jac", ".py")):
         try:
-            code = JacProgram().compile(file_path=filename).gen.py
-            if code:
-                print(code)
-            else:
-                exit(1)
-        finally:
-            # Restore original setting
-            settings.library_mode = original_library_mode
-    else:
-        print("Not a .jac file.", file=sys.stderr)
+            Jac.jac_import(
+                target=mod,
+                base_path=base,
+                lng=lng,
+            )
+        except Exception as e:
+            print(f"Error loading {filename}: {e}", file=sys.stderr)
+            mach.close()
+            exit(1)
+    elif filename.endswith(".jir"):
+        try:
+            with open(filename, "rb") as f:
+                Jac.attach_program(pickle.load(f))
+                Jac.jac_import(
+                    target=mod,
+                    base_path=base,
+                    lng=lng,
+                )
+        except Exception as e:
+            print(f"Error loading {filename}: {e}", file=sys.stderr)
+            mach.close()
+            exit(1)
+
+    # Don't close the context - keep the module loaded for the server
+    # mach.close()
+
+    # Create and start the API server
+    # Use session path for persistent storage across user sessions
+    session_path = session if session else os.path.join(base, f"{mod}.session")
+
+    server = JacAPIServer(
+        module_name="__main__" if main else mod,
+        session_path=session_path,
+        port=port,
+    )
+
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+        mach.close()  # Close on shutdown
+    except Exception as e:
+        print(f"Server error: {e}", file=sys.stderr)
+        mach.close()
         exit(1)
+
+
+Jac.create_cmd()
+Jac.setup()
+
+cmd_registry.finalize()
 
 
 def start_cli() -> None:
