@@ -1037,6 +1037,7 @@ class JacBasics:
                 # Set module attributes
                 module.__file__ = spec.origin
                 module.__name__ = "__main__"
+                module.__spec__ = spec
                 if spec.submodule_search_locations:
                     module.__path__ = spec.submodule_search_locations
 
