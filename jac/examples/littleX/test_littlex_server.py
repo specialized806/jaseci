@@ -86,13 +86,12 @@ class TestLittleXServer:
         Jac.jac_import(
             target=mod,
             base_path=base,
-            override_name="__main__",
             lng="jac",
         )
 
         # Create server
         self.server = JacAPIServer(
-            module_name="__main__",
+            module_name=mod,
             session_path=self.session_file,
             port=self.port,
         )
