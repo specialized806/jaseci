@@ -2324,7 +2324,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             return self._process_f_expr(Tok.F_FORMAT_TEXT, self.cur_nodes)
 
-        def _process_f_expr(self, token: Tok, nodes: list[uni.UniNode]) -> uni.Token | uni.FormattedValue:
+        def _process_f_expr(
+            self, token: Tok, nodes: list[uni.UniNode]
+        ) -> uni.Token | uni.FormattedValue:
             """Process fexpression nodes."""
             if (
                 tok := self.match_token(token)
@@ -2341,7 +2343,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     conversion = ord(conv_tok.value[1:])
                 if self.match_token(Tok.COLON):
                     parts = []
-                    while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                    while part := self.match(uni.String) or self.match(
+                        uni.FormattedValue
+                    ):
                         parts.append(part)
                     if len(parts) == 1 and isinstance(parts[0], uni.String):
                         format_spec = parts[0]
