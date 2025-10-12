@@ -112,7 +112,6 @@ class ExecutionContext:
     def close(self) -> None:
         """Close current ExecutionContext."""
         self.mem.close()
-        JacMachine.reset_machine()
 
     def get_root(self) -> Root:
         """Get current root."""
@@ -1850,8 +1849,12 @@ class JacMachine(JacMachineInterface):
     @staticmethod
     def reset_machine() -> None:
         """Reset the machine."""
-        # for i in JacMachine.loaded_modules.values():
-        #     sys.modules.pop(i.__name__, None)
+        # Remove Jac modules from sys.modules, but skip special module names
+        # that Python relies on (like __main__, __mp_main__, etc.)
+        special_modules = {"__main__", "__mp_main__", "builtins"}
+        for i in JacMachine.loaded_modules.values():
+            if i.__name__ not in special_modules:
+                sys.modules.pop(i.__name__, None)
         JacMachine.loaded_modules.clear()
         JacMachine.base_path_dir = os.getcwd()
         JacMachine.program = JacProgram()
