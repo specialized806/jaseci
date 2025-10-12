@@ -6,7 +6,7 @@ import keyword
 import logging
 import os
 import sys
-from typing import Callable, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
+from typing import Callable, Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler import TOKEN_MAP, jac_lark as jl
@@ -2215,45 +2215,30 @@ class JacParser(Transform[uni.Source, uni.Module]):
             fstring: F_DQ_START fstr_dq_part* F_DQ_END
                     | F_SQ_START fstr_sq_part* F_SQ_END
             """
+            fstring_configs = [
+                ([Tok.F_DQ_START, Tok.RF_DQ_START], Tok.F_DQ_END),
+                ([Tok.F_SQ_START, Tok.RF_SQ_START], Tok.F_SQ_END),
+                ([Tok.F_TDQ_START, Tok.RF_TDQ_START], Tok.F_TDQ_END),
+                ([Tok.F_TSQ_START, Tok.RF_TSQ_START], Tok.F_TSQ_END),
+            ]
+
+            for start_toks, end_tok in fstring_configs:
+                if fstr := self._process_fstring(start_toks, end_tok):
+                    return fstr
+
+            raise self.ice()
+
+        def _process_fstring(
+            self, start_tok: list[Tok], end_tok: Tok
+        ) -> Optional[uni.FString]:
+            """Process fstring nodes."""
+            tok_start = self.match_token(start_tok[0]) or self.match_token(start_tok[1])
+            if not tok_start:
+                return None
             parts = []
-            tok_start = None
-            tok_end = None
-            if tok_start := (
-                self.match_token(Tok.F_DQ_START) or self.match_token(Tok.RF_DQ_START)
-            ):
-                while part := (
-                    self.match(uni.String) or self.match(uni.FormattedValue)
-                ):
-                    parts.append(part)
-                tok_end = self.consume_token(Tok.F_DQ_END)
-            elif tok_start := (
-                self.match_token(Tok.F_SQ_START) or self.match_token(Tok.RF_SQ_START)
-            ):
-                while part := (
-                    self.match(uni.String) or self.match(uni.FormattedValue)
-                ):
-                    parts.append(part)
-                tok_end = self.consume_token(Tok.F_SQ_END)
-            elif tok_start := (
-                self.match_token(Tok.F_TDQ_START) or self.match_token(Tok.RF_TDQ_START)
-            ):
-                while part := (
-                    self.match(uni.String) or self.match(uni.FormattedValue)
-                ):
-                    parts.append(part)
-                tok_end = self.consume_token(Tok.F_TDQ_END)
-            elif tok_start := (
-                self.match_token(Tok.F_TSQ_START) or self.match_token(Tok.RF_TSQ_START)
-            ):
-                while part := (
-                    self.match(uni.String) or self.match(uni.FormattedValue)
-                ):
-                    parts.append(part)
-                tok_end = self.consume_token(Tok.F_TSQ_END)
-
-            if tok_start is None or tok_end is None:
-                raise self.ice()
-
+            while part := self.match(uni.String) or self.match(uni.FormattedValue):
+                parts.append(part)
+            tok_end = self.consume_token(end_tok)
             return uni.FString(
                 start=tok_start,
                 parts=parts,
