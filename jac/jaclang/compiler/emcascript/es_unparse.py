@@ -6,9 +6,8 @@ JavaScript source code (unparsing).
 
 from __future__ import annotations
 
-from typing import Union
-
 from jaclang.compiler.emcascript import estree as es
+from jaclang.utils.helpers import pascal_to_snake
 
 
 class JSCodeGenerator:
@@ -25,7 +24,7 @@ class JSCodeGenerator:
 
     def generate(self, node: es.Node) -> str:
         """Generate JavaScript code for a node."""
-        method_name = f"gen_{node.type}"
+        method_name = f"gen_{pascal_to_snake(node.type)}"
         method = getattr(self, method_name, None)
         if method:
             return method(node)
@@ -35,15 +34,15 @@ class JSCodeGenerator:
     # Program and Statements
     # ======================
 
-    def gen_Program(self, node: es.Program) -> str:
+    def gen_program(self, node: es.Program) -> str:
         """Generate program."""
         return "\n".join(self.generate(stmt) for stmt in node.body)
 
-    def gen_ExpressionStatement(self, node: es.ExpressionStatement) -> str:
+    def gen_expression_statement(self, node: es.ExpressionStatement) -> str:
         """Generate expression statement."""
         return f"{self.indent()}{self.generate(node.expression)};"
 
-    def gen_BlockStatement(self, node: es.BlockStatement) -> str:
+    def gen_block_statement(self, node: es.BlockStatement) -> str:
         """Generate block statement."""
         if not node.body:
             return "{}"
@@ -52,17 +51,17 @@ class JSCodeGenerator:
         self.indent_level -= 1
         return f"{{\n{body}\n{self.indent()}}}"
 
-    def gen_EmptyStatement(self, node: es.EmptyStatement) -> str:
+    def gen_empty_statement(self, node: es.EmptyStatement) -> str:
         """Generate empty statement."""
         return f"{self.indent()};"
 
-    def gen_ReturnStatement(self, node: es.ReturnStatement) -> str:
+    def gen_return_statement(self, node: es.ReturnStatement) -> str:
         """Generate return statement."""
         if node.argument:
             return f"{self.indent()}return {self.generate(node.argument)};"
         return f"{self.indent()}return;"
 
-    def gen_IfStatement(self, node: es.IfStatement) -> str:
+    def gen_if_statement(self, node: es.IfStatement) -> str:
         """Generate if statement."""
         test = self.generate(node.test)
         consequent = self.generate(node.consequent)
@@ -75,19 +74,19 @@ class JSCodeGenerator:
                 result += f" else {self.generate(node.alternate)}"
         return result
 
-    def gen_WhileStatement(self, node: es.WhileStatement) -> str:
+    def gen_while_statement(self, node: es.WhileStatement) -> str:
         """Generate while statement."""
         test = self.generate(node.test)
         body = self.generate(node.body)
         return f"{self.indent()}while ({test}) {body}"
 
-    def gen_DoWhileStatement(self, node: es.DoWhileStatement) -> str:
+    def gen_do_while_statement(self, node: es.DoWhileStatement) -> str:
         """Generate do-while statement."""
         body = self.generate(node.body)
         test = self.generate(node.test)
         return f"{self.indent()}do {body} while ({test});"
 
-    def gen_ForStatement(self, node: es.ForStatement) -> str:
+    def gen_for_statement(self, node: es.ForStatement) -> str:
         """Generate for statement."""
         init = self.generate(node.init) if node.init else ""
         test = self.generate(node.test) if node.test else ""
@@ -95,14 +94,14 @@ class JSCodeGenerator:
         body = self.generate(node.body)
         return f"{self.indent()}for ({init}; {test}; {update}) {body}"
 
-    def gen_ForInStatement(self, node: es.ForInStatement) -> str:
+    def gen_for_in_statement(self, node: es.ForInStatement) -> str:
         """Generate for-in statement."""
         left = self.generate(node.left)
         right = self.generate(node.right)
         body = self.generate(node.body)
         return f"{self.indent()}for ({left} in {right}) {body}"
 
-    def gen_ForOfStatement(self, node: es.ForOfStatement) -> str:
+    def gen_for_of_statement(self, node: es.ForOfStatement) -> str:
         """Generate for-of statement."""
         await_str = "await " if node.await_ else ""
         left = self.generate(node.left)
@@ -110,23 +109,23 @@ class JSCodeGenerator:
         body = self.generate(node.body)
         return f"{self.indent()}for {await_str}({left} of {right}) {body}"
 
-    def gen_BreakStatement(self, node: es.BreakStatement) -> str:
+    def gen_break_statement(self, node: es.BreakStatement) -> str:
         """Generate break statement."""
         if node.label:
             return f"{self.indent()}break {self.generate(node.label)};"
         return f"{self.indent()}break;"
 
-    def gen_ContinueStatement(self, node: es.ContinueStatement) -> str:
+    def gen_continue_statement(self, node: es.ContinueStatement) -> str:
         """Generate continue statement."""
         if node.label:
             return f"{self.indent()}continue {self.generate(node.label)};"
         return f"{self.indent()}continue;"
 
-    def gen_ThrowStatement(self, node: es.ThrowStatement) -> str:
+    def gen_throw_statement(self, node: es.ThrowStatement) -> str:
         """Generate throw statement."""
         return f"{self.indent()}throw {self.generate(node.argument)};"
 
-    def gen_TryStatement(self, node: es.TryStatement) -> str:
+    def gen_try_statement(self, node: es.TryStatement) -> str:
         """Generate try statement."""
         result = f"{self.indent()}try {self.generate(node.block)}"
         if node.handler:
@@ -135,13 +134,13 @@ class JSCodeGenerator:
             result += f" finally {self.generate(node.finalizer)}"
         return result
 
-    def gen_CatchClause(self, node: es.CatchClause) -> str:
+    def gen_catch_clause(self, node: es.CatchClause) -> str:
         """Generate catch clause."""
         if node.param:
             return f"catch ({self.generate(node.param)}) {self.generate(node.body)}"
         return f"catch {self.generate(node.body)}"
 
-    def gen_SwitchStatement(self, node: es.SwitchStatement) -> str:
+    def gen_switch_statement(self, node: es.SwitchStatement) -> str:
         """Generate switch statement."""
         discriminant = self.generate(node.discriminant)
         self.indent_level += 1
@@ -149,7 +148,7 @@ class JSCodeGenerator:
         self.indent_level -= 1
         return f"{self.indent()}switch ({discriminant}) {{\n{cases}\n{self.indent()}}}"
 
-    def gen_SwitchCase(self, node: es.SwitchCase) -> str:
+    def gen_switch_case(self, node: es.SwitchCase) -> str:
         """Generate switch case."""
         if node.test:
             result = f"{self.indent()}case {self.generate(node.test)}:\n"
@@ -164,7 +163,7 @@ class JSCodeGenerator:
     # Declarations
     # ============
 
-    def gen_FunctionDeclaration(self, node: es.FunctionDeclaration) -> str:
+    def gen_function_declaration(self, node: es.FunctionDeclaration) -> str:
         """Generate function declaration."""
         async_str = "async " if node.async_ else ""
         generator_str = "*" if node.generator else ""
@@ -175,19 +174,19 @@ class JSCodeGenerator:
             f"{self.indent()}{async_str}function{generator_str} {name}({params}) {body}"
         )
 
-    def gen_VariableDeclaration(self, node: es.VariableDeclaration) -> str:
+    def gen_variable_declaration(self, node: es.VariableDeclaration) -> str:
         """Generate variable declaration."""
         declarators = ", ".join(self.generate(d) for d in node.declarations)
         return f"{self.indent()}{node.kind} {declarators};"
 
-    def gen_VariableDeclarator(self, node: es.VariableDeclarator) -> str:
+    def gen_variable_declarator(self, node: es.VariableDeclarator) -> str:
         """Generate variable declarator."""
         id_str = self.generate(node.id)
         if node.init:
             return f"{id_str} = {self.generate(node.init)}"
         return id_str
 
-    def gen_ClassDeclaration(self, node: es.ClassDeclaration) -> str:
+    def gen_class_declaration(self, node: es.ClassDeclaration) -> str:
         """Generate class declaration."""
         name = self.generate(node.id) if node.id else ""
         extends = (
@@ -196,7 +195,7 @@ class JSCodeGenerator:
         body = self.generate(node.body)
         return f"{self.indent()}class {name}{extends} {body}"
 
-    def gen_ClassExpression(self, node: es.ClassExpression) -> str:
+    def gen_class_expression(self, node: es.ClassExpression) -> str:
         """Generate class expression."""
         name = self.generate(node.id) if node.id else ""
         extends = (
@@ -205,7 +204,7 @@ class JSCodeGenerator:
         body = self.generate(node.body)
         return f"class {name}{extends} {body}"
 
-    def gen_ClassBody(self, node: es.ClassBody) -> str:
+    def gen_class_body(self, node: es.ClassBody) -> str:
         """Generate class body."""
         if not node.body:
             return "{}"
@@ -214,7 +213,7 @@ class JSCodeGenerator:
         self.indent_level -= 1
         return f"{{\n{methods}\n{self.indent()}}}"
 
-    def gen_MethodDefinition(self, node: es.MethodDefinition) -> str:
+    def gen_method_definition(self, node: es.MethodDefinition) -> str:
         """Generate method definition."""
         static_str = "static " if node.static else ""
         key = self.generate(node.key)
@@ -240,11 +239,11 @@ class JSCodeGenerator:
     # Expressions
     # ===========
 
-    def gen_Identifier(self, node: es.Identifier) -> str:
+    def gen_identifier(self, node: es.Identifier) -> str:
         """Generate identifier."""
         return node.name
 
-    def gen_Literal(self, node: es.Literal) -> str:
+    def gen_literal(self, node: es.Literal) -> str:
         """Generate literal."""
         if node.raw:
             return node.raw
@@ -257,23 +256,23 @@ class JSCodeGenerator:
         else:
             return str(node.value)
 
-    def gen_ThisExpression(self, node: es.ThisExpression) -> str:
+    def gen_this_expression(self, node: es.ThisExpression) -> str:
         """Generate this expression."""
         return "this"
 
-    def gen_ArrayExpression(self, node: es.ArrayExpression) -> str:
+    def gen_array_expression(self, node: es.ArrayExpression) -> str:
         """Generate array expression."""
         elements = ", ".join(self.generate(e) if e else "" for e in node.elements)
         return f"[{elements}]"
 
-    def gen_ObjectExpression(self, node: es.ObjectExpression) -> str:
+    def gen_object_expression(self, node: es.ObjectExpression) -> str:
         """Generate object expression."""
         if not node.properties:
             return "{}"
         props = ", ".join(self.generate(p) for p in node.properties)
         return f"{{{props}}}"
 
-    def gen_Property(self, node: es.Property) -> str:
+    def gen_property(self, node: es.Property) -> str:
         """Generate property."""
         key = self.generate(node.key)
         value = self.generate(node.value)
@@ -289,7 +288,7 @@ class JSCodeGenerator:
         else:
             return f"{key}: {value}"
 
-    def gen_FunctionExpression(self, node: es.FunctionExpression) -> str:
+    def gen_function_expression(self, node: es.FunctionExpression) -> str:
         """Generate function expression."""
         async_str = "async " if node.async_ else ""
         generator_str = "*" if node.generator else ""
@@ -298,7 +297,7 @@ class JSCodeGenerator:
         body = self.generate(node.body)
         return f"{async_str}function{generator_str} {name}({params}) {body}".strip()
 
-    def gen_ArrowFunctionExpression(self, node: es.ArrowFunctionExpression) -> str:
+    def gen_arrow_function_expression(self, node: es.ArrowFunctionExpression) -> str:
         """Generate arrow function expression."""
         async_str = "async " if node.async_ else ""
         params = ", ".join(self.generate(p) for p in node.params)
@@ -314,7 +313,7 @@ class JSCodeGenerator:
             body = self.generate(node.body)
             return f"{async_str}{params} => {body}"
 
-    def gen_UnaryExpression(self, node: es.UnaryExpression) -> str:
+    def gen_unary_expression(self, node: es.UnaryExpression) -> str:
         """Generate unary expression."""
         arg = self.generate(node.argument)
         if node.prefix:
@@ -324,7 +323,7 @@ class JSCodeGenerator:
         else:
             return f"{arg}{node.operator}"
 
-    def gen_UpdateExpression(self, node: es.UpdateExpression) -> str:
+    def gen_update_expression(self, node: es.UpdateExpression) -> str:
         """Generate update expression."""
         arg = self.generate(node.argument)
         if node.prefix:
@@ -332,25 +331,25 @@ class JSCodeGenerator:
         else:
             return f"{arg}{node.operator}"
 
-    def gen_BinaryExpression(self, node: es.BinaryExpression) -> str:
+    def gen_binary_expression(self, node: es.BinaryExpression) -> str:
         """Generate binary expression."""
         left = self.generate(node.left)
         right = self.generate(node.right)
         return f"{left} {node.operator} {right}"
 
-    def gen_LogicalExpression(self, node: es.LogicalExpression) -> str:
+    def gen_logical_expression(self, node: es.LogicalExpression) -> str:
         """Generate logical expression."""
         left = self.generate(node.left)
         right = self.generate(node.right)
         return f"{left} {node.operator} {right}"
 
-    def gen_AssignmentExpression(self, node: es.AssignmentExpression) -> str:
+    def gen_assignment_expression(self, node: es.AssignmentExpression) -> str:
         """Generate assignment expression."""
         left = self.generate(node.left)
         right = self.generate(node.right)
         return f"{left} {node.operator} {right}"
 
-    def gen_MemberExpression(self, node: es.MemberExpression) -> str:
+    def gen_member_expression(self, node: es.MemberExpression) -> str:
         """Generate member expression."""
         obj = self.generate(node.object)
         optional = "?." if node.optional else ""
@@ -363,83 +362,83 @@ class JSCodeGenerator:
                 return f"{obj}{optional}{prop}"
             return f"{obj}.{prop}"
 
-    def gen_ConditionalExpression(self, node: es.ConditionalExpression) -> str:
+    def gen_conditional_expression(self, node: es.ConditionalExpression) -> str:
         """Generate conditional expression."""
         test = self.generate(node.test)
         consequent = self.generate(node.consequent)
         alternate = self.generate(node.alternate)
         return f"{test} ? {consequent} : {alternate}"
 
-    def gen_CallExpression(self, node: es.CallExpression) -> str:
+    def gen_call_expression(self, node: es.CallExpression) -> str:
         """Generate call expression."""
         callee = self.generate(node.callee)
         optional = "?." if node.optional else ""
         args = ", ".join(self.generate(arg) for arg in node.arguments)
         return f"{callee}{optional}({args})"
 
-    def gen_NewExpression(self, node: es.NewExpression) -> str:
+    def gen_new_expression(self, node: es.NewExpression) -> str:
         """Generate new expression."""
         callee = self.generate(node.callee)
         args = ", ".join(self.generate(arg) for arg in node.arguments)
         return f"new {callee}({args})"
 
-    def gen_SequenceExpression(self, node: es.SequenceExpression) -> str:
+    def gen_sequence_expression(self, node: es.SequenceExpression) -> str:
         """Generate sequence expression."""
         exprs = ", ".join(self.generate(e) for e in node.expressions)
         return f"({exprs})"
 
-    def gen_YieldExpression(self, node: es.YieldExpression) -> str:
+    def gen_yield_expression(self, node: es.YieldExpression) -> str:
         """Generate yield expression."""
         delegate = "*" if node.delegate else ""
         if node.argument:
             return f"yield{delegate} {self.generate(node.argument)}"
         return f"yield{delegate}"
 
-    def gen_AwaitExpression(self, node: es.AwaitExpression) -> str:
+    def gen_await_expression(self, node: es.AwaitExpression) -> str:
         """Generate await expression."""
         return f"await {self.generate(node.argument)}"
 
-    def gen_SpreadElement(self, node: es.SpreadElement) -> str:
+    def gen_spread_element(self, node: es.SpreadElement) -> str:
         """Generate spread element."""
         return f"...{self.generate(node.argument)}"
 
-    def gen_Super(self, node: es.Super) -> str:
+    def gen_super(self, node: es.Super) -> str:
         """Generate super."""
         return "super"
 
     # Patterns
     # ========
 
-    def gen_ArrayPattern(self, node: es.ArrayPattern) -> str:
+    def gen_array_pattern(self, node: es.ArrayPattern) -> str:
         """Generate array pattern."""
         elements = ", ".join(self.generate(e) if e else "" for e in node.elements)
         return f"[{elements}]"
 
-    def gen_ObjectPattern(self, node: es.ObjectPattern) -> str:
+    def gen_object_pattern(self, node: es.ObjectPattern) -> str:
         """Generate object pattern."""
         props = ", ".join(self.generate(p) for p in node.properties)
         return f"{{{props}}}"
 
-    def gen_AssignmentPattern(self, node: es.AssignmentPattern) -> str:
+    def gen_assignment_pattern(self, node: es.AssignmentPattern) -> str:
         """Generate assignment pattern."""
         left = self.generate(node.left)
         right = self.generate(node.right)
         return f"{left} = {right}"
 
-    def gen_RestElement(self, node: es.RestElement) -> str:
+    def gen_rest_element(self, node: es.RestElement) -> str:
         """Generate rest element."""
         return f"...{self.generate(node.argument)}"
 
     # Modules
     # =======
 
-    def gen_ImportDeclaration(self, node: es.ImportDeclaration) -> str:
+    def gen_import_declaration(self, node: es.ImportDeclaration) -> str:
         """Generate import declaration."""
         specs = ", ".join(self.generate(s) for s in node.specifiers)
         source = self.generate(node.source)
         return f"{self.indent()}import {specs} from {source};"
 
-    def gen_ImportSpecifier(self, node: es.ImportSpecifier) -> str:
+    def gen_import_specifier(self, node: es.ImportSpecifier) -> str:
         """Generate import specifier."""
         imported = self.generate(node.imported)
         local = self.generate(node.local)
@@ -447,15 +446,15 @@ class JSCodeGenerator:
             return f"{imported} as {local}"
         return imported
 
-    def gen_ImportDefaultSpecifier(self, node: es.ImportDefaultSpecifier) -> str:
+    def gen_import_default_specifier(self, node: es.ImportDefaultSpecifier) -> str:
         """Generate import default specifier."""
         return self.generate(node.local)
 
-    def gen_ImportNamespaceSpecifier(self, node: es.ImportNamespaceSpecifier) -> str:
+    def gen_import_namespace_specifier(self, node: es.ImportNamespaceSpecifier) -> str:
         """Generate import namespace specifier."""
         return f"* as {self.generate(node.local)}"
 
-    def gen_ExportNamedDeclaration(self, node: es.ExportNamedDeclaration) -> str:
+    def gen_export_named_declaration(self, node: es.ExportNamedDeclaration) -> str:
         """Generate export named declaration."""
         if node.declaration:
             return f"{self.indent()}export {self.generate(node.declaration).lstrip()}"
@@ -465,7 +464,7 @@ class JSCodeGenerator:
             return f"{self.indent()}export {{{specs}}} from {source};"
         return f"{self.indent()}export {{{specs}}};"
 
-    def gen_ExportSpecifier(self, node: es.ExportSpecifier) -> str:
+    def gen_export_specifier(self, node: es.ExportSpecifier) -> str:
         """Generate export specifier."""
         local = self.generate(node.local)
         exported = self.generate(node.exported)
@@ -473,11 +472,11 @@ class JSCodeGenerator:
             return f"{local} as {exported}"
         return local
 
-    def gen_ExportDefaultDeclaration(self, node: es.ExportDefaultDeclaration) -> str:
+    def gen_export_default_declaration(self, node: es.ExportDefaultDeclaration) -> str:
         """Generate export default declaration."""
         return f"{self.indent()}export default {self.generate(node.declaration)};"
 
-    def gen_ExportAllDeclaration(self, node: es.ExportAllDeclaration) -> str:
+    def gen_export_all_declaration(self, node: es.ExportAllDeclaration) -> str:
         """Generate export all declaration."""
         source = self.generate(node.source)
         if node.exported:
