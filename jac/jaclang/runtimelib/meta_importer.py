@@ -165,31 +165,37 @@ class JacMetaImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         return None  # use default machinery
 
     def exec_module(self, module: ModuleType) -> None:
-        """Execute the module."""
+        """Execute the module by loading and executing its bytecode.
+
+        This method implements PEP 451's exec_module() protocol, which separates
+        module creation from execution. It handles both package (__init__.jac) and
+        regular module (.jac/.py) execution.
+        """
         if not module.__spec__ or not module.__spec__.origin:
             raise ImportError(
                 f"Cannot find spec or origin for module {module.__name__}"
             )
+
         file_path = module.__spec__.origin
         is_pkg = module.__spec__.submodule_search_locations is not None
 
-        if is_pkg:
-            codeobj = Jac.program.get_bytecode(full_target=file_path)
-            if codeobj:
-                exec(codeobj, module.__dict__)
-            JacMachineInterface.load_module(module.__name__, module)
-            return
+        # Register module in JacMachine's tracking
+        JacMachineInterface.load_module(module.__name__, module)
 
-        base_path = os.path.dirname(file_path)
-        target = os.path.splitext(os.path.basename(file_path))[0]
-        ret = JacMachineInterface.jac_import(
-            target=target,
-            base_path=base_path,
-            override_name=module.__name__,
-            lng="py" if file_path.endswith(".py") else "jac",
-        )
-        if ret:
-            loaded_module = ret[0]
-            module.__dict__.update(loaded_module.__dict__)
-        else:
-            raise ImportError(f"Unable to import {module.__name__}")
+        # Get and execute bytecode
+        codeobj = Jac.program.get_bytecode(full_target=file_path)
+        if not codeobj:
+            if is_pkg:
+                # Empty package is OK - just register it
+                return
+            raise ImportError(f"No bytecode found for {file_path}")
+
+        try:
+            # Execute the bytecode directly in the module's namespace
+            exec(codeobj, module.__dict__)
+        except Exception as e:
+            logger.error(f"Error executing module {module.__name__}: {e}")
+            from jaclang.utils.helpers import dump_traceback
+
+            logger.error(dump_traceback(e))
+            raise

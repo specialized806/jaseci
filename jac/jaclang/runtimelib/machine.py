@@ -934,23 +934,38 @@ class JacBasics:
         target: str,
         base_path: str,
         absorb: bool = False,
-        mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
         lng: Optional[str] = None,
     ) -> tuple[types.ModuleType, ...]:
-        """Core Import Process.
+        """Import a Jac or Python module using Python's standard import machinery.
 
-        This function provides a bridge between Jac's import semantics and Python's
-        standard import machinery. It leverages importlib.import_module() which
-        automatically invokes our JacMetaImporter when appropriate.
+        This function bridges Jac's import semantics with Python's import system,
+        leveraging importlib.import_module() which automatically invokes our
+        JacMetaImporter (registered in sys.meta_path).
 
-        For most cases, this delegates to Python's import system. Special handling
-        is only needed for:
-        - Selective item imports with aliasing (items parameter)
-        - Module name overrides (override_name parameter)
-        - Reload semantics (reload_module parameter)
+        Args:
+            target: Module name to import (e.g., "foo.bar" or ".relative")
+            base_path: Base directory for resolving the module
+            absorb: If True with items, return module instead of items
+            override_name: Special handling for "__main__" execution context
+            items: Specific items to import from module (like "from X import Y")
+            reload_module: Force reload even if already in sys.modules
+            lng: Language hint ("jac", "py", etc.) - auto-detected if None
+
+        Returns:
+            Tuple of imported module(s) or item(s)
+
+        Examples:
+            # Import entire module
+            (mod,) = jac_import("mymod", "/path/to/base")
+
+            # Import specific items
+            (func, cls) = jac_import("mymod", "/path", items={"myfunc": None, "MyClass": None})
+
+            # Run as __main__
+            jac_import("mymod", "/path", override_name="__main__")
         """
         import importlib
         import importlib.util
@@ -962,28 +977,23 @@ class JacBasics:
             JacMachineInterface.attach_program(JacProgram())
 
         # Compute the module name
-        if override_name:
-            module_name = override_name
+        # Convert relative imports (e.g., ".foo") to absolute
+        if target.startswith("."):
+            # Relative import - need to resolve against base_path
+            caller_dir = (
+                base_path if os.path.isdir(base_path) else os.path.dirname(base_path)
+            )
+            chomp_target = target
+            while chomp_target.startswith("."):
+                if len(chomp_target) > 1 and chomp_target[1] == ".":
+                    caller_dir = os.path.dirname(caller_dir)
+                    chomp_target = chomp_target[1:]
+                else:
+                    chomp_target = chomp_target[1:]
+                    break
+            module_name = chomp_target
         else:
-            # Convert relative imports (e.g., ".foo") to absolute
-            if target.startswith("."):
-                # Relative import - need to resolve against base_path
-                caller_dir = (
-                    base_path
-                    if os.path.isdir(base_path)
-                    else os.path.dirname(base_path)
-                )
-                chomp_target = target
-                while chomp_target.startswith("."):
-                    if len(chomp_target) > 1 and chomp_target[1] == ".":
-                        caller_dir = os.path.dirname(caller_dir)
-                        chomp_target = chomp_target[1:]
-                    else:
-                        chomp_target = chomp_target[1:]
-                        break
-                module_name = chomp_target
-            else:
-                module_name = target
+            module_name = target
 
         # Add base_path to sys.path for import resolution
         # The meta importer uses this for finding modules
@@ -998,8 +1008,46 @@ class JacBasics:
             sys.path.insert(0, caller_dir)
 
         try:
-            # Handle reload case
-            if reload_module and module_name in sys.modules:
+            # Handle special case: override_name="__main__" means run as script
+            if override_name == "__main__":
+                # For __main__ execution, we use spec_from_file_location
+                from jaclang.runtimelib.meta_importer import JacMetaImporter
+
+                finder = JacMetaImporter()
+                spec = finder.find_spec(
+                    module_name, [caller_dir] if caller_dir else None
+                )
+
+                if not spec or not spec.origin:
+                    raise ImportError(f"Cannot find module {module_name}")
+
+                # Create or get __main__ module
+                if "__main__" in sys.modules and not reload_module:
+                    module = sys.modules["__main__"]
+                    # Clear the module's dict except for special attributes
+                    to_keep = {
+                        k: v for k, v in module.__dict__.items() if k.startswith("__")
+                    }
+                    module.__dict__.clear()
+                    module.__dict__.update(to_keep)
+                else:
+                    module = types.ModuleType("__main__")
+                    sys.modules["__main__"] = module
+
+                # Set module attributes
+                module.__file__ = spec.origin
+                module.__name__ = "__main__"
+                if spec.submodule_search_locations:
+                    module.__path__ = spec.submodule_search_locations
+
+                # Register in JacMachine
+                JacMachineInterface.load_module("__main__", module)
+
+                # Execute the module
+                if spec.loader:
+                    spec.loader.exec_module(module)
+            elif reload_module and module_name in sys.modules:
+                # Handle reload case
                 module = importlib.reload(sys.modules[module_name])
             else:
                 # Use Python's standard import machinery
