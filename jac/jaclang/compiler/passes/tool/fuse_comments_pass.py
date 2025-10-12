@@ -56,10 +56,6 @@ class FuseCommentsPass(UniPass):
                     next_code = next(code_tokens)
                 except StopIteration:
                     next_code = None
-
-        # Replace the source terminals order with the merged order so downstream
-        # passes see comments interleaved with code tokens.  We update the list
-        # in-place to avoid breaking references held by other structures.
         self.ir_out.src_terminals[:] = merged
 
         return merged

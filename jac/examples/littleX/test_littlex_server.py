@@ -88,7 +88,6 @@ class TestLittleXServer:
             target=mod,
             base_path=base,
             reload_module=True,
-            lng="jac",
         )
 
         # Create server
