@@ -215,12 +215,12 @@ class TestLarkParser(TestCaseMicroSuite):
                 }
             """,
             """
-            Missing SEMI
+            Unexpected token 'bar'
+                with entry {
                     foo = Foo(;
                     func(foo bar)
+                             ^^^
                     foo.bar;
-                    ^^^
-                }
             """
         ]
         for idx, alrt in enumerate(prog.errors_had):
