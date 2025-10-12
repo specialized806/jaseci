@@ -1014,9 +1014,9 @@ class JacBasics:
                 from jaclang.runtimelib.meta_importer import JacMetaImporter
 
                 finder = JacMetaImporter()
-                spec = finder.find_spec(
-                    module_name, [caller_dir] if caller_dir else None
-                )
+                # Pass None as path for top-level imports (e.g., "micro.simple_walk")
+                # This ensures the meta importer searches sys.path correctly
+                spec = finder.find_spec(module_name, None)
 
                 if not spec or not spec.origin:
                     raise ImportError(f"Cannot find module {module_name}")
