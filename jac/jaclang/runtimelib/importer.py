@@ -1,9 +1,22 @@
-"""Special Imports for Jac Code."""
+"""Special Imports for Jac Code.
+
+DEPRECATED: This module is kept for backward compatibility only.
+
+The import functionality has been refactored to leverage Python's standard
+import machinery (PEP 302 and PEP 451) via JacMetaImporter in meta_importer.py.
+
+New code should use:
+- importlib.import_module() for standard imports
+- JacMachineInterface.jac_import() for Jac-specific import semantics
+
+These classes remain for backward compatibility but delegate to the new system.
+"""
 
 from __future__ import annotations
 
 import os
 import types
+import warnings
 from os import getcwd, path
 from typing import Optional, Union
 
@@ -11,13 +24,26 @@ from jaclang.runtimelib.machine import JacMachineInterface
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
-from jaclang.utils.module_resolver import get_jac_search_paths
 
 logger = logging.getLogger(__name__)
 
 
+def _deprecation_warning(name: str) -> None:
+    """Issue a deprecation warning for old importer classes."""
+    warnings.warn(
+        f"{name} is deprecated and will be removed in a future version. "
+        "Use JacMachineInterface.jac_import() or importlib.import_module() instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
 class ImportPathSpec:
-    """Import Specification."""
+    """Import Specification.
+
+    DEPRECATED: This class is maintained for backward compatibility.
+    ModuleSpec from importlib provides equivalent functionality.
+    """
 
     def __init__(
         self,
@@ -30,6 +56,7 @@ class ImportPathSpec:
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> None:
         """Initialize the ImportPathSpec object."""
+        _deprecation_warning("ImportPathSpec")
         self.target = target
         self.base_path = base_path
         self.absorb = absorb
@@ -131,10 +158,14 @@ class ImportReturn:
 
 
 class Importer:
-    """Abstract base class for all importers."""
+    """Abstract base class for all importers.
+
+    DEPRECATED: Use JacMetaImporter with Python's import machinery instead.
+    """
 
     def __init__(self) -> None:
         """Initialize the Importer object."""
+        _deprecation_warning("Importer")
         self.result: Optional[ImportReturn] = None
 
     def run_import(self, spec: ImportPathSpec) -> ImportReturn:
@@ -143,43 +174,56 @@ class Importer:
 
 
 class PythonImporter(Importer):
-    """Importer for Python modules using Jac AST conversion."""
+    """Importer for Python modules using Jac AST conversion.
+
+    DEPRECATED: This functionality is now handled by JacMetaImporter.
+    This class delegates to JacMachineInterface.jac_import() for compatibility.
+    """
 
     def __init__(self) -> None:
         """Initialize the Python importer."""
-        super().__init__()
+        # Don't call super().__init__() to avoid double warning
+        _deprecation_warning("PythonImporter")
+        self.result: Optional[ImportReturn] = None
         from jaclang.utils.module_resolver import PythonModuleResolver
 
         self.resolver = PythonModuleResolver()
 
     def load_and_execute(self, file_path: str) -> types.ModuleType:
-        """Convert Python file to Jac AST and create module."""
-        module_name = os.path.splitext(os.path.basename(file_path))[0]
-        module = types.ModuleType(module_name)
-        module.__file__ = file_path
-        module.__name__ = "__main__"
+        """Convert Python file to Jac AST and create module.
 
-        from jaclang.runtimelib.machine import JacMachine
+        DEPRECATED: Delegates to standard import machinery.
+        """
+        # Use the new import system
+        import importlib.util
 
-        codeobj = JacMachine.program.get_bytecode(full_target=file_path)
-        if codeobj:
-            exec(codeobj, module.__dict__)
-        else:
-            raise ImportError(f"Failed to generate bytecode for {file_path}")
+        spec = importlib.util.spec_from_file_location("__main__", file_path)
+        if not spec or not spec.loader:
+            raise ImportError(f"Failed to create spec for {file_path}")
 
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
         return module
 
     def run_import(self, spec: ImportPathSpec) -> ImportReturn:
-        """Run the import process for Python modules using Jac AST."""
+        """Run the import process for Python modules using Jac AST.
+
+        DEPRECATED: Delegates to JacMachineInterface.jac_import().
+        """
         try:
-            python_file_path = self.resolver.resolve_module_path(
+            # Delegate to the new import system
+            result = JacMachineInterface.jac_import(
                 target=spec.target,
                 base_path=spec.base_path,
+                absorb=spec.absorb,
+                mdl_alias=spec.mdl_alias,
+                override_name=spec.override_name,
+                items=spec.items,
+                lng="py",
             )
-            imported_module = self.load_and_execute(python_file_path)
-            # JacMachineInterface.load_module(imported_module.__name__, imported_module)
 
-            loaded_items: list = []
+            imported_module = result[0]
+            loaded_items = list(result[1:]) if len(result) > 1 else []
             self.result = ImportReturn(imported_module, loaded_items, self)
             return self.result
 
@@ -188,7 +232,11 @@ class PythonImporter(Importer):
 
 
 class JacImporter(Importer):
-    """Importer for Jac modules."""
+    """Importer for Jac modules.
+
+    DEPRECATED: This functionality is now handled by JacMetaImporter.
+    This class delegates to JacMachineInterface.jac_import() for compatibility.
+    """
 
     def get_sys_mod_name(self, full_target: str) -> str:
         """Generate proper module names from file paths."""
@@ -279,73 +327,32 @@ class JacImporter(Importer):
         JacMachineInterface.load_module(module_name, module)
         return module
 
+    def __init__(self) -> None:
+        """Initialize the Jac importer."""
+        # Don't call super().__init__() to avoid double warning
+        _deprecation_warning("JacImporter")
+        self.result: Optional[ImportReturn] = None
+
     def run_import(
         self, spec: ImportPathSpec, reload: Optional[bool] = False
     ) -> ImportReturn:
-        """Run the import process for Jac modules."""
-        from jaclang.runtimelib.machine import JacMachine
+        """Run the import process for Jac modules.
 
-        unique_loaded_items: list[types.ModuleType] = []
-        module = None
-        # Gather all possible search paths
-        search_paths = get_jac_search_paths(spec.caller_dir)
+        DEPRECATED: Delegates to JacMachineInterface.jac_import().
+        """
+        # Delegate to the new import system
+        result = JacMachineInterface.jac_import(
+            target=spec.target,
+            base_path=spec.base_path,
+            absorb=spec.absorb,
+            mdl_alias=spec.mdl_alias,
+            override_name=spec.override_name,
+            items=spec.items,
+            reload_module=reload,
+            lng=spec.language,
+        )
 
-        found_path = None
-        target_path_components = spec.target.split(".")
-        for search_path in search_paths:
-            candidate = os.path.join(search_path, *target_path_components)
-            # Check if the candidate is a directory or a .jac file
-            if (os.path.isdir(candidate)) or (os.path.isfile(candidate + ".jac")):
-                found_path = candidate
-                break
-
-        # If a suitable path was found, update spec.full_target; otherwise, raise an error
-        if found_path:
-            spec.full_target = os.path.abspath(found_path)
-        elif os.path.exists(spec.full_target) or os.path.exists(
-            spec.full_target + ".jac"
-        ):
-            pass
-        else:
-            raise ImportError(
-                f"Unable to locate module '{spec.target}' in {search_paths}"
-            )
-        if os.path.isfile(spec.full_target + ".jac"):
-            module_name = self.get_sys_mod_name(spec.full_target + ".jac")
-            module_name = spec.override_name if spec.override_name else module_name
-        else:
-            module_name = self.get_sys_mod_name(spec.full_target)
-
-        module = JacMachine.loaded_modules.get(module_name)
-
-        if not module or module.__name__ == "__main__" or reload:
-            if os.path.isdir(spec.full_target):
-                module = self.handle_directory(spec.module_name, spec.full_target)
-            else:
-                spec.full_target += ".jac" if spec.language in ["jac", "jir"] else ".py"
-                module = self.create_jac_py_module(
-                    module_name,
-                    spec.package_path,
-                    spec.full_target,
-                )
-                codeobj = JacMachine.program.get_bytecode(full_target=spec.full_target)
-
-                # Since this is a compile time error, we can safely raise an exception here.
-                if not codeobj:
-                    raise ImportError(f"No bytecode found for {spec.full_target}")
-
-                try:
-                    with sys_path_context(spec.caller_dir):
-                        exec(codeobj, module.__dict__)
-                except Exception as e:
-                    logger.error(e)
-                    logger.error(dump_traceback(e))
-                    raise e
-
-        import_return = ImportReturn(module, unique_loaded_items, self)
-        if spec.items:
-            import_return.process_items(
-                module=module, items=spec.items, lang=spec.language
-            )
-        self.result = import_return
+        imported_module = result[0]
+        loaded_items = list(result[1:]) if len(result) > 1 else []
+        self.result = ImportReturn(imported_module, loaded_items, self)
         return self.result
