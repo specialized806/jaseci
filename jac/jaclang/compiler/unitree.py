@@ -576,6 +576,13 @@ class AstAccessNode(UniNode):
 T = TypeVar("T", bound=UniNode)
 
 
+class ClientFacingNode:
+    """Mixin for nodes that can be marked as client-facing declarations."""
+
+    def __init__(self, is_client_decl: bool = False) -> None:
+        self.is_client_decl = is_client_decl
+
+
 class AstDocNode(UniNode):
     """Nodes that have access."""
 
@@ -1003,7 +1010,7 @@ class ProgramModule(UniNode):
         self.hub: dict[str, Module] = {self.loc.mod_path: main_mod} if main_mod else {}
 
 
-class GlobalVars(ElementStmt, AstAccessNode):
+class GlobalVars(ClientFacingNode, ElementStmt, AstAccessNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
@@ -1019,6 +1026,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         UniNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
+        ClientFacingNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1030,6 +1038,8 @@ class GlobalVars(ElementStmt, AstAccessNode):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         if self.is_frozen:
             new_kid.append(self.gen_token(Tok.KW_LET))
         else:
@@ -1180,7 +1190,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         return res
 
 
-class Import(ElementStmt, CodeBlockStmt):
+class Import(ClientFacingNode, ElementStmt, CodeBlockStmt):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -1198,6 +1208,7 @@ class Import(ElementStmt, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         CodeBlockStmt.__init__(self)
+        ClientFacingNode.__init__(self)
 
     @property
     def is_py(self) -> bool:
@@ -1251,6 +1262,8 @@ class Import(ElementStmt, CodeBlockStmt):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         if self.is_absorb:
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
@@ -1379,6 +1392,7 @@ class ModuleItem(UniNode):
 
 
 class Archetype(
+    ClientFacingNode,
     ArchSpec,
     AstAccessNode,
     ArchBlockStmt,
@@ -1420,6 +1434,7 @@ class Archetype(
         ArchSpec.__init__(self, decorators=decorators)
         UniScopeNode.__init__(self, name=self.sym_name)
         CodeBlockStmt.__init__(self)
+        ClientFacingNode.__init__(self)
 
     @property
     def is_abstract(self) -> bool:
@@ -1456,6 +1471,8 @@ class Archetype(
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
             for idx, dec in enumerate(self.decorators):
@@ -1647,7 +1664,14 @@ class SemDef(ElementStmt, AstSymbolNode, UniScopeNode):
         return res
 
 
-class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeNode):
+class Enum(
+    ClientFacingNode,
+    ArchSpec,
+    AstAccessNode,
+    AstImplNeedingNode,
+    ArchBlockStmt,
+    UniScopeNode,
+):
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -1674,6 +1698,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         AstDocNode.__init__(self, doc=doc)
         ArchSpec.__init__(self, decorators=decorators)
         UniScopeNode.__init__(self, name=self.sym_name)
+        ClientFacingNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1701,6 +1726,8 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
                     new_kid.append(self.gen_token(Tok.DECOR_OP))
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         new_kid.append(self.gen_token(Tok.KW_ENUM))
         if self.access:
             new_kid.append(self.access)
@@ -1731,6 +1758,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
 
 
 class Ability(
+    ClientFacingNode,
     AstAccessNode,
     ElementStmt,
     AstAsyncNode,
@@ -1775,6 +1803,7 @@ class Ability(
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=self.sym_name)
         CodeBlockStmt.__init__(self)
+        ClientFacingNode.__init__(self)
 
     @property
     def is_method(self) -> bool:
@@ -1846,6 +1875,8 @@ class Ability(
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
             for idx, dec in enumerate(self.decorators):

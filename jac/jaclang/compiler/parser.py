@@ -422,7 +422,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 | py_code_block
                 | test
             """
-            return self.consume(uni.ElementStmt)
+            client_tok = self.match_token(Tok.KW_CLIENT)
+            element = self.consume(uni.ElementStmt)
+            if client_tok and isinstance(element, uni.ClientFacingNode):
+                element.is_client_decl = True
+                element.add_kids_left([client_tok])
+            return element
 
         def global_var(self, _: None) -> uni.GlobalVars:
             """Grammar rule.

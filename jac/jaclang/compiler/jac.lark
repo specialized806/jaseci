@@ -5,12 +5,12 @@ module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
        | STRING        (tl_stmt_with_doc | toplevel_stmt)*
 
 tl_stmt_with_doc: STRING toplevel_stmt
-toplevel_stmt: import_stmt
-       | archetype
+toplevel_stmt: KW_CLIENT? import_stmt
+       | KW_CLIENT? archetype
        | impl_def
        | sem_def
-       | ability
-       | global_var
+       | KW_CLIENT? ability
+       | KW_CLIENT? global_var
        | free_code
        | py_code_block
        | test
@@ -579,6 +579,7 @@ KW_STATIC: "static"
 KW_OVERRIDE: "override"
 KW_MATCH: "match"
 KW_CASE: "case"
+KW_CLIENT: "cl"
 
 KW_INIT: "init"
 KW_POST_INIT: "postinit"

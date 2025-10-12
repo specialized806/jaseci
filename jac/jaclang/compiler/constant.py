@@ -247,6 +247,7 @@ class Tokens(str, Enum):
     KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
     KW_CASE = "KW_CASE"
+    KW_CLIENT = "KW_CLIENT"
     PLUS = "PLUS"
     MINUS = "MINUS"
     STAR_MUL = "STAR_MUL"
