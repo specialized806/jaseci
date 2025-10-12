@@ -421,7 +421,7 @@ special_ref: KW_INIT
             | KW_HERE
             | KW_VISITOR
 
-// [Heading]: JSX Elements with Contextual Lexing.
+// [Heading]: JSX Elements.
 jsx_element: jsx_self_closing
            | jsx_fragment
            | jsx_opening_closing
