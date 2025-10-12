@@ -79,13 +79,15 @@ class TestLittleXServer:
         from http.server import HTTPServer
 
         # Load the module
-        base, mod, mach = cli.proc_file_sess(
-            "/home/ninja/jaseci/jac/examples/littleX/littleX_single_nodeps.jac", ""
+        jac_file = os.path.join(
+            os.path.dirname(__file__), "littleX_single_nodeps.jac"
         )
+        base, mod, mach = cli.proc_file_sess(jac_file, "")
         Jac.set_base_path(base)
         Jac.jac_import(
             target=mod,
             base_path=base,
+            reload_module=True,
             lng="jac",
         )
 
@@ -94,6 +96,7 @@ class TestLittleXServer:
             module_name=mod,
             session_path=self.session_file,
             port=self.port,
+            base_path=base,
         )
 
         # Start server in thread

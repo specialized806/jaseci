@@ -1017,6 +1017,23 @@ class JacBasics:
                 # Pass None as path for top-level imports (e.g., "micro.simple_walk")
                 # This ensures the meta importer searches sys.path correctly
                 spec = finder.find_spec(module_name, None)
+                if (
+                    spec
+                    and spec.origin
+                    and spec.origin.endswith(".jac")
+                    and lng == "py"
+                ):
+                    spec = None
+
+                if (not spec or not spec.origin) and lng == "py":
+                    file_path = os.path.join(caller_dir, f"{module_name}.py")
+                    if os.path.isfile(file_path):
+                        spec_name = (
+                            "__main__" if override_name == "__main__" else module_name
+                        )
+                        spec = importlib.util.spec_from_file_location(
+                            spec_name, file_path
+                        )
 
                 if not spec or not spec.origin:
                     raise ImportError(f"Cannot find module {module_name}")
