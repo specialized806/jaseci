@@ -18,6 +18,10 @@ class TestLoader(TestCase):
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
         Jac.reset_machine()
+        # Clear fixtures package from sys.modules to avoid stale cache from pytest collection
+        # This ensures the import system can properly resolve fixtures.hello_world.jac
+        sys.modules.pop("fixtures", None)
+        sys.modules.pop("fixtures.hello_world", None)
         Jac.set_base_path(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             JacProgram(),
@@ -28,6 +32,9 @@ class TestLoader(TestCase):
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
         Jac.reset_machine()
+        # Clear fixtures package from sys.modules to avoid stale cache from pytest collection
+        sys.modules.pop("fixtures", None)
+        sys.modules.pop("fixtures.hello_world", None)
         Jac.set_base_path(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             JacProgram(),
