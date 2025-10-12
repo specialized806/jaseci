@@ -21,7 +21,7 @@ class TestLoader(TestCase):
         JacMachineInterface.attach_program(
             JacProgram(),
         )
-        (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__)
+        (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__, reload_module=True)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
@@ -30,7 +30,7 @@ class TestLoader(TestCase):
         JacMachineInterface.attach_program(
             JacProgram(),
         )
-        Jac.jac_import("fixtures.hello_world", base_path=__file__)
+        Jac.jac_import("fixtures.hello_world", base_path=__file__, reload_module=True)
         self.assertIn(
             "module 'fixtures.hello_world'",
             str(Jac.loaded_modules),
