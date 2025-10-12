@@ -17,20 +17,22 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
+        Jac.reset_machine()
         Jac.set_base_path(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             JacProgram(),
         )
-        (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__, reload_module=True)
+        (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
+        Jac.reset_machine()
         Jac.set_base_path(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             JacProgram(),
         )
-        Jac.jac_import("fixtures.hello_world", base_path=__file__, reload_module=True)
+        Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
             str(Jac.loaded_modules),
