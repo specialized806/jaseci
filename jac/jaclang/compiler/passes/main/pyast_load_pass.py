@@ -20,8 +20,7 @@ import re
 from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler import TOKEN_MAP
-from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.uni_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
@@ -89,28 +88,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
         return extracted
-
-    def gen_token(self, name: Tok, value: Optional[str] = None) -> uni.Token:
-        value = (
-            value
-            if value
-            else (
-                DELIM_MAP[name]
-                if name in DELIM_MAP
-                else TOKEN_MAP[name.value] if name.value in TOKEN_MAP else name.value
-            )
-        )
-        return uni.Token(
-            name=name,
-            value=value,
-            orig_src=self.orig_src,
-            col_start=0,
-            col_end=0,
-            line=0,
-            end_line=0,
-            pos_start=0,
-            pos_end=0,
-        )
 
     def proc_module(self, node: py_ast.Module) -> uni.Module:
         """Process python node.
@@ -1398,12 +1375,16 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             __match_args__ = ("values",)
         values: list[expr]
         """
-        values = [self.convert(value) for value in node.values]
-        valid = [
-            value
-            for value in values
-            if isinstance(value, (uni.String, uni.FormattedValue))
-        ]
+        valid: list[uni.Token | uni.FormattedValue] = []
+        for i in node.values:
+            if isinstance(i, py_ast.Constant) and isinstance(i.value, str):
+                valid.append(self.operator(Tok.STRING, i.value))
+            elif isinstance(i, py_ast.FormattedValue):
+                converted = self.convert(i)
+                if isinstance(converted, uni.FormattedValue):
+                    valid.append(converted)
+            else:
+                raise self.ice("Invalid node in joined str")
         ast_seg = py_ast.get_source_segment(self.orig_src.code, node)
         if ast_seg is None:
             ast_seg = 'f""'
@@ -1415,8 +1396,8 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         else:
             start = "f'"
             end = "'"
-        tok_start = self.gen_token(name=Tok.STRING, value=start)
-        tok_end = self.gen_token(name=Tok.STRING, value=end)
+        tok_start = self.operator(Tok.STRING, start)
+        tok_end = self.operator(Tok.STRING, end)
         fstr = uni.FString(
             start=tok_start,
             parts=valid,
