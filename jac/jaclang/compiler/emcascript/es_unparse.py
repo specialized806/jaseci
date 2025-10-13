@@ -104,7 +104,13 @@ class JSCodeGenerator:
     def gen_for_of_statement(self, node: es.ForOfStatement) -> str:
         """Generate for-of statement."""
         await_str = "await " if node.await_ else ""
-        left = self.generate(node.left)
+        if isinstance(node.left, es.VariableDeclaration):
+            declarators = ", ".join(
+                self.generate(decl) for decl in node.left.declarations
+            )
+            left = f"{node.left.kind} {declarators}"
+        else:
+            left = self.generate(node.left)
         right = self.generate(node.right)
         body = self.generate(node.body)
         return f"{self.indent()}for {await_str}({left} of {right}) {body}"

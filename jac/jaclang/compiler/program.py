@@ -309,6 +309,14 @@ class JacProgram:
             return None
         if hasattr(expr, "lit_value"):
             return getattr(expr, "lit_value")
+        if isinstance(expr, uni.MultiString):
+            parts: list[str] = []
+            for segment in expr.strings:
+                if hasattr(segment, "lit_value"):
+                    parts.append(getattr(segment, "lit_value"))
+                else:
+                    return None
+            return "".join(parts)
         if isinstance(expr, uni.ListVal):
             values = [self._literal_value(item) for item in expr.values]
             if all(val is not None for val in values):

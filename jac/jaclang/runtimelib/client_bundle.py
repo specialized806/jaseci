@@ -180,9 +180,18 @@ class ClientBundleBuilder:
             lines.append(f"  moduleFunctions[{json.dumps(name)}] = {name};")
             lines.append(f"  scope[{json.dumps(name)}] = {name};")
         for name, value in client_globals.items():
-            value_literal = json.dumps(value)
-            lines.append(f"  moduleGlobals[{json.dumps(name)}] = {value_literal};")
-            lines.append(f"  scope[{json.dumps(name)}] = {value_literal};")
+            identifier = json.dumps(name)
+            try:
+                value_literal = json.dumps(value)
+            except TypeError:
+                value_literal = "null"
+            lines.append(f"  if (typeof {name} !== 'undefined') {{")
+            lines.append(f"    moduleGlobals[{identifier}] = {name};")
+            lines.append(f"    scope[{identifier}] = {name};")
+            lines.append("  } else {")
+            lines.append(f"    moduleGlobals[{identifier}] = {value_literal};")
+            lines.append(f"    scope[{identifier}] = {value_literal};")
+            lines.append("  }")
 
         lines.extend(
             [
