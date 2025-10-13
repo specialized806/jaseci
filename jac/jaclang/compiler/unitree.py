@@ -221,7 +221,10 @@ class UniNode:
 
     def unparse(self) -> str:
         valid = self.normalize()
-        res = " ".join([i.unparse() for i in self.kid])
+        if isinstance(self, FString):
+            res = "".join([i.unparse() for i in self.kid])
+        else:
+            res = " ".join([i.unparse() for i in self.kid])
         if not valid:
             raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
         return res
