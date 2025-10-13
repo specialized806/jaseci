@@ -13,7 +13,6 @@ from jaclang.compiler.passes.main import (
     Alert,
     CFGBuildPass,
     DeclImplMatchPass,
-    DefUsePass,
     JacAnnexPass,
     JacImportDepsPass,
     PreDynamoPass,

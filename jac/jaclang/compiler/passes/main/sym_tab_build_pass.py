@@ -149,6 +149,26 @@ class SymTabBuildPass(UniPass):
         assert node.parent_scope is not None
         node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
+    def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
+        # If inside any method(not static) and the attribute chain starts with 'self',
+        # insert the symbol into the class (archetype) symbol table to ensure proper member registration.
+        chain = node.as_attr_list
+        if (
+            node.parent
+            and isinstance(node.parent, uni.Assignment)
+            and node == node.parent.target[0]  # TODO: check for all targets
+            and len(chain) == 2
+            and (ability := node.find_parent_of_type(uni.Ability))
+            and ability.is_method
+            and isinstance(ability.method_owner, uni.Archetype)
+            and not ability.is_static
+            and not ability.is_cls_method
+            and chain[0].sym_name == "self"
+        ):
+            arch = ability.find_parent_of_type(uni.Archetype)
+            if arch:
+                arch.sym_tab.def_insert(chain[1], access_spec=arch)
+
     def exit_enum(self, node: uni.Enum) -> None:
         self.pop_scope()
 

@@ -1,3 +1,5 @@
+"""Jac Semantic Analysis Pass."""
+
 import ast as ast3
 
 import jaclang.compiler.unitree as uni
@@ -63,5 +65,7 @@ class SemanticAnalysisPass(UniPass):
     def _change_atom_trailer_ctx(self, node: uni.AtomTrailer) -> None:
         """Mark final element in trailer chain as a Store context."""
         last = node.right
-        if isinstance(last, uni.Name):
+        if isinstance(last, uni.AtomExpr):
             last.name_spec.py_ctx_func = ast3.Store
+            if isinstance(last.name_spec, uni.AstSymbolNode):
+                last.name_spec.py_ctx_func = ast3.Store

@@ -437,20 +437,19 @@ class TypeEvaluator {
 
         # Define helper function for parameter kind conversion.
         def _convert_param_kind(kind: uni.ParamKind) -> types.ParamKind {
-            ::py::
-            match kind:
+            match kind {
                 case uni.ParamKind.POSONLY:
-                    return types.ParamKind.POSONLY
+                    return types.ParamKind.POSONLY;
                 case uni.ParamKind.NORMAL:
-                    return types.ParamKind.NORMAL
+                    return types.ParamKind.NORMAL;
                 case uni.ParamKind.VARARG:
-                    return types.ParamKind.VARARG
+                    return types.ParamKind.VARARG;
                 case uni.ParamKind.KWONLY:
-                    return types.ParamKind.KWONLY
+                    return types.ParamKind.KWONLY;
                 case uni.ParamKind.KWARG:
-                    return types.ParamKind.KWARG
-            return types.ParamKind.NORMAL
-            ::py::
+                    return types.ParamKind.KWARG;
+            return types.ParamKind.NORMAL;
+            }
         }
 
         parameters: list[types.Parameter] = [];
