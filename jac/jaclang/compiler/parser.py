@@ -198,7 +198,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         # Reference: https://github.com/lark-parser/lark/blob/master/examples/advanced/error_reporting_lalr.py
         # e.match_examples()
         if isinstance(e, jl.UnexpectedToken):
-            return f"Unexpected token '{e.token.value}'\n Expected one of: {list(e.accepts)}\n"
+            return f"Unexpected token '{e.token.value}'"
         return "Syntax Error"
 
     def error_to_token(self, e: jl.UnexpectedInput) -> uni.Token:
