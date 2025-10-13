@@ -2312,7 +2312,11 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = [
             self.sync(
                 ast3.JoinedStr(
-                    values=[cast(ast3.expr, part.gen.py_ast[0]) for part in node.parts],
+                    values=[
+                        cast(ast3.expr, part.gen.py_ast[0])
+                        for part in node.parts
+                        if part.gen.py_ast
+                    ],
                 )
             )
         ]
