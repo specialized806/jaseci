@@ -35,17 +35,17 @@ print(f"name is {name} {f'inner: {name}'}")
 
 # Multiline f-strings with triple quotes
 multiline_msg = f"""Hello {name},
-This is a multiline f-string.
-Your value is: {value}
-Sum of {x} + {y} = {x + y}"""
+    This is a multiline f-string.
+    Your value is: {value}
+    Sum of {x} + {y} = {x + y}"""
 print(multiline_msg)
 
 another_multiline = f'''Welcome {name}!
-Here's your data:
-- X: {x}
-- Y: {y}
-- Z: {z}
-Binary of {x}: {x:b}'''
+    Here's your data:
+    - X: {x}
+    - Y: {y}
+    - Z: {z}
+    Binary of {x}: {x:b}'''
 print(another_multiline)
 
 # Nested triple quote f-strings
@@ -54,13 +54,13 @@ print(nested_triple)
 
 # Complex JSON-like formatting
 complex_format = f"""
-Debug Report for {name}:
-{{
-    "x": {x},
-    "y": {y},
-    "hex_y": "{y:x}",
-    "repr_value": {value!r}
-}}
+    Debug Report for {name}:
+    {{
+        "x": {x},
+        "y": {y},
+        "hex_y": "{y:x}",
+        "repr_value": {value!r}
+    }}
 """
 print(complex_format)
 
@@ -76,13 +76,13 @@ print(raw_path2)
 
 # Multiline raw f-strings
 raw_multiline = rf"""Path: C:\Users\{name}\Documents\
-File: {file}
-Full: C:\Users\{name}\Documents\{file}"""
+    File: {file}
+    Full: C:\Users\{name}\Documents\{file}"""
 print(raw_multiline)
 
 raw_multiline2 = fr'''Regex pattern: \d+\.\d+
-Name: {name}
-Pattern for {name}: \b{name}\b'''
+    Name: {name}
+    Pattern for {name}: \b{name}\b'''
 print(raw_multiline2)
 
 # Raw f-strings with special patterns
