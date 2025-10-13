@@ -5,9 +5,11 @@ from __future__ import annotations
 import ast as py_ast
 import marshal
 import types
-from typing import Any, Iterable, Optional, TYPE_CHECKING, Literal, cast
+from typing import Any, Iterable, Literal, Optional, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.emcascript import EsastGenPass
+from jaclang.compiler.emcascript.es_unparse import es_to_js
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     Alert,
@@ -31,8 +33,6 @@ from jaclang.compiler.passes.tool import (
     FuseCommentsPass,
     JacFormatPass,
 )
-from jaclang.compiler.emcascript import EsastGenPass
-from jaclang.compiler.emcascript.es_unparse import es_to_js
 from jaclang.runtimelib.utils import read_file_with_encoding
 from jaclang.settings import settings
 from jaclang.utils.log import logging
@@ -101,6 +101,7 @@ class JacProgram:
 
     @property
     def emit_client_python(self) -> bool:
+        """Return True when compiler should generate client-facing Python artifacts."""
         return self.client_codegen_mode == "both"
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
@@ -276,7 +277,7 @@ class JacProgram:
         return {
             "exports": sorted(exports),
             "globals": sorted(globals_set),
-            "params": {key: value for key, value in sorted(params.items())},
+            "params": dict(sorted(params.items())),
             "globals_values": globals_values,
             "has_client": has_client,
         }
@@ -304,16 +305,17 @@ class JacProgram:
             if child:
                 yield from self._walk_nodes(child)
 
-    def _literal_value(self, expr: uni.UniNode | None) -> Any:
+    def _literal_value(self, expr: uni.UniNode | None) -> object | None:
         if expr is None:
             return None
-        if hasattr(expr, "lit_value"):
-            return getattr(expr, "lit_value")
+        literal_attr = "lit_value"
+        if hasattr(expr, literal_attr):
+            return getattr(expr, literal_attr)
         if isinstance(expr, uni.MultiString):
             parts: list[str] = []
             for segment in expr.strings:
-                if hasattr(segment, "lit_value"):
-                    parts.append(getattr(segment, "lit_value"))
+                if hasattr(segment, literal_attr):
+                    parts.append(getattr(segment, literal_attr))
                 else:
                     return None
             return "".join(parts)

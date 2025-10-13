@@ -10,6 +10,7 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
 from functools import wraps
@@ -1106,7 +1107,11 @@ class JacBasics:
         return test_deco
 
     @staticmethod
-    def jsx(tag: Any, attributes: dict[str, Any], children: list[Any]) -> Any:
+    def jsx(
+        tag: object,
+        attributes: Mapping[str, object] | None = None,
+        children: Sequence[object] | None = None,
+    ) -> dict[str, object]:
         """JSX interface for creating elements.
 
         Args:
@@ -1117,17 +1122,19 @@ class JacBasics:
         Returns:
             JSX element representation (implementation-defined)
         """
+        props: dict[str, object] = dict(attributes) if attributes else {}
+        child_list = list(children) if children else []
         return {
             "tag": tag,
-            "props": attributes,
-            "children": children,
+            "props": props,
+            "children": child_list,
         }
 
     @staticmethod
-    def render_jsx_tree(node: Any) -> str:
+    def render_jsx_tree(node: object) -> str:
         """Render a JSX tree produced by JacMachine.jsx to HTML."""
 
-        def render(node_obj: Any) -> str:
+        def render(node_obj: object) -> str:
             if node_obj is None:
                 return ""
             if isinstance(node_obj, (str, int, float)):
@@ -1145,25 +1152,27 @@ class JacBasics:
                         rendered = None
                     return render(rendered)
 
-                props = node_obj.get("props") or node_obj.get("attributes") or {}
-                if not isinstance(props, dict):
+                raw_props = node_obj.get("props") or node_obj.get("attributes") or {}
+                if isinstance(raw_props, Mapping):
+                    props_dict = dict(raw_props)
+                else:
                     try:
-                        props = dict(props)
+                        props_dict = dict(raw_props)  # type: ignore[arg-type]
                     except Exception:
-                        props = {}
+                        props_dict = {}
                 children = node_obj.get("children") or []
 
                 if tag in (None, ""):
                     return "".join(render(child) for child in children)
 
                 tag_name = html.escape(str(tag))
-                attr_str = _render_props(props)
+                attr_str = _render_props(props_dict)
                 inner = "".join(render(child) for child in children)
                 return f"<{tag_name}{attr_str}>{inner}</{tag_name}>"
 
             return html.escape(str(node_obj))
 
-        def _render_props(props: dict[str, Any]) -> str:
+        def _render_props(props: Mapping[str, object]) -> str:
             if not props:
                 return ""
             attr_parts: list[str] = []
@@ -1175,7 +1184,7 @@ class JacBasics:
                 attr_name = "class" if key == "className" else key
                 if key == "dangerouslySetInnerHTML":
                     continue
-                if key == "style" and isinstance(value, dict):
+                if key == "style" and isinstance(value, Mapping):
                     style_pairs = [
                         f"{html.escape(str(style_key))}: {html.escape(str(style_value))}"
                         for style_key, style_value in value.items()

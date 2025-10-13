@@ -145,7 +145,7 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = []
             if hasattr(node.gen, "py"):
                 node.gen.py = ""  # type: ignore[attr-defined]
-            setattr(node, "_jac_skip_python_codegen", True)
+            node._jac_skip_python_codegen = True  # type: ignore[attr-defined]
             self.prune()
             return
         if node.gen.py_ast:
@@ -159,7 +159,7 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = []
             if hasattr(node.gen, "py"):
                 node.gen.py = ""  # type: ignore[attr-defined]
-            setattr(node, "_jac_skip_python_codegen", False)
+            node._jac_skip_python_codegen = False  # type: ignore[attr-defined]
             return
         super().exit_node(node)
         # for i in node.gen.py_ast:  # Internal validation
@@ -351,34 +351,39 @@ class PyastGenPass(UniPass):
         return getattr(node, "is_client_decl", False) and not self.emit_client_python
 
     def _literal_to_ast(
-        self, value: Any, jac_node: Optional[uni.UniNode] = None
-    ) -> ast3.AST:
+        self, value: object, jac_node: Optional[uni.UniNode] = None
+    ) -> ast3.expr:
         target_node = jac_node if jac_node else self.ir_out
         if isinstance(value, list):
-            return self.sync(
+            list_node = self.sync(
                 ast3.List(
                     elts=[self._literal_to_ast(v, jac_node) for v in value],
                     ctx=ast3.Load(),
                 ),
                 jac_node=target_node,
             )
+            return cast(ast3.expr, list_node)
         if isinstance(value, tuple):
-            return self.sync(
+            tuple_node = self.sync(
                 ast3.Tuple(
                     elts=[self._literal_to_ast(v, jac_node) for v in value],
                     ctx=ast3.Load(),
                 ),
                 jac_node=target_node,
             )
+            return cast(ast3.expr, tuple_node)
         if isinstance(value, dict):
-            return self.sync(
+            dict_node = self.sync(
                 ast3.Dict(
                     keys=[self._literal_to_ast(k, jac_node) for k in value.keys()],
                     values=[self._literal_to_ast(v, jac_node) for v in value.values()],
                 ),
                 jac_node=target_node,
             )
-        return self.sync(ast3.Constant(value=value), jac_node=target_node)
+            return cast(ast3.expr, dict_node)
+        return cast(
+            ast3.expr, self.sync(ast3.Constant(value=value), jac_node=target_node)
+        )
 
     def sync(
         self, py_node: T, jac_node: Optional[uni.UniNode] = None, deep: bool = False
@@ -606,7 +611,7 @@ class PyastGenPass(UniPass):
             )
             new_body.append(js_assign)
 
-        manifest_data = {}
+        manifest_data: dict[str, object] = {}
         if client_exports_list:
             manifest_data["exports"] = client_exports_list
         if client_globals_list:

@@ -38,6 +38,7 @@ class ClientBundleBuilder:
     """Compile Jac modules and runtime support into a browser-ready bundle."""
 
     def __init__(self, runtime_path: Path | None = None) -> None:
+        """Initialise the builder with an optional override for the runtime path."""
         self.runtime_path = runtime_path or Path(__file__).with_name(
             "client_runtime.jac"
         )
@@ -56,9 +57,9 @@ class ClientBundleBuilder:
         runtime_path = self.runtime_path.resolve()
         signature = self._signature([source_path, runtime_path])
 
-        if not force and (cached := self._cache.get(module.__name__)):
-            if cached.signature == signature:
-                return cached.bundle
+        cached = self._cache.get(module.__name__)
+        if not force and cached and cached.signature == signature:
+            return cached.bundle
 
         bundle = self._compile_bundle(module, source_path, runtime_path)
         self._cache[module.__name__] = _CachedBundle(signature=signature, bundle=bundle)
@@ -171,7 +172,8 @@ class ClientBundleBuilder:
         lines: list[str] = [
             "(function registerJacClientModule(){",
             "  const scope = typeof globalThis !== 'undefined' ? globalThis : window;",
-            "  const registry = scope.__jacClient || (scope.__jacClient = { functions: {}, globals: {}, modules: {} });",
+            "  const registry = scope.__jacClient || (scope.__jacClient ="
+            " { functions: {}, globals: {}, modules: {} });",
             "  const moduleFunctions = {};",
             "  const moduleGlobals = {};",
         ]
@@ -193,58 +195,101 @@ class ClientBundleBuilder:
             lines.append(f"    scope[{identifier}] = {value_literal};")
             lines.append("  }")
 
-        lines.extend(
-            [
-                f"  registry.modules[{json.dumps(module_name)}] = {{",
-                f"    functions: {json.dumps(list(client_functions))},",
-                f"    globals: {json.dumps(list(client_globals.keys()))}",
-                "  };",
-                "  registry.state = registry.state || {};",
-                "  registry.state.globals = registry.state.globals || {};",
-                "  Object.assign(registry.functions, moduleFunctions);",
-                "  Object.assign(registry.globals, moduleGlobals);",
-                "  Object.assign(scope, moduleGlobals);",
-                "  function hydrateJacClient(){",
-                "    if (typeof document === 'undefined') { return; }",
-                "    const initEl = document.getElementById('__jac_init__');",
-                "    const rootEl = document.getElementById('__jac_root');",
-                "    if (!initEl || !rootEl || initEl.dataset.jacHydrated === 'true') { return; }",
-                "    initEl.dataset.jacHydrated = 'true';",
-                "    let payload;",
-                "    try { payload = JSON.parse(initEl.textContent || '{}'); } catch (err) { console.error('[Jac] Failed to parse hydration payload', err); return; }",
-                "    if (!payload || !payload.function) { return; }",
-                f"    const moduleName = payload.module || {json.dumps(module_name)};",
-                "    const argsOrder = Array.isArray(payload.argOrder) ? payload.argOrder : [];",
-                "    const argsDict = payload.args || {};",
-                "    const orderedArgs = argsOrder.map((name) => argsDict[name]);",
-                "    const targetName = payload.function;",
-                "    const target = moduleFunctions[targetName] || registry.functions[targetName];",
-                "    if (typeof target !== 'function') { console.error('[Jac] Client function not found:', targetName); return; }",
-                "    registry.state.globals[moduleName] = payload.globals || {};",
-                "    for (const [gName, gValue] of Object.entries(payload.globals || {})) {",
-                "      scope[gName] = gValue;",
-                "    }",
-                "    const applyRender = (node) => {",
-                "      const renderer = scope.renderJsxTree || (typeof renderJsxTree === 'function' ? renderJsxTree : null);",
-                "      if (!renderer) { console.warn('[Jac] renderJsxTree is not available in client bundle'); return; }",
-                "      try { renderer(node, rootEl); } catch (err) { console.error('[Jac] Failed to render JSX tree', err); }",
-                "    };",
-                "    let result;",
-                "    try { result = target.apply(scope, orderedArgs); } catch (err) { console.error('[Jac] Error executing client function', targetName, err); return; }",
-                "    if (result && typeof result.then === 'function') {",
-                "      result.then(applyRender).catch((err) => console.error('[Jac] Error resolving client function promise', err));",
-                "    } else {",
-                "      applyRender(result);",
-                "    }",
-                "  }",
-                "  if (typeof document !== 'undefined') {",
-                "    if (document.readyState === 'loading') {",
-                "      document.addEventListener('DOMContentLoaded', hydrateJacClient, { once: true });",
-                "    } else {",
-                "      hydrateJacClient();",
-                "    }",
-                "  }",
-                "})();",
-            ]
+        lines.append(f"  registry.modules[{json.dumps(module_name)}] = {{")
+        lines.append(f"    functions: {json.dumps(list(client_functions))},")
+        lines.append(f"    globals: {json.dumps(list(client_globals.keys()))}")
+        lines.append("  };")
+        lines.append("  registry.state = registry.state || {};")
+        lines.append("  registry.state.globals = registry.state.globals || {};")
+        lines.append("  Object.assign(registry.functions, moduleFunctions);")
+        lines.append("  Object.assign(registry.globals, moduleGlobals);")
+        lines.append("  Object.assign(scope, moduleGlobals);")
+        lines.append("  function hydrateJacClient(){")
+        lines.append("    if (typeof document === 'undefined') { return; }")
+        lines.append("    const initEl = document.getElementById('__jac_init__');")
+        lines.append("    const rootEl = document.getElementById('__jac_root');")
+        lines.append(
+            "    if (!initEl || !rootEl || initEl.dataset.jacHydrated === 'true') { return; }"
         )
+        lines.append("    initEl.dataset.jacHydrated = 'true';")
+        lines.append("    let payload;")
+        lines.append("    try {")
+        lines.append("      payload = JSON.parse(initEl.textContent || '{}');")
+        lines.append("    } catch (err) {")
+        lines.append(
+            "      console.error('[Jac] Failed to parse hydration payload', err);"
+        )
+        lines.append("      return;")
+        lines.append("    }")
+        lines.append("    if (!payload || !payload.function) { return; }")
+        lines.append(
+            f"    const moduleName = payload.module || {json.dumps(module_name)};"
+        )
+        lines.append(
+            "    const argsOrder = Array.isArray(payload.argOrder) ? payload.argOrder : [];"
+        )
+        lines.append("    const argsDict = payload.args || {};")
+        lines.append("    const orderedArgs = argsOrder.map((name) => argsDict[name]);")
+        lines.append("    const targetName = payload.function;")
+        lines.append(
+            "    const target = moduleFunctions[targetName] || registry.functions[targetName];"
+        )
+        lines.append("    if (typeof target !== 'function') {")
+        lines.append(
+            "      console.error('[Jac] Client function not found:', targetName);"
+        )
+        lines.append("      return;")
+        lines.append("    }")
+        lines.append("    registry.state.globals[moduleName] = payload.globals || {};")
+        lines.append(
+            "    for (const [gName, gValue] of Object.entries(payload.globals || {})) {"
+        )
+        lines.append("      scope[gName] = gValue;")
+        lines.append("    }")
+        lines.append("    const applyRender = (node) => {")
+        lines.append(
+            "      const renderer = scope.renderJsxTree || "
+            "(typeof renderJsxTree === 'function' ? renderJsxTree : null);"
+        )
+        lines.append("      if (!renderer) {")
+        lines.append(
+            "        console.warn('[Jac] renderJsxTree is not available in client bundle');"
+        )
+        lines.append("        return;")
+        lines.append("      }")
+        lines.append("      try {")
+        lines.append("        renderer(node, rootEl);")
+        lines.append("      } catch (err) {")
+        lines.append("        console.error('[Jac] Failed to render JSX tree', err);")
+        lines.append("      }")
+        lines.append("    };")
+        lines.append("    let result;")
+        lines.append("    try {")
+        lines.append("      result = target.apply(scope, orderedArgs);")
+        lines.append("    } catch (err) {")
+        lines.append(
+            "      console.error('[Jac] Error executing client function', targetName, err);"
+        )
+        lines.append("      return;")
+        lines.append("    }")
+        lines.append("    if (result && typeof result.then === 'function') {")
+        lines.append("      result.then(applyRender).catch((err) => {")
+        lines.append(
+            "        console.error('[Jac] Error resolving client function promise', err);"
+        )
+        lines.append("      });")
+        lines.append("    } else {")
+        lines.append("      applyRender(result);")
+        lines.append("    }")
+        lines.append("  }")
+        lines.append("  if (typeof document !== 'undefined') {")
+        lines.append("    if (document.readyState === 'loading') {")
+        lines.append(
+            "      document.addEventListener('DOMContentLoaded', hydrateJacClient, { once: true });"
+        )
+        lines.append("    } else {")
+        lines.append("      hydrateJacClient();")
+        lines.append("    }")
+        lines.append("  }")
+        lines.append("})();")
         return "\n".join(lines)

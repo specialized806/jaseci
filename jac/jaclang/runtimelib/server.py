@@ -375,9 +375,10 @@ class JacAPIServer:
                 and obj.__module__ == self.module.__name__
             ):
                 functions[name] = obj
-                if name in export_names:
-                    client_functions[name] = obj
-                elif not export_names and getattr(obj, "__jac_client__", False):
+                should_include = name in export_names or (
+                    not export_names and getattr(obj, "__jac_client__", False)
+                )
+                if should_include:
                     client_functions[name] = obj
 
         # Ensure manifest-defined exports exist in the client function map
