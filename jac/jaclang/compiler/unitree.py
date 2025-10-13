@@ -221,10 +221,7 @@ class UniNode:
 
     def unparse(self) -> str:
         valid = self.normalize()
-        if isinstance(self, FString):
-            res = "".join([i.unparse() for i in self.kid])
-        else:
-            res = " ".join([i.unparse() for i in self.kid])
+        res = " ".join([i.unparse() for i in self.kid])
         if not valid:
             raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
         return res
@@ -3251,6 +3248,13 @@ class FString(AtomExpr):
         if self.end is not None:
             new_kid.append(self.gen_token(self.end))
         self.set_kids(nodes=new_kid)
+        return res
+
+    def unparse(self) -> str:
+        valid = self.normalize()
+        res = "".join([i.unparse() for i in self.kid])
+        if not valid:
+            raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
         return res
 
 
