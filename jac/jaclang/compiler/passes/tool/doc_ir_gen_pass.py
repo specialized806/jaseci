@@ -1719,6 +1719,10 @@ class DocIRGenPass(UniPass):
             )
             return
 
+        if node.parent and isinstance(node.parent, uni.FString):
+            node.gen.doc_ir = self.text(node.lit_value)
+            return
+
         # Regular string
         node.gen.doc_ir = self.text(node.value)
 
