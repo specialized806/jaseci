@@ -227,8 +227,8 @@ All components described in this design document have been implemented and teste
 | Component | Status | Location |
 |-----------|--------|----------|
 | **`cl` keyword grammar** | ✅ Complete | [jac.lark:582](../jaclang/compiler/jac.lark#L582) |
-| **ESTree generation** | ✅ Complete | [esast_gen_pass.py](../jaclang/compiler/emcascript/esast_gen_pass.py) |
-| **JavaScript unparsing** | ✅ Complete | [es_unparse.py](../jaclang/compiler/emcascript/es_unparse.py) |
+| **ESTree generation** | ✅ Complete | [esast_gen_pass.py](../jaclang/compiler/ecmascript/esast_gen_pass.py) |
+| **JavaScript unparsing** | ✅ Complete | [es_unparse.py](../jaclang/compiler/ecmascript/es_unparse.py) |
 | **Client bundle builder** | ✅ Complete | [client_bundle.py](../jaclang/runtimelib/client_bundle.py) |
 | **JSX SSR rendering** | ✅ Complete | [machine.py:1134](../jaclang/runtimelib/machine.py#L1134) |
 | **Page endpoints** | ✅ Complete | [server.py:779-816](../jaclang/runtimelib/server.py#L779-L816) |
@@ -251,7 +251,7 @@ All components described in this design document have been implemented and teste
 | **Client bundle tests** | ✅ Passing | [test_client_bundle.py](../jaclang/runtimelib/tests/test_client_bundle.py) |
 | **Server endpoint tests** | ✅ Passing | [test_serve.py](../jaclang/runtimelib/tests/test_serve.py) |
 | **CSR mode tests** | ✅ Passing | [test_serve.py:632-732](../jaclang/runtimelib/tests/test_serve.py#L632-L732) |
-| **JavaScript generation** | ✅ Passing | [test_js_generation.py](../jaclang/compiler/emcascript/tests/test_js_generation.py) |
+| **JavaScript generation** | ✅ Passing | [test_js_generation.py](../jaclang/compiler/ecmascript/tests/test_js_generation.py) |
 
 ### Example Usage
 

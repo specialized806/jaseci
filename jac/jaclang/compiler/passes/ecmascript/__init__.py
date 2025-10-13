@@ -4,8 +4,8 @@ This package provides ECMAScript AST generation capabilities following the ESTre
 specification, allowing Jac code to be transpiled to JavaScript/ECMAScript.
 """
 
-from jaclang.compiler.emcascript.esast_gen_pass import EsastGenPass
-from jaclang.compiler.emcascript.estree import (
+from jaclang.compiler.passes.ecmascript.esast_gen_pass import EsastGenPass
+from jaclang.compiler.passes.ecmascript.estree import (
     Declaration,
     Expression,
     Pattern,

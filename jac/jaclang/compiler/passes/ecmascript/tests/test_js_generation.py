@@ -10,8 +10,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from jaclang.compiler.emcascript import EsastGenPass
-from jaclang.compiler.emcascript.es_unparse import es_to_js
+from jaclang.compiler.passes.ecmascript import EsastGenPass
+from jaclang.compiler.passes.ecmascript.es_unparse import es_to_js
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 

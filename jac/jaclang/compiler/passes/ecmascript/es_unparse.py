@@ -6,7 +6,7 @@ JavaScript source code (unparsing).
 
 from __future__ import annotations
 
-from jaclang.compiler.emcascript import estree as es
+from jaclang.compiler.passes.ecmascript import estree as es
 from jaclang.utils.helpers import pascal_to_snake
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from jaclang.compiler.program import JacProgram
 
 
-FIXTURE_DIR = Path(__file__).resolve().parent.parent / "emcascript" / "tests" / "fixtures"
+FIXTURE_DIR = Path(__file__).resolve().parent.parent / "passes" / "ecmascript" / "tests" / "fixtures"
 
 
 def test_js_only_mode_generates_js_and_manifest() -> None:

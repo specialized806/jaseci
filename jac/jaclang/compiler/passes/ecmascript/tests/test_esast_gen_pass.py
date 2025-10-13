@@ -3,9 +3,9 @@
 import json
 from pathlib import Path
 
-from jaclang.compiler.emcascript import EsastGenPass, es_node_to_dict
-from jaclang.compiler.emcascript import estree as es
-from jaclang.compiler.emcascript.es_unparse import es_to_js
+from jaclang.compiler.passes.ecmascript import EsastGenPass, es_node_to_dict
+from jaclang.compiler.passes.ecmascript import estree as es
+from jaclang.compiler.passes.ecmascript.es_unparse import es_to_js
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 

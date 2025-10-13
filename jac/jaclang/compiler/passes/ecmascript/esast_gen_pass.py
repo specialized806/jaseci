@@ -25,7 +25,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional, Sequence, Union
 
-import jaclang.compiler.emcascript.estree as es
+import jaclang.compiler.passes.ecmascript.estree as es
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass

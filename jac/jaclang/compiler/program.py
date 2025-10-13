@@ -8,9 +8,9 @@ import types
 from typing import Any, Iterable, Literal, Optional, TYPE_CHECKING, cast
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.emcascript import EsastGenPass
-from jaclang.compiler.emcascript.es_unparse import es_to_js
 from jaclang.compiler.parser import JacParser
+from jaclang.compiler.passes.ecmascript import EsastGenPass
+from jaclang.compiler.passes.ecmascript.es_unparse import es_to_js
 from jaclang.compiler.passes.main import (
     Alert,
     CFGBuildPass,

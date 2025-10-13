@@ -264,7 +264,7 @@ class AstTool:
                         else "Compile failed."
                     )
                 case "esast":
-                    from jaclang.compiler.emcascript import (
+                    from jaclang.compiler.passes.ecmascript import (
                         EsastGenPass,
                         es_node_to_dict,
                     )
@@ -277,8 +277,8 @@ class AstTool:
                     else:
                         return "ECMAScript AST generation failed."
                 case "es":
-                    from jaclang.compiler.emcascript import EsastGenPass
-                    from jaclang.compiler.emcascript.es_unparse import es_to_js
+                    from jaclang.compiler.passes.ecmascript import EsastGenPass
+                    from jaclang.compiler.passes.ecmascript.es_unparse import es_to_js
 
                     esast_pass = EsastGenPass(ir, prog)
                     es_ir = esast_pass.ir_out
