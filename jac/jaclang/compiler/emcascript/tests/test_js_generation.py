@@ -167,6 +167,27 @@ class JavaScriptGenerationTests(TestCase):
         self.assertIn("-=", js_code)
         self.assertIn("*=", js_code)
 
+    def test_tuple_unpacking_declares_destructuring(self) -> None:
+        """Ensure tuple/list destructuring lowers to a single let declaration."""
+        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
+
+        self.assertIn("let [x, y] = [10, 20];", js_code)
+        self.assertIn("let [a, b, c] = [1, 2, 3];", js_code)
+
+    def test_walrus_assignment_is_parenthesized_and_hoisted(self) -> None:
+        """Walrus expressions should hoist the target and stay parenthesized in expressions."""
+        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
+
+        self.assertIn("let x;", js_code)
+        self.assertIn("(x = 5) + 10", js_code)
+
+    def test_boolean_literals_lowercase(self) -> None:
+        """Jac booleans should translate to lowercase JavaScript literals."""
+        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
+
+        self.assertIn("let active = true;", js_code)
+        self.assertNotIn("True", js_code)
+
     def test_js_syntax_is_balanced(self) -> None:
         """Test that generated JavaScript has balanced braces and parens."""
         fixtures = [

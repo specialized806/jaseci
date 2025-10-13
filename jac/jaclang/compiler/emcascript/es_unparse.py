@@ -236,12 +236,30 @@ class JSCodeGenerator:
 
         return f"{self.indent()}{static_str}{key}{value}"
 
+    def gen_property_definition(self, node: es.PropertyDefinition) -> str:
+        """Generate class field definition."""
+        static_str = "static " if node.static else ""
+        key = self.generate(node.key) if node.key else ""
+        if node.computed:
+            key = f"[{key}]"
+        value = f" = {self.generate(node.value)}" if node.value else ""
+        return f"{self.indent()}{static_str}{key}{value};"
+
+    def gen_static_block(self, node: es.StaticBlock) -> str:
+        """Generate static initialization block."""
+        block = self.generate(es.BlockStatement(body=node.body))
+        return f"{self.indent()}static {block}"
+
     # Expressions
     # ===========
 
     def gen_identifier(self, node: es.Identifier) -> str:
         """Generate identifier."""
         return node.name
+
+    def gen_private_identifier(self, node: es.PrivateIdentifier) -> str:
+        """Generate private identifier."""
+        return f"#{node.name}"
 
     def gen_literal(self, node: es.Literal) -> str:
         """Generate literal."""
@@ -335,6 +353,10 @@ class JSCodeGenerator:
         """Generate binary expression."""
         left = self.generate(node.left)
         right = self.generate(node.right)
+        if isinstance(node.left, es.AssignmentExpression):
+            left = f"({left})"
+        if isinstance(node.right, es.AssignmentExpression):
+            right = f"({right})"
         return f"{left} {node.operator} {right}"
 
     def gen_logical_expression(self, node: es.LogicalExpression) -> str:
@@ -376,11 +398,20 @@ class JSCodeGenerator:
         args = ", ".join(self.generate(arg) for arg in node.arguments)
         return f"{callee}{optional}({args})"
 
+    def gen_chain_expression(self, node: es.ChainExpression) -> str:
+        """Generate optional chaining expression."""
+        return self.generate(node.expression)
+
     def gen_new_expression(self, node: es.NewExpression) -> str:
         """Generate new expression."""
         callee = self.generate(node.callee)
         args = ", ".join(self.generate(arg) for arg in node.arguments)
         return f"new {callee}({args})"
+
+    def gen_import_expression(self, node: es.ImportExpression) -> str:
+        """Generate dynamic import expression."""
+        source = self.generate(node.source) if node.source else ""
+        return f"import({source})"
 
     def gen_sequence_expression(self, node: es.SequenceExpression) -> str:
         """Generate sequence expression."""
@@ -398,6 +429,26 @@ class JSCodeGenerator:
         """Generate await expression."""
         return f"await {self.generate(node.argument)}"
 
+    def gen_template_literal(self, node: es.TemplateLiteral) -> str:
+        """Generate template literal."""
+        parts: list[str] = []
+        for idx, quasi in enumerate(node.quasis):
+            parts.append(self.generate(quasi))
+            if idx < len(node.expressions):
+                parts.append(f"${{{self.generate(node.expressions[idx])}}}")
+        return f"`{''.join(parts)}`"
+
+    def gen_template_element(self, node: es.TemplateElement) -> str:
+        """Generate template element."""
+        value = node.value.get("raw") if node.value else ""
+        return value or ""
+
+    def gen_tagged_template_expression(self, node: es.TaggedTemplateExpression) -> str:
+        """Generate tagged template expression."""
+        tag = self.generate(node.tag)
+        quasi = self.generate(node.quasi)
+        return f"{tag}{quasi}"
+
     def gen_spread_element(self, node: es.SpreadElement) -> str:
         """Generate spread element."""
         return f"...{self.generate(node.argument)}"
@@ -405,6 +456,12 @@ class JSCodeGenerator:
     def gen_super(self, node: es.Super) -> str:
         """Generate super."""
         return "super"
+
+    def gen_meta_property(self, node: es.MetaProperty) -> str:
+        """Generate meta property (e.g., new.target)."""
+        meta = self.generate(node.meta) if node.meta else ""
+        prop = self.generate(node.property) if node.property else ""
+        return f"{meta}.{prop}"
 
     # Patterns
     # ========
@@ -434,9 +491,31 @@ class JSCodeGenerator:
 
     def gen_import_declaration(self, node: es.ImportDeclaration) -> str:
         """Generate import declaration."""
-        specs = ", ".join(self.generate(s) for s in node.specifiers)
+        default_spec: str | None = None
+        namespace_spec: str | None = None
+        named_specs: list[str] = []
+
+        for spec in node.specifiers:
+            if isinstance(spec, es.ImportDefaultSpecifier):
+                default_spec = self.generate(spec)
+            elif isinstance(spec, es.ImportNamespaceSpecifier):
+                namespace_spec = self.generate(spec)
+            elif isinstance(spec, es.ImportSpecifier):
+                named_specs.append(self.generate(spec))
+
+        clause_parts: list[str] = []
+        if default_spec:
+            clause_parts.append(default_spec)
+        if namespace_spec:
+            clause_parts.append(namespace_spec)
+        if named_specs:
+            clause_parts.append("{ " + ", ".join(named_specs) + " }")
+
         source = self.generate(node.source)
-        return f"{self.indent()}import {specs} from {source};"
+        if clause_parts:
+            clause = ", ".join(clause_parts)
+            return f"{self.indent()}import {clause} from {source};"
+        return f"{self.indent()}import {source};"
 
     def gen_import_specifier(self, node: es.ImportSpecifier) -> str:
         """Generate import specifier."""

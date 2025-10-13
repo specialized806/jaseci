@@ -21,12 +21,34 @@ serialized to JavaScript source code or used by JavaScript tooling.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Optional, Sequence, Union
 
 import jaclang.compiler.emcascript.estree as es
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
+
+
+@dataclass
+class ScopeInfo:
+    """Track declarations within a lexical scope."""
+
+    node: uni.UniScopeNode
+    declared: set[str] = field(default_factory=set)
+    hoisted: list[es.Statement] = field(default_factory=list)
+
+
+@dataclass
+class AssignmentTargetInfo:
+    """Container for processed assignment targets."""
+
+    node: uni.UniNode
+    left: Union[es.Pattern, es.Expression]
+    reference: Optional[es.Expression]
+    decl_name: Optional[str]
+    pattern_names: list[tuple[str, uni.Name]]
+    is_first: bool
 
 
 class EsastGenPass(UniPass):
@@ -40,13 +62,23 @@ class EsastGenPass(UniPass):
             self.child_passes.append(child_pass)
         self.imports: list[es.ImportDeclaration] = []
         self.exports: list[es.ExportNamedDeclaration] = []
+        self.scope_stack: list[ScopeInfo] = []
+        self.scope_map: dict[uni.UniScopeNode, ScopeInfo] = {}
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
+        if isinstance(node, uni.UniScopeNode):
+            self._push_scope(node)
         if hasattr(node.gen, "es_ast") and node.gen.es_ast:
             self.prune()
             return
         super().enter_node(node)
+
+    def exit_node(self, node: uni.UniNode) -> None:
+        """Exit node."""
+        super().exit_node(node)
+        if isinstance(node, uni.UniScopeNode):
+            self._pop_scope(node)
 
     def sync_loc(
         self, es_node: es.Node, jac_node: Optional[uni.UniNode] = None
@@ -74,6 +106,63 @@ class EsastGenPass(UniPass):
                 result.append(item)
         return result
 
+    # Scope helpers
+    # =============
+
+    def _push_scope(self, node: uni.UniScopeNode) -> None:
+        """Enter a new lexical scope."""
+        info = ScopeInfo(node=node)
+        self.scope_stack.append(info)
+        self.scope_map[node] = info
+
+    def _pop_scope(self, node: uni.UniScopeNode) -> None:
+        """Exit a lexical scope."""
+        if self.scope_stack and self.scope_stack[-1].node is node:
+            self.scope_stack.pop()
+        self.scope_map.pop(node, None)
+
+    def _current_scope(self) -> Optional[ScopeInfo]:
+        """Get the scope currently being populated."""
+        return self.scope_stack[-1] if self.scope_stack else None
+
+    def _is_declared_in_current_scope(self, name: str) -> bool:
+        """Check if a name is already declared in the active scope."""
+        scope = self._current_scope()
+        return name in scope.declared if scope else False
+
+    def _register_declaration(self, name: str) -> None:
+        """Mark a name as declared within the current scope."""
+        scope = self._current_scope()
+        if scope:
+            scope.declared.add(name)
+
+    def _ensure_identifier_declared(self, name: str, jac_node: uni.UniNode) -> None:
+        """Hoist a declaration for identifiers introduced mid-expression (e.g., walrus)."""
+        scope = self._current_scope()
+        if not scope or name in scope.declared:
+            return
+        ident = self.sync_loc(es.Identifier(name=name), jac_node=jac_node)
+        declarator = self.sync_loc(
+            es.VariableDeclarator(id=ident, init=None), jac_node=jac_node
+        )
+        decl = self.sync_loc(
+            es.VariableDeclaration(declarations=[declarator], kind="let"),
+            jac_node=jac_node,
+        )
+        scope.hoisted.append(decl)
+        scope.declared.add(name)
+
+    def _prepend_hoisted(
+        self, node: uni.UniScopeNode, statements: list[es.Statement]
+    ) -> list[es.Statement]:
+        """Insert hoisted declarations, if any, ahead of the given statements."""
+        scope = self.scope_map.get(node)
+        if scope and scope.hoisted:
+            hoisted = list(scope.hoisted)
+            scope.hoisted.clear()
+            return hoisted + statements
+        return statements
+
     # Module and Program
     # ==================
 
@@ -83,6 +172,13 @@ class EsastGenPass(UniPass):
 
         # Add imports
         body.extend(self.imports)
+
+        # Insert hoisted declarations (e.g., walrus-introduced identifiers)
+        scope = self.scope_map.get(node)
+        if scope and scope.hoisted:
+            hoisted = list(scope.hoisted)
+            scope.hoisted.clear()
+            body.extend(hoisted)
 
         # Process module body
         clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
@@ -436,6 +532,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         block = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         func_id = self.sync_loc(
@@ -477,6 +574,7 @@ class EsastGenPass(UniPass):
         param_id = self.sync_loc(
             es.Identifier(name=node.name.sym_name), jac_node=node.name
         )
+        self._register_declaration(param_id.name)
         node.gen.es_ast = param_id
 
     def exit_arch_has(self, node: uni.ArchHas) -> None:
@@ -697,6 +795,7 @@ class EsastGenPass(UniPass):
                     else:
                         consequent_stmts.append(stmt.gen.es_ast)
 
+        consequent_stmts = self._prepend_hoisted(node, consequent_stmts)
         consequent = self.sync_loc(
             es.BlockStatement(body=consequent_stmts), jac_node=node
         )
@@ -732,6 +831,7 @@ class EsastGenPass(UniPass):
                     else:
                         consequent_stmts.append(stmt.gen.es_ast)
 
+        consequent_stmts = self._prepend_hoisted(node, consequent_stmts)
         consequent = self.sync_loc(
             es.BlockStatement(body=consequent_stmts), jac_node=node
         )
@@ -752,6 +852,7 @@ class EsastGenPass(UniPass):
                     else:
                         stmts.append(stmt.gen.es_ast)
 
+        stmts = self._prepend_hoisted(node, stmts)
         block = self.sync_loc(es.BlockStatement(body=stmts), jac_node=node)
         node.gen.es_ast = block
 
@@ -772,6 +873,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         body = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         while_stmt = self.sync_loc(
@@ -803,6 +905,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         body = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         # Use for-of for iteration over values
@@ -823,6 +926,7 @@ class EsastGenPass(UniPass):
                     else:
                         block_stmts.append(stmt.gen.es_ast)
 
+        block_stmts = self._prepend_hoisted(node, block_stmts)
         block = self.sync_loc(es.BlockStatement(body=block_stmts), jac_node=node)
 
         handler: Optional[es.CatchClause] = None
@@ -863,6 +967,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         body = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         catch_clause = self.sync_loc(
@@ -881,6 +986,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         block = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
         node.gen.es_ast = block
 
@@ -981,14 +1087,29 @@ class EsastGenPass(UniPass):
         """Process binary expression."""
         left = (
             node.left.gen.es_ast
-            if hasattr(node.left.gen, "es_ast")
-            else self.sync_loc(es.Literal(value=0), jac_node=node.left)
+            if hasattr(node.left.gen, "es_ast") and node.left.gen.es_ast
+            else None
         )
+        if not left:
+            if isinstance(node.left, uni.Name):
+                left = self.sync_loc(
+                    es.Identifier(name=node.left.sym_name), jac_node=node.left
+                )
+            else:
+                left = self.sync_loc(es.Literal(value=0), jac_node=node.left)
+
         right = (
             node.right.gen.es_ast
-            if hasattr(node.right.gen, "es_ast")
-            else self.sync_loc(es.Literal(value=0), jac_node=node.right)
+            if hasattr(node.right.gen, "es_ast") and node.right.gen.es_ast
+            else None
         )
+        if not right:
+            if isinstance(node.right, uni.Name):
+                right = self.sync_loc(
+                    es.Identifier(name=node.right.sym_name), jac_node=node.right
+                )
+            else:
+                right = self.sync_loc(es.Literal(value=0), jac_node=node.right)
 
         op_name = getattr(node.op, "name", None)
 
@@ -1024,6 +1145,15 @@ class EsastGenPass(UniPass):
             Tok.LSHIFT: "<<",
             Tok.RSHIFT: ">>",
         }
+
+        if op_name == Tok.WALRUS_EQ and isinstance(left, es.Identifier):
+            self._ensure_identifier_declared(left.name, node.left)
+            assign_expr = self.sync_loc(
+                es.AssignmentExpression(operator="=", left=left, right=right),
+                jac_node=node,
+            )
+            node.gen.es_ast = assign_expr
+            return
 
         operator = op_map.get(op_name, "+")
 
@@ -1166,63 +1296,236 @@ class EsastGenPass(UniPass):
         )
         node.gen.es_ast = unary_expr
 
+    def _convert_assignment_target(
+        self, target: uni.UniNode
+    ) -> tuple[
+        Union[es.Pattern, es.Expression], Optional[es.Expression], Optional[str]
+    ]:
+        """Convert a Jac assignment target into an ESTree pattern/expression."""
+        if isinstance(target, uni.Name):
+            identifier = self.sync_loc(
+                es.Identifier(name=target.sym_name), jac_node=target
+            )
+            return identifier, identifier, target.sym_name
+
+        if isinstance(target, (uni.TupleVal, uni.ListVal)):
+            elements: list[Optional[es.Pattern]] = []
+            for value in getattr(target, "values", []):
+                if value is None:
+                    elements.append(None)
+                    continue
+                pattern, _, _ = self._convert_assignment_target(value)
+                elements.append(pattern if isinstance(pattern, es.Pattern) else pattern)
+            pattern = self.sync_loc(es.ArrayPattern(elements=elements), jac_node=target)
+            return pattern, None, None
+
+        if isinstance(target, uni.DictVal):
+            properties: list[es.AssignmentProperty] = []
+            for kv in target.kv_pairs:
+                if not isinstance(kv, uni.KVPair) or kv.key is None:
+                    continue
+                key_expr = (
+                    kv.key.gen.es_ast
+                    if hasattr(kv.key.gen, "es_ast") and kv.key.gen.es_ast
+                    else self.sync_loc(es.Identifier(name="key"), jac_node=kv.key)
+                )
+                value_pattern, _, _ = self._convert_assignment_target(kv.value)
+                assignment = self.sync_loc(
+                    es.AssignmentProperty(
+                        key=key_expr,
+                        value=(
+                            value_pattern
+                            if isinstance(value_pattern, es.Pattern)
+                            else value_pattern
+                        ),
+                        shorthand=False,
+                    ),
+                    jac_node=kv,
+                )
+                properties.append(assignment)
+            pattern = self.sync_loc(
+                es.ObjectPattern(properties=properties), jac_node=target
+            )
+            return pattern, None, None
+
+        if isinstance(target, uni.SubTag):
+            return self._convert_assignment_target(target.tag)
+
+        left = (
+            target.gen.es_ast
+            if hasattr(target.gen, "es_ast") and target.gen.es_ast
+            else self.sync_loc(es.Identifier(name="temp"), jac_node=target)
+        )
+        reference = left if isinstance(left, es.Expression) else None
+        return left, reference, None
+
+    def _collect_pattern_names(self, target: uni.UniNode) -> list[tuple[str, uni.Name]]:
+        """Collect identifier names from a (possibly nested) destructuring target."""
+        names: list[tuple[str, uni.Name]] = []
+        if isinstance(target, uni.Name):
+            names.append((target.sym_name, target))
+        elif isinstance(target, (uni.TupleVal, uni.ListVal)):
+            for value in getattr(target, "values", []):
+                names.extend(self._collect_pattern_names(value))
+        elif isinstance(target, uni.DictVal):
+            for kv in target.kv_pairs:
+                if isinstance(kv, uni.KVPair):
+                    names.extend(self._collect_pattern_names(kv.value))
+        elif isinstance(target, uni.SubTag):
+            names.extend(self._collect_pattern_names(target.tag))
+        return names
+
+    def _is_name_first_definition(self, name_node: uni.Name) -> bool:
+        """Determine whether a name node corresponds to the first definition in its scope."""
+        sym = getattr(name_node, "sym", None)
+        if sym and name_node.name_spec in sym.defn:
+            return sym.defn.index(name_node.name_spec) == 0
+        return True
+
     def exit_assignment(self, node: uni.Assignment) -> None:
         """Process assignment expression."""
-        # Handle first target
-        if node.target:
-            # Get target identifier
-            target_node = node.target[0]
-            left = (
-                target_node.gen.es_ast
-                if hasattr(target_node.gen, "es_ast")
-                else self.sync_loc(es.Identifier(name="temp"), jac_node=target_node)
+        if not node.target:
+            node.gen.es_ast = None
+            return
+
+        aug_op_map = {
+            Tok.ADD_EQ: "+=",
+            Tok.SUB_EQ: "-=",
+            Tok.MUL_EQ: "*=",
+            Tok.DIV_EQ: "/=",
+            Tok.MOD_EQ: "%=",
+            Tok.BW_AND_EQ: "&=",
+            Tok.BW_OR_EQ: "|=",
+            Tok.BW_XOR_EQ: "^=",
+            Tok.LSHIFT_EQ: "<<=",
+            Tok.RSHIFT_EQ: ">>=",
+            Tok.STAR_POW_EQ: "**=",
+        }
+
+        value_expr = (
+            node.value.gen.es_ast
+            if node.value
+            and hasattr(node.value.gen, "es_ast")
+            and node.value.gen.es_ast
+            else None
+        )
+
+        if node.aug_op:
+            left, _, _ = self._convert_assignment_target(node.target[0])
+            operator = aug_op_map.get(node.aug_op.name, "=")
+            right = value_expr or self.sync_loc(
+                es.Identifier(name="undefined"), jac_node=node
             )
-            right = (
-                node.value.gen.es_ast
-                if node.value and hasattr(node.value.gen, "es_ast")
-                else self.sync_loc(es.Literal(value=None), jac_node=node)
+            assign_expr = self.sync_loc(
+                es.AssignmentExpression(operator=operator, left=left, right=right),
+                jac_node=node,
+            )
+            expr_stmt = self.sync_loc(
+                es.ExpressionStatement(expression=assign_expr), jac_node=node
+            )
+            node.gen.es_ast = expr_stmt
+            return
+
+        targets_info: list[AssignmentTargetInfo] = []
+        for target_node in node.target:
+            left, reference, decl_name = self._convert_assignment_target(target_node)
+            pattern_names = self._collect_pattern_names(target_node)
+            first_def = False
+            if isinstance(target_node, uni.Name):
+                first_def = self._is_name_first_definition(target_node)
+            elif pattern_names:
+                first_def = any(
+                    self._is_name_first_definition(name_node)
+                    for _, name_node in pattern_names
+                )
+
+            targets_info.append(
+                AssignmentTargetInfo(
+                    node=target_node,
+                    left=left,
+                    reference=reference,
+                    decl_name=decl_name,
+                    pattern_names=pattern_names,
+                    is_first=first_def,
+                )
             )
 
-            # Check if this is a simple assignment (not augmented like +=, -=, etc.)
-            # and if the target is a simple identifier (not a property access)
-            is_simple_assignment = not node.aug_op
-            is_identifier = isinstance(left, es.Identifier)
+        statements: list[es.Statement] = []
+        current_value = value_expr or self.sync_loc(
+            es.Identifier(name="undefined"), jac_node=node
+        )
 
-            # For simple assignments to identifiers, create a variable declaration
-            # This ensures variables are declared with 'let' in JavaScript
-            if is_simple_assignment and is_identifier:
-                # Create variable declaration
-                var_decl = self.sync_loc(
-                    es.VariableDeclaration(
-                        declarations=[
-                            self.sync_loc(
-                                es.VariableDeclarator(id=left, init=right),
-                                jac_node=node,
-                            )
-                        ],
-                        kind="let",  # Use 'let' for mutable variables
+        for info in reversed(targets_info):
+            target_node = info.node
+            left = info.left
+            decl_name = info.decl_name
+            pattern_names = info.pattern_names
+            is_first = info.is_first
+
+            should_declare = False
+            if decl_name:
+                should_declare = is_first and not self._is_declared_in_current_scope(
+                    decl_name
+                )
+            elif pattern_names:
+                should_declare = any(
+                    self._is_name_first_definition(name_node)
+                    and not self._is_declared_in_current_scope(name)
+                    for name, name_node in pattern_names
+                )
+
+            if should_declare:
+                declarator = self.sync_loc(
+                    es.VariableDeclarator(
+                        id=left, init=current_value if value_expr is not None else None
                     ),
-                    jac_node=node,
+                    jac_node=target_node,
                 )
-                node.gen.es_ast = var_decl
+                decl_stmt = self.sync_loc(
+                    es.VariableDeclaration(
+                        declarations=[declarator],
+                        kind="let",
+                    ),
+                    jac_node=target_node,
+                )
+                statements.append(decl_stmt)
+
+                if decl_name:
+                    self._register_declaration(decl_name)
+                else:
+                    for name, _ in pattern_names:
+                        self._register_declaration(name)
             else:
-                # For augmented assignments or property assignments, use assignment expression
-                op_map = {
-                    Tok.EQ: "=",
-                    Tok.ADD_EQ: "+=",
-                    Tok.SUB_EQ: "-=",
-                    Tok.MUL_EQ: "*=",
-                    Tok.DIV_EQ: "/=",
-                    Tok.MOD_EQ: "%=",
-                }
-
-                operator = op_map.get(node.aug_op.name if node.aug_op else Tok.EQ, "=")
-
                 assign_expr = self.sync_loc(
-                    es.AssignmentExpression(operator=operator, left=left, right=right),
-                    jac_node=node,
+                    es.AssignmentExpression(
+                        operator="=",
+                        left=left,
+                        right=current_value,
+                    ),
+                    jac_node=target_node,
                 )
-                node.gen.es_ast = assign_expr
+                expr_stmt = self.sync_loc(
+                    es.ExpressionStatement(expression=assign_expr),
+                    jac_node=target_node,
+                )
+                statements.append(expr_stmt)
+
+            if isinstance(left, es.Identifier):
+                current_value = self.sync_loc(
+                    es.Identifier(name=left.name), jac_node=target_node
+                )
+            elif isinstance(info.reference, es.Identifier):
+                ref_ident = info.reference
+                current_value = self.sync_loc(
+                    es.Identifier(name=ref_ident.name), jac_node=target_node
+                )
+            else:
+                current_value = info.reference or current_value
+
+        if len(statements) == 1:
+            node.gen.es_ast = statements[0]
+        else:
+            node.gen.es_ast = statements
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Process function call."""
@@ -1347,6 +1650,13 @@ class EsastGenPass(UniPass):
                 # If right is a call or other expression, it should already be processed
                 node.gen.es_ast = node.right.gen.es_ast
 
+    def exit_atom_unit(self, node: uni.AtomUnit) -> None:
+        """Process parenthesized atom."""
+        if node.value and hasattr(node.value.gen, "es_ast") and node.value.gen.es_ast:
+            node.gen.es_ast = node.value.gen.es_ast
+        else:
+            node.gen.es_ast = self.sync_loc(es.Literal(value=None), jac_node=node)
+
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Process list literal."""
         elements: list[Optional[Union[es.Expression, es.SpreadElement]]] = []
@@ -1433,8 +1743,9 @@ class EsastGenPass(UniPass):
 
     def exit_bool(self, node: uni.Bool) -> None:
         """Process boolean literal."""
-        value = node.value == "True" or node.value == "true"
-        bool_lit = self.sync_loc(es.Literal(value=value, raw=node.value), jac_node=node)
+        value = node.value.lower() == "true"
+        raw_value = "true" if value else "false"
+        bool_lit = self.sync_loc(es.Literal(value=value, raw=raw_value), jac_node=node)
         node.gen.es_ast = bool_lit
 
     def exit_int(self, node: uni.Int) -> None:
@@ -1611,6 +1922,7 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
+        body_stmts = self._prepend_hoisted(node, body_stmts)
         block = self.sync_loc(es.BlockStatement(body=body_stmts), jac_node=node)
 
         func_id = self.sync_loc(
