@@ -11,13 +11,13 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Callable, Optional, get_type_hints
 from urllib.parse import parse_qs, urlparse
 
+from jaclang.runtimelib.client_bundle import ClientBundleBuilder, ClientBundleError
 from jaclang.runtimelib.constructs import (
     Archetype,
     NodeArchetype,
     Root,
     WalkerArchetype,
 )
-from jaclang.runtimelib.client_bundle import ClientBundleBuilder, ClientBundleError
 from jaclang.runtimelib.machine import (
     ExecutionContext,
     JacMachine as Jac,
@@ -708,6 +708,38 @@ class JacAPIServer:
                     )
                     return
 
+                # Handle /page/ endpoints (may be public or protected)
+                if path.startswith("/page/"):
+                    func_name = path.split("/")[-1]
+                    query_params = parse_qs(parsed_path.query, keep_blank_values=True)
+                    args: dict[str, Any] = {
+                        key: values[0] if len(values) == 1 else values
+                        for key, values in query_params.items()
+                    }
+
+                    # Try to authenticate, but allow unauthenticated access
+                    # Client pages will use a guest user if not authenticated
+                    username = self._authenticate()
+                    if not username:
+                        # Create or use guest user for unauthenticated requests
+                        username = "__guest__"
+                        if username not in server.user_manager.users:
+                            server.user_manager.create_user(username, "__no_password__")
+
+                    try:
+                        render_payload = server.render_client_page(
+                            func_name, args, username
+                        )
+                    except ValueError as exc:
+                        self._send_json_response(404, {"error": str(exc)})
+                        return
+                    except RuntimeError as exc:
+                        self._send_json_response(503, {"error": str(exc)})
+                        return
+
+                    self._send_html_response(200, render_payload["html"])
+                    return
+
                 # Protected endpoints require authentication
                 username = self._authenticate()
                 if not username:
@@ -779,13 +811,13 @@ class JacAPIServer:
                 elif path.startswith("/page/"):
                     func_name = path.split("/")[-1]
                     query_params = parse_qs(parsed_path.query, keep_blank_values=True)
-                    args: dict[str, Any] = {
+                    pargs: dict[str, Any] = {
                         key: values[0] if len(values) == 1 else values
                         for key, values in query_params.items()
                     }
                     try:
                         render_payload = server.render_client_page(
-                            func_name, args, username
+                            func_name, pargs, username
                         )
                     except ValueError as exc:
                         self._send_json_response(404, {"error": str(exc)})

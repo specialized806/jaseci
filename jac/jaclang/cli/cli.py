@@ -786,6 +786,7 @@ def serve(
         module_name=mod,
         session_path=session_path,
         port=port,
+        base_path=base,
     )
 
     try:
