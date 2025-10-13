@@ -8,10 +8,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
-from jaclang.compiler.emcascript import EsastGenPass
-from jaclang.compiler.emcascript.es_unparse import es_to_js
 from jaclang.compiler.program import JacProgram
 
 
@@ -74,20 +72,50 @@ class ClientBundleBuilder:
     ) -> ClientBundle:
         """Compile bundle pieces and stitch them together."""
         runtime_js = self._compile_to_js(runtime_path)
-        module_js = self._compile_to_js(module_path)
 
-        client_exports = sorted(
-            name
-            for name, member in inspect.getmembers(module)
-            if getattr(member, "__jac_client__", False)
-            and (inspect.isfunction(member) or inspect.isclass(member))
-        )
+        manifest = getattr(module, "__jac_client_manifest__", {}) or {}
+        manifest_exports = manifest.get("exports", [])
+        manifest_globals = manifest.get("globals", [])
+        manifest_globals_values = manifest.get("globals_values", {})
+        manifest_js = manifest.get("js", "")
 
-        raw_globals = getattr(module, "__jac_client_globals__", [])
-        client_globals = sorted(str(item) for item in raw_globals)
+        if manifest_js:
+            module_js = manifest_js
+        else:
+            module_js = self._compile_to_js(module_path)
+
+        if manifest_exports:
+            client_exports = list(manifest_exports)
+        else:
+            client_exports = [
+                name
+                for name, member in inspect.getmembers(module)
+                if getattr(member, "__jac_client__", False)
+                and (inspect.isfunction(member) or inspect.isclass(member))
+            ]
+
+        if manifest_globals:
+            client_globals_list = list(manifest_globals)
+        else:
+            raw_globals = getattr(module, "__jac_client_globals__", [])
+            client_globals_list = sorted(str(item) for item in raw_globals)
+
+        client_globals_map: dict[str, Any] = {}
+        for name in client_globals_list:
+            if name in manifest_globals_values:
+                client_globals_map[name] = manifest_globals_values[name]
+            elif hasattr(module, name):
+                client_globals_map[name] = getattr(module, name)
+            else:
+                client_globals_map[name] = None
+
+        client_exports = sorted(dict.fromkeys(client_exports))
+        client_globals_map = {
+            key: client_globals_map[key] for key in sorted(client_globals_map)
+        }
 
         registration_js = self._generate_registration_js(
-            module.__name__, client_exports, client_globals
+            module.__name__, client_exports, client_globals_map
         )
 
         bundle_pieces = [
@@ -106,25 +134,20 @@ class ClientBundleBuilder:
             module_name=module.__name__,
             code=bundle_code,
             client_functions=client_exports,
-            client_globals=client_globals,
+            client_globals=list(client_globals_map.keys()),
             hash=bundle_hash,
         )
 
     def _compile_to_js(self, source_path: Path) -> str:
         """Compile the provided Jac file into JavaScript."""
-        program = JacProgram()
-        mod = program.compile(str(source_path), no_cgen=True)
+        program = JacProgram(client_codegen_mode="js_only")
+        mod = program.compile(str(source_path), client_codegen_mode="js_only")
         if program.errors_had:
             formatted = "\n".join(str(err) for err in program.errors_had)
             raise ClientBundleError(
                 f"Failed to compile '{source_path}' for client bundle:\n{formatted}"
             )
-        es_pass = EsastGenPass(ir_in=mod, prog=program)
-        es_module = es_pass.ir_out
-        es_ast = getattr(es_module.gen, "es_ast", None)
-        if es_ast is None:
-            return ""
-        return es_to_js(es_ast)
+        return mod.gen.js or ""
 
     @staticmethod
     def _signature(paths: Iterable[Path]) -> str:
@@ -142,7 +165,7 @@ class ClientBundleBuilder:
     def _generate_registration_js(
         module_name: str,
         client_functions: Sequence[str],
-        client_globals: Sequence[str],
+        client_globals: dict[str, Any],
     ) -> str:
         """Generate registration code that exposes client symbols globally."""
         lines: list[str] = [
@@ -156,15 +179,16 @@ class ClientBundleBuilder:
         for name in client_functions:
             lines.append(f"  moduleFunctions[{json.dumps(name)}] = {name};")
             lines.append(f"  scope[{json.dumps(name)}] = {name};")
-        for name in client_globals:
-            lines.append(f"  moduleGlobals[{json.dumps(name)}] = {name};")
-            lines.append(f"  scope[{json.dumps(name)}] = {name};")
+        for name, value in client_globals.items():
+            value_literal = json.dumps(value)
+            lines.append(f"  moduleGlobals[{json.dumps(name)}] = {value_literal};")
+            lines.append(f"  scope[{json.dumps(name)}] = {value_literal};")
 
         lines.extend(
             [
                 f"  registry.modules[{json.dumps(module_name)}] = {{",
                 f"    functions: {json.dumps(list(client_functions))},",
-                f"    globals: {json.dumps(list(client_globals))}",
+                f"    globals: {json.dumps(list(client_globals.keys()))}",
                 "  };",
                 "  registry.state = registry.state || {};",
                 "  registry.state.globals = registry.state.globals || {};",

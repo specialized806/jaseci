@@ -664,7 +664,7 @@ def jac2py(filename: str) -> None:
 
 
 @cmd_registry.register
-def js(filename: str) -> None:
+def js(filename: str, mode: str = "js_only") -> None:
     """Convert a Jac file to JavaScript code.
 
     Translates Jac source code to equivalent JavaScript/ECMAScript code using
@@ -673,17 +673,21 @@ def js(filename: str) -> None:
 
     Args:
         filename: Path to the .jac file to convert
+        mode: Client code generation mode. 'js_only' emits only JavaScript for
+            client declarations. 'both' also keeps Python stubs for clients.
 
     Examples:
         jac js myprogram.jac > myprogram.js
         jac js myprogram.jac
+        jac js myprogram.jac both
     """
     if filename.endswith(".jac"):
-        from jaclang.compiler.emcascript import EsastGenPass
-        from jaclang.compiler.emcascript.es_unparse import es_to_js
-
-        prog = JacProgram()
-        ir = prog.compile(file_path=filename, no_cgen=True)
+        requested_mode = mode if mode in ("js_only", "both") else "js_only"
+        prog = JacProgram(client_codegen_mode=requested_mode)
+        ir = prog.compile(
+            file_path=filename,
+            client_codegen_mode=requested_mode,
+        )
 
         if prog.errors_had:
             for error in prog.errors_had:
@@ -691,14 +695,22 @@ def js(filename: str) -> None:
             exit(1)
 
         try:
-            esast_pass = EsastGenPass(ir, prog)
-            es_ir = esast_pass.ir_out
-            if hasattr(es_ir.gen, "es_ast") and es_ir.gen.es_ast:
-                js_code = es_to_js(es_ir.gen.es_ast)
-                print(js_code)
-            else:
-                print("ECMAScript code generation failed.", file=sys.stderr)
-                exit(1)
+            js_code = ir.gen.js
+            if not js_code:
+                from jaclang.compiler.emcascript import EsastGenPass
+                from jaclang.compiler.emcascript.es_unparse import es_to_js
+
+                es_ir = EsastGenPass(ir, prog).ir_out
+                es_ast = getattr(es_ir.gen, "es_ast", None)
+                if not es_ast:
+                    print(
+                        "ECMAScript code generation failed.",
+                        file=sys.stderr,
+                    )
+                    exit(1)
+                js_code = es_to_js(es_ast)
+
+            print(js_code)
         except Exception as e:
             print(f"Error generating JavaScript: {e}", file=sys.stderr)
             import traceback

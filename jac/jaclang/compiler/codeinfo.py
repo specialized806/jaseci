@@ -20,6 +20,9 @@ class CodeGenTarget:
         self.jac: str = ""
         self.doc_ir: doc.DocType = doc.Text("")
         self.js: str = ""
+        self.client_exports: list[str] = []
+        self.client_globals: list[str] = []
+        self.client_export_params: dict[str, list[str]] = {}
         self.py_ast: list[ast3.AST] = []
         self.py_bytecode: Optional[bytes] = None
 

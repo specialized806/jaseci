@@ -214,7 +214,10 @@ class JacAPIServer:
         self._function_cache: dict[str, Callable] = {}
         self._walker_cache: dict[str, type[WalkerArchetype]] = {}
         self._client_functions: dict[str, Callable] = {}
+        self._client_exports: list[str] = []
         self._client_globals: dict[str, Any] = {}
+        self._client_manifest: dict[str, Any] = {}
+        self._client_params: dict[str, list[str]] = {}
         self._client_bundle_builder = ClientBundleBuilder()
         self._client_bundle = None
         self._client_bundle_error: Optional[str] = None
@@ -243,6 +246,10 @@ class JacAPIServer:
             or (not self._function_cache and not self._walker_cache)
         ):
             self.module = module
+            manifest = getattr(self.module, "__jac_client_manifest__", {}) or {}
+            self._client_manifest = manifest
+            self._client_exports = list(manifest.get("exports", []))
+            self._client_params = manifest.get("params", {})
             self._function_cache = self._collect_functions()
             self._walker_cache = self._collect_walkers()
             self._client_globals = self._collect_client_globals()
@@ -276,11 +283,13 @@ class JacAPIServer:
         """Render a client-marked function to HTML (non-HTTP helper)."""
         self.load_module()
         client_functions = self.get_client_functions()
-        if function_name not in client_functions:
+        available_exports = set(self._client_exports) or set(client_functions.keys())
+        if function_name not in available_exports:
             raise ValueError(f"Client function '{function_name}' not found")
 
+        func = client_functions.get(function_name)
         render_result = self._render_client_function(
-            client_functions[function_name], args, username
+            function_name, func, args, username
         )
         if "error" in render_result:
             raise RuntimeError(render_result["error"])
@@ -358,6 +367,7 @@ class JacAPIServer:
             return {}
         functions = {}
         client_functions: dict[str, Callable] = {}
+        export_names = set(self._client_exports)
         for name, obj in inspect.getmembers(self.module):
             if (
                 inspect.isfunction(obj)
@@ -365,8 +375,17 @@ class JacAPIServer:
                 and obj.__module__ == self.module.__name__
             ):
                 functions[name] = obj
-                if getattr(obj, "__jac_client__", False):
+                if name in export_names:
                     client_functions[name] = obj
+                elif not export_names and getattr(obj, "__jac_client__", False):
+                    client_functions[name] = obj
+
+        # Ensure manifest-defined exports exist in the client function map
+        for name in export_names:
+            if name not in client_functions and hasattr(self.module, name):
+                attr = getattr(self.module, name)
+                if callable(attr):
+                    client_functions[name] = attr
         self._client_functions = client_functions
         return functions
 
@@ -390,10 +409,18 @@ class JacAPIServer:
         if not self.module:
             return {}
         result: dict[str, Any] = {}
-        names = getattr(self.module, "__jac_client_globals__", [])
+        manifest_names = self._client_manifest.get("globals")
+        names = (
+            manifest_names
+            if manifest_names is not None
+            else getattr(self.module, "__jac_client_globals__", [])
+        )
+        values_map = self._client_manifest.get("globals_values", {})
         for name in names:
             if hasattr(self.module, name):
                 result[name] = getattr(self.module, name)
+            elif name in values_map:
+                result[name] = values_map[name]
         return result
 
     def introspect_callable(self, func: Callable) -> dict[str, Any]:
@@ -477,9 +504,18 @@ class JacAPIServer:
         return bundle.hash
 
     def _render_client_function(
-        self, func: Callable, args: dict[str, Any], username: str
+        self,
+        function_name: str,
+        func: Optional[Callable],
+        args: dict[str, Any],
+        username: str,
     ) -> dict[str, Any]:
         """Execute a client function and return rendered HTML."""
+        arg_order = list(self._client_params.get(function_name, []))
+
+        if func is None:
+            return {"html": "", "reports": {}, "arg_order": arg_order}
+
         root_id = self.user_manager.get_user_root(username)
         if not root_id:
             return {"error": "User not found"}
@@ -491,19 +527,20 @@ class JacAPIServer:
             result = func(**args)
             Jac.commit()
             html_body = Jac.render_jsx_tree(result)
-            try:
-                signature = inspect.signature(func)
-                arg_order = [
-                    name
-                    for name, param in signature.parameters.items()
-                    if param.kind
-                    in (
-                        inspect.Parameter.POSITIONAL_ONLY,
-                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                    )
-                ]
-            except (TypeError, ValueError):
-                arg_order = []
+            if not arg_order:
+                try:
+                    signature = inspect.signature(func)
+                    arg_order = [
+                        name
+                        for name, param in signature.parameters.items()
+                        if param.kind
+                        in (
+                            inspect.Parameter.POSITIONAL_ONLY,
+                            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        )
+                    ]
+                except (TypeError, ValueError):
+                    arg_order = []
             return {
                 "html": html_body,
                 "reports": serialize_for_response(ctx.reports),

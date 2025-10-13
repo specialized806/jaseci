@@ -22,7 +22,7 @@ import ast as ast3
 import copy
 import textwrap
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, TypeVar, Union, cast
+from typing import Any, List, Optional, Sequence, TypeVar, Union, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
@@ -118,7 +118,14 @@ class PyastGenPass(UniPass):
         self.already_added: list[str] = []
         self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
         self.builtin_imports: set[str] = set()  # Track individual builtin imports
-        self.client_globals: set[str] = set()
+        module_path = self.ir_in.loc.mod_path
+        metadata = self.prog.client_metadata.get(module_path, {})
+        self.emit_client_python = self.prog.emit_client_python
+        self.client_exports: set[str] = set(metadata.get("exports", []))
+        self.client_globals: set[str] = set(metadata.get("globals", []))
+        self.client_params: dict[str, list[str]] = metadata.get("params", {})
+        self.client_global_values: dict[str, Any] = metadata.get("globals_values", {})
+        self.client_js_code: str = self.prog.client_js_map.get(module_path, "")
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -132,6 +139,15 @@ class PyastGenPass(UniPass):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
+        if getattr(node, "_jac_skip_python_codegen", False):
+            return
+        if self._should_skip_client(node):
+            node.gen.py_ast = []
+            if hasattr(node.gen, "py"):
+                node.gen.py = ""  # type: ignore[attr-defined]
+            setattr(node, "_jac_skip_python_codegen", True)
+            self.prune()
+            return
         if node.gen.py_ast:
             self.prune()
             return
@@ -139,6 +155,12 @@ class PyastGenPass(UniPass):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
+        if getattr(node, "_jac_skip_python_codegen", False):
+            node.gen.py_ast = []
+            if hasattr(node.gen, "py"):
+                node.gen.py = ""  # type: ignore[attr-defined]
+            setattr(node, "_jac_skip_python_codegen", False)
+            return
         super().exit_node(node)
         # for i in node.gen.py_ast:  # Internal validation
         #     self.node_compilable_test(i)
@@ -325,6 +347,39 @@ class PyastGenPass(UniPass):
                 new_body.append(item)
         return new_body
 
+    def _should_skip_client(self, node: uni.UniNode) -> bool:
+        return getattr(node, "is_client_decl", False) and not self.emit_client_python
+
+    def _literal_to_ast(
+        self, value: Any, jac_node: Optional[uni.UniNode] = None
+    ) -> ast3.AST:
+        target_node = jac_node if jac_node else self.ir_out
+        if isinstance(value, list):
+            return self.sync(
+                ast3.List(
+                    elts=[self._literal_to_ast(v, jac_node) for v in value],
+                    ctx=ast3.Load(),
+                ),
+                jac_node=target_node,
+            )
+        if isinstance(value, tuple):
+            return self.sync(
+                ast3.Tuple(
+                    elts=[self._literal_to_ast(v, jac_node) for v in value],
+                    ctx=ast3.Load(),
+                ),
+                jac_node=target_node,
+            )
+        if isinstance(value, dict):
+            return self.sync(
+                ast3.Dict(
+                    keys=[self._literal_to_ast(k, jac_node) for k in value.keys()],
+                    values=[self._literal_to_ast(v, jac_node) for v in value.values()],
+                ),
+                jac_node=target_node,
+            )
+        return self.sync(ast3.Constant(value=value), jac_node=target_node)
+
     def sync(
         self, py_node: T, jac_node: Optional[uni.UniNode] = None, deep: bool = False
     ) -> T:
@@ -501,7 +556,8 @@ class PyastGenPass(UniPass):
             jac_node=node,
         )
         new_body.append(source_assign)
-        if self.client_globals:
+        client_globals_list = sorted(self.client_globals)
+        if client_globals_list:
             globals_assign = self.sync(
                 ast3.Assign(
                     targets=[
@@ -510,21 +566,73 @@ class PyastGenPass(UniPass):
                             jac_node=node,
                         )
                     ],
-                    value=self.sync(
-                        ast3.List(
-                            elts=[
-                                self.sync(ast3.Constant(value=name), jac_node=node)
-                                for name in sorted(self.client_globals)
-                            ],
-                            ctx=ast3.Load(),
-                        ),
-                        jac_node=node,
-                    ),
+                    value=self._literal_to_ast(client_globals_list, node),
                     type_comment=None,
                 ),
                 jac_node=node,
             )
             new_body.append(globals_assign)
+
+        client_exports_list = sorted(self.client_exports)
+        if client_exports_list:
+            exports_assign = self.sync(
+                ast3.Assign(
+                    targets=[
+                        self.sync(
+                            ast3.Name(id="__jac_client_exports__", ctx=ast3.Store()),
+                            jac_node=node,
+                        )
+                    ],
+                    value=self._literal_to_ast(client_exports_list, node),
+                    type_comment=None,
+                ),
+                jac_node=node,
+            )
+            new_body.append(exports_assign)
+
+        if self.client_js_code:
+            js_assign = self.sync(
+                ast3.Assign(
+                    targets=[
+                        self.sync(
+                            ast3.Name(id="__jac_client_js__", ctx=ast3.Store()),
+                            jac_node=node,
+                        )
+                    ],
+                    value=self._literal_to_ast(self.client_js_code, node),
+                    type_comment=None,
+                ),
+                jac_node=node,
+            )
+            new_body.append(js_assign)
+
+        manifest_data = {}
+        if client_exports_list:
+            manifest_data["exports"] = client_exports_list
+        if client_globals_list:
+            manifest_data["globals"] = client_globals_list
+        if self.client_params:
+            manifest_data["params"] = self.client_params
+        if self.client_global_values:
+            manifest_data["globals_values"] = self.client_global_values
+        if self.client_js_code:
+            manifest_data["js"] = self.client_js_code
+
+        if manifest_data:
+            manifest_assign = self.sync(
+                ast3.Assign(
+                    targets=[
+                        self.sync(
+                            ast3.Name(id="__jac_client_manifest__", ctx=ast3.Store()),
+                            jac_node=node,
+                        )
+                    ],
+                    value=self._literal_to_ast(manifest_data, node),
+                    type_comment=None,
+                ),
+                jac_node=node,
+            )
+            new_body.append(manifest_assign)
         node.gen.py_ast = [
             self.sync(
                 ast3.Module(
@@ -536,6 +644,9 @@ class PyastGenPass(UniPass):
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
+        if self._should_skip_client(node):
+            node.gen.py_ast = []
+            return
         if node.doc:
             doc = self.sync(
                 ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),
