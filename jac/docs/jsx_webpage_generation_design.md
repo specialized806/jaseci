@@ -38,12 +38,12 @@ graph TB
         R --> P
     end
 
-    style A fill:#e1f5ff
-    style E fill:#ffe1e1
-    style F fill:#fff3e1
-    style J fill:#fff3e1
-    style L fill:#e1ffe1
-    style M fill:#e1ffe1
+    style A fill:#153d66,stroke:#2a6f9f,color:#eef6ff
+    style E fill:#4d1d2b,stroke:#9c3650,color:#ffeef3
+    style F fill:#4b330e,stroke:#c27b27,color:#fff3d6
+    style J fill:#4b330e,stroke:#c27b27,color:#fff3d6
+    style L fill:#123828,stroke:#2f7d5e,color:#e8fff6
+    style M fill:#123828,stroke:#2f7d5e,color:#e8fff6
 ```
 
 ### Rendering Models
