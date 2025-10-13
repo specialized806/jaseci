@@ -86,12 +86,22 @@ class EsastGenPass(UniPass):
 
         # Process module body
         clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
+        client_items: list[Union[es.Statement, list[es.Statement]]] = []
+        fallback_items: list[Union[es.Statement, list[es.Statement]]] = []
         for stmt in clean_body:
             if hasattr(stmt.gen, "es_ast") and stmt.gen.es_ast:
-                if isinstance(stmt.gen.es_ast, list):
-                    body.extend(stmt.gen.es_ast)
-                else:
-                    body.append(stmt.gen.es_ast)
+                target_list = (
+                    client_items
+                    if getattr(stmt, "is_client_decl", False)
+                    else fallback_items
+                )
+                target_list.append(stmt.gen.es_ast)
+        target_body = client_items if client_items else fallback_items
+        for item in target_body:
+            if isinstance(item, list):
+                body.extend(item)
+            else:
+                body.append(item)
 
         # Add exports
         body.extend(self.exports)
@@ -168,6 +178,7 @@ class EsastGenPass(UniPass):
         body_stmts: list[
             Union[es.MethodDefinition, es.PropertyDefinition, es.StaticBlock]
         ] = []
+        has_members: list[uni.ArchHas] = []
 
         # Process body
         inner: Sequence[uni.CodeBlockStmt] | None = None
@@ -178,6 +189,9 @@ class EsastGenPass(UniPass):
 
         if inner:
             for stmt in inner:
+                if isinstance(stmt, uni.ArchHas):
+                    has_members.append(stmt)
+                    continue
                 if (
                     hasattr(stmt.gen, "es_ast")
                     and stmt.gen.es_ast
@@ -187,6 +201,142 @@ class EsastGenPass(UniPass):
                     )
                 ):
                     body_stmts.append(stmt.gen.es_ast)
+
+        if node.arch_type.name == Tok.KW_OBJECT and has_members:
+            constructor_stmts: list[es.Statement] = []
+            props_param = self.sync_loc(
+                es.AssignmentPattern(
+                    left=self.sync_loc(es.Identifier(name="props"), jac_node=node),
+                    right=self.sync_loc(
+                        es.ObjectExpression(properties=[]), jac_node=node
+                    ),
+                ),
+                jac_node=node,
+            )
+
+            for arch_has in has_members:
+                if arch_has.is_static:
+                    for var in arch_has.vars:
+                        default_expr = (
+                            var.value.gen.es_ast
+                            if var.value
+                            and hasattr(var.value.gen, "es_ast")
+                            and var.value.gen.es_ast
+                            else self.sync_loc(es.Literal(value=None), jac_node=var)
+                        )
+                        static_prop = self.sync_loc(
+                            es.PropertyDefinition(
+                                key=self.sync_loc(
+                                    es.Identifier(name=var.name.sym_name),
+                                    jac_node=var.name,
+                                ),
+                                value=default_expr,
+                                static=True,
+                            ),
+                            jac_node=var,
+                        )
+                        body_stmts.append(static_prop)
+                    continue
+
+                for var in arch_has.vars:
+                    props_ident = self.sync_loc(
+                        es.Identifier(name="props"), jac_node=var
+                    )
+                    prop_ident = self.sync_loc(
+                        es.Identifier(name=var.name.sym_name), jac_node=var.name
+                    )
+                    this_member = self.sync_loc(
+                        es.MemberExpression(
+                            object=self.sync_loc(es.ThisExpression(), jac_node=var),
+                            property=prop_ident,
+                            computed=False,
+                        ),
+                        jac_node=var,
+                    )
+                    props_access = self.sync_loc(
+                        es.MemberExpression(
+                            object=props_ident,
+                            property=self.sync_loc(
+                                es.Identifier(name=var.name.sym_name),
+                                jac_node=var.name,
+                            ),
+                            computed=False,
+                        ),
+                        jac_node=var,
+                    )
+                    has_call = self.sync_loc(
+                        es.CallExpression(
+                            callee=self.sync_loc(
+                                es.MemberExpression(
+                                    object=props_ident,
+                                    property=self.sync_loc(
+                                        es.Identifier(name="hasOwnProperty"),
+                                        jac_node=var,
+                                    ),
+                                    computed=False,
+                                ),
+                                jac_node=var,
+                            ),
+                            arguments=[
+                                self.sync_loc(
+                                    es.Literal(value=var.name.sym_name),
+                                    jac_node=var.name,
+                                )
+                            ],
+                        ),
+                        jac_node=var,
+                    )
+                    default_expr = (
+                        var.value.gen.es_ast
+                        if var.value
+                        and hasattr(var.value.gen, "es_ast")
+                        and var.value.gen.es_ast
+                        else self.sync_loc(es.Literal(value=None), jac_node=var)
+                    )
+                    conditional = self.sync_loc(
+                        es.ConditionalExpression(
+                            test=has_call,
+                            consequent=props_access,
+                            alternate=default_expr,
+                        ),
+                        jac_node=var,
+                    )
+                    assignment = self.sync_loc(
+                        es.AssignmentExpression(
+                            operator="=", left=this_member, right=conditional
+                        ),
+                        jac_node=var,
+                    )
+                    constructor_stmts.append(
+                        self.sync_loc(
+                            es.ExpressionStatement(expression=assignment),
+                            jac_node=var,
+                        )
+                    )
+
+            if constructor_stmts:
+                constructor_method = self.sync_loc(
+                    es.MethodDefinition(
+                        key=self.sync_loc(
+                            es.Identifier(name="constructor"), jac_node=node
+                        ),
+                        value=self.sync_loc(
+                            es.FunctionExpression(
+                                id=None,
+                                params=[props_param],
+                                body=self.sync_loc(
+                                    es.BlockStatement(body=constructor_stmts),
+                                    jac_node=node,
+                                ),
+                            ),
+                            jac_node=node,
+                        ),
+                        kind="constructor",
+                        static=False,
+                    ),
+                    jac_node=node,
+                )
+                body_stmts.insert(0, constructor_method)
 
         # Create class body
         class_body = self.sync_loc(es.ClassBody(body=body_stmts), jac_node=node)
@@ -338,6 +488,194 @@ class EsastGenPass(UniPass):
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Process has variable."""
         node.gen.es_ast = None
+
+    # JSX Nodes
+    # =========
+
+    def exit_jsx_element(self, node: uni.JsxElement) -> None:
+        """Process JSX element into __jacJsx(tag, props, children) call."""
+        # Tag expression (string literal for HTML tags, identifier/member for components)
+        if node.is_fragment or not node.name:
+            tag_expr: es.Expression = self.sync_loc(
+                es.Literal(value=None), jac_node=node
+            )
+        else:
+            tag_expr = (
+                node.name.gen.es_ast
+                if hasattr(node.name.gen, "es_ast") and node.name.gen.es_ast
+                else self.sync_loc(es.Literal(value=None), jac_node=node.name)
+            )
+
+        # Props / attributes
+        props_expr: es.Expression
+        attributes = node.attributes or []
+        has_spread = any(
+            isinstance(attr, uni.JsxSpreadAttribute) for attr in attributes
+        )
+        if not attributes:
+            props_expr = self.sync_loc(
+                es.ObjectExpression(properties=[]), jac_node=node
+            )
+        elif has_spread:
+            segments: list[es.Expression] = []
+            for attr in attributes:
+                if isinstance(attr, uni.JsxSpreadAttribute):
+                    exp = getattr(attr.gen, "es_ast", None)
+                    if exp:
+                        segments.append(exp)
+                elif isinstance(attr, uni.JsxNormalAttribute):
+                    prop = getattr(attr.gen, "es_ast", None)
+                    if isinstance(prop, es.Property):
+                        segments.append(
+                            self.sync_loc(
+                                es.ObjectExpression(properties=[prop]), jac_node=attr
+                            )
+                        )
+            if segments:
+                assign_member = self.sync_loc(
+                    es.MemberExpression(
+                        object=self.sync_loc(
+                            es.Identifier(name="Object"), jac_node=node
+                        ),
+                        property=self.sync_loc(
+                            es.Identifier(name="assign"), jac_node=node
+                        ),
+                        computed=False,
+                        optional=False,
+                    ),
+                    jac_node=node,
+                )
+                props_expr = self.sync_loc(
+                    es.CallExpression(
+                        callee=assign_member,
+                        arguments=[
+                            self.sync_loc(
+                                es.ObjectExpression(properties=[]), jac_node=node
+                            ),
+                            *segments,
+                        ],
+                    ),
+                    jac_node=node,
+                )
+            else:
+                props_expr = self.sync_loc(
+                    es.ObjectExpression(properties=[]), jac_node=node
+                )
+        else:
+            properties: list[es.Property] = []
+            for attr in attributes:
+                prop = getattr(attr.gen, "es_ast", None)
+                if isinstance(prop, es.Property):
+                    properties.append(prop)
+            props_expr = self.sync_loc(
+                es.ObjectExpression(properties=properties), jac_node=node
+            )
+
+        # Children
+        children_elements: list[Optional[Union[es.Expression, es.SpreadElement]]] = []
+        for child in node.children or []:
+            child_expr = getattr(child.gen, "es_ast", None)
+            if child_expr is None:
+                continue
+            if isinstance(child_expr, list):
+                children_elements.extend(child_expr)  # type: ignore[arg-type]
+            else:
+                children_elements.append(child_expr)
+        children_expr = self.sync_loc(
+            es.ArrayExpression(elements=children_elements), jac_node=node
+        )
+
+        # __jacJsx(tag, props, children)
+        call_expr = self.sync_loc(
+            es.CallExpression(
+                callee=self.sync_loc(es.Identifier(name="__jacJsx"), jac_node=node),
+                arguments=[tag_expr, props_expr, children_expr],
+            ),
+            jac_node=node,
+        )
+        node.gen.es_ast = call_expr
+
+    def exit_jsx_element_name(self, node: uni.JsxElementName) -> None:
+        """Process JSX element name."""
+        if not node.parts:
+            node.gen.es_ast = self.sync_loc(es.Literal(value=None), jac_node=node)
+            return
+
+        parts = [part.value for part in node.parts]
+        first = parts[0]
+        if first and first[0].isupper():
+            expr: es.Expression = self.sync_loc(
+                es.Identifier(name=first), jac_node=node.parts[0]
+            )
+            for idx, part in enumerate(parts[1:], start=1):
+                expr = self.sync_loc(
+                    es.MemberExpression(
+                        object=expr,
+                        property=self.sync_loc(
+                            es.Identifier(name=part), jac_node=node.parts[idx]
+                        ),
+                        computed=False,
+                        optional=False,
+                    ),
+                    jac_node=node,
+                )
+            node.gen.es_ast = expr
+        else:
+            node.gen.es_ast = self.sync_loc(
+                es.Literal(value=".".join(parts)), jac_node=node
+            )
+
+    def exit_jsx_spread_attribute(self, node: uni.JsxSpreadAttribute) -> None:
+        """Process JSX spread attribute."""
+        expr = (
+            node.expr.gen.es_ast
+            if hasattr(node.expr.gen, "es_ast") and node.expr.gen.es_ast
+            else self.sync_loc(es.ObjectExpression(properties=[]), jac_node=node)
+        )
+        node.gen.es_ast = expr
+
+    def exit_jsx_normal_attribute(self, node: uni.JsxNormalAttribute) -> None:
+        """Process JSX normal attribute."""
+        key_expr = self.sync_loc(es.Literal(value=node.name.value), jac_node=node.name)
+        if node.value is None:
+            value_expr = self.sync_loc(es.Literal(value=True), jac_node=node)
+        elif isinstance(node.value, uni.String):
+            value_expr = self.sync_loc(
+                es.Literal(value=node.value.lit_value), jac_node=node.value
+            )
+        else:
+            value_expr = (
+                node.value.gen.es_ast
+                if hasattr(node.value.gen, "es_ast") and node.value.gen.es_ast
+                else self.sync_loc(es.Literal(value=None), jac_node=node.value)
+            )
+
+        prop = self.sync_loc(
+            es.Property(
+                key=key_expr,
+                value=value_expr,
+                kind="init",
+                method=False,
+                shorthand=False,
+                computed=False,
+            ),
+            jac_node=node,
+        )
+        node.gen.es_ast = prop
+
+    def exit_jsx_text(self, node: uni.JsxText) -> None:
+        """Process JSX text node."""
+        raw_value = node.value.value if hasattr(node.value, "value") else node.value
+        node.gen.es_ast = self.sync_loc(es.Literal(value=str(raw_value)), jac_node=node)
+
+    def exit_jsx_expression(self, node: uni.JsxExpression) -> None:
+        """Process JSX expression child."""
+        expr = (
+            node.expr.gen.es_ast
+            if hasattr(node.expr.gen, "es_ast") and node.expr.gen.es_ast
+            else self.sync_loc(es.Literal(value=None), jac_node=node.expr)
+        )
+        node.gen.es_ast = expr
 
     # Control Flow Statements
     # =======================
@@ -652,6 +990,21 @@ class EsastGenPass(UniPass):
             else self.sync_loc(es.Literal(value=0), jac_node=node.right)
         )
 
+        op_name = getattr(node.op, "name", None)
+
+        if op_name == Tok.KW_SPAWN:
+            spawn_call = self.sync_loc(
+                es.CallExpression(
+                    callee=self.sync_loc(
+                        es.Identifier(name="__jacSpawn"), jac_node=node
+                    ),
+                    arguments=[left, right],
+                ),
+                jac_node=node,
+            )
+            node.gen.es_ast = spawn_call
+            return
+
         # Map Jac operators to JS operators
         op_map = {
             Tok.EE: "===",
@@ -672,11 +1025,11 @@ class EsastGenPass(UniPass):
             Tok.RSHIFT: ">>",
         }
 
-        operator = op_map.get(node.op.name, "+")
+        operator = op_map.get(op_name, "+")
 
         # Check if it's a logical operator
-        if node.op.name in (Tok.KW_AND, Tok.KW_OR):
-            logical_op = "&&" if node.op.name == Tok.KW_AND else "||"
+        if op_name in (Tok.KW_AND, Tok.KW_OR):
+            logical_op = "&&" if op_name == Tok.KW_AND else "||"
             bin_expr = self.sync_loc(
                 es.LogicalExpression(operator=logical_op, left=left, right=right),
                 jac_node=node,
@@ -1226,8 +1579,18 @@ class EsastGenPass(UniPass):
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Process global variables."""
-        # Global declarations don't have direct equivalent in ES modules
-        node.gen.es_ast = []
+        statements: list[es.Statement] = []
+        for assignment in node.assignments:
+            if hasattr(assignment.gen, "es_ast") and assignment.gen.es_ast:
+                stmt = assignment.gen.es_ast
+                if (
+                    isinstance(stmt, es.VariableDeclaration)
+                    and node.is_frozen
+                    and stmt.kind != "const"
+                ):
+                    stmt.kind = "const"
+                statements.append(stmt)
+        node.gen.es_ast = statements
 
     def exit_non_local_vars(self, node: uni.NonLocalVars) -> None:
         """Process non-local variables."""

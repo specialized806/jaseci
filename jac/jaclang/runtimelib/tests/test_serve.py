@@ -33,7 +33,11 @@ class TestServeCommand(TestCase):
         self.server_thread = None
         self.httpd = None
         # Use dynamically allocated free port for each test
-        self.port = get_free_port()
+        try:
+            self.port = get_free_port()
+        except PermissionError:
+            self.skipTest("Socket operations are not permitted in this environment")
+            return
         self.base_url = f"http://localhost:{self.port}"
         # Use unique session file for each test
         test_name = self._testMethodName
@@ -126,6 +130,16 @@ class TestServeCommand(TestCase):
         self, method: str, path: str, data: dict = None, token: str = None
     ) -> dict:
         """Make HTTP request to server."""
+        status, payload, _ = self._request_raw(method, path, data=data, token=token)
+        try:
+            return json.loads(payload)
+        except json.JSONDecodeError as exc:  # pragma: no cover - sanity guard
+            raise AssertionError(f"Expected JSON response, got: {payload}") from exc
+
+    def _request_raw(
+        self, method: str, path: str, data: dict = None, token: str = None
+    ) -> tuple[int, str, dict[str, str]]:
+        """Make an HTTP request and return status, body, and headers."""
         url = f"{self.base_url}{path}"
         headers = {"Content-Type": "application/json"}
 
@@ -137,9 +151,11 @@ class TestServeCommand(TestCase):
 
         try:
             with urlopen(request, timeout=5) as response:
-                return json.loads(response.read().decode())
+                payload = response.read().decode()
+                return response.status, payload, dict(response.headers)
         except HTTPError as e:
-            return json.loads(e.read().decode())
+            payload = e.read().decode()
+            return e.code, payload, dict(e.headers)
 
     def test_user_manager_creation(self) -> None:
         """Test UserManager creates users with unique roots."""
@@ -522,6 +538,34 @@ class TestServeCommand(TestCase):
         )
 
         self.assertIn("error", result)
+
+    def test_client_page_and_bundle_endpoints(self) -> None:
+        """Render a client page and fetch the bundled JavaScript."""
+        self._start_server()
+
+        create_result = self._request(
+            "POST",
+            "/user/create",
+            {"username": "pageuser", "password": "pass"}
+        )
+        token = create_result["token"]
+
+        status, html_body, headers = self._request_raw(
+            "GET",
+            "/page/client_page",
+            token=token,
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers.get("Content-Type", ""))
+        self.assertIn("<div id=\"__jac_root\">", html_body)
+        self.assertIn("Runtime Test", html_body)
+        self.assertIn("/static/client.js?hash=", html_body)
+
+        status_js, js_body, js_headers = self._request_raw("GET", "/static/client.js")
+        self.assertEqual(status_js, 200)
+        self.assertIn("application/javascript", js_headers.get("Content-Type", ""))
+        self.assertIn("function __jacJsx", js_body)
 
     def test_server_root_endpoint(self) -> None:
         """Test root endpoint returns API information."""

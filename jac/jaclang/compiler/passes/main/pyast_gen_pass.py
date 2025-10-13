@@ -118,6 +118,7 @@ class PyastGenPass(UniPass):
         self.already_added: list[str] = []
         self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
         self.builtin_imports: set[str] = set()  # Track individual builtin imports
+        self.client_globals: set[str] = set()
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -161,6 +162,27 @@ class PyastGenPass(UniPass):
         if name not in ["Enum"]:
             self.builtin_imports.add(name)
         return self.sync(ast3.Name(id=name, ctx=ast3.Load()))
+
+    def _client_decl_marker(self, symbol: str, symbol_node: uni.UniNode) -> ast3.Assign:
+        """Create assignment that flags a symbol as client-facing."""
+        target = self.sync(
+            ast3.Attribute(
+                value=self.sync(
+                    ast3.Name(id=symbol, ctx=ast3.Load()), jac_node=symbol_node
+                ),
+                attr="__jac_client__",
+                ctx=ast3.Store(),
+            ),
+            jac_node=symbol_node,
+        )
+        return self.sync(
+            ast3.Assign(
+                targets=[target],
+                value=self.sync(ast3.Constant(value=True), jac_node=symbol_node),
+                type_comment=None,
+            ),
+            jac_node=symbol_node,
+        )
 
     def _add_preamble_once(self, key: str, node: ast3.AST) -> None:
         """Append an import statement to the preamble once."""
@@ -406,6 +428,7 @@ class PyastGenPass(UniPass):
         for child_pass in self.child_passes:
             self.jaclib_imports.update(child_pass.jaclib_imports)
             self.builtin_imports.update(child_pass.builtin_imports)
+            self.client_globals.update(child_pass.client_globals)
 
         # Add builtin imports if any were used
         if self.builtin_imports:
@@ -464,6 +487,44 @@ class PyastGenPass(UniPass):
                 new_body += i
             else:
                 new_body.append(i) if i else None
+        source_assign = self.sync(
+            ast3.Assign(
+                targets=[
+                    self.sync(
+                        ast3.Name(id="__jac_source__", ctx=ast3.Store()),
+                        jac_node=node,
+                    )
+                ],
+                value=self.sync(ast3.Constant(value=node.loc.mod_path), jac_node=node),
+                type_comment=None,
+            ),
+            jac_node=node,
+        )
+        new_body.append(source_assign)
+        if self.client_globals:
+            globals_assign = self.sync(
+                ast3.Assign(
+                    targets=[
+                        self.sync(
+                            ast3.Name(id="__jac_client_globals__", ctx=ast3.Store()),
+                            jac_node=node,
+                        )
+                    ],
+                    value=self.sync(
+                        ast3.List(
+                            elts=[
+                                self.sync(ast3.Constant(value=name), jac_node=node)
+                                for name in sorted(self.client_globals)
+                            ],
+                            ctx=ast3.Load(),
+                        ),
+                        jac_node=node,
+                    ),
+                    type_comment=None,
+                ),
+                jac_node=node,
+            )
+            new_body.append(globals_assign)
         node.gen.py_ast = [
             self.sync(
                 ast3.Module(
@@ -489,6 +550,12 @@ class PyastGenPass(UniPass):
                 raise self.ice()
         else:
             node.gen.py_ast = self.flatten([a.gen.py_ast for a in node.assignments])
+        if node.is_client_decl:
+            for assignment in node.assignments:
+                for target in assignment.target:
+                    name = getattr(target, "sym_name", None)
+                    if isinstance(name, str):
+                        self.client_globals.add(name)
 
     def exit_test(self, node: uni.Test) -> None:
         test_name = node.name.sym_name
@@ -709,18 +776,20 @@ class PyastGenPass(UniPass):
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))
 
-        node.gen.py_ast = [
-            self.sync(
-                ast3.ClassDef(
-                    name=node.name.sym_name,
-                    bases=[cast(ast3.expr, i) for i in base_classes],
-                    keywords=[],
-                    body=[cast(ast3.stmt, i) for i in body],
-                    decorator_list=[cast(ast3.expr, i) for i in decorators],
-                    type_params=[],
-                )
+        class_def = self.sync(
+            ast3.ClassDef(
+                name=node.name.sym_name,
+                bases=[cast(ast3.expr, i) for i in base_classes],
+                keywords=[],
+                body=[cast(ast3.stmt, i) for i in body],
+                decorator_list=[cast(ast3.expr, i) for i in decorators],
+                type_params=[],
             )
-        ]
+        )
+        stmts: list[ast3.stmt] = [class_def]
+        if node.is_client_decl:
+            stmts.append(self._client_decl_marker(node.name.sym_name, node.name))
+        node.gen.py_ast = stmts
 
     def enter_enum(self, node: uni.Enum) -> None:
         if isinstance(node.body, uni.ImplDef):
@@ -745,18 +814,20 @@ class PyastGenPass(UniPass):
 
         base_classes = [cast(ast3.expr, i.gen.py_ast[0]) for i in node.base_classes]
         base_classes.append(self.builtin_name("Enum"))
-        node.gen.py_ast = [
-            self.sync(
-                ast3.ClassDef(
-                    name=node.name.sym_name,
-                    bases=[cast(ast3.expr, i) for i in base_classes],
-                    keywords=[],
-                    body=[cast(ast3.stmt, i) for i in body],
-                    decorator_list=[cast(ast3.expr, i) for i in decorators],
-                    type_params=[],
-                )
+        class_def = self.sync(
+            ast3.ClassDef(
+                name=node.name.sym_name,
+                bases=[cast(ast3.expr, i) for i in base_classes],
+                keywords=[],
+                body=[cast(ast3.stmt, i) for i in body],
+                decorator_list=[cast(ast3.expr, i) for i in decorators],
+                type_params=[],
             )
-        ]
+        )
+        stmts: list[ast3.stmt] = [class_def]
+        if node.is_client_decl:
+            stmts.append(self._client_decl_marker(node.name.sym_name, node.name))
+        node.gen.py_ast = stmts
 
     def enter_ability(self, node: uni.Ability) -> None:
         if isinstance(node.body, uni.ImplDef):
@@ -970,36 +1041,41 @@ class PyastGenPass(UniPass):
         if isinstance(node.signature, uni.FuncSignature) and node.signature.return_type:
             ast_returns = cast(ast3.expr, node.signature.return_type.gen.py_ast[0])
 
-        node.gen.py_ast = [
-            self.sync(
-                func_type(
-                    name=node.name_ref.sym_name,
-                    args=(
-                        cast(ast3.arguments, node.signature.gen.py_ast[0])
-                        if node.signature
-                        else self.sync(
-                            ast3.arguments(
-                                posonlyargs=[],
-                                args=(
-                                    [self.sync(ast3.arg(arg="self", annotation=None))]
-                                    if node.is_method
-                                    else []
-                                ),
-                                vararg=None,
-                                kwonlyargs=[],
-                                kw_defaults=[],
-                                kwarg=None,
-                                defaults=[],
-                            )
+        func_def = self.sync(
+            func_type(
+                name=node.name_ref.sym_name,
+                args=(
+                    cast(ast3.arguments, node.signature.gen.py_ast[0])
+                    if node.signature
+                    else self.sync(
+                        ast3.arguments(
+                            posonlyargs=[],
+                            args=(
+                                [self.sync(ast3.arg(arg="self", annotation=None))]
+                                if node.is_method
+                                else []
+                            ),
+                            vararg=None,
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            kwarg=None,
+                            defaults=[],
                         )
-                    ),
-                    body=[cast(ast3.stmt, i) for i in body],
-                    decorator_list=[cast(ast3.expr, i) for i in decorator_list],
-                    returns=ast_returns,
-                    type_params=[],
-                )
+                    )
+                ),
+                body=[cast(ast3.stmt, i) for i in body],
+                decorator_list=[cast(ast3.expr, i) for i in decorator_list],
+                returns=ast_returns,
+                type_params=[],
             )
-        ]
+        )
+        stmts: list[ast3.stmt] = [func_def]
+        if node.is_client_decl and not node.is_method:
+            symbol_node = (
+                node.name_ref if isinstance(node.name_ref, uni.UniNode) else node
+            )
+            stmts.append(self._client_decl_marker(node.name_ref.sym_name, symbol_node))
+        node.gen.py_ast = stmts
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         pass

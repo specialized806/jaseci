@@ -1106,9 +1106,7 @@ class JacBasics:
         return test_deco
 
     @staticmethod
-    def jsx(
-        tag: Any, attributes: dict[str, Any], children: list[Any]  # noqa: ANN401
-    ) -> Any:  # noqa: ANN401
+    def jsx(tag: Any, attributes: dict[str, Any], children: list[Any]) -> Any:
         """JSX interface for creating elements.
 
         Args:
@@ -1119,13 +1117,88 @@ class JacBasics:
         Returns:
             JSX element representation (implementation-defined)
         """
-        # Default implementation returns a simple dict representation
-        # This can be overridden by plugins or custom implementations
         return {
             "tag": tag,
-            "attributes": attributes,
+            "props": attributes,
             "children": children,
         }
+
+    @staticmethod
+    def render_jsx_tree(node: Any) -> str:
+        """Render a JSX tree produced by JacMachine.jsx to HTML."""
+
+        def render(node_obj: Any) -> str:
+            if node_obj is None:
+                return ""
+            if isinstance(node_obj, (str, int, float)):
+                return html.escape(str(node_obj))
+            if isinstance(node_obj, bool):
+                return "true" if node_obj else "false"
+            if isinstance(node_obj, (list, tuple)):
+                return "".join(render(child) for child in node_obj)
+            if isinstance(node_obj, dict):
+                tag = node_obj.get("tag")
+                if callable(tag):
+                    try:
+                        rendered = tag(node_obj.get("props", {}) or {})
+                    except Exception:
+                        rendered = None
+                    return render(rendered)
+
+                props = node_obj.get("props") or node_obj.get("attributes") or {}
+                if not isinstance(props, dict):
+                    try:
+                        props = dict(props)
+                    except Exception:
+                        props = {}
+                children = node_obj.get("children") or []
+
+                if tag in (None, ""):
+                    return "".join(render(child) for child in children)
+
+                tag_name = html.escape(str(tag))
+                attr_str = _render_props(props)
+                inner = "".join(render(child) for child in children)
+                return f"<{tag_name}{attr_str}>{inner}</{tag_name}>"
+
+            return html.escape(str(node_obj))
+
+        def _render_props(props: dict[str, Any]) -> str:
+            if not props:
+                return ""
+            attr_parts: list[str] = []
+            for key, value in props.items():
+                if key is None:
+                    continue
+                if key == "children" or key.startswith("on"):
+                    continue
+                attr_name = "class" if key == "className" else key
+                if key == "dangerouslySetInnerHTML":
+                    continue
+                if key == "style" and isinstance(value, dict):
+                    style_pairs = [
+                        f"{html.escape(str(style_key))}: {html.escape(str(style_value))}"
+                        for style_key, style_value in value.items()
+                        if style_value is not None
+                    ]
+                    if style_pairs:
+                        style_value = "; ".join(style_pairs)
+                        attr_parts.append(f'style="{style_value}"')
+                    continue
+                if isinstance(value, bool):
+                    if value:
+                        attr_parts.append(html.escape(str(attr_name)))
+                    continue
+                if value is None:
+                    continue
+                attr_parts.append(
+                    f'{html.escape(str(attr_name))}="{html.escape(str(value))}"'
+                )
+            if not attr_parts:
+                return ""
+            return " " + " ".join(attr_parts)
+
+        return render(node)
 
     @staticmethod
     def run_test(

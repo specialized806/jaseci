@@ -118,6 +118,42 @@ class EsastGenPassTests(TestCase):
         self.assertIn("||", js_code, "Should contain OR operator")
         self.assertIn("!", js_code, "Should contain NOT operator")
 
+    def test_client_jsx_generation(self) -> None:
+        """Test that cl-marked code generates JSX-aware JavaScript."""
+        es_ast = self.compile_to_esast(self.get_fixture_path("client_jsx.jac"))
+        js_code = es_to_js(es_ast)
+
+        self.assertIn(
+            'const API_URL = "https://api.example.com";',
+            js_code,
+            "Client global should be emitted as const.",
+        )
+        self.assertIn(
+            "function component()",
+            js_code,
+            "Client function should be present in bundle.",
+        )
+        self.assertIn(
+            '__jacJsx("div"',
+            js_code,
+            "JSX element should translate to __jacJsx calls.",
+        )
+        self.assertIn(
+            "class ButtonProps",
+            js_code,
+            "Client-side objects should become ES6 classes.",
+        )
+        self.assertIn(
+            "constructor(props",
+            js_code,
+            "Object constructor should accept props parameter.",
+        )
+        self.assertNotIn(
+            "server_only",
+            js_code,
+            "Server-only functions must be excluded from client bundle.",
+        )
+
     def test_data_structures(self) -> None:
         """Test data structure generation."""
         es_ast = self.compile_to_esast(self.get_fixture_path("data_structures.jac"))
@@ -476,4 +512,3 @@ class EsastGenPassTests(TestCase):
         self.assertIn("*=", js_code)
         self.assertIn("/=", js_code)
         self.assertIn("%=", js_code)
-

@@ -1,6 +1,7 @@
 """REST API Server for Jac Programs."""
 
 import hashlib
+import html
 import inspect
 import json
 import os
@@ -8,7 +9,7 @@ import secrets
 from contextlib import suppress
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Callable, Optional, get_type_hints
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from jaclang.runtimelib.constructs import (
     Archetype,
@@ -16,6 +17,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchetype,
 )
+from jaclang.runtimelib.client_bundle import ClientBundleBuilder, ClientBundleError
 from jaclang.runtimelib.machine import (
     ExecutionContext,
     JacMachine as Jac,
@@ -211,6 +213,11 @@ class JacAPIServer:
         self.module = None
         self._function_cache: dict[str, Callable] = {}
         self._walker_cache: dict[str, type[WalkerArchetype]] = {}
+        self._client_functions: dict[str, Callable] = {}
+        self._client_globals: dict[str, Any] = {}
+        self._client_bundle_builder = ClientBundleBuilder()
+        self._client_bundle = None
+        self._client_bundle_error: Optional[str] = None
 
     def load_module(self, force_reload: bool = False) -> None:
         """Load the target module if necessary and refresh caches."""
@@ -238,6 +245,9 @@ class JacAPIServer:
             self.module = module
             self._function_cache = self._collect_functions()
             self._walker_cache = self._collect_walkers()
+            self._client_globals = self._collect_client_globals()
+            self._client_bundle = None
+            self._client_bundle_error = None
 
     def get_functions(self) -> dict[str, Callable]:
         """Get all functions from the module."""
@@ -251,11 +261,103 @@ class JacAPIServer:
             self.load_module()
         return dict(self._walker_cache)
 
+    def get_client_functions(self) -> dict[str, Callable]:
+        """Return functions marked for client rendering."""
+        if not self._client_functions:
+            self.load_module()
+        return dict(self._client_functions)
+
+    def render_client_page(
+        self,
+        function_name: str,
+        args: dict[str, Any],
+        username: str,
+    ) -> dict[str, Any]:
+        """Render a client-marked function to HTML (non-HTTP helper)."""
+        self.load_module()
+        client_functions = self.get_client_functions()
+        if function_name not in client_functions:
+            raise ValueError(f"Client function '{function_name}' not found")
+
+        render_result = self._render_client_function(
+            client_functions[function_name], args, username
+        )
+        if "error" in render_result:
+            raise RuntimeError(render_result["error"])
+
+        bundle_hash = self._ensure_client_bundle()
+        if not bundle_hash or not self._client_bundle:
+            error_msg = (
+                self._client_bundle_error
+                if self._client_bundle_error
+                else "Client bundle not available"
+            )
+            raise RuntimeError(error_msg)
+
+        module_name = self.module.__name__ if self.module else self.module_name
+        globals_payload = {
+            name: serialize_for_response(value)
+            for name, value in self._client_globals.items()
+        }
+        raw_args = {key: serialize_for_response(value) for key, value in args.items()}
+        arg_order = render_result.get("arg_order", [])
+        initial_state = {
+            "module": module_name,
+            "function": function_name,
+            "args": raw_args,
+            "globals": globals_payload,
+            "argOrder": arg_order,
+        }
+        try:
+            initial_json = json.dumps(initial_state)
+        except TypeError:
+            serializable_args = {
+                key: serialize_for_response(value) for key, value in raw_args.items()
+            }
+            initial_state["args"] = serializable_args
+            initial_json = json.dumps(initial_state)
+        safe_initial_json = initial_json.replace("</", "<\\/")
+        html_body = render_result["html"]
+        page = (
+            "<!DOCTYPE html>"
+            '<html lang="en">'
+            "<head>"
+            '<meta charset="utf-8"/>'
+            f"<title>{html.escape(function_name)}</title>"
+            "</head>"
+            "<body>"
+            f'<div id="__jac_root">{html_body}</div>'
+            f'<script id="__jac_init__" type="application/json">{safe_initial_json}</script>'
+            f'<script src="/static/client.js?hash={self._client_bundle.hash}" defer></script>'
+            "</body>"
+            "</html>"
+        )
+
+        return {
+            "html": page,
+            "bundle_hash": self._client_bundle.hash,
+            "bundle_code": self._client_bundle.code,
+        }
+
+    def get_client_bundle_code(self) -> str:
+        """Return the current client bundle JavaScript."""
+        self.load_module()
+        bundle_hash = self._ensure_client_bundle()
+        if not bundle_hash or not self._client_bundle:
+            error_msg = (
+                self._client_bundle_error
+                if self._client_bundle_error
+                else "Client bundle not available"
+            )
+            raise RuntimeError(error_msg)
+        return self._client_bundle.code
+
     def _collect_functions(self) -> dict[str, Callable]:
         """Collect callable functions from the module."""
         if not self.module:
             return {}
         functions = {}
+        client_functions: dict[str, Callable] = {}
         for name, obj in inspect.getmembers(self.module):
             if (
                 inspect.isfunction(obj)
@@ -263,6 +365,9 @@ class JacAPIServer:
                 and obj.__module__ == self.module.__name__
             ):
                 functions[name] = obj
+                if getattr(obj, "__jac_client__", False):
+                    client_functions[name] = obj
+        self._client_functions = client_functions
         return functions
 
     def _collect_walkers(self) -> dict[str, type[WalkerArchetype]]:
@@ -279,6 +384,17 @@ class JacAPIServer:
             ):
                 walkers[name] = obj
         return walkers
+
+    def _collect_client_globals(self) -> dict[str, Any]:
+        """Collect client-exposed global values."""
+        if not self.module:
+            return {}
+        result: dict[str, Any] = {}
+        names = getattr(self.module, "__jac_client_globals__", [])
+        for name in names:
+            if hasattr(self.module, name):
+                result[name] = getattr(self.module, name)
+        return result
 
     def introspect_callable(self, func: Callable) -> dict[str, Any]:
         """Introspect a callable and return its signature."""
@@ -343,6 +459,61 @@ class JacAPIServer:
         }
 
         return {"fields": fields}
+
+    def _ensure_client_bundle(self) -> Optional[str]:
+        """Ensure a client bundle is available and return the bundle hash."""
+        if not self.module:
+            return None
+        if self._client_bundle:
+            return self._client_bundle.hash
+        try:
+            bundle = self._client_bundle_builder.build(self.module)
+        except ClientBundleError as exc:
+            self._client_bundle = None
+            self._client_bundle_error = str(exc)
+            return None
+        self._client_bundle = bundle
+        self._client_bundle_error = None
+        return bundle.hash
+
+    def _render_client_function(
+        self, func: Callable, args: dict[str, Any], username: str
+    ) -> dict[str, Any]:
+        """Execute a client function and return rendered HTML."""
+        root_id = self.user_manager.get_user_root(username)
+        if not root_id:
+            return {"error": "User not found"}
+
+        ctx = ExecutionContext(session=self.session_path, root=root_id)
+        Jac.set_context(ctx)
+
+        try:
+            result = func(**args)
+            Jac.commit()
+            html_body = Jac.render_jsx_tree(result)
+            try:
+                signature = inspect.signature(func)
+                arg_order = [
+                    name
+                    for name, param in signature.parameters.items()
+                    if param.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                ]
+            except (TypeError, ValueError):
+                arg_order = []
+            return {
+                "html": html_body,
+                "reports": serialize_for_response(ctx.reports),
+                "arg_order": arg_order,
+            }
+        except Exception as exc:  # pragma: no cover - surfaced to HTTP caller
+            return {"error": str(exc)}
+        finally:
+            ctx.mem.close()
+            Jac.set_context(ExecutionContext())
 
     def call_function(
         self,
@@ -443,6 +614,25 @@ class JacAPIServer:
                 self.end_headers()
                 self.wfile.write(json.dumps(data).encode())
 
+            def _send_html_response(
+                self,
+                status_code: int,
+                body: str,
+                content_type: str = "text/html; charset=utf-8",
+            ) -> None:
+                """Send an HTML response."""
+                payload = body.encode("utf-8")
+                self.send_response(status_code)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(payload)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                self.send_header(
+                    "Access-Control-Allow-Headers", "Content-Type, Authorization"
+                )
+                self.end_headers()
+                self.wfile.write(payload)
+
             def _get_auth_token(self) -> Optional[str]:
                 """Extract auth token from Authorization header."""
                 auth_header = self.headers.get("Authorization")
@@ -472,6 +662,30 @@ class JacAPIServer:
                 parsed_path = urlparse(self.path)
                 path = parsed_path.path
 
+                if path == "/static/client.js":
+                    try:
+                        bundle_code = server.get_client_bundle_code()
+                    except RuntimeError as exc:
+                        self._send_json_response(503, {"error": str(exc)})
+                        return
+                    payload = bundle_code.encode("utf-8")
+                    self.send_response(200)
+                    self.send_header(
+                        "Content-Type", "application/javascript; charset=utf-8"
+                    )
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.send_header("Cache-Control", "no-cache")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.send_header(
+                        "Access-Control-Allow-Methods", "GET, POST, OPTIONS"
+                    )
+                    self.send_header(
+                        "Access-Control-Allow-Headers", "Content-Type, Authorization"
+                    )
+                    self.end_headers()
+                    self.wfile.write(payload)
+                    return
+
                 # Public endpoints
                 if path == "/":
                     self._send_json_response(
@@ -487,6 +701,8 @@ class JacAPIServer:
                                 "GET /walker/<name>": "Get walker fields",
                                 "POST /function/<name>": "Call a function",
                                 "POST /walker/<name>": "Spawn a walker",
+                                "GET /page/<function_name>": "Render HTML page for a client function",
+                                "GET /static/client.js": "Retrieve the compiled client bundle",
                             },
                         },
                     )
@@ -558,6 +774,27 @@ class JacAPIServer:
                             404,
                             {"error": f"Walker '{walker_name}' not found"},
                         )
+                    return
+
+                elif path.startswith("/page/"):
+                    func_name = path.split("/")[-1]
+                    query_params = parse_qs(parsed_path.query, keep_blank_values=True)
+                    args: dict[str, Any] = {
+                        key: values[0] if len(values) == 1 else values
+                        for key, values in query_params.items()
+                    }
+                    try:
+                        render_payload = server.render_client_page(
+                            func_name, args, username
+                        )
+                    except ValueError as exc:
+                        self._send_json_response(404, {"error": str(exc)})
+                        return
+                    except RuntimeError as exc:
+                        self._send_json_response(503, {"error": str(exc)})
+                        return
+
+                    self._send_html_response(200, render_payload["html"])
                     return
 
                 self._send_json_response(404, {"error": "Not found"})
