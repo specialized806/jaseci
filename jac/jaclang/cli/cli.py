@@ -683,34 +683,25 @@ def js(filename: str, mode: str = "js_only") -> None:
     """
     if filename.endswith(".jac"):
         requested_mode = mode if mode in ("js_only", "both") else "js_only"
-        prog = JacProgram(client_codegen_mode=requested_mode)
-        ir = prog.compile(
-            file_path=filename,
-            client_codegen_mode=requested_mode,
-        )
-
-        if prog.errors_had:
-            for error in prog.errors_had:
-                print(f"Error: {error}", file=sys.stderr)
-            exit(1)
-
         try:
-            js_code = ir.gen.js
-            if not js_code:
-                from jaclang.compiler.emcascript import EsastGenPass
-                from jaclang.compiler.emcascript.es_unparse import es_to_js
+            prog = JacProgram(client_codegen_mode=requested_mode)
+            ir = prog.compile(
+                file_path=filename,
+                client_codegen_mode=requested_mode,
+            )
 
-                es_ir = EsastGenPass(ir, prog).ir_out
-                es_ast = getattr(es_ir.gen, "es_ast", None)
-                if not es_ast:
-                    print(
-                        "ECMAScript code generation failed.",
-                        file=sys.stderr,
-                    )
-                    exit(1)
-                js_code = es_to_js(es_ast)
-
-            print(js_code)
+            if prog.errors_had:
+                for error in prog.errors_had:
+                    print(f"Error: {error}", file=sys.stderr)
+                exit(1)
+            js_output = ir.gen.js or ""
+            if not js_output.strip():
+                print(
+                    "ECMAScript code generation produced no output.",
+                    file=sys.stderr,
+                )
+                exit(1)
+            print(js_output)
         except Exception as e:
             print(f"Error generating JavaScript: {e}", file=sys.stderr)
             import traceback

@@ -233,9 +233,7 @@ class JacProgram:
             module.gen.client_exports = artifacts["exports"]
             module.gen.client_globals = artifacts["globals"]
             module.gen.client_export_params = artifacts["params"]
-            js_code = ""
-            if artifacts["has_client"]:
-                js_code = self._generate_client_js(module)
+            js_code = self._generate_module_js(module)
             module.gen.js = js_code
             self.client_js_map[mod_path] = js_code
 
@@ -289,6 +287,10 @@ class JacProgram:
         if es_ast:
             return es_to_js(es_ast)
         return ""
+
+    def _generate_module_js(self, module: uni.Module) -> str:
+        """Generate JavaScript for the supplied module."""
+        return self._generate_client_js(module)
 
     def _iter_modules(self, module: uni.Module) -> Iterable[uni.Module]:
         yield module
