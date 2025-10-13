@@ -4680,6 +4680,8 @@ class String(Literal):
 
     def unparse(self) -> str:
         super().unparse()
+        if self.parent and isinstance(self.parent, FString):
+            return self.lit_value
         return self.value
 
 

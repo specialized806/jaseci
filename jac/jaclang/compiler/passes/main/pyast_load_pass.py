@@ -16,10 +16,12 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
+import re
 from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.constant import Tokens as Tok
+from jaclang.compiler import TOKEN_MAP
+from jaclang.compiler.constant import DELIM_MAP, Tokens as Tok
 from jaclang.compiler.passes.uni_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
@@ -87,6 +89,28 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         if len(with_entry_body):
             extracted.append(gen_mod_code(with_entry_body))
         return extracted
+
+    def gen_token(self, name: Tok, value: Optional[str] = None) -> uni.Token:
+        value = (
+            value
+            if value
+            else (
+                DELIM_MAP[name]
+                if name in DELIM_MAP
+                else TOKEN_MAP[name.value] if name.value in TOKEN_MAP else name.value
+            )
+        )
+        return uni.Token(
+            name=name,
+            value=value,
+            orig_src=self.orig_src,
+            col_start=0,
+            col_end=0,
+            line=0,
+            end_line=0,
+            pos_start=0,
+            pos_end=0,
+        )
 
     def proc_module(self, node: py_ast.Module) -> uni.Module:
         """Process python node.
@@ -1160,7 +1184,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         else:
             raise self.ice()
 
-    def proc_formatted_value(self, node: py_ast.FormattedValue) -> uni.ExprStmt:
+    def proc_formatted_value(self, node: py_ast.FormattedValue) -> uni.FormattedValue:
         """Process python node.
 
         class FormattedValue(expr):
@@ -1171,10 +1195,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         format_spec: expr | None
         """
         value = self.convert(node.value)
+        if node.format_spec:
+            fmt_spec = cast(uni.Expr, self.convert(node.format_spec))
+        else:
+            fmt_spec = None
         if isinstance(value, uni.Expr):
-            ret = uni.ExprStmt(
-                expr=value,
-                in_fstring=True,
+            ret = uni.FormattedValue(
+                format_part=value,
+                conversion=node.conversion,
+                format_spec=fmt_spec,
                 kid=[value],
             )
         else:
@@ -1371,13 +1400,28 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         """
         values = [self.convert(value) for value in node.values]
         valid = [
-            value for value in values if isinstance(value, (uni.String, uni.ExprStmt))
+            value
+            for value in values
+            if isinstance(value, (uni.String, uni.FormattedValue))
         ]
+        ast_seg = py_ast.get_source_segment(self.orig_src.code, node)
+        if ast_seg is None:
+            ast_seg = 'f""'
+        match = re.match(r"(?i)(fr|rf|f)(['\"]{1,3})", ast_seg)
+        if match:
+            prefix, quote = match.groups()
+            start = match.group(0)
+            end = quote * (3 if len(quote) == 3 else 1)
+        else:
+            start = "f'"
+            end = "'"
+        tok_start = self.gen_token(name=Tok.STRING, value=start)
+        tok_end = self.gen_token(name=Tok.STRING, value=end)
         fstr = uni.FString(
-            start=None,
+            start=tok_start,
             parts=valid,
-            end=None,
-            kid=[*valid] if valid else [uni.EmptyToken()],
+            end=tok_end,
+            kid=[tok_start, *valid, tok_end] if valid else [uni.EmptyToken()],
         )
         return uni.MultiString(strings=[fstr], kid=[fstr])
 

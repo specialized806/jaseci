@@ -94,5 +94,7 @@ with entry {
     # Raw f-string with backslashes and formatting
     windows_path = rf"\\server\share\{name}\documents\{file}";
     print(windows_path);
+    pi = 3.14159;
+    print(f"Pi: {pi:.2f}");
 
 }
