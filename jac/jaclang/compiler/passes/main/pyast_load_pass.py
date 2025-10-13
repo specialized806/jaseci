@@ -1407,7 +1407,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         ast_seg = py_ast.get_source_segment(self.orig_src.code, node)
         if ast_seg is None:
             ast_seg = 'f""'
-        match = re.match(r"(?i)(fr|rf|f)(['\"]{1,3})", ast_seg)
+        match = re.match(r"(?i)(fr|rf|f)('{3}|\"{3}|'|\")", ast_seg)
         if match:
             prefix, quote = match.groups()
             start = match.group(0)
