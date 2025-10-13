@@ -2,7 +2,7 @@
 name = "jac-cloud"
 version = "0.2.9"
 description = ""
-authors = ["Jason Mars <jason@jaseci.org>"]
+authors = ["Jason Mars <jason@mars.ninja>"]
 readme = "README.md"
 packages = [{include = "jac_cloud"}]
 

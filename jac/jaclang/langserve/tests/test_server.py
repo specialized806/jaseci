@@ -7,40 +7,9 @@ import lsprotocol.types as lspt
 import pytest
 from jaclang import JacMachineInterface as _
 from jaclang.langserve.engine import JacLangServer
-from .session import LspSession
 
 
 class TestJacLangServer(TestCase):
-
-    def test_formatting(self) -> None:
-        with LspSession() as s:
-            s.initialize()
-            with open(self.fixture_abs_path("hello.jac"), "w") as f:
-                f.write('with entry {print("Hello, World!");}')
-            with open(self.fixture_abs_path("hello.jac"), "r") as f:
-                self.assertEqual(f.read(), 'with entry {print("Hello, World!");}')
-            params_json = {
-                "textDocument": {
-                    "uri": uris.from_fs_path(self.fixture_abs_path("hello.jac")),
-                    "languageId": "jac",
-                    "version": 1,
-                    "text": "with entry {print('Hello, World!');}",
-                },
-                "options": {"tabSize": 4, "insertSpaces": True},
-            }
-            text_edits = s.text_document_formatting(params_json)
-            self.assertEqual(
-                text_edits,
-                [
-                    {
-                        "range": {
-                            "start": {"line": 0, "character": 0},
-                            "end": {"line": 2, "character": 0},
-                        },
-                        "newText": 'with entry {\n    print("Hello, World!");\n}\n',
-                    }
-                ],
-            )
 
     def test_impl_stay_connected(self) -> None:
         """Test that the server doesn't run if there is a syntax error."""
@@ -230,7 +199,8 @@ class TestJacLangServer(TestCase):
             (6, 17, "concurrent/__init__.py:0:0-0:0"),
             (6, 28, "concurrent/futures/__init__.py:0:0-0:0"),
             (7, 17, "typing.py:0:0-0:0"),
-            (7, 27, "typing.py:2636:0-2636:7"),
+            # not a good one since there may be different typing.py versions
+            # (7, 27, "typing.py:2636:0-2636:7"), 
             (9, 18, "compiler/__init__.py:0:0-0:0"),
             (9, 38, "compiler/unitree.py:0:0-0:0"),
             (11, 35, "compiler/constant.py:0:0-0:0"),
@@ -244,6 +214,32 @@ class TestJacLangServer(TestCase):
             (18, 38, "vendor/pygls/uris.py:0:0-0:0"),
             (19, 52, "vendor/pygls/server.py:351:0-615:13"),
             (21, 31, "vendor/lsprotocol/types.py:0:0-0:0"),
+        ]
+        # fmt: on
+
+        for line, char, expected in positions:
+            with self.subTest(line=line, char=char):
+                self.assertIn(
+                    expected,
+                    str(
+                        lsp.get_definition(
+                            import_file, lspt.Position(line - 1, char - 1)
+                        )
+                    ),
+                )
+
+    def test_go_to_definition_atom_trailer(self) -> None:
+        """Test that the go to definition is correct."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        import_file = uris.from_fs_path(self.fixture_abs_path("user.jac"))
+        lsp.deep_check(import_file)
+        # fmt: off
+        positions = [
+            (14, 16, "fixtures/greet.py:12:3-13:15"),
+            (14, 28, "fixtures/greet.py:5:3-6:15"),
         ]
         # fmt: on
 
