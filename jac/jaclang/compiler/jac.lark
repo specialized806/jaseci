@@ -373,14 +373,14 @@ rfstr_tsq_part: RF_TEXT_TSQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COL
 
 fformat: F_FORMAT_TEXT | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
-RF_DQ_START.10: /[rR][fF]"|[fF][rR]"/
-RF_SQ_START.10: /[rR][fF]'|[fF][rR]'/
-RF_TDQ_START.10: /[rR][fF]"""|[fF][rR]"""/
-RF_TSQ_START.10: /[rR][fF]'''|[fF][rR]'''/
-F_DQ_START.9: /[fF]"/
-F_SQ_START.9: /[fF]'/
-F_TDQ_START.9: /[fF]"""/
-F_TSQ_START.9: /[fF]'''/
+RF_DQ_START.3: /[rR][fF]"|[fF][rR]"/
+RF_SQ_START.3: /[rR][fF]'|[fF][rR]'/
+RF_TDQ_START.3: /[rR][fF]"""|[fF][rR]"""/
+RF_TSQ_START.3: /[rR][fF]'''|[fF][rR]'''/
+F_DQ_START.2: /[fF]"/
+F_SQ_START.2: /[fF]'/
+F_TDQ_START.2: /[fF]"""/
+F_TSQ_START.2: /[fF]'''/
 
 F_DQ_END: "\""
 F_SQ_END: "'"
@@ -694,7 +694,7 @@ DOT_BKWD: "<."
 // Comments and Whitespace                                                   //
 // ************************************************************************* //
 
-COMMENT: /#\*(.|\n|\r)*?\*#|#.*/
+COMMENT.4: /#\*(.|\n|\r)*?\*#|#.*/
 WS.-2: /[ \t\f\r\n]/+
 %ignore COMMENT
 %ignore WS
