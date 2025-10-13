@@ -150,24 +150,43 @@ class SymTabBuildPass(UniPass):
         node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
-        # If inside any method(not static) and the attribute chain starts with 'self',
-        # insert the symbol into the class (archetype) symbol table to ensure proper member registration.
+        """Handle attribute access for self member assignments."""
+        if not self._is_self_member_assignment(node):
+            return
+
         chain = node.as_attr_list
-        if (
-            node.parent
-            and isinstance(node.parent, uni.Assignment)
-            and node == node.parent.target[0]  # TODO: check for all targets
-            and len(chain) == 2
-            and (ability := node.find_parent_of_type(uni.Ability))
+        ability = node.find_parent_of_type(uni.Ability)
+
+        # Register the attribute in the archetype's symbol table
+        # Example: self.attr = value → add 'attr' to archetype.sym_tab
+        if ability and ability.method_owner:
+            archetype = ability.method_owner
+            if isinstance(archetype, uni.Archetype):
+                archetype.sym_tab.def_insert(chain[1], access_spec=archetype)
+
+    def _is_self_member_assignment(self, node: uni.AtomTrailer) -> bool:
+        """Check if the node represents a simple `self.attr = value` assignment."""
+        # Must be inside an assignment as the target
+        if not (node.parent and isinstance(node.parent, uni.Assignment)):
+            return False
+
+        if node != node.parent.target[0]:  # TODO: Support multiple assignment targets
+            return False
+
+        chain = node.as_attr_list
+
+        # Must be a direct self attribute (no nested attributes)
+        if len(chain) != 2 or chain[0].sym_name != "self":
+            return False
+
+        # Must be inside a non-static, non-class instance method
+        ability = node.find_parent_of_type(uni.Ability)
+        return (
+            ability is not None
             and ability.is_method
-            and isinstance(ability.method_owner, uni.Archetype)
             and not ability.is_static
             and not ability.is_cls_method
-            and chain[0].sym_name == "self"
-        ):
-            arch = ability.find_parent_of_type(uni.Archetype)
-            if arch:
-                arch.sym_tab.def_insert(chain[1], access_spec=arch)
+        )
 
     def exit_enum(self, node: uni.Enum) -> None:
         self.pop_scope()
