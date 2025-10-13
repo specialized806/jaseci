@@ -48,7 +48,7 @@ jobs:
       run: |
         echo "TEST_ENV=true" >> $GITHUB_ENV
     - name: Run tests
-      run: pytest jac jac-cloud jac-byllm jac-streamlit
+      run: pytest -x jac jac-cloud jac-byllm jac-streamlit
     - name: Run jac-cloud tests with DB
       run: pytest -x jac-cloud
       env:
