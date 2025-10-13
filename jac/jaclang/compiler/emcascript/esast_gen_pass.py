@@ -220,7 +220,7 @@ class EsastGenPass(UniPass):
         """Process import statement."""
         if node.from_loc and node.items:
             source = self.sync_loc(
-                es.Literal(value=node.from_loc.path_str), jac_node=node.from_loc
+                es.Literal(value=node.from_loc.dot_path_str), jac_node=node.from_loc
             )
             specifiers: list[
                 Union[
@@ -1835,8 +1835,9 @@ class EsastGenPass(UniPass):
 
     def exit_int(self, node: uni.Int) -> None:
         """Process integer literal."""
+        # Use base 0 to auto-detect binary (0b), octal (0o), hex (0x), or decimal
         int_lit = self.sync_loc(
-            es.Literal(value=int(node.value), raw=node.value), jac_node=node
+            es.Literal(value=int(node.value, 0), raw=node.value), jac_node=node
         )
         node.gen.es_ast = int_lit
 

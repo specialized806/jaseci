@@ -629,6 +629,108 @@ class TestServeCommand(TestCase):
 
         mach.close()
 
+    def test_csr_mode_empty_root(self) -> None:
+        """Test CSR mode returns empty __jac_root for client-side rendering."""
+        self._start_server()
+
+        # Create user
+        create_result = self._request(
+            "POST",
+            "/user/create",
+            {"username": "csruser", "password": "pass"}
+        )
+        token = create_result["token"]
+
+        # Request page in CSR mode using query parameter
+        status, html_body, headers = self._request_raw(
+            "GET",
+            "/page/client_page?mode=csr",
+            token=token,
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers.get("Content-Type", ""))
+
+        # In CSR mode, __jac_root should be empty (no SSR)
+        self.assertIn('<div id="__jac_root"></div>', html_body)
+
+        # But __jac_init__ and client.js should still be present
+        self.assertIn('<script id="__jac_init__" type="application/json">', html_body)
+        self.assertIn("/static/client.js?hash=", html_body)
+
+        # __jac_init__ should still contain the function name and args
+        self.assertIn('"function": "client_page"', html_body)
+
+    def test_ssr_mode_has_content(self) -> None:
+        """Test SSR mode (default) returns pre-rendered HTML in __jac_root."""
+        self._start_server()
+
+        # Create user
+        create_result = self._request(
+            "POST",
+            "/user/create",
+            {"username": "ssruser", "password": "pass"}
+        )
+        token = create_result["token"]
+
+        # Request page in SSR mode (default, no mode param)
+        status, html_body, headers = self._request_raw(
+            "GET",
+            "/page/client_page",
+            token=token,
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers.get("Content-Type", ""))
+
+        # In SSR mode, __jac_root should have pre-rendered content
+        self.assertIn("<div id=\"__jac_root\">", html_body)
+        self.assertIn("Runtime Test", html_body)  # Content from the client_page function
+
+        # __jac_init__ and client.js should still be present for hydration
+        self.assertIn('<script id="__jac_init__" type="application/json">', html_body)
+        self.assertIn("/static/client.js?hash=", html_body)
+
+    def test_csr_mode_with_server_default(self) -> None:
+        """Test server initialized with CSR as default render mode."""
+        # Load module
+        base, mod, mach = cli.proc_file_sess(
+            self.fixture_abs_path("serve_api.jac"), ""
+        )
+        Jac.set_base_path(base)
+        Jac.jac_import(
+            target=mod,
+            base_path=base,
+            override_name="__main__",
+            lng="jac",
+        )
+
+        # Create server with CSR as default
+        server = JacAPIServer(
+            module_name="__main__",
+            session_path=self.session_file,
+            port=9998,
+            render_mode="csr",
+        )
+        server.load_module()
+
+        # Create a test user
+        server.user_manager.create_user("testuser", "testpass")
+
+        # Call render_client_page without specifying mode (should use server default)
+        result = server.render_client_page(
+            function_name="client_page",
+            args={},
+            username="testuser",
+        )
+
+        # Should have empty HTML body (CSR mode)
+        self.assertIn("html", result)
+        html_content = result["html"]
+        self.assertIn('<div id="__jac_root"></div>', html_content)
+
+        mach.close()
+
     def test_root_data_persistence_across_server_restarts(self) -> None:
         """Test that user data and graph persist across server restarts.
 

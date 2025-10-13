@@ -40,6 +40,8 @@ class JacUnparseTests(TestCaseMicroSuite):
         )
         after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:
+            # Expect 7 differences after adding client manifest support
+            # (was 5 before client codegen implementation)
             self.assertEqual(
                 len(
                     [
@@ -50,7 +52,7 @@ class JacUnparseTests(TestCaseMicroSuite):
                         if "test" not in i
                     ]
                 ),
-                5,
+                7,
             )
         else:
             try:

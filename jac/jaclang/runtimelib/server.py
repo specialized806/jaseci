@@ -203,12 +203,24 @@ class JacAPIServer:
         session_path: str,
         port: int = 8000,
         base_path: str | None = None,
+        render_mode: str = "ssr",
     ) -> None:
-        """Initialize the API server."""
+        """Initialize the API server.
+
+        Args:
+            module_name: Name of the module to serve
+            session_path: Path to session storage
+            port: Port to listen on
+            base_path: Base path for module imports
+            render_mode: Default render mode - "ssr"
+                (server-side rendering + hydration) or "csr"
+                (client-side rendering only)
+        """
         self.module_name = module_name
         self.session_path = session_path
         self.port = port
         self.base_path = os.path.abspath(base_path) if base_path else None
+        self.render_mode = render_mode if render_mode in ("ssr", "csr") else "ssr"
         self.user_manager = UserManager(session_path)
         self.module = None
         self._function_cache: dict[str, Callable] = {}
@@ -279,20 +291,41 @@ class JacAPIServer:
         function_name: str,
         args: dict[str, Any],
         username: str,
+        mode: str | None = None,
     ) -> dict[str, Any]:
-        """Render a client-marked function to HTML (non-HTTP helper)."""
+        """Render a client-marked function to HTML (non-HTTP helper).
+
+        Args:
+            function_name: Name of the client function to render
+            args: Arguments to pass to the function
+            username: Username for authentication context
+            mode: Render mode - "ssr" (server-side rendering + hydration) or "csr" (client-side rendering only).
+                  If None, uses the server's default render_mode.
+        """
         self.load_module()
         client_functions = self.get_client_functions()
         available_exports = set(self._client_exports) or set(client_functions.keys())
         if function_name not in available_exports:
             raise ValueError(f"Client function '{function_name}' not found")
 
+        # Use provided mode or fall back to server default
+        render_mode = mode if mode in ("ssr", "csr") else self.render_mode
+
         func = client_functions.get(function_name)
-        render_result = self._render_client_function(
-            function_name, func, args, username
-        )
-        if "error" in render_result:
-            raise RuntimeError(render_result["error"])
+
+        # For CSR mode, skip server-side rendering
+        if render_mode == "csr":
+            html_body = ""  # Empty - client will render everything
+            arg_order = list(self._client_params.get(function_name, []))
+        else:
+            # SSR mode - render on server and hydrate on client
+            render_result = self._render_client_function(
+                function_name, func, args, username
+            )
+            if "error" in render_result:
+                raise RuntimeError(render_result["error"])
+            html_body = render_result["html"]
+            arg_order = render_result.get("arg_order", [])
 
         bundle_hash = self._ensure_client_bundle()
         if not bundle_hash or not self._client_bundle:
@@ -309,7 +342,6 @@ class JacAPIServer:
             for name, value in self._client_globals.items()
         }
         raw_args = {key: serialize_for_response(value) for key, value in args.items()}
-        arg_order = render_result.get("arg_order", [])
         initial_state = {
             "module": module_name,
             "function": function_name,
@@ -326,7 +358,6 @@ class JacAPIServer:
             initial_state["args"] = serializable_args
             initial_json = json.dumps(initial_state)
         safe_initial_json = initial_json.replace("</", "<\\/")
-        html_body = render_result["html"]
         page = (
             "<!DOCTYPE html>"
             '<html lang="en">'
@@ -750,9 +781,17 @@ class JacAPIServer:
                 if path.startswith("/page/"):
                     func_name = path.split("/")[-1]
                     query_params = parse_qs(parsed_path.query, keep_blank_values=True)
+
+                    # Extract render mode from query params (if provided)
+                    render_mode = None
+                    if "mode" in query_params:
+                        render_mode = query_params["mode"][0]
+
+                    # Build args dict excluding the 'mode' parameter
                     args: dict[str, Any] = {
                         key: values[0] if len(values) == 1 else values
                         for key, values in query_params.items()
+                        if key != "mode"
                     }
 
                     # Try to authenticate, but allow unauthenticated access
@@ -766,7 +805,7 @@ class JacAPIServer:
 
                     try:
                         render_payload = server.render_client_page(
-                            func_name, args, username
+                            func_name, args, username, mode=render_mode
                         )
                     except ValueError as exc:
                         self._send_json_response(404, {"error": str(exc)})
@@ -849,13 +888,21 @@ class JacAPIServer:
                 elif path.startswith("/page/"):
                     func_name = path.split("/")[-1]
                     query_params = parse_qs(parsed_path.query, keep_blank_values=True)
+
+                    # Extract render mode from query params (if provided)
+                    render_mode = None
+                    if "mode" in query_params:
+                        render_mode = query_params["mode"][0]
+
+                    # Build args dict excluding the 'mode' parameter
                     pargs: dict[str, Any] = {
                         key: values[0] if len(values) == 1 else values
                         for key, values in query_params.items()
+                        if key != "mode"
                     }
                     try:
                         render_payload = server.render_client_page(
-                            func_name, pargs, username
+                            func_name, pargs, username, mode=render_mode
                         )
                     except ValueError as exc:
                         self._send_json_response(404, {"error": str(exc)})
