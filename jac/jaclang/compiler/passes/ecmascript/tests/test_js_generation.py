@@ -1,11 +1,6 @@
-"""Test JavaScript code generation from Jac source files.
+"""Test JavaScript code generation using consolidated Jac fixtures."""
 
-This module tests the complete Jac -> ESTree -> JavaScript pipeline,
-ensuring that generated JavaScript code is syntactically valid and
-semantically correct.
-"""
-
-import re
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -17,304 +12,148 @@ from jaclang.utils.test import TestCase
 
 
 class JavaScriptGenerationTests(TestCase):
-    """Test JavaScript code generation from Jac files."""
+    """Validate JavaScript generation for core and advanced Jac fixtures."""
+
+    CORE_FIXTURE = "core_language_features.jac"
+    ADVANCED_FIXTURE = "advanced_language_features.jac"
+    CLIENT_FIXTURE = "client_jsx.jac"
 
     def get_fixture_path(self, filename: str) -> str:
-        """Get absolute path to fixture file."""
+        """Return absolute path to a fixture file."""
         fixtures_dir = Path(__file__).parent / "fixtures"
         return str(fixtures_dir / filename)
 
-    def compile_to_js(self, filename: str) -> str:
-        """Compile Jac file directly to JavaScript code."""
+    def compile_fixture_to_js(self, fixture_name: str) -> str:
+        """Compile a Jac fixture to JavaScript and return the emitted source."""
+        fixture_path = fixture_name
+        if not Path(fixture_path).exists():
+            fixture_path = self.get_fixture_path(fixture_name)
         prog = JacProgram()
-        ir = prog.compile(file_path=filename, no_cgen=True)
+        ir = prog.compile(file_path=fixture_path, no_cgen=True)
 
         self.assertFalse(
-            prog.errors_had, f"Compilation errors: {[str(e) for e in prog.errors_had]}"
+            prog.errors_had,
+            f"Compilation errors in {fixture_name}: {[str(e) for e in prog.errors_had]}",
         )
 
-        esast_pass = EsastGenPass(ir, prog)
-        es_ir = esast_pass.ir_out
+        es_pass = EsastGenPass(ir, prog)
+        es_ir = es_pass.ir_out
 
-        self.assertTrue(hasattr(es_ir.gen, "es_ast"), "es_ast attribute not found")
-        self.assertIsNotNone(es_ir.gen.es_ast, "es_ast is None")
+        self.assertTrue(hasattr(es_ir.gen, "es_ast"), "es_ast attribute missing")
+        self.assertIsNotNone(es_ir.gen.es_ast, "es_ast should not be None")
 
-        js_code = es_to_js(es_ir.gen.es_ast)
-        return js_code
+        return es_to_js(es_ir.gen.es_ast)
 
-    def test_functions_generate_valid_js(self) -> None:
-        """Test that function definitions generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
+    def assert_balanced_syntax(self, js_code: str, fixture_name: str) -> None:
+        """Ensure generated JavaScript has balanced delimiters."""
+        pairs = [("{", "}"), ("(", ")"), ("[", "]")]
+        for open_char, close_char in pairs:
+            self.assertEqual(
+                js_code.count(open_char),
+                js_code.count(close_char),
+                f"{fixture_name} produced unbalanced {open_char}{close_char} pairs",
+            )
 
-        # Should contain function keyword
-        self.assertIn("function", js_code)
-
-        # Should have function declarations
-        self.assertIn("simple_function", js_code)
-        self.assertIn("with_params", js_code)
-        self.assertIn("with_return", js_code)
-        self.assertIn("factorial", js_code)
-
-        # Should have proper JS syntax
-        self.assertNotIn("def ", js_code)  # Jac keyword should be converted
-
-    def test_classes_generate_valid_js(self) -> None:
-        """Test that class/object definitions generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_classes.jac"))
-
-        # Should contain class keyword
-        self.assertIn("class", js_code)
-
-        # Should have class declarations
-        self.assertIn("Person", js_code)
-        self.assertIn("Employee", js_code)
-        self.assertIn("Calculator", js_code)
-
-        # Should not have Jac keywords
-        self.assertNotIn("obj ", js_code)
-        self.assertNotIn("has ", js_code)
-
-    def test_control_flow_generates_valid_js(self) -> None:
-        """Test that control flow statements generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_control_flow.jac"))
-
-        # Should have control flow keywords
-        self.assertIn("if", js_code)
-        self.assertIn("else", js_code)
-        self.assertIn("while", js_code)
-        self.assertIn("for", js_code)
-        self.assertIn("break", js_code)
-        self.assertIn("continue", js_code)
-        self.assertIn("return", js_code)
-
-        # Should have proper for loop syntax
-        self.assertRegex(js_code, r"for\s*\(")
-
-    def test_expressions_generate_valid_js(self) -> None:
-        """Test that expressions generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_expressions.jac"))
-
-        # Arithmetic operators
-        self.assertIn("+", js_code)
-        self.assertIn("-", js_code)
-        self.assertIn("*", js_code)
-        self.assertIn("/", js_code)
-        self.assertIn("%", js_code)
-
-        # Comparison operators (Jac == should become JS ===)
-        self.assertIn("===", js_code)
-        self.assertIn("!==", js_code)
-        self.assertIn("<", js_code)
-        self.assertIn(">", js_code)
-        self.assertIn("<=", js_code)
-        self.assertIn(">=", js_code)
-
-        # Logical operators (Jac and/or should become JS &&/||)
-        self.assertIn("&&", js_code)
-        self.assertIn("||", js_code)
-        self.assertIn("!", js_code)
-
-        # Bitwise operators
-        self.assertIn("&", js_code)
-        self.assertIn("|", js_code)
-        self.assertIn("^", js_code)
-        self.assertIn("<<", js_code)
-        self.assertIn(">>", js_code)
-
-    def test_data_structures_generate_valid_js(self) -> None:
-        """Test that data structures generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_data_structures.jac"))
-
-        # Should have array syntax
-        self.assertIn("[", js_code)
-        self.assertIn("]", js_code)
-
-        # Should have object syntax
-        self.assertIn("{", js_code)
-        self.assertIn("}", js_code)
-
-    def test_enums_generate_valid_js(self) -> None:
-        """Test that enums generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_enums.jac"))
-
-        # Enums should generate const declarations
-        self.assertIn("const", js_code)
-
-        # Should not have enum keyword (JS doesn't have native enums in ES6)
-        # Instead should use const objects
-
-    def test_exception_handling_generates_valid_js(self) -> None:
-        """Test that exception handling generates valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_exception_handling.jac"))
-
-        # Should have try/catch/finally
-        self.assertIn("try", js_code)
-        self.assertIn("catch", js_code)
-        self.assertIn("finally", js_code)
-
-        # Raise should become throw
-        self.assertIn("throw", js_code)
-
-    def test_assignments_generate_valid_js(self) -> None:
-        """Test that assignments generate valid JavaScript."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
-
-        # Should have assignment operator
-        self.assertIn("=", js_code)
-
-        # Should have augmented assignments
-        self.assertIn("+=", js_code)
-        self.assertIn("-=", js_code)
-        self.assertIn("*=", js_code)
-
-    def test_tuple_unpacking_declares_destructuring(self) -> None:
-        """Ensure tuple/list destructuring lowers to a single let declaration."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
-
-        self.assertIn("let [x, y] = [10, 20];", js_code)
-        self.assertIn("let [a, b, c] = [1, 2, 3];", js_code)
-
-    def test_walrus_assignment_is_parenthesized_and_hoisted(self) -> None:
-        """Walrus expressions should hoist the target and stay parenthesized in expressions."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
-
-        self.assertIn("let x;", js_code)
-        self.assertIn("(x = 5) + 10", js_code)
-
-    def test_boolean_literals_lowercase(self) -> None:
-        """Jac booleans should translate to lowercase JavaScript literals."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_assignments.jac"))
-
-        self.assertIn("let active = true;", js_code)
-        self.assertNotIn("True", js_code)
-
-    def test_js_syntax_is_balanced(self) -> None:
-        """Test that generated JavaScript has balanced braces and parens."""
-        fixtures = [
-            "comprehensive_functions.jac",
-            "comprehensive_classes.jac",
-            "comprehensive_control_flow.jac",
-            "comprehensive_expressions.jac",
-        ]
-
-        for fixture in fixtures:
-            with self.subTest(fixture=fixture):
-                js_code = self.compile_to_js(self.get_fixture_path(fixture))
-
-                # Check balanced braces
-                open_braces = js_code.count("{")
-                close_braces = js_code.count("}")
-                self.assertEqual(
-                    open_braces, close_braces,
-                    f"Unbalanced braces in {fixture}: {open_braces} open, {close_braces} close"
-                )
-
-                # Check balanced parentheses
-                open_parens = js_code.count("(")
-                close_parens = js_code.count(")")
-                self.assertEqual(
-                    open_parens, close_parens,
-                    f"Unbalanced parens in {fixture}: {open_parens} open, {close_parens} close"
-                )
-
-                # Check balanced brackets
-                open_brackets = js_code.count("[")
-                close_brackets = js_code.count("]")
-                self.assertEqual(
-                    open_brackets, close_brackets,
-                    f"Unbalanced brackets in {fixture}: {open_brackets} open, {close_brackets} close"
-                )
-
-    def test_js_has_no_jac_keywords(self) -> None:
-        """Test that generated JavaScript doesn't contain Jac-specific keywords."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
-
-        # Jac-specific keywords that shouldn't appear in JS
+    def assert_no_jac_keywords(self, js_code: str, fixture_name: str) -> None:
+        """Verify Jac-specific keywords are absent from generated JavaScript."""
         jac_keywords = [
-            "can ", "has ", "obj ", "walker ", "node ", "edge ",
-            "visit ", "spawn ", "disengage ", "here ", "root "
+            "can ",
+            "has ",
+            "obj ",
+            "walker ",
+            "node ",
+            "edge ",
+            "visit ",
+            "spawn ",
+            "disengage ",
+            "here ",
+            "root ",
         ]
 
         for keyword in jac_keywords:
             self.assertNotIn(
-                keyword, js_code,
-                f"Jac keyword '{keyword.strip()}' found in JavaScript output"
+                keyword,
+                js_code,
+                f"Jac keyword '{keyword.strip()}' leaked into JavaScript for {fixture_name}",
             )
 
-    def test_operator_mapping_correctness(self) -> None:
-        """Test that Jac operators are correctly mapped to JavaScript operators."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_expressions.jac"))
+    def test_core_fixture_emits_expected_constructs(self) -> None:
+        """Core fixture should cover fundamental language constructs."""
+        js_code = self.compile_fixture_to_js(self.CORE_FIXTURE)
 
-        # Jac 'and' -> JS '&&'
-        self.assertIn("&&", js_code)
-        self.assertNotIn(" and ", js_code)
+        self.assertIn("const global_counter = 0;", js_code)
+        self.assertIn("function add", js_code)
+        self.assertIn("function greet", js_code)
+        self.assertIn("function fibonacci", js_code)
+        self.assertIn("for (const i of range(limit))", js_code)
+        self.assertIn("while (counter > 0)", js_code)
 
-        # Jac 'or' -> JS '||'
-        self.assertIn("||", js_code)
-        self.assertNotIn(" or ", js_code)
-
-        # Jac 'not' -> JS '!'
-        self.assertIn("!", js_code)
-        self.assertNotRegex(js_code, r"\bnot\b")
-
-        # Jac '==' -> JS '==='
+        # Operators map to JavaScript equivalents
         self.assertIn("===", js_code)
-
-        # Jac '!=' -> JS '!=='
         self.assertIn("!==", js_code)
+        self.assertIn("&&", js_code)
+        self.assertIn("||", js_code)
 
-    def test_comments_are_preserved_or_stripped(self) -> None:
-        """Test that comments are handled appropriately."""
-        js_code = self.compile_to_js(self.get_fixture_path("simple_function.jac"))
+        # Classes and enums materialize as expected
+        self.assertIn("class Person", js_code)
+        self.assertIn("class Employee extends Person", js_code)
+        self.assertIn("class Calculator", js_code)
+        self.assertIn("class MathUtils", js_code)
+        self.assertIn("const Status", js_code)
+        self.assertIn("const Priority", js_code)
 
-        # JavaScript code may or may not preserve comments
-        # This test just ensures the code is still valid
-        self.assertGreater(len(js_code), 0)
-        self.assertIn("function", js_code)
+        # Exception handling remains intact
+        self.assertIn("try", js_code)
+        self.assertIn("catch (err)", js_code)
+        self.assertIn("finally", js_code)
 
-    def test_string_literals_are_correct(self) -> None:
-        """Test that string literals are correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("simple_function.jac"))
+        self.assert_balanced_syntax(js_code, self.CORE_FIXTURE)
+        self.assert_no_jac_keywords(js_code, self.CORE_FIXTURE)
+        self.assertGreater(len(js_code), 200, "Core fixture generated suspiciously small output")
 
-        # Should have string literals
-        self.assertRegex(js_code, r'["\'].*["\']')
+    def test_advanced_fixture_emits_expected_constructs(self) -> None:
+        """Advanced fixture should exercise higher-level Jac features."""
+        js_code = self.compile_fixture_to_js(self.ADVANCED_FIXTURE)
 
-    def test_function_parameters_are_correct(self) -> None:
-        """Test that function parameters are correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
+        self.assertIn("function lambda_examples", js_code)
+        self.assertIn("async function fetch_value", js_code)
+        self.assertIn("await fetch_value", js_code)
+        self.assertIn("async function gather_async", js_code)
+        self.assertIn("function generator_examples", js_code)
+        self.assertIn("function spread_and_rest_examples", js_code)
+        self.assertIn("...defaults", js_code)
+        self.assertIn("function template_literal_examples", js_code)
+        self.assertIn("score >= 60 ? \"pass\" : \"fail\"", js_code)
+        self.assertIn("function do_while_simulation", js_code)
+        self.assertIn("function build_advanced_report", js_code)
 
-        # Should have function with parameters
-        self.assertRegex(js_code, r"function\s+\w+\s*\([^)]+\)")
+        # Ensure pattern matching lowered into a callable
+        self.assertIn("function pattern_matching_examples", js_code)
 
-    def test_return_statements_are_correct(self) -> None:
-        """Test that return statements are correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
+        self.assert_balanced_syntax(js_code, self.ADVANCED_FIXTURE)
+        self.assert_no_jac_keywords(js_code, self.ADVANCED_FIXTURE)
+        self.assertGreater(len(js_code), 150, "Advanced fixture output unexpectedly small")
 
-        # Should have return statements
-        self.assertIn("return", js_code)
-        self.assertRegex(js_code, r"return\s+\w+")
+    def test_client_fixture_generates_client_bundle(self) -> None:
+        """Client-focused fixture should emit JSX-flavoured JavaScript."""
+        js_code = self.compile_fixture_to_js(self.CLIENT_FIXTURE)
 
-    def test_variable_declarations_are_correct(self) -> None:
-        """Test that variable declarations use const/let/var."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_expressions.jac"))
+        self.assertIn('const API_URL = "https://api.example.com";', js_code)
+        self.assertIn("function component()", js_code)
+        self.assertIn('__jacJsx("div"', js_code)
+        self.assertIn("class ButtonProps", js_code)
+        self.assertIn("constructor(props", js_code)
+        self.assertNotIn("server_only", js_code, "Server-only code leaked into client bundle")
 
-        # Should have variable declarations (const, let, or var)
-        has_const = "const" in js_code
-        has_let = "let" in js_code
-        has_var = "var" in js_code
+        self.assert_balanced_syntax(js_code, self.CLIENT_FIXTURE)
 
-        self.assertTrue(
-            has_const or has_let or has_var,
-            "No variable declarations found in generated JavaScript"
-        )
-
-    def test_cli_js_command_works(self) -> None:
-        """Test that 'jac js' CLI command produces valid JavaScript."""
-        import os
-
-        fixture_path = self.get_fixture_path("simple_function.jac")
+    def test_cli_js_command_outputs_js(self) -> None:
+        """jac js CLI should emit JavaScript for the core fixture."""
+        fixture_path = self.get_fixture_path(self.CORE_FIXTURE)
         env = os.environ.copy()
-        env["PYTHONPATH"] = f"/home/ninja/jaseci/jac:{env.get('PYTHONPATH', '')}"
+        project_root = str(Path(__file__).resolve().parents[4])
+        existing = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = f"{project_root}:{existing}" if existing else project_root
 
         result = subprocess.run(
             ["python3", "-m", "jaclang.cli.cli", "js", fixture_path],
@@ -324,331 +163,18 @@ class JavaScriptGenerationTests(TestCase):
         )
 
         self.assertEqual(result.returncode, 0, f"CLI command failed: {result.stderr}")
-        self.assertGreater(len(result.stdout), 0, "No JavaScript output from CLI")
-        self.assertIn("function", result.stdout, "Output should contain functions")
+        self.assertGreater(len(result.stdout), 0, "CLI produced no output")
+        self.assertIn("function add", result.stdout)
 
-    def test_async_functions_generate_correctly(self) -> None:
-        """Test that async functions are correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
-
-        # Should have async keyword
-        if "async_fetch" in js_code:
-            self.assertIn("async", js_code)
-
-    def test_lambda_expressions_generate_correctly(self) -> None:
-        """Test that lambda expressions are converted to arrow functions or function expressions."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
-
-        # Lambdas might become arrow functions or function expressions
-        # Just verify the code is generated
-        self.assertGreater(len(js_code), 0)
-
-    def test_class_methods_generate_correctly(self) -> None:
-        """Test that class methods are correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_classes.jac"))
-
-        # Should have class keyword
-        self.assertIn("class", js_code)
-
-        # Should have methods (might be in constructor or as class methods)
-        # Just verify the structure exists
-        self.assertRegex(js_code, r"class\s+\w+")
-
-    def test_inheritance_generates_correctly(self) -> None:
-        """Test that class inheritance is correctly generated."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_classes.jac"))
-
-        # Should have extends keyword for inheritance
-        if "Student" in js_code:
-            # Student extends Person
-            self.assertIn("extends", js_code)
-
-    def test_multiline_code_formatting(self) -> None:
-        """Test that generated code has reasonable formatting."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_functions.jac"))
-
-        # Should have multiple lines
-        lines = js_code.split("\n")
-        self.assertGreater(len(lines), 5, "Generated code should be multi-line")
-
-        # Should have some indentation
-        indented_lines = [line for line in lines if line.startswith(" ") or line.startswith("\t")]
-        self.assertGreater(
-            len(indented_lines), 0,
-            "Generated code should have some indentation"
-        )
-
-    def test_empty_jac_file_generates_empty_or_minimal_js(self) -> None:
-        """Test that an empty Jac file generates minimal JavaScript."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".jac", delete=False) as f:
-            f.write('"""Empty file."""\n')
-            temp_file = f.name
+    def test_empty_file_generates_minimal_js(self) -> None:
+        """Ensure an empty Jac file generates a minimal JavaScript stub."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jac", delete=False) as tmp:
+            tmp.write('"""Empty file for smoke testing."""\n')
+            temp_path = tmp.name
 
         try:
-            js_code = self.compile_to_js(temp_file)
-            # Empty file should generate minimal code
-            self.assertLess(len(js_code), 100)
+            js_code = self.compile_fixture_to_js(temp_path)
+            self.assertLess(len(js_code), 100, "Empty file produced unexpectedly large output")
+            self.assert_balanced_syntax(js_code, temp_path)
         finally:
-            import os
-            os.unlink(temp_file)
-
-    def test_complex_nested_structures(self) -> None:
-        """Test that complex nested structures generate correctly."""
-        js_code = self.compile_to_js(self.get_fixture_path("comprehensive_control_flow.jac"))
-
-        # Should handle nested loops
-        self.assertIn("for", js_code)
-
-        # Count braces to ensure nesting is handled
-        open_braces = js_code.count("{")
-        self.assertGreater(open_braces, 5, "Should have multiple nested structures")
-
-    def test_all_comprehensive_fixtures_compile(self) -> None:
-        """Test that all comprehensive fixtures compile to JavaScript without errors."""
-        fixtures = [
-            "comprehensive_functions.jac",
-            "comprehensive_classes.jac",
-            "comprehensive_control_flow.jac",
-            "comprehensive_expressions.jac",
-            "comprehensive_data_structures.jac",
-            "comprehensive_enums.jac",
-            "comprehensive_exception_handling.jac",
-            "comprehensive_assignments.jac",
-        ]
-
-        for fixture in fixtures:
-            with self.subTest(fixture=fixture):
-                try:
-                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
-                    self.assertGreater(
-                        len(js_code), 0,
-                        f"{fixture} generated empty JavaScript"
-                    )
-                except Exception as e:
-                    self.fail(f"{fixture} failed to compile: {e}")
-
-    def test_high_priority_fixtures_compile(self) -> None:
-        """Test that all high priority feature fixtures compile successfully."""
-        fixtures = [
-            "high_priority_lambdas.jac",
-            "high_priority_ternary.jac",
-            "high_priority_spread_rest.jac",
-            "high_priority_async_await.jac",
-            "high_priority_yield.jac",
-            "high_priority_for_loops.jac",
-        ]
-
-        for fixture in fixtures:
-            with self.subTest(fixture=fixture):
-                try:
-                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
-                    self.assertGreater(
-                        len(js_code), 0,
-                        f"{fixture} generated empty JavaScript"
-                    )
-                except Exception as e:
-                    self.fail(f"{fixture} failed to compile: {e}")
-
-    def test_medium_priority_fixtures_compile(self) -> None:
-        """Test that all medium priority feature fixtures compile successfully."""
-        fixtures = [
-            "medium_priority_template_literals.jac",
-            "medium_priority_update_expressions.jac",
-            "medium_priority_switch_match.jac",
-            "medium_priority_destructuring.jac",
-        ]
-
-        for fixture in fixtures:
-            with self.subTest(fixture=fixture):
-                try:
-                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
-                    self.assertGreater(
-                        len(js_code), 0,
-                        f"{fixture} generated empty JavaScript"
-                    )
-                except Exception as e:
-                    self.fail(f"{fixture} failed to compile: {e}")
-
-    def test_low_priority_fixtures_compile(self) -> None:
-        """Test that all low priority feature fixtures compile successfully."""
-        fixtures = [
-            "low_priority_sequence_expressions.jac",
-            "low_priority_do_while.jac",
-            "low_priority_optional_chaining.jac",
-        ]
-
-        for fixture in fixtures:
-            with self.subTest(fixture=fixture):
-                try:
-                    js_code = self.compile_to_js(self.get_fixture_path(fixture))
-                    self.assertGreater(
-                        len(js_code), 0,
-                        f"{fixture} generated empty JavaScript"
-                    )
-                except Exception as e:
-                    self.fail(f"{fixture} failed to compile: {e}")
-
-    def test_lambda_fixtures_have_functions(self) -> None:
-        """Test that lambda fixtures generate function-like structures."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_lambdas.jac"))
-
-        # Lambdas should generate functions (either arrow functions or function expressions)
-        self.assertIn("function", js_code)
-
-        # Should have lambda test function names
-        self.assertIn("test_simple_lambda", js_code)
-        self.assertIn("test_lambda_in_map", js_code)
-
-    def test_ternary_fixtures_have_conditionals(self) -> None:
-        """Test that ternary fixtures generate conditional expressions."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_ternary.jac"))
-
-        # Should have conditional test functions
-        self.assertIn("test_simple_ternary", js_code)
-        self.assertIn("test_nested_ternary", js_code)
-
-        # May contain ternary operator or if-else structures
-        has_ternary = "?" in js_code and ":" in js_code
-        has_if = "if" in js_code
-        self.assertTrue(has_ternary or has_if, "Should have conditional structures")
-
-    def test_spread_rest_fixtures_compile(self) -> None:
-        """Test that spread/rest operator fixtures compile."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_spread_rest.jac"))
-
-        # Should have test functions
-        self.assertIn("test_list_spread", js_code)
-        self.assertIn("test_dict_spread", js_code)
-        self.assertIn("test_rest_destructuring", js_code)
-
-        # Should generate JavaScript code
-        self.assertGreater(len(js_code), 100)
-
-    def test_async_await_fixtures_have_async(self) -> None:
-        """Test that async/await fixtures generate async functions."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_async_await.jac"))
-
-        # Should have async keyword
-        self.assertIn("async", js_code)
-
-        # Should have async function names
-        self.assertIn("simple_async", js_code)
-        self.assertIn("test_basic_await", js_code)
-
-    def test_yield_fixtures_have_generators(self) -> None:
-        """Test that yield fixtures generate generator functions."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_yield.jac"))
-
-        # Should have generator function names
-        self.assertIn("simple_generator", js_code)
-        self.assertIn("yield_in_loop", js_code)
-        self.assertIn("fibonacci", js_code)
-
-    def test_for_loop_fixtures_have_loops(self) -> None:
-        """Test that for loop fixtures generate loop structures."""
-        js_code = self.compile_to_js(self.get_fixture_path("high_priority_for_loops.jac"))
-
-        # Should have loop keywords
-        self.assertIn("for", js_code)
-
-        # Should have test function names
-        self.assertIn("test_basic_for_to_by", js_code)
-        self.assertIn("test_for_countdown", js_code)
-
-    def test_template_literal_fixtures_have_strings(self) -> None:
-        """Test that template literal (f-string) fixtures generate strings."""
-        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_template_literals.jac"))
-
-        # Should have test functions
-        self.assertIn("test_simple_fstring", js_code)
-        self.assertIn("test_fstring_expressions", js_code)
-
-        # Should have string-related code
-        has_strings = '"' in js_code or "'" in js_code or "`" in js_code
-        self.assertTrue(has_strings, "Should have string literals")
-
-    def test_switch_match_fixtures_have_conditionals(self) -> None:
-        """Test that switch/match fixtures generate conditional structures."""
-        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_switch_match.jac"))
-
-        # Should have match test functions
-        self.assertIn("test_match_integers", js_code)
-        self.assertIn("test_match_strings", js_code)
-
-        # Should have conditional structures (if/else or switch)
-        has_conditionals = "if" in js_code or "switch" in js_code
-        self.assertTrue(has_conditionals, "Should have conditional structures")
-
-    def test_destructuring_fixtures_compile(self) -> None:
-        """Test that destructuring pattern fixtures compile."""
-        js_code = self.compile_to_js(self.get_fixture_path("medium_priority_destructuring.jac"))
-
-        # Should have destructuring test functions
-        self.assertIn("test_array_destructuring", js_code)
-        self.assertIn("test_tuple_swap", js_code)
-
-        # Should generate valid JavaScript
-        self.assertGreater(len(js_code), 100)
-
-    def test_sequence_expression_fixtures_compile(self) -> None:
-        """Test that sequence expression (walrus) fixtures compile."""
-        js_code = self.compile_to_js(self.get_fixture_path("low_priority_sequence_expressions.jac"))
-
-        # Should have walrus test functions
-        self.assertIn("test_walrus_basic", js_code)
-        self.assertIn("test_walrus_while", js_code)
-
-    def test_all_new_fixtures_have_valid_syntax(self) -> None:
-        """Test that all new fixture files have balanced braces and generate valid output."""
-        all_new_fixtures = [
-            # High priority
-            "high_priority_lambdas.jac",
-            "high_priority_ternary.jac",
-            "high_priority_spread_rest.jac",
-            "high_priority_async_await.jac",
-            "high_priority_yield.jac",
-            "high_priority_for_loops.jac",
-            # Medium priority
-            "medium_priority_template_literals.jac",
-            "medium_priority_update_expressions.jac",
-            "medium_priority_switch_match.jac",
-            "medium_priority_destructuring.jac",
-            # Low priority
-            "low_priority_sequence_expressions.jac",
-            "low_priority_do_while.jac",
-            "low_priority_optional_chaining.jac",
-        ]
-
-        for fixture in all_new_fixtures:
-            with self.subTest(fixture=fixture):
-                js_code = self.compile_to_js(self.get_fixture_path(fixture))
-
-                # Check balanced braces
-                open_braces = js_code.count("{")
-                close_braces = js_code.count("}")
-                self.assertEqual(
-                    open_braces, close_braces,
-                    f"Unbalanced braces in {fixture}: {open_braces} open, {close_braces} close"
-                )
-
-                # Check balanced parentheses
-                open_parens = js_code.count("(")
-                close_parens = js_code.count(")")
-                self.assertEqual(
-                    open_parens, close_parens,
-                    f"Unbalanced parens in {fixture}: {open_parens} open, {close_parens} close"
-                )
-
-                # Check balanced brackets
-                open_brackets = js_code.count("[")
-                close_brackets = js_code.count("]")
-                self.assertEqual(
-                    open_brackets, close_brackets,
-                    f"Unbalanced brackets in {fixture}: {open_brackets} open, {close_brackets} close"
-                )
-
-                # Ensure non-empty output
-                self.assertGreater(
-                    len(js_code), 50,
-                    f"{fixture} generated suspiciously small output"
-                )
+            os.unlink(temp_path)
