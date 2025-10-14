@@ -647,6 +647,25 @@ class TypeEvaluator {
                         }
                     }
                 }
+
+                # handle member access
+                # pyright handle this in getDeclInfoForNameNode()
+                if isinstance(node_.parent, uni.AtomTrailer) and node_.parent.parent
+                and isinstance(node_.parent.parent, uni.Assignment) {
+
+                    if node_.parent.parent.type_tag is not None {
+                        annotation_type = self.get_type_of_expression(
+                            node_.parent.parent.type_tag.tag
+                        );
+                        return self._convert_to_instance(annotation_type);
+                    }
+
+                    else {  # Assignment without a type annotation: obj.member = <expr>
+                        if node_.parent.parent.value is not None {
+                            return self.get_type_of_expression(node_.parent.parent.value);
+                        }
+                    }
+                }
                 if isinstance(node_.parent, uni.ModulePath) {
                     return self.get_type_of_module(node_.parent);
                 }
@@ -777,7 +796,7 @@ class TypeEvaluator {
     }
 
     def _set_symbol_to_expr(self: TypeEvaluator, expr: uni.Expr, sym: uni.Symbol) -> TypeBase {
-        expr.sym = sym;
+        sym.add_use(expr);
         expr.type = self.get_type_of_symbol(sym);
         return expr.type;
     }
@@ -788,7 +807,7 @@ class TypeEvaluator {
             isinstance(expr, uni.Name)
             and (expr.value == TOKEN_MAP[Tok.KW_SELF])
             and (fn := self._get_enclosing_method(expr))
-            and (not fn.is_static)
+            and (not fn.is_static) and (not fn.is_cls_method)
         ) {
             return True;
         }
@@ -818,11 +837,13 @@ class TypeEvaluator {
     }
 
     """Return the effective type of self."""
-    def _get_type_of_self(self: TypeEvaluator, node: uni.Name) -> TypeBase {
-        if method := self._get_enclosing_method(node) {
+    def _get_type_of_self(self: TypeEvaluator, node_: uni.Name) -> TypeBase {
+        if method := self._get_enclosing_method(node_) {
             cls = method.method_owner;
             if isinstance(cls, uni.Archetype) {
-                return self.get_type_of_class(cls).clone_as_instance();
+                node_.sym = cls.name_spec.sym;
+                node_.type = self.get_type_of_class(cls).clone_as_instance();
+                return node_.type;
             }
             if isinstance(cls, uni.Enum) {
                 # TODO: Implement type from enum.

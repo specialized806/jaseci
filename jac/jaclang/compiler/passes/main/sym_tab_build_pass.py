@@ -59,7 +59,15 @@ class SymTabBuildPass(UniPass):
                 if isinstance(j, uni.AstSymbolNode):
                     j.sym_tab.def_insert(j, access_spec=node, single_decl="global var")
                 else:
-                    self.ice("Expected name type for globabl vars")
+                    self.ice("Expected name type for global vars")
+
+    def exit_assignment(self, node: uni.Assignment) -> None:
+        for i in node.target:
+            if isinstance(i, uni.AstSymbolNode):
+                if (sym := i.sym_tab.lookup(i.sym_name, deep=False)) is None:
+                    i.sym_tab.def_insert(i, single_decl="local var")
+                else:
+                    sym.add_use(i.name_spec)
 
     def enter_test(self, node: uni.Test) -> None:
         self.push_scope_and_link(node)
@@ -148,6 +156,15 @@ class SymTabBuildPass(UniPass):
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
         node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
+
+    def enter_has_var(self, node: uni.HasVar) -> None:
+        if isinstance(node.parent, uni.ArchHas):
+            node.sym_tab.def_insert(
+                node, single_decl="has var", access_spec=node.parent
+            )
+
+    def enter_param_var(self, node: uni.ParamVar) -> None:
+        node.sym_tab.def_insert(node, single_decl="param")
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Handle attribute access for self member assignments."""
