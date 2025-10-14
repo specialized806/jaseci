@@ -695,7 +695,7 @@ class JacClassReferences:
     Root: TypeAlias = _Root
     GenericEdge: TypeAlias = _GenericEdge
 
-    Path: TypeAlias = ObjectSpatialPath
+    OPath: TypeAlias = ObjectSpatialPath
 
 
 class JacBuiltin:

@@ -2890,7 +2890,7 @@ class PyastGenPass(UniPass):
 
         pynode = self.sync(
             ast3.Call(
-                func=self.jaclib_obj("Path"),
+                func=self.jaclib_obj("OPath"),
                 args=[cast(ast3.expr, origin or cur.gen.py_ast[0])],
                 keywords=[],
             )
