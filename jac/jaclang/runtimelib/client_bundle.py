@@ -119,7 +119,18 @@ class ClientBundleBuilder:
             module.__name__, client_exports, client_globals_map
         )
 
+        # Add Object.prototype.get polyfill for Python dict-like behavior
+        polyfill_js = (
+            "// Polyfill: Add .get() method to objects for Python dict-like behavior\n"
+            "if (!Object.prototype.get) {\n"
+            "  Object.prototype.get = function(key, defaultValue) {\n"
+            "    return this.hasOwnProperty(key) ? this[key] : (defaultValue !== undefined ? defaultValue : null);\n"
+            "  };\n"
+            "}\n"
+        )
+
         bundle_pieces = [
+            polyfill_js,
             "// Jac client runtime",
             runtime_js,
             "",

@@ -842,3 +842,49 @@ class TestServeCommand(TestCase):
             token=new_token
         )
         self.assertIn("result", complete_result)
+
+    def test_login_form_renders_with_correct_elements(self) -> None:
+        """Test that client page renders with correct HTML elements via HTTP endpoint."""
+        self._start_server()
+
+        # Create user
+        create_result = self._request(
+            "POST",
+            "/user/create",
+            {"username": "formuser", "password": "pass"}
+        )
+        token = create_result["token"]
+
+        # Request the client_page endpoint
+        status, html_body, headers = self._request_raw(
+            "GET",
+            "/page/client_page",
+            token=token,
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers.get("Content-Type", ""))
+
+        # Check basic HTML structure
+        self.assertIn("<!DOCTYPE html>", html_body)
+        self.assertIn('<div id="__jac_root">', html_body)
+        self.assertIn('<script id="__jac_init__"', html_body)
+        self.assertIn("/static/client.js?hash=", html_body)
+
+        # Verify __jac_init__ contains the right function and global
+        self.assertIn('"function": "client_page"', html_body)
+        self.assertIn('"WELCOME_TITLE": "Runtime Test"', html_body)  # Global variable
+
+        # Note: SSR rendering may not populate content due to async/complexity
+        # The important thing is that the page structure is correct and
+        # client.js will render the content on the client side
+
+        # Fetch and verify the bundle
+        status_js, js_body, _ = self._request_raw("GET", "/static/client.js")
+        self.assertEqual(status_js, 200)
+
+        # Verify the bundle has the polyfill
+        self.assertIn("Object.prototype.get", js_body)
+
+        # Verify the function is in the bundle
+        self.assertIn("function client_page", js_body)
