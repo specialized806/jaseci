@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast as py_ast
 import marshal
 import types
-from typing import Any, Iterable, Literal, Optional, TYPE_CHECKING, cast
+from typing import Any, Iterable, Literal, Optional, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-ClientCodegenMode = Literal["js_only", "both"]
+ClientCodegenMode = Literal["js_only"]
 
 ir_gen_sched = [
     SymTabBuildPass,
@@ -84,7 +84,6 @@ class JacProgram:
             else self._validate_client_mode(default_mode)
         )
         self.client_metadata: dict[str, dict[str, Any]] = {}
-        self.client_js_map: dict[str, str] = {}
 
     def get_type_evaluator(self) -> TypeEvaluator:
         """Return the type evaluator."""
@@ -95,14 +94,18 @@ class JacProgram:
         return self.type_evaluator
 
     def _validate_client_mode(self, mode: str) -> ClientCodegenMode:
-        if mode in ("js_only", "both"):
-            return cast(ClientCodegenMode, mode)
+        if mode != "js_only":
+            logger.warning(
+                "Client code generation mode '%s' is no longer supported; "
+                "defaulting to 'js_only'.",
+                mode,
+            )
         return "js_only"
 
     @property
     def emit_client_python(self) -> bool:
         """Return True when compiler should generate client-facing Python artifacts."""
-        return self.client_codegen_mode == "both"
+        return False
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -233,9 +236,7 @@ class JacProgram:
             module.gen.client_exports = artifacts["exports"]
             module.gen.client_globals = artifacts["globals"]
             module.gen.client_export_params = artifacts["params"]
-            js_code = self._generate_module_js(module)
-            module.gen.js = js_code
-            self.client_js_map[mod_path] = js_code
+            module.gen.js = self._generate_module_js(module)
 
     def _collect_client_metadata(self, module: uni.Module) -> dict[str, Any]:
         exports: set[str] = set()

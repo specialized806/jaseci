@@ -78,12 +78,7 @@ class ClientBundleBuilder:
         manifest_exports = manifest.get("exports", [])
         manifest_globals = manifest.get("globals", [])
         manifest_globals_values = manifest.get("globals_values", {})
-        manifest_js = manifest.get("js", "")
-
-        if manifest_js:
-            module_js = manifest_js
-        else:
-            module_js = self._compile_to_js(module_path)
+        module_js = self._compile_to_js(module_path)
 
         if manifest_exports:
             client_exports = list(manifest_exports)
@@ -95,11 +90,7 @@ class ClientBundleBuilder:
                 and (inspect.isfunction(member) or inspect.isclass(member))
             ]
 
-        if manifest_globals:
-            client_globals_list = list(manifest_globals)
-        else:
-            raw_globals = getattr(module, "__jac_client_globals__", [])
-            client_globals_list = sorted(str(item) for item in raw_globals)
+        client_globals_list = list(manifest_globals) if manifest_globals else []
 
         client_globals_map: dict[str, Any] = {}
         for name in client_globals_list:

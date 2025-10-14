@@ -37,8 +37,7 @@ class ClientRenderTests(TestCase):
         html_bundle = server.render_client_page("client_page", {}, "tester")
 
         self.assertIn("<!DOCTYPE html>", html_bundle["html"])
-        self.assertIn("__jac_root", html_bundle["html"])
-        self.assertIn("Runtime Test", html_bundle["html"])
+        self.assertIn('<div id="__jac_root"></div>', html_bundle["html"])
         self.assertIn("/static/client.js?hash=", html_bundle["html"])
 
         init_match = re.search(

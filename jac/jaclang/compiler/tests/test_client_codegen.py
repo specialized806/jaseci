@@ -29,7 +29,7 @@ def test_js_only_mode_generates_js_and_manifest() -> None:
     assert "ButtonProps" not in module.gen.client_export_params
 
 
-def test_both_mode_keeps_python_for_clients() -> None:
+def test_both_mode_falls_back_to_js_only() -> None:
     fixture = FIXTURE_DIR / "client_jsx.jac"
     prog = JacProgram(client_codegen_mode="both")
     module = prog.compile(str(fixture), client_codegen_mode="both")
@@ -38,10 +38,10 @@ def test_both_mode_keeps_python_for_clients() -> None:
     assert "function component" in module.gen.js
     assert "__jacJsx(" in module.gen.js
 
-    # In both mode the Python definition should still exist
-    assert "def component" in module.gen.py
-    assert "__jac_client__" in module.gen.py
-    assert "class ButtonProps" in module.gen.py
+    # Client Python definitions are intentionally omitted
+    assert "def component" not in module.gen.py
+    assert "__jac_client__" not in module.gen.py
+    assert "class ButtonProps" not in module.gen.py
 
     # Manifest data should still be populated
     assert "__jac_client_manifest__" in module.gen.py

@@ -2,164 +2,43 @@
 
 ## Overview
 
-This document describes the design and implementation plan for enabling Jac's `cl` (client) keyword to generate full-stack web applications. Functions and objects marked with `cl` will be compiled to JavaScript (client-side), enabling seamless integration between Jac backend services and browser-based UIs. With this approach jac serve will be able to create both json and webpage endpoint, converting walkers and functions without `cl` into rest endpoint (already supported), and functions with `cl` into html+js end points.
+This document describes how Jac's `cl` (client) keyword produces browser-ready experiences. Client-marked declarations compile to JavaScript and ship through `jac serve` as static bundles that execute entirely in the browser. The current implementation is **CSR-only**: the server always returns an empty HTML shell together with bootstrapping metadata and the JavaScript bundle.
 
 ## Architecture Overview
 
-The system compiles Jac code to both Python and JavaScript, supporting two rendering modes: Server-Side Rendering (SSR) and Client-Side Rendering (CSR).
-
 ```mermaid
-graph TB
-    subgraph "Development Time"
-        A[Jac Source Code<br/>with cl keywords] --> B[Jac Compiler]
+graph TD
+    subgraph "Development"
+        A[Jac source with cl] --> B[Jac Compiler]
         B --> C[Python AST<br/>pyast_gen_pass.py]
         B --> D[ECMAScript AST<br/>esast_gen_pass.py]
-        C --> E[Python .py file<br/>+ __jac_client_manifest__]
-        D --> F[ESTree stored in<br/>node.gen.es_ast]
+        C --> E[Python module<br/>+ __jac_client_manifest__]
+        D --> F[Client bundle inputs]
     end
 
-    subgraph "Runtime: jac serve"
-        E --> G[Import Python Module]
+    subgraph "Runtime"
+        E --> G[JacAPIServer]
         F --> H[ClientBundleBuilder]
-        G --> I[JacAPIServer<br/>render_mode: ssr/csr]
-        H --> J[client.js Bundle<br/>runtime + module + hydration]
-
-        I --> K{Render Mode?}
-        K -->|SSR| L[Execute cl function<br/>JacMachine.render_jsx_tree]
-        K -->|CSR| M[Skip execution<br/>Return empty shell]
-
-        L --> N[GET /page/fn<br/>Pre-rendered HTML]
-        M --> O[GET /page/fn?mode=csr<br/>Empty div]
-
-        I --> P[GET /static/client.js<br/>JavaScript Bundle]
-        I --> Q[POST /walker/*<br/>REST API]
+        G --> I[GET /page/<fn><br/>Empty shell + manifest]
+        H --> J[GET /static/client.js<br/>Jac runtime + module]
+        I --> K[Browser]
+        J --> K
+        K --> L[Execute exported client fn]
+        L --> M[Render DOM + call walkers]
     end
-
-    subgraph "Browser: SSR Mode"
-        N --> R[HTML with content<br/>Immediate FCP]
-        P --> S[Load client.js]
-        S --> T[Hydrate: attach events<br/>make interactive]
-        T --> U[Walker/Function Calls]
-        U --> Q
-    end
-
-    subgraph "Browser: CSR Mode"
-        O --> V[Empty HTML shell]
-        P --> W[Load client.js]
-        W --> X[Execute function<br/>Full render in browser]
-        X --> Y[Walker/Function Calls]
-        Y --> Q
-    end
-
-    style A fill:#153d66,stroke:#2a6f9f,color:#eef6ff
-    style E fill:#4d1d2b,stroke:#9c3650,color:#ffeef3
-    style F fill:#4b330e,stroke:#c27b27,color:#fff3d6
-    style J fill:#4b330e,stroke:#c27b27,color:#fff3d6
-    style L fill:#2d5016,stroke:#5a9e2b,color:#f0ffe8
-    style M fill:#5c3d00,stroke:#d48e00,color:#fff8e5
-    style N fill:#123828,stroke:#2f7d5e,color:#e8fff6
-    style O fill:#123828,stroke:#2f7d5e,color:#e8fff6
-    style P fill:#123828,stroke:#2f7d5e,color:#e8fff6
 ```
 
-### Rendering Modes
+### CSR Execution Flow
 
-The implementation supports two rendering modes that can be configured per-server or per-request:
+1. `jac serve` imports the compiled Python module and reads `__jac_client_manifest__` to discover client exports, globals, and parameter ordering.
+2. When `/page/<fn>` is requested, the server emits a minimal HTML document containing:
+   - `<div id="__jac_root"></div>` (always empty),
+   - a `<script id="__jac_init__">` payload describing the module/function invocation,
+   - a `<script src="/static/client.js">` tag keyed by the bundle hash.
+3. The browser downloads `/static/client.js`, which contains the Jac client runtime plus the transpiled module and registration code.
+4. On DOM ready, the runtime looks up the requested function, restores any literal globals, invokes the function in JavaScript, and renders the returned JSX tree entirely in the browser.
 
-#### Mode Configuration
-
-```python
-# Set default render mode at server initialization
-server = JacAPIServer("mymodule", session_path, render_mode="ssr")  # or "csr"
-
-# Override per-request via query parameter
-GET /page/homepage?mode=csr   # Client-Side Rendering
-GET /page/homepage?mode=ssr   # Server-Side Rendering (default)
-```
-
-#### Client-Side Rendering (CSR) Mode
-
-Pure client-side rendering with zero backend computation for the initial render. Best for SPAs and highly interactive applications.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Browser
-    participant Server as JacAPIServer
-    participant Runtime as Client Runtime
-
-    Browser->>Server: GET /page/homepage?mode=csr
-    Server->>Server: render_client_page(mode="csr")
-    Note over Server: Skip SSR execution<br/>html_body = ""
-    Server-->>Browser: HTML Shell<br/><div id="__jac_root"></div><br/>+ __jac_init__ JSON<br/>+ client.js script tag
-    Browser->>Server: GET /static/client.js
-    Server->>Server: ClientBundleBuilder.build()
-    Server-->>Browser: JavaScript Bundle<br/>(runtime + module + registration)
-    Browser->>Runtime: DOMContentLoaded
-    Runtime->>Runtime: hydrateJacClient()
-    Runtime->>Runtime: Execute homepage()
-    Runtime->>Runtime: renderJsxTree(result, __jac_root)
-    Note over Runtime: Full render happens<br/>in browser
-    Runtime->>Server: Optional: Walker API calls
-```
-
-**CSR Flow:**
-1. Server returns empty `__jac_root` div
-2. Client bundle executes function from scratch
-3. All rendering happens in browser
-4. Zero backend CPU for initial render
-
-#### Server-Side Rendering + Hydration (SSR) Mode
-
-Pre-renders HTML on server, then hydrates on client. Best for SEO, initial load performance, and progressive enhancement.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Browser
-    participant Server as JacAPIServer
-    participant Machine as JacMachine
-    participant Runtime as Client Runtime
-
-    Browser->>Server: GET /page/homepage
-    Server->>Server: render_client_page(mode="ssr")
-    Server->>Machine: Execute homepage()
-    Machine->>Machine: JSX returns tree structure
-    Server->>Machine: render_jsx_tree(tree)
-    Machine-->>Server: Pre-rendered HTML
-    Note over Server: html_body = "<h1>Welcome</h1>..."
-    Server-->>Browser: HTML Page<br/><div id="__jac_root">Pre-rendered</div><br/>+ __jac_init__ JSON<br/>+ client.js script tag
-    Note over Browser: User sees content<br/>immediately (FCP)
-    Browser->>Server: GET /static/client.js
-    Server->>Server: ClientBundleBuilder.build()
-    Server-->>Browser: JavaScript Bundle
-    Browser->>Runtime: DOMContentLoaded
-    Runtime->>Runtime: hydrateJacClient()
-    Runtime->>Runtime: Execute homepage()
-    Runtime->>Runtime: renderJsxTree(result, __jac_root)
-    Note over Runtime: Replaces SSR content<br/>Attaches event handlers
-    Runtime->>Server: Optional: Walker API calls
-```
-
-**SSR Flow:**
-1. Server executes function and renders JSX to HTML
-2. Browser receives pre-populated `__jac_root`
-3. User sees content immediately (better FCP)
-4. Client bundle loads and "hydrates" (adds interactivity)
-5. Event handlers and dynamic behavior become active
-
-#### Comparison
-
-| Feature | CSR Mode | SSR Mode |
-|---------|----------|----------|
-| **Initial HTML** | Empty div | Pre-rendered content |
-| **Server CPU** | Minimal | Executes function |
-| **First Contentful Paint** | Slower (waits for JS) | Faster (immediate HTML) |
-| **SEO** | Poor (requires JS) | Excellent (crawlable HTML) |
-| **Best For** | Dashboards, SPAs | Landing pages, blogs |
-| **Hydration** | Full render | Event attachment only |
-| **Network** | 1 request (HTML + JS) | 1 request (HTML + JS) |
-| **Default** | No | Yes |
+> SSR + hydration was part of the original design but has been removed from the active code path. The runtime no longer executes client functions on the server or embeds prerendered HTML.
 
 ## Language Features
 
@@ -281,15 +160,14 @@ walker GetData {
 
 **Start the server:**
 ```bash
-jac serve myapp.jac --render-mode=ssr
+jac serve myapp.jac
 ```
 
 **Access endpoints:**
-- SSR: `GET http://localhost:8000/page/homepage`
-- CSR: `GET http://localhost:8000/page/homepage?mode=csr`
+- Page shell: `GET http://localhost:8000/page/homepage`
 - Bundle: `GET http://localhost:8000/static/client.js`
 - Walker: `POST http://localhost:8000/walker/GetData`
 
 ### Known Limitations
 
-None - the implementation is production-ready and feature-complete as designed.
+SSR/hydration is not currently supported; all initial rendering happens on the client.

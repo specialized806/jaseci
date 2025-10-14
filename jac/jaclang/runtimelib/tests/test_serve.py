@@ -661,8 +661,8 @@ class TestServeCommand(TestCase):
         # __jac_init__ should still contain the function name and args
         self.assertIn('"function": "client_page"', html_body)
 
-    def test_ssr_mode_has_content(self) -> None:
-        """Test SSR mode (default) returns pre-rendered HTML in __jac_root."""
+    def test_default_page_is_csr(self) -> None:
+        """Requesting a page without mode parameter returns empty CSR shell."""
         self._start_server()
 
         # Create user
@@ -673,7 +673,7 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
-        # Request page in SSR mode (default, no mode param)
+        # Request page without specifying mode (CSR-only)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page",
@@ -683,16 +683,15 @@ class TestServeCommand(TestCase):
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers.get("Content-Type", ""))
 
-        # In SSR mode, __jac_root should have pre-rendered content
-        self.assertIn("<div id=\"__jac_root\">", html_body)
-        self.assertIn("Runtime Test", html_body)  # Content from the client_page function
+        # CSR shell should be empty; client renders later
+        self.assertIn('<div id="__jac_root"></div>', html_body)
 
         # __jac_init__ and client.js should still be present for hydration
         self.assertIn('<script id="__jac_init__" type="application/json">', html_body)
         self.assertIn("/static/client.js?hash=", html_body)
 
     def test_csr_mode_with_server_default(self) -> None:
-        """Test server initialized with CSR as default render mode."""
+        """render_client_page returns an empty shell when called directly."""
         # Load module
         base, mod, mach = cli.proc_file_sess(
             self.fixture_abs_path("serve_api.jac"), ""
@@ -705,19 +704,18 @@ class TestServeCommand(TestCase):
             lng="jac",
         )
 
-        # Create server with CSR as default
+        # Create server
         server = JacAPIServer(
             module_name="__main__",
             session_path=self.session_file,
             port=9998,
-            render_mode="csr",
         )
         server.load_module()
 
         # Create a test user
         server.user_manager.create_user("testuser", "testpass")
 
-        # Call render_client_page without specifying mode (should use server default)
+        # Call render_client_page (always CSR)
         result = server.render_client_page(
             function_name="client_page",
             args={},
@@ -909,8 +907,8 @@ class TestServeCommand(TestCase):
         # Verify the function is in the bundle
         self.assertIn("function client_page", js_body)
 
-    def test_default_render_mode_is_csr(self) -> None:
-        """Test that the default render mode is CSR (client-side rendering)."""
+    def test_default_page_is_csr(self) -> None:
+        """Test that the default page response is CSR (client-side rendering)."""
         self._start_server()
 
         # Create user
@@ -943,7 +941,7 @@ class TestServeCommand(TestCase):
         root_content = root_match.group(1)
         self.assertEqual(root_content, "")  # Should be empty string
 
-        # Verify that explicitly requesting SSR mode works
+        # Verify that explicitly requesting SSR mode is ignored (still CSR)
         status_ssr, html_ssr, _ = self._request_raw(
             "GET",
             "/page/client_page?mode=ssr",
@@ -951,5 +949,4 @@ class TestServeCommand(TestCase):
         )
         self.assertEqual(status_ssr, 200)
 
-        # SSR should have pre-rendered content
-        self.assertIn("Runtime Test", html_ssr)
+        self.assertIn('<div id="__jac_root"></div>', html_ssr)

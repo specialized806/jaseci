@@ -125,7 +125,6 @@ class PyastGenPass(UniPass):
         self.client_globals: set[str] = set(metadata.get("globals", []))
         self.client_params: dict[str, list[str]] = metadata.get("params", {})
         self.client_global_values: dict[str, Any] = metadata.get("globals_values", {})
-        self.client_js_code: str = self.prog.client_js_map.get(module_path, "")
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -184,27 +183,6 @@ class PyastGenPass(UniPass):
         if name not in ["Enum"]:
             self.builtin_imports.add(name)
         return self.sync(ast3.Name(id=name, ctx=ast3.Load()))
-
-    def _client_decl_marker(self, symbol: str, symbol_node: uni.UniNode) -> ast3.Assign:
-        """Create assignment that flags a symbol as client-facing."""
-        target = self.sync(
-            ast3.Attribute(
-                value=self.sync(
-                    ast3.Name(id=symbol, ctx=ast3.Load()), jac_node=symbol_node
-                ),
-                attr="__jac_client__",
-                ctx=ast3.Store(),
-            ),
-            jac_node=symbol_node,
-        )
-        return self.sync(
-            ast3.Assign(
-                targets=[target],
-                value=self.sync(ast3.Constant(value=True), jac_node=symbol_node),
-                type_comment=None,
-            ),
-            jac_node=symbol_node,
-        )
 
     def _add_preamble_once(self, key: str, node: ast3.AST) -> None:
         """Append an import statement to the preamble once."""
@@ -562,55 +540,7 @@ class PyastGenPass(UniPass):
         )
         new_body.append(source_assign)
         client_globals_list = sorted(self.client_globals)
-        if client_globals_list:
-            globals_assign = self.sync(
-                ast3.Assign(
-                    targets=[
-                        self.sync(
-                            ast3.Name(id="__jac_client_globals__", ctx=ast3.Store()),
-                            jac_node=node,
-                        )
-                    ],
-                    value=self._literal_to_ast(client_globals_list, node),
-                    type_comment=None,
-                ),
-                jac_node=node,
-            )
-            new_body.append(globals_assign)
-
         client_exports_list = sorted(self.client_exports)
-        if client_exports_list:
-            exports_assign = self.sync(
-                ast3.Assign(
-                    targets=[
-                        self.sync(
-                            ast3.Name(id="__jac_client_exports__", ctx=ast3.Store()),
-                            jac_node=node,
-                        )
-                    ],
-                    value=self._literal_to_ast(client_exports_list, node),
-                    type_comment=None,
-                ),
-                jac_node=node,
-            )
-            new_body.append(exports_assign)
-
-        if self.client_js_code:
-            js_assign = self.sync(
-                ast3.Assign(
-                    targets=[
-                        self.sync(
-                            ast3.Name(id="__jac_client_js__", ctx=ast3.Store()),
-                            jac_node=node,
-                        )
-                    ],
-                    value=self._literal_to_ast(self.client_js_code, node),
-                    type_comment=None,
-                ),
-                jac_node=node,
-            )
-            new_body.append(js_assign)
-
         manifest_data: dict[str, object] = {}
         if client_exports_list:
             manifest_data["exports"] = client_exports_list
@@ -620,8 +550,6 @@ class PyastGenPass(UniPass):
             manifest_data["params"] = self.client_params
         if self.client_global_values:
             manifest_data["globals_values"] = self.client_global_values
-        if self.client_js_code:
-            manifest_data["js"] = self.client_js_code
 
         if manifest_data:
             manifest_assign = self.sync(
@@ -902,10 +830,7 @@ class PyastGenPass(UniPass):
                 type_params=[],
             )
         )
-        stmts: list[ast3.stmt] = [class_def]
-        if node.is_client_decl:
-            stmts.append(self._client_decl_marker(node.name.sym_name, node.name))
-        node.gen.py_ast = stmts
+        node.gen.py_ast = [class_def]
 
     def enter_enum(self, node: uni.Enum) -> None:
         if isinstance(node.body, uni.ImplDef):
@@ -940,10 +865,7 @@ class PyastGenPass(UniPass):
                 type_params=[],
             )
         )
-        stmts: list[ast3.stmt] = [class_def]
-        if node.is_client_decl:
-            stmts.append(self._client_decl_marker(node.name.sym_name, node.name))
-        node.gen.py_ast = stmts
+        node.gen.py_ast = [class_def]
 
     def enter_ability(self, node: uni.Ability) -> None:
         if isinstance(node.body, uni.ImplDef):
@@ -1185,13 +1107,7 @@ class PyastGenPass(UniPass):
                 type_params=[],
             )
         )
-        stmts: list[ast3.stmt] = [func_def]
-        if node.is_client_decl and not node.is_method:
-            symbol_node = (
-                node.name_ref if isinstance(node.name_ref, uni.UniNode) else node
-            )
-            stmts.append(self._client_decl_marker(node.name_ref.sym_name, symbol_node))
-        node.gen.py_ast = stmts
+        node.gen.py_ast = [func_def]
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         pass
