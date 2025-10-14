@@ -28,12 +28,12 @@ def test_js_codegen_generates_js_and_manifest() -> None:
     assert "ButtonProps" in manifest.get("exports", [])
     assert "API_URL" in manifest.get("globals", [])
 
-    # Module.gen should also have the metadata
-    assert "component" in module.gen.client_exports
-    assert "ButtonProps" in module.gen.client_exports
-    assert "API_URL" in module.gen.client_globals
-    assert module.gen.client_export_params.get("component", []) == []
-    assert "ButtonProps" not in module.gen.client_export_params
+    # Module.gen.client_manifest should have the metadata
+    assert "component" in module.gen.client_manifest.exports
+    assert "ButtonProps" in module.gen.client_manifest.exports
+    assert "API_URL" in module.gen.client_manifest.globals
+    assert module.gen.client_manifest.params.get("component", []) == []
+    assert "ButtonProps" not in module.gen.client_manifest.params
 
 
 def test_compilation_skips_python_stubs() -> None:
@@ -58,8 +58,8 @@ def test_compilation_skips_python_stubs() -> None:
     assert "ButtonProps" in manifest.get("exports", [])
     assert "API_URL" in manifest.get("globals", [])
 
-    # Module.gen should also have the metadata
-    assert "component" in module.gen.client_exports
-    assert "ButtonProps" in module.gen.client_exports
-    assert "API_URL" in module.gen.client_globals
-    assert module.gen.client_export_params.get("component", []) == []
+    # Module.gen.client_manifest should have the metadata
+    assert "component" in module.gen.client_manifest.exports
+    assert "ButtonProps" in module.gen.client_manifest.exports
+    assert "API_URL" in module.gen.client_manifest.globals
+    assert module.gen.client_manifest.params.get("component", []) == []

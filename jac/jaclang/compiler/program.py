@@ -70,7 +70,6 @@ class JacProgram:
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
         self.type_evaluator: TypeEvaluator | None = None
-        self.client_metadata: dict[str, dict[str, Any]] = {}
 
     def get_type_evaluator(self) -> TypeEvaluator:
         """Return the type evaluator."""
@@ -97,7 +96,17 @@ class JacProgram:
         Returns:
             Dictionary containing client metadata (exports, globals, params, etc.)
         """
-        return self.client_metadata.get(mod_path, {})
+        module = self.mod.hub.get(mod_path)
+        if module and hasattr(module.gen, "client_manifest"):
+            manifest = module.gen.client_manifest
+            return {
+                "exports": manifest.exports,
+                "globals": manifest.globals,
+                "params": manifest.params,
+                "globals_values": manifest.globals_values,
+                "has_client": manifest.has_client,
+            }
+        return {}
 
     def parse_str(self, source_str: str, file_path: str) -> uni.Module:
         """Convert a Jac file to an AST."""
@@ -206,13 +215,20 @@ class JacProgram:
 
     def _prepare_client_artifacts(self, root_module: uni.Module) -> None:
         """Collect client metadata and pre-generate JS for modules."""
+        from jaclang.compiler.codeinfo import ClientManifest
+
         for module in self._iter_modules(root_module):
             artifacts = self._collect_client_metadata(module)
-            mod_path = module.loc.mod_path
-            self.client_metadata[mod_path] = artifacts
-            module.gen.client_exports = artifacts["exports"]
-            module.gen.client_globals = artifacts["globals"]
-            module.gen.client_export_params = artifacts["params"]
+
+            # Populate the typed ClientManifest on module.gen
+            module.gen.client_manifest = ClientManifest(
+                exports=artifacts["exports"],
+                globals=artifacts["globals"],
+                params=artifacts["params"],
+                globals_values=artifacts["globals_values"],
+                has_client=artifacts["has_client"],
+            )
+
             module.gen.js = self._generate_module_js(module)
 
     def _collect_client_metadata(self, module: uni.Module) -> dict[str, Any]:

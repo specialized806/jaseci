@@ -22,7 +22,7 @@ import ast as ast3
 import copy
 import textwrap
 from dataclasses import dataclass
-from typing import Any, List, Optional, Sequence, TypeVar, Union, cast
+from typing import List, Optional, Sequence, TypeVar, Union, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
@@ -99,12 +99,6 @@ class PyastGenPass(UniPass):
         self.already_added: list[str] = []
         self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
         self.builtin_imports: set[str] = set()  # Track individual builtin imports
-        module_path = self.ir_in.loc.mod_path
-        metadata = self.prog.client_metadata.get(module_path, {})
-        self.client_exports: set[str] = set(metadata.get("exports", []))
-        self.client_globals: set[str] = set(metadata.get("globals", []))
-        self.client_params: dict[str, list[str]] = metadata.get("params", {})
-        self.client_global_values: dict[str, Any] = metadata.get("globals_values", {})
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -446,7 +440,6 @@ class PyastGenPass(UniPass):
         for child_pass in self.child_passes:
             self.jaclib_imports.update(child_pass.jaclib_imports)
             self.builtin_imports.update(child_pass.builtin_imports)
-            self.client_globals.update(child_pass.client_globals)
 
         # Add builtin imports if any were used
         if self.builtin_imports:
@@ -547,12 +540,6 @@ class PyastGenPass(UniPass):
                 raise self.ice()
         else:
             node.gen.py_ast = self.flatten([a.gen.py_ast for a in node.assignments])
-        if node.is_client_decl:
-            for assignment in node.assignments:
-                for target in assignment.target:
-                    name = getattr(target, "sym_name", None)
-                    if isinstance(name, str):
-                        self.client_globals.add(name)
 
     def exit_test(self, node: uni.Test) -> None:
         test_name = node.name.sym_name
