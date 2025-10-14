@@ -90,25 +90,6 @@ UNARY_OP_MAP: dict[Tok, type[ast3.unaryop]] = {
 class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
-    # Builtins that should be imported from jaclang.runtimelib.builtin
-    KNOWN_BUILTINS = {
-        "abstractmethod",
-        "ClassVar",
-        "override",
-        "printgraph",
-        "jid",
-        "jobj",
-        "grant",
-        "revoke",
-        "allroots",
-        "save",
-        "commit",
-        "NoPerm",
-        "ReadPerm",
-        "ConnectPerm",
-        "WritePerm",
-    }
-
     def before_pass(self) -> None:
         self.child_passes: list[PyastGenPass] = []
         for i in self.ir_in.impl_mod + self.ir_in.test_mod:
@@ -538,33 +519,6 @@ class PyastGenPass(UniPass):
             jac_node=node,
         )
         new_body.append(source_assign)
-        client_globals_list = sorted(self.client_globals)
-        client_exports_list = sorted(self.client_exports)
-        manifest_data: dict[str, object] = {}
-        if client_exports_list:
-            manifest_data["exports"] = client_exports_list
-        if client_globals_list:
-            manifest_data["globals"] = client_globals_list
-        if self.client_params:
-            manifest_data["params"] = self.client_params
-        if self.client_global_values:
-            manifest_data["globals_values"] = self.client_global_values
-
-        if manifest_data:
-            manifest_assign = self.sync(
-                ast3.Assign(
-                    targets=[
-                        self.sync(
-                            ast3.Name(id="__jac_client_manifest__", ctx=ast3.Store()),
-                            jac_node=node,
-                        )
-                    ],
-                    value=self._literal_to_ast(manifest_data, node),
-                    type_comment=None,
-                ),
-                jac_node=node,
-            )
-            new_body.append(manifest_assign)
         node.gen.py_ast = [
             self.sync(
                 ast3.Module(
@@ -3183,7 +3137,9 @@ class PyastGenPass(UniPass):
     def exit_name(self, node: uni.Name) -> None:
         name = node.sym_name
         # Track if this name is a known builtin
-        if name in self.KNOWN_BUILTINS:
+        import jaclang.runtimelib.builtin
+
+        if name in set(jaclang.runtimelib.builtin.__all__):
             self.builtin_imports.add(name)
         node.gen.py_ast = [self.sync(ast3.Name(id=name, ctx=node.py_ctx_func()))]
 

@@ -88,6 +88,17 @@ class JacProgram:
         result = self.compile(file_path=full_target)
         return marshal.loads(result.gen.py_bytecode) if result.gen.py_bytecode else None
 
+    def get_client_manifest(self, mod_path: str) -> dict[str, Any]:
+        """Get the client manifest for a specific module.
+
+        Args:
+            mod_path: The module path to get the manifest for
+
+        Returns:
+            Dictionary containing client metadata (exports, globals, params, etc.)
+        """
+        return self.client_metadata.get(mod_path, {})
+
     def parse_str(self, source_str: str, file_path: str) -> uni.Module:
         """Convert a Jac file to an AST."""
         had_error = False

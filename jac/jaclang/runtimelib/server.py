@@ -253,7 +253,12 @@ class JacAPIServer:
             or (not self._function_cache and not self._walker_cache)
         ):
             self.module = module
-            manifest = getattr(self.module, "__jac_client_manifest__", {}) or {}
+            # Get manifest from JacProgram instead of module attribute
+            mod_path = getattr(module, "__file__", None)
+            if mod_path:
+                manifest = Jac.program.get_client_manifest(mod_path)
+            else:
+                manifest = {}
             self._client_manifest = manifest
             self._client_exports = list(manifest.get("exports", []))
             self._client_params = manifest.get("params", {})

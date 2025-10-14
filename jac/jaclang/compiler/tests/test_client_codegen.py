@@ -20,8 +20,15 @@ def test_js_codegen_generates_js_and_manifest() -> None:
     # Client Python code should be omitted in js_only mode
     assert "def component" not in module.gen.py
 
-    # Metadata should capture exported symbols and globals
-    assert "__jac_client_manifest__" in module.gen.py
+    # Metadata should be stored in JacProgram, not in generated Python
+    assert "__jac_client_manifest__" not in module.gen.py
+    manifest = prog.get_client_manifest(module.loc.mod_path)
+    assert manifest, "Client manifest should be available in JacProgram"
+    assert "component" in manifest.get("exports", [])
+    assert "ButtonProps" in manifest.get("exports", [])
+    assert "API_URL" in manifest.get("globals", [])
+
+    # Module.gen should also have the metadata
     assert "component" in module.gen.client_exports
     assert "ButtonProps" in module.gen.client_exports
     assert "API_URL" in module.gen.client_globals
@@ -43,8 +50,15 @@ def test_compilation_skips_python_stubs() -> None:
     assert "__jac_client__" not in module.gen.py
     assert "class ButtonProps" not in module.gen.py
 
-    # Manifest data should still be populated
-    assert "__jac_client_manifest__" in module.gen.py
+    # Manifest data should be in JacProgram, not in generated Python
+    assert "__jac_client_manifest__" not in module.gen.py
+    manifest = prog.get_client_manifest(module.loc.mod_path)
+    assert manifest, "Client manifest should be available in JacProgram"
+    assert "component" in manifest.get("exports", [])
+    assert "ButtonProps" in manifest.get("exports", [])
+    assert "API_URL" in manifest.get("globals", [])
+
+    # Module.gen should also have the metadata
     assert "component" in module.gen.client_exports
     assert "ButtonProps" in module.gen.client_exports
     assert "API_URL" in module.gen.client_globals

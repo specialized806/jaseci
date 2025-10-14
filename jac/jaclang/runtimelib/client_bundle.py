@@ -73,7 +73,10 @@ class ClientBundleBuilder:
         """Compile bundle pieces and stitch them together."""
         runtime_js = self._compile_to_js(runtime_path)
 
-        manifest = getattr(module, "__jac_client_manifest__", {}) or {}
+        # Get manifest from JacProgram instead of module attribute
+        from jaclang.runtimelib.machine import JacMachine as Jac
+
+        manifest = Jac.program.get_client_manifest(str(module_path)) or {}
         manifest_exports = manifest.get("exports", [])
         manifest_globals = manifest.get("globals", [])
         manifest_globals_values = manifest.get("globals_values", {})
