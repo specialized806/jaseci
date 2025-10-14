@@ -5,12 +5,11 @@ from __future__ import annotations
 import ast as py_ast
 import marshal
 import types
-from typing import Any, Iterable, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.ecmascript import EsastGenPass
-from jaclang.compiler.passes.ecmascript.es_unparse import es_to_js
 from jaclang.compiler.passes.main import (
     Alert,
     CFGBuildPass,
@@ -50,6 +49,7 @@ type_check_sched: list = [
     TypeCheckPass,
 ]
 py_code_gen = [
+    EsastGenPass,
     PyastGenPass,
     PyJacAstLinkPass,
     PyBytecodeGenPass,
@@ -156,7 +156,6 @@ class JacProgram:
         if (not mod_targ.has_syntax_errors) and (not no_cgen):
             if settings.predynamo_pass and PreDynamoPass not in py_code_gen:
                 py_code_gen.insert(0, PreDynamoPass)
-            self._prepare_client_artifacts(mod_targ)
             self.run_schedule(mod=mod_targ, passes=py_code_gen)
         return mod_targ
 
@@ -209,128 +208,3 @@ class JacProgram:
         prse.errors_had = prog.errors_had
         prse.warnings_had = prog.warnings_had
         return prse.ir_out.gen.jac if not prse.errors_had else source_str
-
-    # ------------------------------------------------------------------
-    # Client element handling
-
-    def _prepare_client_artifacts(self, root_module: uni.Module) -> None:
-        """Collect client metadata and pre-generate JS for modules."""
-        from jaclang.compiler.codeinfo import ClientManifest
-
-        for module in self._iter_modules(root_module):
-            artifacts = self._collect_client_metadata(module)
-
-            # Populate the typed ClientManifest on module.gen
-            module.gen.client_manifest = ClientManifest(
-                exports=artifacts["exports"],
-                globals=artifacts["globals"],
-                params=artifacts["params"],
-                globals_values=artifacts["globals_values"],
-                has_client=artifacts["has_client"],
-            )
-
-            module.gen.js = self._generate_module_js(module)
-
-    def _collect_client_metadata(self, module: uni.Module) -> dict[str, Any]:
-        exports: set[str] = set()
-        globals_set: set[str] = set()
-        params: dict[str, list[str]] = {}
-        globals_values: dict[str, Any] = {}
-        has_client = False
-
-        for node in self._walk_nodes(module):
-            if not getattr(node, "is_client_decl", False):
-                continue
-            has_client = True
-            if isinstance(node, uni.Ability) and not node.is_method:
-                name = node.name_ref.sym_name
-                exports.add(name)
-                if isinstance(node.signature, uni.FuncSignature):
-                    params[name] = [
-                        param.name.sym_name
-                        for param in node.signature.params
-                        if hasattr(param, "name")
-                    ]
-                else:
-                    params[name] = []
-            elif isinstance(node, uni.Archetype):
-                exports.add(node.name.sym_name)
-            elif isinstance(node, uni.GlobalVars):
-                for assignment in node.assignments:
-                    for target in assignment.target:
-                        sym_name = getattr(target, "sym_name", None)
-                        if isinstance(sym_name, str):
-                            globals_set.add(sym_name)
-                            if assignment.value:
-                                lit_val = self._literal_value(assignment.value)
-                                if lit_val is not None:
-                                    globals_values[sym_name] = lit_val
-
-        return {
-            "exports": sorted(exports),
-            "globals": sorted(globals_set),
-            "params": dict(sorted(params.items())),
-            "globals_values": globals_values,
-            "has_client": has_client,
-        }
-
-    def _generate_client_js(self, module: uni.Module) -> str:
-        es_pass = EsastGenPass(ir_in=module, prog=self)
-        es_module = es_pass.ir_out
-        es_ast = getattr(es_module.gen, "es_ast", None)
-        if es_ast:
-            return es_to_js(es_ast)
-        return ""
-
-    def _generate_module_js(self, module: uni.Module) -> str:
-        """Generate JavaScript for the supplied module."""
-        return self._generate_client_js(module)
-
-    def _iter_modules(self, module: uni.Module) -> Iterable[uni.Module]:
-        yield module
-        for child in getattr(module, "impl_mod", []):
-            if isinstance(child, uni.Module):
-                yield from self._iter_modules(child)
-        for child in getattr(module, "test_mod", []):
-            if isinstance(child, uni.Module):
-                yield from self._iter_modules(child)
-
-    def _walk_nodes(self, node: uni.UniNode) -> Iterable[uni.UniNode]:
-        yield node
-        for child in getattr(node, "kid", []):
-            if child:
-                yield from self._walk_nodes(child)
-
-    def _literal_value(self, expr: uni.UniNode | None) -> object | None:
-        if expr is None:
-            return None
-        literal_attr = "lit_value"
-        if hasattr(expr, literal_attr):
-            return getattr(expr, literal_attr)
-        if isinstance(expr, uni.MultiString):
-            parts: list[str] = []
-            for segment in expr.strings:
-                if hasattr(segment, literal_attr):
-                    parts.append(getattr(segment, literal_attr))
-                else:
-                    return None
-            return "".join(parts)
-        if isinstance(expr, uni.ListVal):
-            values = [self._literal_value(item) for item in expr.values]
-            if all(val is not None for val in values):
-                return values
-        if isinstance(expr, uni.TupleVal):
-            values = [self._literal_value(item) for item in expr.values]
-            if all(val is not None for val in values):
-                return tuple(values)
-        if isinstance(expr, uni.DictVal):
-            items: dict[str, Any] = {}
-            for pair in expr.kv_pairs:
-                if isinstance(pair, uni.KVPair) and pair.key:
-                    key_val = self._literal_value(pair.key)
-                    val_val = self._literal_value(pair.value)
-                    if isinstance(key_val, str) and val_val is not None:
-                        items[key_val] = val_val
-            if items:
-                return items
-        return None
