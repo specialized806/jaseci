@@ -4,6 +4,7 @@ import inspect
 import io
 import os
 import sys
+from pathlib import Path
 
 from jaclang import JacMachineInterface as Jac
 from jaclang.compiler import jac_lark as jl
@@ -229,52 +230,54 @@ class TestLarkParser(TestCaseMicroSuite):
                 line = line.strip()
                 self.assertIn(line, pretty)
 
-    def test_jsx_basic(self) -> None:
-        """Test basic JSX parsing."""
+    def _load_combined_jsx_fixture(self) -> tuple[str, JacParser]:
+        """Parse the consolidated JSX fixture once for downstream assertions."""
+        fixture_path = (
+            Path(__file__)
+            .resolve()
+            .parent
+            .parent
+            / "passes"
+            / "ecmascript"
+            / "tests"
+            / "fixtures"
+            / "client_jsx.jac"
+        )
+        source_text = fixture_path.read_text(encoding="utf-8")
         prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_basic.jac"), mod_path=""),
+            root_ir=Source(source_text, mod_path=str(fixture_path)),
             prog=JacProgram(),
         )
-        self.assertFalse(prse.errors_had)
+        self.assertFalse(
+            prse.errors_had,
+            f"Parser reported errors for JSX fixture: {[str(e) for e in prse.errors_had]}",
+        )
+        return source_text, prse
 
-    def test_jsx_expressions(self) -> None:
-        """Test JSX with expressions."""
-        prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_expressions.jac"), mod_path=""),
-            prog=JacProgram(),
-        )
-        self.assertFalse(prse.errors_had)
+    def test_jsx_comprehensive_fixture(self) -> None:
+        """Ensure the consolidated JSX fixture exercises varied grammar shapes."""
+        source_text, prse = self._load_combined_jsx_fixture()
+        tree_repr = prse.ir_out.pp()
 
-    def test_jsx_nested(self) -> None:
-        """Test nested JSX elements."""
-        prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_nested.jac"), mod_path=""),
-            prog=JacProgram(),
-        )
-        self.assertFalse(prse.errors_had)
+        expected_snippets = {
+            "self_closing": "<div />",
+            "attribute_binding": 'id={name}',
+            "namespaced_component": "<Form.Input.Text />",
+            "fragment": "<>",
+            "spread_attribute": "{...props}",
+            "expression_child": '{"Hello " + name + "!"}',
+        }
+        for label, snippet in expected_snippets.items():
+            with self.subTest(label=label):
+                self.assertIn(snippet, source_text)
 
-    def test_jsx_components(self) -> None:
-        """Test JSX with component names."""
-        prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_components.jac"), mod_path=""),
-            prog=JacProgram(),
-        )
-        self.assertFalse(prse.errors_had)
-
-    def test_jsx_fragments(self) -> None:
-        """Test JSX fragments."""
-        prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_fragments.jac"), mod_path=""),
-            prog=JacProgram(),
-        )
-        self.assertFalse(prse.errors_had)
-
-    def test_jsx_spread(self) -> None:
-        """Test JSX with spread attributes."""
-        prse = JacParser(
-            root_ir=Source(self.load_fixture("jsx_spread.jac"), mod_path=""),
-            prog=JacProgram(),
-        )
-        self.assertFalse(prse.errors_had)
+        ast_markers = {
+            "JsxElement": "JsxElement" in tree_repr,
+            "FragmentTokens": "Token - <>" in tree_repr and "Token - </>" in tree_repr,
+            "JsxSpreadAttribute": "JsxSpreadAttribute" in tree_repr,
+        }
+        for label, present in ast_markers.items():
+            with self.subTest(node=label):
+                self.assertTrue(present, f"{label} missing from AST pretty print")
 
 TestLarkParser.self_attach_micro_tests()
