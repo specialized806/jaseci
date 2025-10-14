@@ -73,7 +73,7 @@ Traditional OOP with python classes (`class` or Jac's dataclass-like `obj`) that
 
 Instances of node and edge classes allow for assembling objects in a graph structure to express semantic relationships between objects. This goes beyond only modeling objects in memory as a disconnected soup of instances. Walker classes enables to expression of objects interacting with each other through special methods called abilities.
 
-In this example, nodes represent meaningful entities (like Libraries and Shelves), while walkers (borrower) traverse these node objects and process them.
+In this example, nodes represent meaningful entities (like Libraries and Shelves), while walkers (borrowers) traverse these node objects and process them.
 
 ```jac
 node Library {
