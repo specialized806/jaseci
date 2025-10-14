@@ -633,6 +633,8 @@ class TypeEvaluator {
             # This actually defined in the function getTypeForDeclaration();
             # Pyright has DeclarationType.Variable.
             case uni.Name():
+
+                # ---- Handle simple assignment: var = <expr> ----
                 if isinstance(node_.parent, uni.Assignment) {
                     if node_.parent.type_tag is not None {
                         annotation_type = self.get_type_of_expression(
@@ -648,11 +650,14 @@ class TypeEvaluator {
                     }
                 }
 
-                # handle member access
-                # pyright handle this in getDeclInfoForNameNode()
-                if isinstance(node_.parent, uni.AtomTrailer) and node_.parent.parent
-                and isinstance(node_.parent.parent, uni.Assignment) {
-
+                # ---- Handle member assignment: obj.attr = <expr> ----
+                # Pyright handles this in getDeclInfoForNameNode()
+                if (
+                    isinstance(node_.parent, uni.AtomTrailer)
+                    and node_.parent.parent
+                    and isinstance(node_.parent.parent, uni.Assignment)
+                ) {
+                    # Member assignment with a type annotation: obj.member: <type> = <expr>
                     if node_.parent.parent.type_tag is not None {
                         annotation_type = self.get_type_of_expression(
                             node_.parent.parent.type_tag.tag
@@ -660,12 +665,14 @@ class TypeEvaluator {
                         return self._convert_to_instance(annotation_type);
                     }
 
-                    else {  # Assignment without a type annotation: obj.member = <expr>
+                    # Assignment without a type annotation: obj.member = <expr>
+                    else {
                         if node_.parent.parent.value is not None {
                             return self.get_type_of_expression(node_.parent.parent.value);
                         }
                     }
                 }
+
                 if isinstance(node_.parent, uni.ModulePath) {
                     return self.get_type_of_module(node_.parent);
                 }
