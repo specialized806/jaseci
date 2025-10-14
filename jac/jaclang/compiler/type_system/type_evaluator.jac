@@ -841,7 +841,7 @@ class TypeEvaluator {
         if method := self._get_enclosing_method(node_) {
             cls = method.method_owner;
             if isinstance(cls, uni.Archetype) {
-                node_.sym = cls.name_spec.sym;
+                node_.sym = method.lookup(node_.value);
                 node_.type = self.get_type_of_class(cls).clone_as_instance();
                 return node_.type;
             }

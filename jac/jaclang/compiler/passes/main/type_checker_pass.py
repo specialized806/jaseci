@@ -108,3 +108,8 @@ class TypeCheckPass(UniPass):
         # 1. Function Existence & Callable Validation
         # 2. Argument Matching(count, types, names)
         self.evaluator.get_type_of_expression(node)
+
+    def exit_return_stmt(self, node: uni.ReturnStmt) -> None:
+        """Handle the return statement node."""
+        if node.expr:
+            self.evaluator.get_type_of_expression(node.expr)
