@@ -664,7 +664,7 @@ def jac2py(filename: str) -> None:
 
 
 @cmd_registry.register
-def js(filename: str, mode: str = "js_only") -> None:
+def js(filename: str) -> None:
     """Convert a Jac file to JavaScript code.
 
     Translates Jac source code to equivalent JavaScript/ECMAScript code using
@@ -673,22 +673,15 @@ def js(filename: str, mode: str = "js_only") -> None:
 
     Args:
         filename: Path to the .jac file to convert
-        mode: Client code generation mode. 'js_only' emits only JavaScript for
-            client declarations. 'both' also keeps Python stubs for clients.
 
     Examples:
         jac js myprogram.jac > myprogram.js
         jac js myprogram.jac
-        jac js myprogram.jac both
     """
     if filename.endswith(".jac"):
-        requested_mode = mode if mode in ("js_only", "both") else "js_only"
         try:
-            prog = JacProgram(client_codegen_mode=requested_mode)
-            ir = prog.compile(
-                file_path=filename,
-                client_codegen_mode=requested_mode,
-            )
+            prog = JacProgram()
+            ir = prog.compile(file_path=filename)
 
             if prog.errors_had:
                 for error in prog.errors_had:

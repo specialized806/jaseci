@@ -20,7 +20,6 @@ class Settings:
     ignore_test_annex: bool = False
     pyfile_raise: bool = False
     pyfile_raise_full: bool = False
-    client_codegen_mode: str = "js_only"
 
     # Formatter configuration
     max_line_length: int = 88

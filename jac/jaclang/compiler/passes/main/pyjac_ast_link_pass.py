@@ -23,14 +23,11 @@ from jaclang.compiler.passes import UniPass
 class PyJacAstLinkPass(UniPass):
     """Link jac ast to python ast nodes."""
 
-    def before_pass(self) -> None:
-        self.emit_client_python = self.prog.emit_client_python
-
     def link_jac_py_nodes(
         self, jac_node: uni.UniNode, py_nodes: list[ast3.AST]
     ) -> None:
         """Link jac name ast to py ast nodes."""
-        if getattr(jac_node, "is_client_decl", False) and not self.emit_client_python:
+        if getattr(jac_node, "is_client_decl", False):
             return
         jac_node.gen.py_ast = py_nodes
         for i in py_nodes:

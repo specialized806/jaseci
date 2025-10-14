@@ -8,10 +8,10 @@ from jaclang.compiler.program import JacProgram
 FIXTURE_DIR = Path(__file__).resolve().parent.parent / "passes" / "ecmascript" / "tests" / "fixtures"
 
 
-def test_js_only_mode_generates_js_and_manifest() -> None:
+def test_js_codegen_generates_js_and_manifest() -> None:
     fixture = FIXTURE_DIR / "client_jsx.jac"
-    prog = JacProgram(client_codegen_mode="js_only")
-    module = prog.compile(str(fixture), client_codegen_mode="js_only")
+    prog = JacProgram()
+    module = prog.compile(str(fixture))
 
     assert module.gen.js.strip(), "Expected JavaScript output for client declarations"
     assert "function component" in module.gen.js
@@ -29,10 +29,10 @@ def test_js_only_mode_generates_js_and_manifest() -> None:
     assert "ButtonProps" not in module.gen.client_export_params
 
 
-def test_both_mode_falls_back_to_js_only() -> None:
+def test_compilation_skips_python_stubs() -> None:
     fixture = FIXTURE_DIR / "client_jsx.jac"
-    prog = JacProgram(client_codegen_mode="both")
-    module = prog.compile(str(fixture), client_codegen_mode="both")
+    prog = JacProgram()
+    module = prog.compile(str(fixture))
 
     assert module.gen.js.strip(), "Expected JavaScript output when emitting both"
     assert "function component" in module.gen.js

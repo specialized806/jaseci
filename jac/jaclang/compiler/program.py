@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast as py_ast
 import marshal
 import types
-from typing import Any, Iterable, Literal, Optional, TYPE_CHECKING
+from typing import Any, Iterable, Optional, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
@@ -35,15 +35,9 @@ from jaclang.compiler.passes.tool import (
 )
 from jaclang.runtimelib.utils import read_file_with_encoding
 from jaclang.settings import settings
-from jaclang.utils.log import logging
 
 if TYPE_CHECKING:
     from jaclang.compiler.type_system.type_evaluator import TypeEvaluator
-
-
-logger = logging.getLogger(__name__)
-
-ClientCodegenMode = Literal["js_only"]
 
 ir_gen_sched = [
     SymTabBuildPass,
@@ -69,7 +63,6 @@ class JacProgram:
     def __init__(
         self,
         main_mod: Optional[uni.ProgramModule] = None,
-        client_codegen_mode: ClientCodegenMode | None = None,
     ) -> None:
         """Initialize the JacProgram object."""
         self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
@@ -77,12 +70,6 @@ class JacProgram:
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
         self.type_evaluator: TypeEvaluator | None = None
-        default_mode: str = settings.client_codegen_mode
-        self.client_codegen_mode: ClientCodegenMode = (
-            client_codegen_mode
-            if client_codegen_mode is not None
-            else self._validate_client_mode(default_mode)
-        )
         self.client_metadata: dict[str, dict[str, Any]] = {}
 
     def get_type_evaluator(self) -> TypeEvaluator:
@@ -92,20 +79,6 @@ class JacProgram:
         if not self.type_evaluator:
             self.type_evaluator = TypeEvaluator(program=self)
         return self.type_evaluator
-
-    def _validate_client_mode(self, mode: str) -> ClientCodegenMode:
-        if mode != "js_only":
-            logger.warning(
-                "Client code generation mode '%s' is no longer supported; "
-                "defaulting to 'js_only'.",
-                mode,
-            )
-        return "js_only"
-
-    @property
-    def emit_client_python(self) -> bool:
-        """Return True when compiler should generate client-facing Python artifacts."""
-        return False
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -152,27 +125,20 @@ class JacProgram:
         # options in it.
         no_cgen: bool = False,
         type_check: bool = False,
-        client_codegen_mode: ClientCodegenMode | None = None,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        prev_mode = self.client_codegen_mode
-        if client_codegen_mode is not None:
-            self.client_codegen_mode = self._validate_client_mode(client_codegen_mode)
-        try:
-            keep_str = use_str or read_file_with_encoding(file_path)
-            mod_targ = self.parse_str(keep_str, file_path)
-            self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
-            if type_check:
-                self.run_schedule(mod=mod_targ, passes=type_check_sched)
-            # If the module has syntax errors, we skip code generation.
-            if (not mod_targ.has_syntax_errors) and (not no_cgen):
-                if settings.predynamo_pass and PreDynamoPass not in py_code_gen:
-                    py_code_gen.insert(0, PreDynamoPass)
-                self._prepare_client_artifacts(mod_targ)
-                self.run_schedule(mod=mod_targ, passes=py_code_gen)
-            return mod_targ
-        finally:
-            self.client_codegen_mode = prev_mode
+        keep_str = use_str or read_file_with_encoding(file_path)
+        mod_targ = self.parse_str(keep_str, file_path)
+        self.run_schedule(mod=mod_targ, passes=ir_gen_sched)
+        if type_check:
+            self.run_schedule(mod=mod_targ, passes=type_check_sched)
+        # If the module has syntax errors, we skip code generation.
+        if (not mod_targ.has_syntax_errors) and (not no_cgen):
+            if settings.predynamo_pass and PreDynamoPass not in py_code_gen:
+                py_code_gen.insert(0, PreDynamoPass)
+            self._prepare_client_artifacts(mod_targ)
+            self.run_schedule(mod=mod_targ, passes=py_code_gen)
+        return mod_targ
 
     def build(
         self, file_path: str, use_str: str | None = None, type_check: bool = False

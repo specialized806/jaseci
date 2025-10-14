@@ -120,7 +120,6 @@ class PyastGenPass(UniPass):
         self.builtin_imports: set[str] = set()  # Track individual builtin imports
         module_path = self.ir_in.loc.mod_path
         metadata = self.prog.client_metadata.get(module_path, {})
-        self.emit_client_python = self.prog.emit_client_python
         self.client_exports: set[str] = set(metadata.get("exports", []))
         self.client_globals: set[str] = set(metadata.get("globals", []))
         self.client_params: dict[str, list[str]] = metadata.get("params", {})
@@ -326,7 +325,7 @@ class PyastGenPass(UniPass):
         return new_body
 
     def _should_skip_client(self, node: uni.UniNode) -> bool:
-        return getattr(node, "is_client_decl", False) and not self.emit_client_python
+        return getattr(node, "is_client_decl", False)
 
     def _literal_to_ast(
         self, value: object, jac_node: Optional[uni.UniNode] = None

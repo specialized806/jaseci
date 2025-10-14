@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import inspect
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -80,15 +79,7 @@ class ClientBundleBuilder:
         manifest_globals_values = manifest.get("globals_values", {})
         module_js = self._compile_to_js(module_path)
 
-        if manifest_exports:
-            client_exports = list(manifest_exports)
-        else:
-            client_exports = [
-                name
-                for name, member in inspect.getmembers(module)
-                if getattr(member, "__jac_client__", False)
-                and (inspect.isfunction(member) or inspect.isclass(member))
-            ]
+        client_exports = list(manifest_exports)
 
         client_globals_list = list(manifest_globals) if manifest_globals else []
 
@@ -143,8 +134,8 @@ class ClientBundleBuilder:
 
     def _compile_to_js(self, source_path: Path) -> str:
         """Compile the provided Jac file into JavaScript."""
-        program = JacProgram(client_codegen_mode="js_only")
-        mod = program.compile(str(source_path), client_codegen_mode="js_only")
+        program = JacProgram()
+        mod = program.compile(str(source_path))
         if program.errors_had:
             formatted = "\n".join(str(err) for err in program.errors_had)
             raise ClientBundleError(
