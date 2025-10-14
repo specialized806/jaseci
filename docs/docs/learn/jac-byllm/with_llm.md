@@ -18,7 +18,7 @@ The MTP concept is implemented in Jac-lang through the **byLLM** plugin, which i
 
 <div align="left" style="margin-top: 1em;">
     <a href="https://arxiv.org/abs/2405.08965" class="md-button" style="display: inline-block; margin-right: 10px;">MTP Research</a>
-    <a href="./quickstart.md" class="md-button" style="display: inline-block; margin-right: 10px;">Get Started with MTP</a>
+    <a href="https://www.jac-lang.org/learn/jac-byllm/quickstart/" class="md-button" style="display: inline-block; margin-right: 10px;">Get Started with MTP</a>
     <a href="https://github.com/jaseci-labs/jaseci/tree/main/jac-byllm" class="md-button" style="display: inline-block;">GitHub</a>
 </div>
 
@@ -115,7 +115,7 @@ Similarly, custom types can be used as output types which force the LLM to adher
 
 ## Control! Control! Control!
 
-Even if we are elimination prompt engineering entierly, we allow specific ways to enrich code semantics through **docstrings** and **semstrings**.
+Even if we are elimination prompt engineering entirely, we allow specific ways to enrich code semantics through **docstrings** and **semstrings**.
 
 === "Jac"
     ```jac linenums="1"
