@@ -843,6 +843,26 @@ class TestServeCommand(TestCase):
         )
         self.assertIn("result", complete_result)
 
+    def test_client_bundle_has_object_get_polyfill(self) -> None:
+        """Test that client bundle includes Object.prototype.get polyfill."""
+        self._start_server()
+
+        # Fetch the client bundle
+        status, js_body, headers = self._request_raw("GET", "/static/client.js")
+
+        self.assertEqual(status, 200)
+        self.assertIn("application/javascript", headers.get("Content-Type", ""))
+
+        # Verify the polyfill is at the beginning of the bundle
+        self.assertIn("Object.prototype.get", js_body)
+        self.assertIn("function(key, defaultValue)", js_body)
+        self.assertIn("this.hasOwnProperty(key)", js_body)
+
+        # Verify the polyfill appears before the runtime code
+        polyfill_pos = js_body.find("Object.prototype.get")
+        runtime_pos = js_body.find("// Jac client runtime")
+        self.assertGreater(runtime_pos, polyfill_pos)
+
     def test_login_form_renders_with_correct_elements(self) -> None:
         """Test that client page renders with correct HTML elements via HTTP endpoint."""
         self._start_server()
@@ -888,3 +908,48 @@ class TestServeCommand(TestCase):
 
         # Verify the function is in the bundle
         self.assertIn("function client_page", js_body)
+
+    def test_default_render_mode_is_csr(self) -> None:
+        """Test that the default render mode is CSR (client-side rendering)."""
+        self._start_server()
+
+        # Create user
+        create_result = self._request(
+            "POST",
+            "/user/create",
+            {"username": "csrdefaultuser", "password": "pass"}
+        )
+        token = create_result["token"]
+
+        # Request page WITHOUT specifying mode (should use default)
+        status, html_body, headers = self._request_raw(
+            "GET",
+            "/page/client_page",
+            token=token,
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers.get("Content-Type", ""))
+
+        # In CSR mode (default), __jac_root should be empty
+        self.assertIn('<div id="__jac_root"></div>', html_body)
+
+        # Should NOT contain pre-rendered content
+        # (The content will be rendered on the client side)
+        # Note: We check that the root div is completely empty
+        import re
+        root_match = re.search(r'<div id="__jac_root">(.*?)</div>', html_body)
+        self.assertIsNotNone(root_match)
+        root_content = root_match.group(1)
+        self.assertEqual(root_content, "")  # Should be empty string
+
+        # Verify that explicitly requesting SSR mode works
+        status_ssr, html_ssr, _ = self._request_raw(
+            "GET",
+            "/page/client_page?mode=ssr",
+            token=token,
+        )
+        self.assertEqual(status_ssr, 200)
+
+        # SSR should have pre-rendered content
+        self.assertIn("Runtime Test", html_ssr)

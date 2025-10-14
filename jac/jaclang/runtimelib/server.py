@@ -203,7 +203,7 @@ class JacAPIServer:
         session_path: str,
         port: int = 8000,
         base_path: str | None = None,
-        render_mode: str = "ssr",
+        render_mode: str = "csr",
     ) -> None:
         """Initialize the API server.
 
@@ -212,15 +212,14 @@ class JacAPIServer:
             session_path: Path to session storage
             port: Port to listen on
             base_path: Base path for module imports
-            render_mode: Default render mode - "ssr"
-                (server-side rendering + hydration) or "csr"
-                (client-side rendering only)
+            render_mode: Default render mode - "csr" (client-side rendering only)
+                or "ssr" (server-side rendering + hydration). Defaults to "csr".
         """
         self.module_name = module_name
         self.session_path = session_path
         self.port = port
         self.base_path = os.path.abspath(base_path) if base_path else None
-        self.render_mode = render_mode if render_mode in ("ssr", "csr") else "ssr"
+        self.render_mode = render_mode if render_mode in ("ssr", "csr") else "csr"
         self.user_manager = UserManager(session_path)
         self.module = None
         self._function_cache: dict[str, Callable] = {}

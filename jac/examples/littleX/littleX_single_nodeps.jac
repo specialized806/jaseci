@@ -319,6 +319,11 @@ cl def LoginForm() -> any {
                 Login
             </button>
         </form>
+        <div style={{"marginTop": "15px", "textAlign": "center"}}>
+            <a href="/page/littlex_signup" style={{"color": "#1da1f2", "textDecoration": "none"}}>
+                Don't have an account? Sign up
+            </a>
+        </div>
     </div>;
 }
 
@@ -333,6 +338,107 @@ cl async def handle_login(event: any) -> None {
         window.location.href = "/page/littlex_home";
     } else {
         alert("Login failed. Please try again.");
+    }
+}
+
+# Render signup form
+cl def SignupForm() -> any {
+    return <div class="signup-container" style={{"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}>
+        <h2 style={{"marginTop": "0"}}>Sign Up for LittleX</h2>
+        <form onsubmit={handle_signup}>
+            <div style={{"marginBottom": "15px"}}>
+                <label style={{"display": "block", "marginBottom": "5px"}}>Username:</label>
+                <input
+                    type="text"
+                    id="signup-username"
+                    required
+                    style={{"width": "100%", "padding": "8px", "boxSizing": "border-box"}}
+                />
+            </div>
+            <div style={{"marginBottom": "15px"}}>
+                <label style={{"display": "block", "marginBottom": "5px"}}>Password:</label>
+                <input
+                    type="password"
+                    id="signup-password"
+                    required
+                    style={{"width": "100%", "padding": "8px", "boxSizing": "border-box"}}
+                />
+            </div>
+            <div style={{"marginBottom": "15px"}}>
+                <label style={{"display": "block", "marginBottom": "5px"}}>Confirm Password:</label>
+                <input
+                    type="password"
+                    id="signup-password-confirm"
+                    required
+                    style={{"width": "100%", "padding": "8px", "boxSizing": "border-box"}}
+                />
+            </div>
+            <button
+                type="submit"
+                style={{"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}
+            >
+                Sign Up
+            </button>
+        </form>
+        <div style={{"marginTop": "15px", "textAlign": "center"}}>
+            <a href="/page/littlex_login" style={{"color": "#1da1f2", "textDecoration": "none"}}>
+                Already have an account? Login
+            </a>
+        </div>
+    </div>;
+}
+
+# Handle signup form submission
+cl async def handle_signup(event: any) -> None {
+    event.preventDefault();
+    username = document.getElementById("signup-username").value;
+    password = document.getElementById("signup-password").value;
+    password_confirm = document.getElementById("signup-password-confirm").value;
+
+    if password != password_confirm {
+        alert("Passwords do not match!");
+        return;
+    }
+
+    if username.length < 3 {
+        alert("Username must be at least 3 characters long.");
+        return;
+    }
+
+    if password.length < 6 {
+        alert("Password must be at least 6 characters long.");
+        return;
+    }
+
+    try {
+        response = await __fetch("/user/create", {
+            "method": "POST",
+            "headers": {"Content-Type": "application/json"},
+            "body": __jsonStringify({"username": username, "password": password})
+        });
+
+        if response.ok {
+            data = __jsonParse(await response.text());
+            token = data.get("token");
+            if token {
+                __setLocalStorage("jac_token", token);
+                alert("Account created successfully! Welcome to LittleX!");
+                window.location.href = "/page/littlex_home";
+            } else {
+                alert("Signup succeeded but no token received.");
+            }
+        } else {
+            error_text = await response.text();
+            try {
+                error_data = __jsonParse(error_text);
+                error_msg = error_data.get("error", "Signup failed");
+                alert(error_msg);
+            } except Exception {
+                alert("Signup failed: " + error_text);
+            }
+        }
+    } except Exception as e {
+        alert("Error during signup: " + __toString(e));
     }
 }
 
@@ -380,6 +486,11 @@ cl async def littlex_home() -> any {
 # Login page
 cl def littlex_login() -> any {
     return LoginForm();
+}
+
+# Signup page
+cl def littlex_signup() -> any {
+    return SignupForm();
 }
 
 # Profile page
