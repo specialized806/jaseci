@@ -373,35 +373,6 @@ rfstr_tsq_part: RF_TEXT_TSQ | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COL
 
 fformat: F_FORMAT_TEXT | D_LBRACE | D_RBRACE | LBRACE expression CONV? (COLON fformat*)? RBRACE
 
-RF_DQ_START.3: /[rR][fF]"|[fF][rR]"/
-RF_SQ_START.3: /[rR][fF]'|[fF][rR]'/
-RF_TDQ_START.3: /[rR][fF]"""|[fF][rR]"""/
-RF_TSQ_START.3: /[rR][fF]'''|[fF][rR]'''/
-F_DQ_START.2: /[fF]"/
-F_SQ_START.2: /[fF]'/
-F_TDQ_START.2: /[fF]"""/
-F_TSQ_START.2: /[fF]'''/
-
-F_DQ_END: "\""
-F_SQ_END: "'"
-F_TDQ_END: "\"\"\""
-F_TSQ_END: "'''"
-
-D_RBRACE: "}}"
-D_LBRACE: "{{"
-
-F_TEXT_DQ.-1: /[^"{}\n\\]+|\\./
-F_TEXT_SQ.-1: /[^'{}\n\\]+|\\./
-F_TEXT_TDQ.-1: /(?:[^"{}\\]|"(?!""))+|\\./s
-F_TEXT_TSQ.-1: /(?:[^'{}\\]|'(?!''))+|\\./s
-RF_TEXT_DQ.-1: /[^"{}]+/
-RF_TEXT_SQ.-1: /[^'{}]+/
-RF_TEXT_TDQ.-1: /(?:[^"{}]|"(?!""))+/s
-RF_TEXT_TSQ.-1: /(?:[^'{}]|'(?!''))+/s
-F_FORMAT_TEXT.-1: /[^{}]+/
-
-CONV: /![rRsSaA]/
-
 // [Heading]: Collection values.
 atom_collection: dict_compr
                | set_compr
@@ -600,6 +571,35 @@ NOT: "not" // TODO:AST: Rename to KW_NOT
 
 STRING: /(r?b?|b?r?)("[^"\r\n]*"|'[^'\r\n]*')/
        | /(r?b?|b?r?)("""(.|\r|\n)*?"""|'''(.|\r|\n)*?''')/
+
+RF_DQ_START.3: /[rR][fF]"|[fF][rR]"/
+RF_SQ_START.3: /[rR][fF]'|[fF][rR]'/
+RF_TDQ_START.3: /[rR][fF]"""|[fF][rR]"""/
+RF_TSQ_START.3: /[rR][fF]'''|[fF][rR]'''/
+F_DQ_START.2: /[fF]"/
+F_SQ_START.2: /[fF]'/
+F_TDQ_START.2: /[fF]"""/
+F_TSQ_START.2: /[fF]'''/
+
+F_DQ_END: "\""
+F_SQ_END: "'"
+F_TDQ_END: "\"\"\""
+F_TSQ_END: "'''"
+
+D_RBRACE: "}}"
+D_LBRACE: "{{"
+
+F_TEXT_DQ.-1: /[^"{}\n\\]+|\\./
+F_TEXT_SQ.-1: /[^'{}\n\\]+|\\./
+F_TEXT_TDQ.-1: /(?:[^"{}\\]|"(?!""))+|\\./s
+F_TEXT_TSQ.-1: /(?:[^'{}\\]|'(?!''))+|\\./s
+RF_TEXT_DQ.-1: /[^"{}]+/
+RF_TEXT_SQ.-1: /[^'{}]+/
+RF_TEXT_TDQ.-1: /(?:[^"{}]|"(?!""))+/s
+RF_TEXT_TSQ.-1: /(?:[^'{}]|'(?!''))+/s
+F_FORMAT_TEXT.-1: /[^{}]+/
+
+CONV: /![rRsSaA]/
 
 NULL.1: "None"
 BOOL.1: /True|False/
