@@ -775,7 +775,8 @@ class TypeEvaluator {
                 }
 
                 if symbol := expr.sym_tab.lookup(expr.value, deep=True) {
-                    expr.sym = self.resolve_imported_symbols(symbol);
+                    symbol = self.resolve_imported_symbols(symbol);
+                    symbol.add_use(expr);
                     return self.get_type_of_symbol(symbol);
                 }
         }
