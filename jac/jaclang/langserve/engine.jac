@@ -121,7 +121,7 @@ class JacLangServer(JacProgram , LanguageServer) {
 
     """Rebuild a file and its dependencies (typecheck)."""
     def type_check_file(
-        self: JacLangServer, file_path: str,cancel_token: Event | None, annex_view: Optional[str] = None
+        self: JacLangServer, file_path: str,cancel_token: Event | None = None, annex_view: Optional[str] = None
     ) -> bool {
         try {
             start_time = time.time();
@@ -144,8 +144,8 @@ class JacLangServer(JacProgram , LanguageServer) {
 
             self.update_modules(fs_path, build);
             if build.annexable_by {
-                return self.deep_check(
-                    uris.from_fs_path(build.annexable_by), annex_view=fs_path
+                return self.type_check_file(
+                    uris.from_fs_path(build.annexable_by), cancel_token=cancel_token, annex_view=fs_path
                 );
             }
             self.publish_diagnostics(
@@ -172,12 +172,10 @@ class JacLangServer(JacProgram , LanguageServer) {
             self.log_py(
                 f"'PROFILE: Deep check took '{(time.time() - start_time)}' seconds.'"
             );
-            return len(self.errors_had) == 0;
         } except Exception as e {
-            if not cancel_token.is_set() {
+            if cancel_token and not cancel_token.is_set() {
                 self.log_py(f"'Error during type check: '{e}");
             }
-            return False;
         }
     }
 
