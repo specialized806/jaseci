@@ -1,7 +1,7 @@
 import from byllm.llm { Model }
 import time;
 
-glob llm = Model(model_name="gpt-4o-mini");
+glob llm = Model(model_name="gpt-4o");
 
 node Task {
     has task:str = "";
@@ -88,7 +88,6 @@ walker task_manager {
             RoutingNodes.EMAIL_HANDLING: EmailHandling,
             RoutingNodes.GENERAL_CHAT: GeneralChat
         };
-        
         node_type = node_map[routed_node_name];
         routed_node = [-->(`?node_type)];
         if not routed_node {
