@@ -121,16 +121,16 @@ class TestServeCommand(TestCase):
         max_attempts = 50
         for _ in range(max_attempts):
             try:
-                self._request("GET", "/")
+                self._request("GET", "/", timeout=10)
                 break
             except Exception:
                 time.sleep(0.1)
 
     def _request(
-        self, method: str, path: str, data: dict = None, token: str = None
+        self, method: str, path: str, data: dict = None, token: str = None, timeout: int = 5
     ) -> dict:
         """Make HTTP request to server."""
-        status, payload, _ = self._request_raw(method, path, data=data, token=token)
+        status, payload, _ = self._request_raw(method, path, data=data, token=token, timeout=timeout)
         try:
             return json.loads(payload)
         except json.JSONDecodeError as exc:  # pragma: no cover - sanity guard
@@ -550,10 +550,12 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
+        # Use longer timeout for page requests (they trigger bundle building)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page",
             token=token,
+            timeout=15
         )
 
         self.assertEqual(status, 200)
@@ -642,11 +644,12 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
-        # Request page in CSR mode using query parameter
+        # Request page in CSR mode using query parameter (longer timeout for bundle building)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page?mode=csr",
             token=token,
+            timeout=15
         )
 
         self.assertEqual(status, 200)
@@ -674,11 +677,12 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
-        # Request page without specifying mode (CSR-only)
+        # Request page without specifying mode (CSR-only, longer timeout for bundle building)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page",
             token=token,
+            timeout=15
         )
 
         self.assertEqual(status, 200)
@@ -882,11 +886,12 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
-        # Request the client_page endpoint
+        # Request the client_page endpoint (longer timeout for bundle building)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page",
             token=token,
+            timeout=15
         )
 
         self.assertEqual(status, 200)
@@ -924,11 +929,12 @@ class TestServeCommand(TestCase):
         )
         token = create_result["token"]
 
-        # Request page WITHOUT specifying mode (should use default)
+        # Request page WITHOUT specifying mode (should use default, longer timeout for bundle building)
         status, html_body, headers = self._request_raw(
             "GET",
             "/page/client_page",
             token=token,
+            timeout=15
         )
 
         self.assertEqual(status, 200)
@@ -946,11 +952,12 @@ class TestServeCommand(TestCase):
         root_content = root_match.group(1)
         self.assertEqual(root_content, "")  # Should be empty string
 
-        # Verify that explicitly requesting SSR mode is ignored (still CSR)
+        # Verify that explicitly requesting SSR mode is ignored (still CSR, longer timeout for bundle building)
         status_ssr, html_ssr, _ = self._request_raw(
             "GET",
             "/page/client_page?mode=ssr",
             token=token,
+            timeout=15
         )
         self.assertEqual(status_ssr, 200)
 
