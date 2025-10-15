@@ -1434,6 +1434,17 @@ class Archetype(
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
+    @property
+    def get_has_vars(self) -> list[HasVar]:
+        # TODO: handle impl 
+        has_vars: list[HasVar] = []
+        for nd in list(self.kid):
+            if isinstance(nd, ArchHas):
+                for has_ in nd.vars:
+                    if isinstance(has_, HasVar):
+                        has_vars.append(has_)
+        return has_vars
+
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:

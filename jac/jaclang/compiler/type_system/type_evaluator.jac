@@ -963,6 +963,30 @@ class TypeEvaluator {
         );
     }
 
+    def get_has_var_parameters(self: TypeEvaluator, arch: uni.Archetype) -> list[types.Parameter] {
+        has_vars: list[types.Parameter] = [];
+        arch.get_has_vars;
+        for has_var in arch.get_has_vars {
+            var_type: TypeBase = types.UnknownType();
+            if has_var.type_tag {
+                var_type = self.get_type_of_expression(has_var.type_tag.tag);
+                var_type = self._convert_to_instance(var_type);
+            }
+            has_vars.append(
+                types.Parameter(
+                    name=has_var.name.value,
+                    category=types.ParameterCategory.Positional,
+                    param_type=var_type,
+                    default_value=has_var.value,
+                    is_self=False,
+                    param_kind=types.ParamKind.NORMAL,
+                )
+            );
+        }
+        return has_vars;
+        # 
+    }
+
     """
     Validate that the arguments can be assigned to the call's parameter list.
 
@@ -984,7 +1008,42 @@ class TypeEvaluator {
             isinstance(caller_type, types.ClassType)
             and caller_type.is_instantiable_class()
         ) {
-            # TODO: validate args for __init__()
+
+            # TODO:Fix the bootstrap issue with typing module.
+            if not hasattr(self, 'prefetch'){
+                return types.UnknownType();
+            }
+
+            # get the __init__() method if available.
+            init_method = caller_type.shared.symbol_table.names_in_scope.get("__init__");
+            if init_method {
+            
+                init_method = init_method.symbol_table if init_method.symbol_table.is_method else None;
+
+                init_method_type = self.get_type_of_symbol(init_method.sym);
+                if isinstance(init_method_type, types.FunctionType) {
+                    arg_param_match = self.match_args_to_params(expr, init_method_type);
+                    if not arg_param_match.argument_errors {
+                        self.validate_arg_types(arg_param_match);
+                    }
+                }
+                return caller_type.clone_as_instance();
+            }
+
+            # Data classes and auto-generated __init__() handling.
+            if (arch:= caller_type.shared.symbol_table) 
+                and arch.sym_category != SymbolType.TYPE {
+                    init_method = types.FunctionType(
+                        func_name="__init__",
+                        return_type=types.UnknownType(),
+                        parameters=self.get_has_var_parameters(arch),
+                    );
+                    arg_param_match = self.match_args_to_params(expr, init_method);
+                    if not arg_param_match.argument_errors {
+                        self.validate_arg_types(arg_param_match);
+                    }
+            }
+
             return caller_type.clone_as_instance();
         }
 
