@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import jaclang.compiler.passes.ecmascript.estree as es
 import jaclang.compiler.unitree as uni
@@ -57,6 +57,8 @@ class EsastGenPass(UniPass):
 
     def before_pass(self) -> None:
         """Initialize the pass."""
+        from jaclang.compiler.codeinfo import ClientManifest
+
         self.child_passes: list[EsastGenPass] = []
         for i in self.ir_in.impl_mod + self.ir_in.test_mod:
             child_pass = EsastGenPass(ir_in=i, prog=self.prog)
@@ -66,8 +68,8 @@ class EsastGenPass(UniPass):
         self.scope_stack: list[ScopeInfo] = []
         self.scope_map: dict[uni.UniScopeNode, ScopeInfo] = {}
 
-        # Collect client metadata and populate manifest
-        self._prepare_client_artifacts()
+        # Initialize client manifest instance
+        self.client_manifest = ClientManifest()
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
@@ -214,6 +216,18 @@ class EsastGenPass(UniPass):
         # Generate JavaScript code from ES AST
         node.gen.js = self._generate_module_js(node)
 
+        # Sort and assign client manifest
+        self.client_manifest.exports.sort()
+        self.client_manifest.globals.sort()
+        node.gen.client_manifest = self.client_manifest
+
+        # Assign child manifests
+        for child_pass in self.child_passes:
+            if isinstance(child_pass.ir_in, uni.Module):
+                child_pass.client_manifest.exports.sort()
+                child_pass.client_manifest.globals.sort()
+                child_pass.ir_in.gen.client_manifest = child_pass.client_manifest
+
     def exit_sub_tag(self, node: uni.SubTag[uni.T]) -> None:
         """Process SubTag node."""
         if hasattr(node.tag.gen, "es_ast"):
@@ -278,6 +292,10 @@ class EsastGenPass(UniPass):
 
     def exit_archetype(self, node: uni.Archetype) -> None:
         """Process archetype (class) declaration."""
+        if getattr(node, "is_client_decl", False):
+            self.client_manifest.has_client = True
+            self.client_manifest.exports.append(node.name.sym_name)
+
         body_stmts: list[
             Union[es.MethodDefinition, es.PropertyDefinition, es.StaticBlock]
         ] = []
@@ -517,6 +535,16 @@ class EsastGenPass(UniPass):
 
     def exit_ability(self, node: uni.Ability) -> None:
         """Process ability (function/method) declaration."""
+        if getattr(node, "is_client_decl", False) and not node.is_method:
+            self.client_manifest.has_client = True
+            name = node.name_ref.sym_name
+            self.client_manifest.exports.append(name)
+            self.client_manifest.params[name] = (
+                [p.name.sym_name for p in node.signature.params if hasattr(p, "name")]
+                if isinstance(node.signature, uni.FuncSignature)
+                else []
+            )
+
         params: list[es.Pattern] = []
         if isinstance(node.signature, uni.FuncSignature):
             for param in node.signature.params:
@@ -2029,6 +2057,19 @@ class EsastGenPass(UniPass):
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Process global variables."""
+        if getattr(node, "is_client_decl", False):
+            self.client_manifest.has_client = True
+            for assignment in node.assignments:
+                for target in assignment.target:
+                    if sym_name := getattr(target, "sym_name", None):
+                        self.client_manifest.globals.append(sym_name)
+                        if (
+                            assignment.value
+                            and (lit_val := self._literal_value(assignment.value))
+                            is not None
+                        ):
+                            self.client_manifest.globals_values[sym_name] = lit_val
+
         statements: list[es.Statement] = []
         for assignment in node.assignments:
             if hasattr(assignment.gen, "es_ast") and assignment.gen.es_ast:
@@ -2101,86 +2142,6 @@ class EsastGenPass(UniPass):
         """Process semicolon."""
         # Semicolons are handled automatically
         pass
-
-    # Client Element Handling
-    # =======================
-
-    def _prepare_client_artifacts(self) -> None:
-        """Collect client metadata and pre-generate JS for modules."""
-        from jaclang.compiler.codeinfo import ClientManifest
-
-        for module in self._iter_modules(self.ir_in):
-            artifacts = self._collect_client_metadata(module)
-
-            # Populate the typed ClientManifest on module.gen
-            module.gen.client_manifest = ClientManifest(
-                exports=artifacts["exports"],
-                globals=artifacts["globals"],
-                params=artifacts["params"],
-                globals_values=artifacts["globals_values"],
-                has_client=artifacts["has_client"],
-            )
-
-    def _collect_client_metadata(self, module: uni.Module) -> dict[str, Any]:
-        """Collect client metadata from a module."""
-        exports: set[str] = set()
-        globals_set: set[str] = set()
-        params: dict[str, list[str]] = {}
-        globals_values: dict[str, Any] = {}
-        has_client = False
-
-        for node in self._walk_nodes(module):
-            if not getattr(node, "is_client_decl", False):
-                continue
-            has_client = True
-            if isinstance(node, uni.Ability) and not node.is_method:
-                name = node.name_ref.sym_name
-                exports.add(name)
-                if isinstance(node.signature, uni.FuncSignature):
-                    params[name] = [
-                        param.name.sym_name
-                        for param in node.signature.params
-                        if hasattr(param, "name")
-                    ]
-                else:
-                    params[name] = []
-            elif isinstance(node, uni.Archetype):
-                exports.add(node.name.sym_name)
-            elif isinstance(node, uni.GlobalVars):
-                for assignment in node.assignments:
-                    for target in assignment.target:
-                        sym_name = getattr(target, "sym_name", None)
-                        if isinstance(sym_name, str):
-                            globals_set.add(sym_name)
-                            if assignment.value:
-                                lit_val = self._literal_value(assignment.value)
-                                if lit_val is not None:
-                                    globals_values[sym_name] = lit_val
-
-        return {
-            "exports": sorted(exports),
-            "globals": sorted(globals_set),
-            "params": dict(sorted(params.items())),
-            "globals_values": globals_values,
-            "has_client": has_client,
-        }
-
-    def _iter_modules(self, module: uni.Module) -> Iterable[uni.Module]:
-        """Iterate over a module and its nested modules."""
-        yield module
-        for child in getattr(module, "impl_mod", []):
-            if isinstance(child, uni.Module):
-                yield from self._iter_modules(child)
-        for child in getattr(module, "test_mod", []):
-            if isinstance(child, uni.Module):
-                yield from self._iter_modules(child)
-
-    def _walk_nodes(self, node: uni.UniNode) -> Iterable[uni.UniNode]:
-        """Walk all nodes in the tree."""
-        yield node
-        for child in getattr(node, "kid", []):
-            if child:
-                yield from self._walk_nodes(child)
 
     def _literal_value(self, expr: uni.UniNode | None) -> object | None:
         """Extract literal value from an expression."""
