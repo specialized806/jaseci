@@ -185,7 +185,6 @@ class JacLangServer(JacProgram , LanguageServer) {
         if file_path in self.cancel_tokens {
             self.cancel_tokens[file_path].set();
         }
-        import os;
         # Create new cancellation token
         self.cancel_tokens[file_path] = threading.Event();
 
