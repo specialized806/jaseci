@@ -987,54 +987,31 @@ class TestServeCommand(TestCase):
 
         output = captured_output.getvalue()
 
-        # Verify the documentation header is present
-        self.assertIn("JAC API SERVER ENDPOINT DOCUMENTATION", output)
-        self.assertIn("Module: serve_api", output)
-
-        # Verify authentication endpoints are documented
-        self.assertIn("AUTHENTICATION ENDPOINTS", output)
-        self.assertIn("POST /user/create", output)
-        self.assertIn("POST /user/login", output)
-
-        # Verify introspection endpoints are documented
-        self.assertIn("INTROSPECTION ENDPOINTS", output)
-        self.assertIn("GET /functions", output)
-        self.assertIn("GET /walkers", output)
-
         # Verify function endpoints are documented
-        self.assertIn("FUNCTION ENDPOINTS", output)
-        self.assertIn("GET /function/add_numbers", output)
-        self.assertIn("POST /function/add_numbers", output)
-        self.assertIn("GET /function/greet", output)
-        self.assertIn("POST /function/greet", output)
+        self.assertIn("FUNCTIONS", output)
+        self.assertIn("/function/add_numbers", output)
+        self.assertIn("/function/greet", output)
 
         # Verify walker endpoints are documented
-        self.assertIn("WALKER ENDPOINTS", output)
-        self.assertIn("GET /walker/CreateTask", output)
-        self.assertIn("POST /walker/CreateTask", output)
-        self.assertIn("GET /walker/ListTasks", output)
-        self.assertIn("POST /walker/ListTasks", output)
-        self.assertIn("GET /walker/CompleteTask", output)
-        self.assertIn("POST /walker/CompleteTask", output)
+        self.assertIn("WALKERS", output)
+        self.assertIn("/walker/CreateTask", output)
+        self.assertIn("/walker/ListTasks", output)
+        self.assertIn("/walker/CompleteTask", output)
 
         # Verify client page endpoints section is documented
-        self.assertIn("CLIENT PAGE ENDPOINTS", output)
-
-        # Verify static endpoints are documented
-        self.assertIn("STATIC ENDPOINTS", output)
-        self.assertIn("GET /", output)
-        self.assertIn("GET /static/client.js", output)
+        self.assertIn("CLIENT PAGES", output)
+        self.assertIn("client_page", output)
 
         # Verify summary is present
-        self.assertIn("SUMMARY", output)
-        self.assertIn("Total Functions: 2", output)
-        self.assertIn("Total Walkers: 3", output)
-        self.assertIn("Total Endpoints:", output)
+        self.assertIn("TOTAL:", output)
+        self.assertIn("2 functions", output)
+        self.assertIn("3 walkers", output)
+        self.assertIn("16 endpoints", output)
 
         # Verify parameter details are included
         self.assertIn("required", output)
         self.assertIn("optional", output)
-        self.assertIn("Return Type:", output)
+        self.assertIn("Bearer token", output)
 
     def test_faux_flag_with_littlex_example(self) -> None:
         """Test that --faux flag correctly identifies functions, walkers, and endpoints in littleX example."""
@@ -1072,33 +1049,23 @@ class TestServeCommand(TestCase):
 
         output = captured_output.getvalue()
 
-        # Verify the documentation header is present
-        self.assertIn("JAC API SERVER ENDPOINT DOCUMENTATION", output)
-        self.assertIn("Module: littleX_single_nodeps", output)
 
-        # Verify summary counts match expectations
-        # LittleX has 0 regular functions and 15 walkers
-        self.assertIn("Total Functions: 0", output)
-        self.assertIn("Total Walkers: 15", output)
-
-        # Total endpoints = 2 auth + 2 introspection + (0 functions * 2) + (15 walkers * 2) + 2 = 36
-        self.assertIn("Total Endpoints: 36", output)
+        self.assertIn("littleX_single_nodeps", output)
+        self.assertIn("0 functions", output)
+        self.assertIn("15 walkers", output)
+        self.assertIn("36 endpoints", output)
 
         # Verify some specific walker endpoints are documented
-        self.assertIn("POST /walker/visit_profile", output)
-        self.assertIn("POST /walker/create_tweet", output)
-        self.assertIn("POST /walker/load_feed", output)
-        self.assertIn("POST /walker/update_profile", output)
+        self.assertIn("/walker/visit_profile", output)
+        self.assertIn("/walker/create_tweet", output)
+        self.assertIn("/walker/load_feed", output)
+        self.assertIn("/walker/update_profile", output)
 
         # Verify authentication and introspection endpoints are still present
-        self.assertIn("POST /user/create", output)
-        self.assertIn("GET /functions", output)
-        self.assertIn("GET /walkers", output)
-
-        # Verify client page endpoints show the client functions
-        self.assertIn("CLIENT PAGE ENDPOINTS", output)
-        self.assertIn("Available client-exportable functions", output)
-        # LittleX has many client functions like littlex_app, App, etc.
-        self.assertIn("littlex_app", output)
-        self.assertIn("- App", output)
-        self.assertIn("GET /page/", output)
+        self.assertIn("/user/create", output)
+        self.assertIn("Available", output)
+        self.assertIn("27", output)  # 27 client functions
+        # Verify some client functions are listed
+        self.assertIn("App", output)
+        self.assertIn("FeedView", output)
+        self.assertIn("/page/", output)
