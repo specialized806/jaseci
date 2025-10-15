@@ -934,6 +934,176 @@ class JacAPIServer:
         self.introspector.ensure_bundle()
         return self.introspector._bundle.code
 
+    def print_endpoint_docs(self) -> None:
+        """Print comprehensive documentation for all endpoints that would be generated."""
+        # Load the module and perform introspection
+        self.introspector.load()
+        functions = self.introspector.get_functions()
+        walkers = self.introspector.get_walkers()
+        client_manifest = self.introspector._client_manifest
+        client_exports = client_manifest.get("exports", [])
+
+        print("=" * 80)
+        print("JAC API SERVER ENDPOINT DOCUMENTATION")
+        print(f"Module: {self.module_name}")
+        print("=" * 80)
+        print()
+
+        # Print authentication endpoints
+        print("AUTHENTICATION ENDPOINTS")
+        print("-" * 80)
+        print()
+        print("POST /user/create")
+        print("  Description: Create a new user account")
+        print("  Request Body:")
+        print("    {")
+        print('      "username": "string (required)",')
+        print('      "password": "string (required)"')
+        print("    }")
+        print("  Response: User data with auth token")
+        print()
+        print("POST /user/login")
+        print("  Description: Authenticate and receive auth token")
+        print("  Request Body:")
+        print("    {")
+        print('      "username": "string (required)",')
+        print('      "password": "string (required)"')
+        print("    }")
+        print("  Response: User data with auth token")
+        print()
+
+        # Print introspection endpoints
+        print("INTROSPECTION ENDPOINTS (Authenticated)")
+        print("-" * 80)
+        print()
+        print("GET /functions")
+        print("  Description: List all available functions")
+        print("  Response: Array of function names")
+        print()
+        print("GET /walkers")
+        print("  Description: List all available walkers")
+        print("  Response: Array of walker names")
+        print()
+
+        # Print function endpoints
+        if functions:
+            print("FUNCTION ENDPOINTS (Authenticated)")
+            print("-" * 80)
+            print()
+            for func_name, func in functions.items():
+                signature = self.introspector.introspect_callable(func)
+                print(f"GET /function/{func_name}")
+                print(f"  Description: Get signature information for '{func_name}'")
+                print()
+                print(f"POST /function/{func_name}")
+                print(f"  Description: Call function '{func_name}'")
+                print("  Request Body:")
+                print("    {")
+                print('      "args": {')
+                if signature["parameters"]:
+                    for param_name, param_info in signature["parameters"].items():
+                        required = "required" if param_info["required"] else "optional"
+                        default = (
+                            f", default: {param_info['default']}"
+                            if param_info["default"]
+                            else ""
+                        )
+                        print(
+                            f'        "{param_name}": "{param_info["type"]} ({required}{default})",'
+                        )
+                print("      }")
+                print("    }")
+                print(f"  Return Type: {signature['return_type']}")
+                print()
+        else:
+            print("No functions found in module.")
+            print()
+
+        # Print walker endpoints
+        if walkers:
+            print("WALKER ENDPOINTS (Authenticated)")
+            print("-" * 80)
+            print()
+            for walker_name, walker_cls in walkers.items():
+                info = self.introspector.introspect_walker(walker_cls)
+                print(f"GET /walker/{walker_name}")
+                print(
+                    f"  Description: Get field information for walker '{walker_name}'"
+                )
+                print()
+                print(f"POST /walker/{walker_name}")
+                print(f"  Description: Spawn walker '{walker_name}'")
+                print("  Request Body:")
+                print("    {")
+                print('      "fields": {')
+                if info["fields"]:
+                    for field_name, field_info in info["fields"].items():
+                        required = "required" if field_info["required"] else "optional"
+                        default = (
+                            f", default: {field_info['default']}"
+                            if field_info["default"]
+                            else ""
+                        )
+                        print(
+                            f'        "{field_name}": "{field_info["type"]} ({required}{default})",'
+                        )
+                print("      }")
+                print("    }")
+                print()
+        else:
+            print("No walkers found in module.")
+            print()
+
+        # Print client page endpoints
+        print("CLIENT PAGE ENDPOINTS (Public)")
+        print("-" * 80)
+        print()
+        if client_exports:
+            print(
+                f"Available client-exportable functions ({len(client_exports)} total):"
+            )
+            for func_name in sorted(client_exports):
+                print(f"  - {func_name}")
+            print()
+            print("GET /page/<function_name>?param1=value1&param2=value2")
+            print("  Description: Render HTML page for client-exportable functions")
+            print("  Query Parameters: Function arguments as query string")
+            print("  Examples:")
+            for func_name in sorted(client_exports)[:3]:
+                print(f"    GET /page/{func_name}")
+        else:
+            print("No client-exportable functions found.")
+            print()
+            print(
+                "Note: Use 'cl def' to define client-side functions that can be rendered as HTML pages."
+            )
+        print()
+
+        # Print static endpoints
+        print("STATIC ENDPOINTS")
+        print("-" * 80)
+        print()
+        print("GET /")
+        print("  Description: API server information and endpoint list")
+        print()
+        print("GET /static/client.js")
+        print("  Description: Client-side JavaScript bundle for client functions")
+        print()
+
+        # Print summary
+        print("=" * 80)
+        print("SUMMARY")
+        print("-" * 80)
+        print(f"Total Functions: {len(functions)}")
+        print(f"Total Walkers: {len(walkers)}")
+        print(f"Total Endpoints: {2 + 2 + len(functions) * 2 + len(walkers) * 2 + 2}")
+        print()
+        print(
+            "Note: All authenticated endpoints require Bearer token in Authorization header"
+        )
+        print("Example: Authorization: Bearer <token>")
+        print("=" * 80)
+
     def start(self) -> None:
         """Start the HTTP server."""
         self.introspector.load()
