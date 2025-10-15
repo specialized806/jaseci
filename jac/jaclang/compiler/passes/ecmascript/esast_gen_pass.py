@@ -209,7 +209,7 @@ class EsastGenPass(UniPass):
         node.gen.es_ast = program
 
         # Generate JavaScript code from ES AST
-        node.gen.js = self._generate_module_js(node)
+        node.gen.js = es_to_js(node.gen.es_ast)
 
         # Sort and assign client manifest
         self.client_manifest.exports.sort()
@@ -1585,16 +1585,32 @@ class EsastGenPass(UniPass):
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Process function call."""
-        callee = (
-            node.target.gen.es_ast
-            if node.target.gen.es_ast
-            else self.sync_loc(es.Identifier(name="func"), jac_node=node.target)
-        )
+        # Special case: type(x) -> typeof x in JavaScript
+        # Check the target directly before processing it into an es_ast
+        target_is_type = False
+        if isinstance(node.target, (uni.Name, uni.BuiltinType)):
+            target_name = getattr(node.target, "sym_name", None)
+            if target_name == "type":
+                target_is_type = True
 
         args: list[Union[es.Expression, es.SpreadElement]] = []
         for param in node.params:
             if param.gen.es_ast:
                 args.append(param.gen.es_ast)
+
+        if target_is_type and len(args) == 1 and isinstance(args[0], es.Expression):
+            typeof_expr = self.sync_loc(
+                es.UnaryExpression(operator="typeof", prefix=True, argument=args[0]),
+                jac_node=node,
+            )
+            node.gen.es_ast = typeof_expr
+            return
+
+        callee = (
+            node.target.gen.es_ast
+            if node.target.gen.es_ast
+            else self.sync_loc(es.Identifier(name="func"), jac_node=node.target)
+        )
 
         if isinstance(callee, es.MemberExpression) and isinstance(
             callee.property, es.Identifier
@@ -2143,10 +2159,3 @@ class EsastGenPass(UniPass):
             if items:
                 return items
         return None
-
-    def _generate_module_js(self, module: uni.Module) -> str:
-        """Generate JavaScript code for the supplied module."""
-        es_ast = getattr(module.gen, "es_ast", None)
-        if es_ast:
-            return es_to_js(es_ast)
-        return ""

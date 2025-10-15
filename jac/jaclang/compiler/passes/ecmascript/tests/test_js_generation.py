@@ -178,3 +178,49 @@ class JavaScriptGenerationTests(TestCase):
             self.assert_balanced_syntax(js_code, temp_path)
         finally:
             os.unlink(temp_path)
+
+    def test_type_to_typeof_transformation(self) -> None:
+        """Test that type() calls transform to typeof operator in JavaScript."""
+        jac_code = '''"""Test type() to typeof conversion."""
+
+cl def check_types() {
+    let x = 42;
+    let y = "hello";
+    let obj = {"key": "value"};
+    let arr = [1, 2, 3];
+
+    let t1 = type(x);
+    let t2 = type(y);
+    let t3 = type(obj);
+    let t4 = type(arr[0]);
+
+    return t1;
+}
+'''
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jac", delete=False) as tmp:
+            tmp.write(jac_code)
+            tmp.flush()
+            temp_path = tmp.name
+
+        try:
+            js_code = self.compile_fixture_to_js(temp_path)
+
+            # Verify typeof operator is present
+            self.assertIn("typeof", js_code, "typeof operator should be present in output")
+
+            # Verify specific transformations
+            self.assertIn("typeof x", js_code, "type(x) should become typeof x")
+            self.assertIn("typeof y", js_code, "type(y) should become typeof y")
+            self.assertIn("typeof obj", js_code, "type(obj) should become typeof obj")
+            self.assertIn("typeof arr[0]", js_code, "type(arr[0]) should become typeof arr[0]")
+
+            # Ensure no type() function calls remain
+            self.assertNotIn("type(", js_code, "No type() calls should remain in JavaScript")
+
+            # Count typeof occurrences - should have exactly 4
+            typeof_count = js_code.count("typeof")
+            self.assertEqual(typeof_count, 4, f"Expected 4 typeof occurrences, found {typeof_count}")
+
+            self.assert_balanced_syntax(js_code, temp_path)
+        finally:
+            os.unlink(temp_path)

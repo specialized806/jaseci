@@ -25,6 +25,46 @@ graph TD
 
 ## 1. `typeof` and General Unary Operator Support
 
+### Status
+
+**✅ PARTIALLY IMPLEMENTED** (2025-01-15)
+
+The `type()` function call is now automatically transformed to `typeof` operator in JavaScript compilation. See [JavaScript Compilation Implementation Notes](./js_compilation_impl_notes.md#1-the-type-keyword-transformation) for full details.
+
+### Current Behavior
+
+**Implemented**: `type(expr)` function call syntax
+
+```jac
+cl def check_browser_env() {
+    let scope = type(globalThis) != "undefined" ? globalThis : window;
+
+    if type(document) == "undefined" {
+        return;
+    }
+}
+```
+
+**Generates**:
+```javascript
+function check_browser_env() {
+  const scope = typeof globalThis !== "undefined" ? globalThis : window;
+
+  if (typeof document === "undefined") {
+    return;
+  }
+}
+```
+
+**Not Yet Implemented**: Direct `typeof` operator syntax
+
+The following syntax is not yet supported but may be added in the future:
+
+```jac
+// This syntax doesn't work yet - use type(x) instead
+let t = typeof globalThis;  // ❌ Parser error
+```
+
 ### Motivation
 
 The bootstrap must probe browser globals (`globalThis`, `window`, `document`, etc.) without throwing in non-DOM contexts. JavaScript uses `typeof` for this:
@@ -34,41 +74,30 @@ const scope = typeof globalThis !== "undefined" ? globalThis : window;
 if (typeof document === "undefined") { return; }
 ```
 
-Jac cannot emit this today because:
+### Implementation Details
 
-* The grammar (`jac.lark`) has no `TYPEOF` token.
-* `EsastGenPass.exit_unary_expr` only maps `-, +, !, ~`.
+* **File**: [esast_gen_pass.py:1586-1640](../jaclang/compiler/passes/ecmascript/esast_gen_pass.py#L1586-L1640)
+* **Transformation**: `type(x)` function calls → `typeof x` unary expressions
+* **Scope**: Client-side code only (server-side retains Python's `type()`)
+* **Tests**: [test_client_codegen.py:68-113](../jaclang/compiler/tests/test_client_codegen.py#L68-L113)
 
-### Desired Jac Source
+### Remaining Work (Future Enhancement)
 
-```jac
-let scope = typeof globalThis != "undefined" ? globalThis : window;
-
-if typeof document == "undefined" {
-    return;
-}
-```
-
-### Proposed Compiler Changes
+To support native `typeof` operator syntax (optional):
 
 1. **Lexer/Parser**
    * Add `TYPEOF: "typeof"` terminal in `jac.lark`.
    * Update `factor` rule to include `TYPEOF factor`.
 
-2. **IR Node (Optional)**
+2. **IR Node**
    * `uni.UnaryExpr` already models unary operators; extend it to accept the new token.
 
 3. **ECMAScript Codegen**
    * Extend `op_map` in `EsastGenPass.exit_unary_expr` to map `Tok.TYPEOF` to `"typeof"`.
-   * Ensure the unparser handles `typeof` (it already does generically for unary ops).
-
-4. **Testing**
-   * Unit tests covering `typeof` in expressions and control flow.
-   * Integration test showing client runtime bootstrap compiled entirely from Jac.
 
 ### Migration Impact
 
-Once `typeof` works, guards around `globalThis`, `window`, and `document` may move into `client_runtime.jac`, reducing the bootstrap JS block.
+The `type()` transformation enables guards around `globalThis`, `window`, and `document` to be written in pure Jac, reducing the bootstrap JS block in `client_bundle.py`.
 
 ## 2. Function Expressions and Closures
 

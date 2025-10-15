@@ -73,29 +73,25 @@ class ClientBundleBuilder:
         """Compile bundle pieces and stitch them together."""
         runtime_js = self._compile_to_js(runtime_path)
 
-        # Get manifest from JacProgram instead of module attribute
+        # Get manifest from JacProgram
         from jaclang.runtimelib.machine import JacMachine as Jac
 
-        manifest = Jac.program.get_client_manifest(str(module_path)) or {}
-        manifest_exports = manifest.get("exports", [])
-        manifest_globals = manifest.get("globals", [])
-        manifest_globals_values = manifest.get("globals_values", {})
+        mod = Jac.program.mod.hub.get(str(module_path))
+        manifest = mod.gen.client_manifest if mod else None
+
         module_js = self._compile_to_js(module_path)
 
-        client_exports = list(manifest_exports)
-
-        client_globals_list = list(manifest_globals) if manifest_globals else []
+        client_exports = sorted(dict.fromkeys(manifest.exports)) if manifest else []
 
         client_globals_map: dict[str, Any] = {}
-        for name in client_globals_list:
-            if name in manifest_globals_values:
-                client_globals_map[name] = manifest_globals_values[name]
-            elif hasattr(module, name):
-                client_globals_map[name] = getattr(module, name)
-            else:
-                client_globals_map[name] = None
-
-        client_exports = sorted(dict.fromkeys(client_exports))
+        if manifest:
+            for name in manifest.globals:
+                if name in manifest.globals_values:
+                    client_globals_map[name] = manifest.globals_values[name]
+                elif hasattr(module, name):
+                    client_globals_map[name] = getattr(module, name)
+                else:
+                    client_globals_map[name] = None
         client_globals_map = {
             key: client_globals_map[key] for key in sorted(client_globals_map)
         }
