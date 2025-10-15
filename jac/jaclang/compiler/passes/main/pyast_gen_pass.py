@@ -290,42 +290,8 @@ class PyastGenPass(UniPass):
         return new_body
 
     def _should_skip_client(self, node: uni.UniNode) -> bool:
-        return getattr(node, "is_client_decl", False)
-
-    def _literal_to_ast(
-        self, value: object, jac_node: Optional[uni.UniNode] = None
-    ) -> ast3.expr:
-        target_node = jac_node if jac_node else self.ir_out
-        if isinstance(value, list):
-            list_node = self.sync(
-                ast3.List(
-                    elts=[self._literal_to_ast(v, jac_node) for v in value],
-                    ctx=ast3.Load(),
-                ),
-                jac_node=target_node,
-            )
-            return cast(ast3.expr, list_node)
-        if isinstance(value, tuple):
-            tuple_node = self.sync(
-                ast3.Tuple(
-                    elts=[self._literal_to_ast(v, jac_node) for v in value],
-                    ctx=ast3.Load(),
-                ),
-                jac_node=target_node,
-            )
-            return cast(ast3.expr, tuple_node)
-        if isinstance(value, dict):
-            dict_node = self.sync(
-                ast3.Dict(
-                    keys=[self._literal_to_ast(k, jac_node) for k in value.keys()],
-                    values=[self._literal_to_ast(v, jac_node) for v in value.values()],
-                ),
-                jac_node=target_node,
-            )
-            return cast(ast3.expr, dict_node)
-        return cast(
-            ast3.expr, self.sync(ast3.Constant(value=value), jac_node=target_node)
-        )
+        """Check if node is a client-facing declaration that should skip Python codegen."""
+        return isinstance(node, uni.ClientFacingNode) and node.is_client_decl
 
     def sync(
         self, py_node: T, jac_node: Optional[uni.UniNode] = None, deep: bool = False
