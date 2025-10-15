@@ -135,8 +135,7 @@ class JacLangServer(JacProgram , LanguageServer) {
             build = self.compile(
                 use_str=document.source, file_path=document.path, type_check=True
             );
-            self.debug("      ** Type checking done for " + file_path + " t=" + str(time.time()));
-            self.debug(f"     'Type checking for '{file_path}' done in '{(time.time() - t)}' seconds.'");
+            self.debug(f"     'Type checking for '{file_path}' done {str(time.time())} in '{(time.time() - t)}' seconds.'");
             if cancel_token and cancel_token.is_set(){
                 self.debug("      ** Type checking canceled for " + file_path + " t=" + str(time.time()));
                 self.debug(f"     'Type checking for '{file_path}' was canceled in '{(time.time() - t)}' seconds.'");
