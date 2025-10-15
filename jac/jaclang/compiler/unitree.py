@@ -1458,7 +1458,7 @@ class Archetype(
 
     @property
     def get_has_vars(self) -> list[HasVar]:
-        # TODO: handle impl 
+        # TODO: handle impl
         has_vars: list[HasVar] = []
         for nd in list(self.kid):
             if isinstance(nd, ArchHas):

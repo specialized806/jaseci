@@ -984,7 +984,7 @@ class TypeEvaluator {
             );
         }
         return has_vars;
-        # 
+        #
     }
 
     """
@@ -1017,7 +1017,7 @@ class TypeEvaluator {
             # get the __init__() method if available.
             init_method = caller_type.shared.symbol_table.names_in_scope.get("__init__");
             if init_method {
-            
+
                 init_method = init_method.symbol_table if init_method.symbol_table.is_method else None;
 
                 init_method_type = self.get_type_of_symbol(init_method.sym);
@@ -1031,7 +1031,7 @@ class TypeEvaluator {
             }
 
             # Data classes and auto-generated __init__() handling.
-            if (arch:= caller_type.shared.symbol_table) 
+            if (arch:= caller_type.shared.symbol_table)
                 and arch.sym_category != SymbolType.TYPE {
                     init_method = types.FunctionType(
                         func_name="__init__",
