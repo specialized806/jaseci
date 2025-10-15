@@ -1,7 +1,7 @@
 import from byllm.llm { Model }
 import time;
 
-glob llm = Model(model_name="gpt-4o");
+glob llm = Model(model_name="gpt-4o-mini");
 
 node Task {
     has task:str = "";
@@ -83,21 +83,16 @@ walker task_manager {
     can execute with `root entry {
         routed_node_name = self.route_to_node(self.utterance);
 
-        if routed_node_name == RoutingNodes.TASK_HANDLING {
-            routed_node = [-->(`?TaskHandling)];
-            if not routed_node {
-                routed_node = here ++> TaskHandling();
-            }
-        } elif routed_node_name == RoutingNodes.EMAIL_HANDLING {
-            routed_node = [-->(`?EmailHandling)];
-            if not routed_node {
-                routed_node = here ++> EmailHandling();
-            }
-        } elif routed_node_name == RoutingNodes.GENERAL_CHAT {
-            routed_node = [-->(`?GeneralChat)];
-            if not routed_node {
-                routed_node = here ++> GeneralChat();
-            }
+        node_map = {
+            RoutingNodes.TASK_HANDLING: TaskHandling,
+            RoutingNodes.EMAIL_HANDLING: EmailHandling,
+            RoutingNodes.GENERAL_CHAT: GeneralChat
+        };
+        
+        node_type = node_map[routed_node_name];
+        routed_node = [-->(`?node_type)];
+        if not routed_node {
+            routed_node = here ++> node_type();
         }
         visit routed_node[0];
     }
