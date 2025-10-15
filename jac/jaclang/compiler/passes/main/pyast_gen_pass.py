@@ -454,20 +454,6 @@ class PyastGenPass(UniPass):
                 new_body += i
             else:
                 new_body.append(i) if i else None
-        source_assign = self.sync(
-            ast3.Assign(
-                targets=[
-                    self.sync(
-                        ast3.Name(id="__jac_source__", ctx=ast3.Store()),
-                        jac_node=node,
-                    )
-                ],
-                value=self.sync(ast3.Constant(value=node.loc.mod_path), jac_node=node),
-                type_comment=None,
-            ),
-            jac_node=node,
-        )
-        new_body.append(source_assign)
         node.gen.py_ast = [
             self.sync(
                 ast3.Module(
@@ -479,9 +465,6 @@ class PyastGenPass(UniPass):
         node.gen.py = ast3.unparse(node.gen.py_ast[0])
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
-        if self._should_skip_client(node):
-            node.gen.py_ast = []
-            return
         if node.doc:
             doc = self.sync(
                 ast3.Expr(value=cast(ast3.expr, node.doc.gen.py_ast[0])),

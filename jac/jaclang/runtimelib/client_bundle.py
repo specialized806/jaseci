@@ -45,12 +45,12 @@ class ClientBundleBuilder:
 
     def build(self, module: ModuleType, force: bool = False) -> ClientBundle:
         """Build (or reuse) a client bundle for the supplied module."""
-        module_path = getattr(module, "__jac_source__", None)
-        if not module_path:
+        # Derive source path from module __file__ (replace .py with .jac)
+        if not hasattr(module, "__file__") or not module.__file__:
             raise ClientBundleError(
-                f"Module '{module.__name__}' is missing '__jac_source__'; "
-                "recompile with an updated Jac compiler."
+                f"Module '{module.__name__}' has no __file__ attribute"
             )
+        module_path = module.__file__.replace(".py", ".jac")
 
         source_path = Path(module_path).resolve()
         runtime_path = self.runtime_path.resolve()
