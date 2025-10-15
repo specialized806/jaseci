@@ -1,4 +1,5 @@
 import from byllm.llm { Model }
+import time;
 
 glob llm = Model(model_name="gpt-4o");
 
@@ -9,8 +10,12 @@ node Task {
 }
 
 node TaskHandling {
-    def add_task(task: Task) -> str {
-        self ++> task;
+    def get_current_time() -> str {
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime());
+    }
+    def add_task(task: str, date: str, time: str) -> str {
+        task_created = Task(task=task, date=date, time=time);
+        self ++> task_created;
         return "Task added successfully";
     }
     def check_scheduled_tasks -> list[Task] {
@@ -23,7 +28,7 @@ node TaskHandling {
     }
     def extract_task_info(utterance: str) -> str by llm(
         method="ReAct",
-        tools=([self.add_task])
+        tools=([self.add_task, self.get_current_time])
     );
     def summarize_tasks() -> str by llm(
         method="ReAct",
@@ -91,7 +96,7 @@ walker task_manager {
         routed_node_name = self.route_to_node(self.utterance);
 
         if routed_node_name == RoutingNodes.TASK_HANDLING {
-            routed_node = here ++> TaskHandling();
+            
         } elif routed_node_name == RoutingNodes.EMAIL_HANDLING {
             routed_node = here ++> EmailHandling();
         } elif routed_node_name == RoutingNodes.GENERAL_CHAT {
