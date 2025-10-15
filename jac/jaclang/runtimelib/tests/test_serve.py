@@ -137,7 +137,7 @@ class TestServeCommand(TestCase):
             raise AssertionError(f"Expected JSON response, got: {payload}") from exc
 
     def _request_raw(
-        self, method: str, path: str, data: dict = None, token: str = None
+        self, method: str, path: str, data: dict = None, token: str = None, timeout: int = 5
     ) -> tuple[int, str, dict[str, str]]:
         """Make an HTTP request and return status, body, and headers."""
         url = f"{self.base_url}{path}"
@@ -150,7 +150,7 @@ class TestServeCommand(TestCase):
         request = Request(url, data=body, headers=headers, method=method)
 
         try:
-            with urlopen(request, timeout=5) as response:
+            with urlopen(request, timeout=timeout) as response:
                 payload = response.read().decode()
                 return response.status, payload, dict(response.headers)
         except HTTPError as e:
@@ -562,7 +562,8 @@ class TestServeCommand(TestCase):
         self.assertIn("Runtime Test", html_body)
         self.assertIn("/static/client.js?hash=", html_body)
 
-        status_js, js_body, js_headers = self._request_raw("GET", "/static/client.js")
+        # Bundle should be cached from page request, but use longer timeout for CI safety
+        status_js, js_body, js_headers = self._request_raw("GET", "/static/client.js", timeout=15)
         self.assertEqual(status_js, 200)
         self.assertIn("application/javascript", js_headers.get("Content-Type", ""))
         self.assertIn("function __jacJsx", js_body)
@@ -845,8 +846,16 @@ class TestServeCommand(TestCase):
         """Test that client bundle includes Object.prototype.get polyfill."""
         self._start_server()
 
-        # Fetch the client bundle
-        status, js_body, headers = self._request_raw("GET", "/static/client.js")
+        # Pre-warm the bundle by requesting a page first (triggers bundle build)
+        # This ensures the bundle is cached before we test it directly
+        try:
+            self._request("GET", "/")
+        except Exception:
+            pass  # Ignore errors, we just want to trigger bundle building
+
+        # Fetch the client bundle with longer timeout for CI environments
+        # Bundle building can be slow on CI runners with limited resources
+        status, js_body, headers = self._request_raw("GET", "/static/client.js", timeout=15)
 
         self.assertEqual(status, 200)
         self.assertIn("application/javascript", headers.get("Content-Type", ""))
@@ -893,12 +902,8 @@ class TestServeCommand(TestCase):
         self.assertIn('"function": "client_page"', html_body)
         self.assertIn('"WELCOME_TITLE": "Runtime Test"', html_body)  # Global variable
 
-        # Note: SSR rendering may not populate content due to async/complexity
-        # The important thing is that the page structure is correct and
-        # client.js will render the content on the client side
-
-        # Fetch and verify the bundle
-        status_js, js_body, _ = self._request_raw("GET", "/static/client.js")
+        # Fetch and verify the bundle (should be cached from page request, but use longer timeout for CI)
+        status_js, js_body, _ = self._request_raw("GET", "/static/client.js", timeout=15)
         self.assertEqual(status_js, 200)
 
         # Verify the bundle has the polyfill
