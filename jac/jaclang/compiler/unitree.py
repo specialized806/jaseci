@@ -1054,7 +1054,7 @@ class GlobalVars(ClientFacingNode, ElementStmt, AstAccessNode):
         return res
 
 
-class Test(AstSymbolNode, ElementStmt, UniScopeNode):
+class Test(ClientFacingNode, AstSymbolNode, ElementStmt, UniScopeNode):
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -1100,6 +1100,7 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
         )
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.sym_name)
+        ClientFacingNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1111,6 +1112,8 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         new_kid.append(self.gen_token(Tok.KW_TEST))
         new_kid.append(self.name)
         new_kid.append(self.gen_token(Tok.LBRACE))
@@ -1121,7 +1124,7 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
         return res
 
 
-class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
+class ModuleCode(ClientFacingNode, ElementStmt, ArchBlockStmt, EnumBlockStmt):
     """ModuleCode node type for Jac Ast."""
 
     def __init__(
@@ -1137,6 +1140,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         EnumBlockStmt.__init__(self, is_enum_stmt=is_enum_stmt)
+        ClientFacingNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1148,6 +1152,8 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        if self.is_client_decl:
+            new_kid.append(self.gen_token(Tok.KW_CLIENT))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:

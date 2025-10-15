@@ -11,9 +11,9 @@ toplevel_stmt: KW_CLIENT? import_stmt
        | sem_def
        | KW_CLIENT? ability
        | KW_CLIENT? global_var
-       | free_code
+       | KW_CLIENT? free_code
        | py_code_block
-       | test
+       | KW_CLIENT? test
 
 // [Heading]: Import/Include Statements.
 import_stmt: KW_IMPORT KW_FROM from_path LBRACE import_items RBRACE

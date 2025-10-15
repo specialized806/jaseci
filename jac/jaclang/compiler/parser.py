@@ -414,13 +414,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def toplevel_stmt(self, _: None) -> uni.ElementStmt:
             """Grammar rule.
 
-            toplevel_stmt: import_stmt
-                | archetype
-                | ability
-                | global_var
-                | free_code
+            toplevel_stmt: KW_CLIENT? import_stmt
+                | KW_CLIENT? archetype
+                | impl_def
+                | sem_def
+                | KW_CLIENT? ability
+                | KW_CLIENT? global_var
+                | KW_CLIENT? free_code
                 | py_code_block
-                | test
+                | KW_CLIENT? test
             """
             client_tok = self.match_token(Tok.KW_CLIENT)
             element = self.consume(uni.ElementStmt)

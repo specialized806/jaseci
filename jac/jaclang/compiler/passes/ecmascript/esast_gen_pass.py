@@ -2047,6 +2047,21 @@ class EsastGenPass(UniPass):
         # Non-local doesn't have direct equivalent in ES
         node.gen.es_ast = []
 
+    def exit_module_code(self, node: uni.ModuleCode) -> None:
+        """Process module code (with entry block)."""
+        # Generate the body statements directly
+        body_stmts: list[es.Statement] = []
+        if node.body:
+            for stmt in node.body:
+                if hasattr(stmt.gen, "es_ast") and stmt.gen.es_ast:
+                    if isinstance(stmt.gen.es_ast, list):
+                        body_stmts.extend(stmt.gen.es_ast)
+                    else:
+                        body_stmts.append(stmt.gen.es_ast)
+
+        # Module code is executed at module level, so just output the statements
+        node.gen.es_ast = body_stmts
+
     def exit_test(self, node: uni.Test) -> None:
         """Process test as a function."""
         # Convert test to a regular function
