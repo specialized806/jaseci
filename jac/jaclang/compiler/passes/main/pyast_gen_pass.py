@@ -112,13 +112,10 @@ class PyastGenPass(UniPass):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
-        if getattr(node, "_jac_skip_python_codegen", False):
-            return
         if self._should_skip_client(node):
             node.gen.py_ast = []
             if hasattr(node.gen, "py"):
                 node.gen.py = ""  # type: ignore[attr-defined]
-            node._jac_skip_python_codegen = True  # type: ignore[attr-defined]
             self.prune()
             return
         if node.gen.py_ast:
@@ -128,19 +125,12 @@ class PyastGenPass(UniPass):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
-        if getattr(node, "_jac_skip_python_codegen", False):
+        if self._should_skip_client(node):
             node.gen.py_ast = []
             if hasattr(node.gen, "py"):
                 node.gen.py = ""  # type: ignore[attr-defined]
-            node._jac_skip_python_codegen = False  # type: ignore[attr-defined]
             return
         super().exit_node(node)
-        # for i in node.gen.py_ast:  # Internal validation
-        #     self.node_compilable_test(i)
-
-        # TODO: USE THIS TO SYNC
-        #     if isinstance(i, ast3.AST):
-        #         i.jac_link = node
 
     def jaclib_obj(self, obj_name: str) -> ast3.Name:
         """Return the object from jaclib as ast node based on the import config."""
