@@ -99,8 +99,8 @@ class PyastGenPass(UniPass):
         self.already_added: list[str] = []
         self.jaclib_imports: set[str] = set()  # Track individual jaclib imports
         self.builtin_imports: set[str] = set()  # Track individual builtin imports
-        self.runtime_utils_imports: set[str] = set()
         self._temp_name_counter: int = 0
+        self._hoisted_funcs: list[ast3.FunctionDef | ast3.AsyncFunctionDef] = []
         self.preamble: list[ast3.AST] = [
             self.sync(
                 ast3.ImportFrom(
@@ -196,32 +196,25 @@ class PyastGenPass(UniPass):
         self._temp_name_counter += 1
         return f"__jac_{prefix}_{self._temp_name_counter}"
 
-    def runtime_helper(self, name: str, jac_node: uni.UniNode) -> ast3.Name:
-        """Reference a helper from jaclang.runtimelib.utils, tracking required imports."""
-        self.runtime_utils_imports.add(name)
-        return self.sync(ast3.Name(id=name, ctx=ast3.Load()), jac_node=jac_node)
-
     def _function_expr_from_def(
         self,
         func_def: ast3.FunctionDef | ast3.AsyncFunctionDef,
         jac_node: uni.UniNode,
         filename_hint: str,
-    ) -> ast3.Call:
-        """Convert a synthesized function definition into an executable expression."""
-        func_clone = copy.deepcopy(func_def)
-        module_wrapper = ast3.Module(body=[func_clone], type_ignores=[])
-        ast3.fix_missing_locations(module_wrapper)
-        source = ast3.unparse(func_clone)
-        helper = self.runtime_helper("make_block_lambda", jac_node)
+    ) -> ast3.Name:
+        """Convert a synthesized function definition into an executable expression.
+
+        Instead of using make_block_lambda at runtime, we hoist the function
+        definition to be emitted before the current statement, then return
+        a reference to the function name.
+        """
+        # Ensure locations are fixed
+        ast3.fix_missing_locations(func_def)
+        # Add the function to the hoisted list - it will be emitted before the current statement
+        self._hoisted_funcs.append(func_def)
+        # Return a reference to the function name
         return self.sync(
-            ast3.Call(
-                func=helper,
-                args=[
-                    self.sync(ast3.Constant(value=source), jac_node=jac_node),
-                    self.sync(ast3.Constant(value=func_clone.name), jac_node=jac_node),
-                ],
-                keywords=[],
-            ),
+            ast3.Name(id=func_def.name, ctx=ast3.Load()),
             jac_node=jac_node,
         )
 
@@ -410,6 +403,28 @@ class PyastGenPass(UniPass):
             self.sync(py_node, jac_node)
         return py_nodes
 
+    def safe_copy_ast(self, node: T, jac_node: uni.UniNode) -> T:
+        """Safely copy an AST node, avoiding jac_link circular references."""
+        # Collect all nodes with jac_link, remove them, copy, then restore
+        nodes_with_links: list[tuple[ast3.AST, uni.UniNode]] = []
+
+        for n in ast3.walk(node):
+            if hasattr(n, "jac_link"):
+                nodes_with_links.append((n, n.jac_link))  # type: ignore[attr-defined]
+                delattr(n, "jac_link")
+
+        try:
+            result = copy.deepcopy(node)
+            # Sync all nodes in the copied tree to add jac_link
+            for n in ast3.walk(result):
+                if not isinstance(n, (ast3.Load, ast3.Store, ast3.Del)):
+                    self.sync(n, jac_node)
+            return result
+        finally:
+            # Restore jac_link on original nodes
+            for ast_node, jac_node_link in nodes_with_links:
+                ast_node.jac_link = jac_node_link  # type: ignore[attr-defined]
+
     def list_to_attrib(
         self, attribute_list: list[str], sync_node_list: Sequence[uni.UniNode]
     ) -> ast3.AST:
@@ -432,7 +447,6 @@ class PyastGenPass(UniPass):
         for child_pass in self.child_passes:
             self.jaclib_imports.update(child_pass.jaclib_imports)
             self.builtin_imports.update(child_pass.builtin_imports)
-            self.runtime_utils_imports.update(child_pass.runtime_utils_imports)
 
         # Add builtin imports if any were used
         if self.builtin_imports:
@@ -443,21 +457,6 @@ class PyastGenPass(UniPass):
                         names=[
                             self.sync(ast3.alias(name=name, asname=None))
                             for name in sorted(self.builtin_imports)
-                        ],
-                        level=0,
-                    ),
-                    jac_node=self.ir_out,
-                )
-            )
-
-        if self.runtime_utils_imports:
-            self.preamble.append(
-                self.sync(
-                    ast3.ImportFrom(
-                        module="jaclang.runtimelib.utils",
-                        names=[
-                            self.sync(ast3.alias(name=name, asname=None))
-                            for name in sorted(self.runtime_utils_imports)
                         ],
                         level=0,
                     ),
@@ -1327,19 +1326,24 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = self.resolve_stmt_block(node.body)
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
-        node.gen.py_ast = [
-            (
-                self.sync(ast3.Expr(value=cast(ast3.expr, node.expr.gen.py_ast[0])))
-                if not node.in_fstring
-                else self.sync(
-                    ast3.FormattedValue(
-                        value=cast(ast3.expr, node.expr.gen.py_ast[0]),
-                        conversion=-1,
-                        format_spec=None,
-                    )
+        # Collect any hoisted functions that were generated during expression evaluation
+        hoisted = self._hoisted_funcs[:]
+        self._hoisted_funcs.clear()
+
+        expr_stmt = (
+            self.sync(ast3.Expr(value=cast(ast3.expr, node.expr.gen.py_ast[0])))
+            if not node.in_fstring
+            else self.sync(
+                ast3.FormattedValue(
+                    value=cast(ast3.expr, node.expr.gen.py_ast[0]),
+                    conversion=-1,
+                    format_spec=None,
                 )
             )
-        ]
+        )
+
+        # Emit hoisted functions before the expression statement
+        node.gen.py_ast = [*hoisted, expr_stmt]
 
     def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
         func = ""
@@ -1933,48 +1937,49 @@ class PyastGenPass(UniPass):
         )
         targets_ast = [cast(ast3.expr, t.gen.py_ast[0]) for t in node.target]
 
+        # Collect any hoisted functions that were generated during expression evaluation
+        hoisted = self._hoisted_funcs[:]
+        self._hoisted_funcs.clear()
+
         if node.type_tag:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.AnnAssign(
-                        target=cast(ast3.Name, targets_ast[0]),
-                        annotation=cast(ast3.expr, node.type_tag.gen.py_ast[0]),
-                        value=(
-                            cast(ast3.expr, node.value.gen.py_ast[0])
-                            if node.value
-                            else None
-                        ),
-                        simple=int(isinstance(targets_ast[0], ast3.Name)),
-                    )
+            assignment_stmt: ast3.AnnAssign | ast3.Assign | ast3.AugAssign = self.sync(
+                ast3.AnnAssign(
+                    target=cast(ast3.Name, targets_ast[0]),
+                    annotation=cast(ast3.expr, node.type_tag.gen.py_ast[0]),
+                    value=(
+                        cast(ast3.expr, node.value.gen.py_ast[0])
+                        if node.value
+                        else None
+                    ),
+                    simple=int(isinstance(targets_ast[0], ast3.Name)),
                 )
-            ]
+            )
         elif node.aug_op:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.AugAssign(
-                        target=cast(ast3.Name, targets_ast[0]),
-                        op=cast(ast3.operator, node.aug_op.gen.py_ast[0]),
-                        value=(
-                            cast(ast3.expr, value)
-                            if isinstance(value, ast3.expr)
-                            else ast3.Constant(value=None)
-                        ),
-                    )
+            assignment_stmt = self.sync(
+                ast3.AugAssign(
+                    target=cast(ast3.Name, targets_ast[0]),
+                    op=cast(ast3.operator, node.aug_op.gen.py_ast[0]),
+                    value=(
+                        cast(ast3.expr, value)
+                        if isinstance(value, ast3.expr)
+                        else ast3.Constant(value=None)
+                    ),
                 )
-            ]
+            )
         else:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Assign(
-                        targets=cast(list[ast3.expr], targets_ast),
-                        value=(
-                            cast(ast3.expr, value)
-                            if isinstance(value, ast3.expr)
-                            else ast3.Constant(value=None)
-                        ),
-                    )
+            assignment_stmt = self.sync(
+                ast3.Assign(
+                    targets=cast(list[ast3.expr], targets_ast),
+                    value=(
+                        cast(ast3.expr, value)
+                        if isinstance(value, ast3.expr)
+                        else ast3.Constant(value=None)
+                    ),
                 )
-            ]
+            )
+
+        # Emit hoisted functions before the assignment
+        node.gen.py_ast = [*hoisted, assignment_stmt]
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         if isinstance(node.op, uni.ConnectOp):
@@ -2203,11 +2208,12 @@ class PyastGenPass(UniPass):
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
         # Multi-statement lambda emits a synthesized function definition that is
-        # materialized via jaclang.runtimelib.utils.make_block_lambda.
+        # hoisted before the current statement.
         if isinstance(node.body, list):
             if node.signature and node.signature.gen.py_ast:
                 arguments = cast(
-                    ast3.arguments, copy.deepcopy(node.signature.gen.py_ast[0])
+                    ast3.arguments,
+                    self.safe_copy_ast(node.signature.gen.py_ast[0], node),
                 )
             else:
                 arguments = self.sync(
@@ -2228,19 +2234,25 @@ class PyastGenPass(UniPass):
                 body_stmts = [self.sync(ast3.Pass(), jac_node=node)]
             func_name = self._next_temp_name("lambda")
             returns = (
-                cast(ast3.expr, copy.deepcopy(node.signature.return_type.gen.py_ast[0]))
+                cast(
+                    ast3.expr,
+                    self.safe_copy_ast(node.signature.return_type.gen.py_ast[0], node),
+                )
                 if node.signature
                 and node.signature.return_type
                 and node.signature.return_type.gen.py_ast
                 else None
             )
-            func_def = ast3.FunctionDef(
-                name=func_name,
-                args=arguments,
-                body=body_stmts,
-                decorator_list=[],
-                returns=returns,
-                type_params=[],
+            func_def = self.sync(
+                ast3.FunctionDef(
+                    name=func_name,
+                    args=arguments,
+                    body=body_stmts,
+                    decorator_list=[],
+                    returns=returns,
+                    type_params=[],
+                ),
+                jac_node=node,
             )
             node.gen.py_ast = [
                 self._function_expr_from_def(
