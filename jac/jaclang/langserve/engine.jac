@@ -85,7 +85,7 @@ class JacLangServer(JacProgram , LanguageServer) {
         self.cancel_tokens: dict[str, threading.Event] = {};
 
         # Disable logging library from logging anything
-        logging.getLogger().setLevel(logging.CRITICAL);
+        # logging.getLogger().setLevel(logging.CRITICAL);
     }
 
     """Return diagnostics for all files as a dict {uri: diagnostics}."""
