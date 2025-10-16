@@ -113,7 +113,7 @@ class TypeCheckPass(UniPass):
         """Handle the return statement node."""
         if node.expr:
             self.evaluator.get_type_of_expression(node.expr)
-    
+
     def exit_formatted_value(self, node: uni.FormattedValue) -> None:
         """Handle the formatted value node."""
         self.evaluator.get_type_of_expression(node.format_part)
