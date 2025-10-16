@@ -403,28 +403,6 @@ class PyastGenPass(UniPass):
             self.sync(py_node, jac_node)
         return py_nodes
 
-    def safe_copy_ast(self, node: T, jac_node: uni.UniNode) -> T:
-        """Safely copy an AST node, avoiding jac_link circular references."""
-        # Collect all nodes with jac_link, remove them, copy, then restore
-        nodes_with_links: list[tuple[ast3.AST, uni.UniNode]] = []
-
-        for n in ast3.walk(node):
-            if hasattr(n, "jac_link"):
-                nodes_with_links.append((n, n.jac_link))  # type: ignore[attr-defined]
-                delattr(n, "jac_link")
-
-        try:
-            result = copy.deepcopy(node)
-            # Sync all nodes in the copied tree to add jac_link
-            for n in ast3.walk(result):
-                if not isinstance(n, (ast3.Load, ast3.Store, ast3.Del)):
-                    self.sync(n, jac_node)
-            return result
-        finally:
-            # Restore jac_link on original nodes
-            for ast_node, jac_node_link in nodes_with_links:
-                ast_node.jac_link = jac_node_link  # type: ignore[attr-defined]
-
     def list_to_attrib(
         self, attribute_list: list[str], sync_node_list: Sequence[uni.UniNode]
     ) -> ast3.AST:
@@ -2211,10 +2189,7 @@ class PyastGenPass(UniPass):
         # hoisted before the current statement.
         if isinstance(node.body, list):
             if node.signature and node.signature.gen.py_ast:
-                arguments = cast(
-                    ast3.arguments,
-                    self.safe_copy_ast(node.signature.gen.py_ast[0], node),
-                )
+                arguments = cast(ast3.arguments, node.signature.gen.py_ast[0])
             else:
                 arguments = self.sync(
                     ast3.arguments(
@@ -2234,10 +2209,7 @@ class PyastGenPass(UniPass):
                 body_stmts = [self.sync(ast3.Pass(), jac_node=node)]
             func_name = self._next_temp_name("lambda")
             returns = (
-                cast(
-                    ast3.expr,
-                    self.safe_copy_ast(node.signature.return_type.gen.py_ast[0], node),
-                )
+                cast(ast3.expr, node.signature.return_type.gen.py_ast[0])
                 if node.signature
                 and node.signature.return_type
                 and node.signature.return_type.gen.py_ast
