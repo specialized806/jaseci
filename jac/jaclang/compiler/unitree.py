@@ -1470,7 +1470,6 @@ class Archetype(
                     has_vars.append(has_)
         return has_vars
 
-
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
