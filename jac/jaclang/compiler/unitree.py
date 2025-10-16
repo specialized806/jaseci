@@ -3151,7 +3151,7 @@ class LambdaExpr(Expr, UniScopeNode):
 
     def __init__(
         self,
-        body: Expr,
+        body: Union[Expr, list[CodeBlockStmt]],
         kid: Sequence[UniNode],
         signature: Optional[FuncSignature] = None,
     ) -> None:
@@ -3165,11 +3165,21 @@ class LambdaExpr(Expr, UniScopeNode):
         res = True
         if deep:
             res = self.signature.normalize(deep) if self.signature else res
-            res = res and self.body.normalize(deep)
+            if isinstance(self.body, list):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            else:
+                res = res and self.body.normalize(deep)
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
-        new_kid += [self.gen_token(Tok.COLON), self.body]
+        # For code block lambdas, we add LBRACE, statements, RBRACE
+        if isinstance(self.body, list):
+            new_kid.append(self.gen_token(Tok.LBRACE))
+            new_kid.extend(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
+        else:
+            new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
 

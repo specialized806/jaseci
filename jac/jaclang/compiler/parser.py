@@ -1733,7 +1733,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def lambda_expr(self, _: None) -> uni.LambdaExpr:
             """Grammar rule.
 
-            lambda_expr: KW_LAMBDA func_decl_params? (RETURN_HINT expression)? COLON expression
+            lambda_expr: KW_LAMBDA func_decl_params? (RETURN_HINT expression)? ( COLON expression | code_block )
             """
             return_type: uni.Expr | None = None
             return_hint_tok: uni.Token | None = None
@@ -1742,8 +1742,22 @@ class JacParser(Transform[uni.Source, uni.Module]):
             params = self.match(list)
             if return_hint_tok := self.match_token(Tok.RETURN_HINT):
                 return_type = self.consume(uni.Expr)
-            self.consume_token(Tok.COLON)
-            body = self.consume(uni.Expr)
+
+            # Check if body is a code block or expression
+            block_nodes = None
+            if self.match_token(Tok.COLON):
+                # Single expression body
+                body = self.consume(uni.Expr)
+            else:
+                # Code block body - consume as list of statements
+                block_nodes = self.consume(list)
+                # Extract CodeBlockStmt items from the list
+                body = (
+                    self.extract_from_list(block_nodes, uni.CodeBlockStmt)
+                    if block_nodes
+                    else []
+                )
+
             if params:
                 sig_kid.extend(params)
             if return_hint_tok:
@@ -1768,7 +1782,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             new_kid = [
                 i
                 for i in self.cur_nodes
-                if i != params and i != return_type and i != return_hint_tok
+                if i != params
+                and i != return_type
+                and i != return_hint_tok
+                and i != block_nodes
             ]
             new_kid.insert(1, signature) if signature else None
             return uni.LambdaExpr(
@@ -2166,14 +2183,19 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             atom: named_ref
-                 | LPAREN (expression | yield_expr) RPAREN
+                 | LPAREN (expression | yield_expr | function_decl) RPAREN
                  | atom_collection
                  | atom_literal
                  | type_ref
                  | jsx_element
             """
             if self.match_token(Tok.LPAREN):
-                value = self.match(uni.Expr) or self.consume(uni.YieldExpr)
+                # Try to match expression first, then yield_expr, then function_decl
+                value = self.match(uni.Expr)
+                if value is None:
+                    value = self.match(uni.YieldExpr)
+                if value is None:
+                    value = self.consume(uni.Ability)
                 self.consume_token(Tok.RPAREN)
                 return uni.AtomUnit(value=value, kid=self.cur_nodes)
             return self.consume(uni.AtomExpr)

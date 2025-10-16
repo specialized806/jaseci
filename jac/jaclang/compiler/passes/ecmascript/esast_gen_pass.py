@@ -1743,9 +1743,74 @@ class EsastGenPass(UniPass):
                 # If right is a call or other expression, it should already be processed
                 node.gen.es_ast = node.right.gen.es_ast
 
+    def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
+        """Process lambda expression as arrow function."""
+        # Extract parameters
+        params: list[es.Pattern] = []
+        if isinstance(node.signature, uni.FuncSignature):
+            for param in node.signature.params:
+                if param.gen.es_ast:
+                    params.append(param.gen.es_ast)
+
+        # Check if body is a code block or single expression
+        if isinstance(node.body, uni.CodeBlockStmt):
+            # Multi-statement lambda: use arrow function with block body
+            body_stmts: list[es.Statement] = []
+            for stmt in node.body:
+                if stmt.gen.es_ast:
+                    if isinstance(stmt.gen.es_ast, list):
+                        body_stmts.extend(stmt.gen.es_ast)
+                    else:
+                        body_stmts.append(stmt.gen.es_ast)
+
+            body_stmts = self._prepend_hoisted(node.body, body_stmts)
+            block_stmt = self.sync_loc(
+                es.BlockStatement(body=body_stmts), jac_node=node.body
+            )
+
+            arrow_func = self.sync_loc(
+                es.ArrowFunctionExpression(
+                    params=params, body=block_stmt, async_=False
+                ),
+                jac_node=node,
+            )
+            node.gen.es_ast = arrow_func
+        else:
+            # Single expression lambda: use arrow function with expression body
+            body_expr = (
+                node.body.gen.es_ast
+                if node.body.gen.es_ast
+                else self.sync_loc(es.Literal(value=None), jac_node=node.body)
+            )
+
+            arrow_func = self.sync_loc(
+                es.ArrowFunctionExpression(params=params, body=body_expr, async_=False),
+                jac_node=node,
+            )
+            node.gen.es_ast = arrow_func
+
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
         """Process parenthesized atom."""
-        if node.value and node.value.gen.es_ast:
+        # Check if this is an IIFE (Immediately Invoked Function Expression)
+        # i.e., a parenthesized function_decl (Ability)
+        if isinstance(node.value, uni.Ability) and node.value.gen.es_ast:
+            # Convert function declaration to function expression for IIFE
+            func_decl = node.value.gen.es_ast
+            if isinstance(func_decl, es.FunctionDeclaration):
+                # Convert to function expression
+                func_expr = self.sync_loc(
+                    es.FunctionExpression(
+                        id=func_decl.id,
+                        params=func_decl.params,
+                        body=func_decl.body,
+                        async_=func_decl.async_,
+                    ),
+                    jac_node=node.value,
+                )
+                node.gen.es_ast = func_expr
+            else:
+                node.gen.es_ast = node.value.gen.es_ast
+        elif node.value and node.value.gen.es_ast:
             node.gen.es_ast = node.value.gen.es_ast
         else:
             node.gen.es_ast = self.sync_loc(es.Literal(value=None), jac_node=node)

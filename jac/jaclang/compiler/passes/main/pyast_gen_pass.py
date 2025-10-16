@@ -2154,9 +2154,25 @@ class PyastGenPass(UniPass):
         if node.signature:
             self._remove_lambda_param_annotations(node.signature)
 
-        node.gen.py_ast = [
-            self.sync(
-                ast3.Lambda(
+        # Check if body is a code block (multi-statement lambda)
+        if isinstance(node.body, uni.CodeBlockStmt):
+            # For code block lambdas, we create a regular function and wrap it
+            # in a lambda that returns it. This becomes:
+            # (lambda: (def _lambda(): ...; return _lambda))()
+            # But Python doesn't allow def inside lambda, so we use exec with types.FunctionType
+
+            # Generate a unique name for this lambda function
+            import random
+
+            lambda_name = f"__jac_lambda_{random.randint(100000, 999999)}__"
+
+            # Generate the function body
+            body_stmts = self.resolve_stmt_block(node.body, doc=None)
+
+            # Create an inner function definition
+            inner_func = self.sync(
+                ast3.FunctionDef(
+                    name=lambda_name,
                     args=(
                         cast(ast3.arguments, node.signature.gen.py_ast[0])
                         if node.signature
@@ -2170,10 +2186,43 @@ class PyastGenPass(UniPass):
                             )
                         )
                     ),
-                    body=cast(ast3.expr, node.body.gen.py_ast[0]),
+                    body=[cast(ast3.stmt, i) for i in body_stmts],
+                    decorator_list=[],
+                    returns=None,
+                    type_params=[],
                 )
             )
-        ]
+
+            # Store the function definition for later extraction
+            # We need to make this available in the enclosing scope
+            # The approach: use make_lambda_with_block helper from jaclib
+            node.gen.py_ast = [inner_func]
+
+            # Mark this as a lambda expression that needs special handling
+            # The parent context will need to handle this differently
+            node.meta["is_block_lambda"] = True
+        else:
+            # Single expression lambda (original behavior)
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Lambda(
+                        args=(
+                            cast(ast3.arguments, node.signature.gen.py_ast[0])
+                            if node.signature
+                            else self.sync(
+                                ast3.arguments(
+                                    posonlyargs=[],
+                                    args=[],
+                                    kwonlyargs=[],
+                                    kw_defaults=[],
+                                    defaults=[],
+                                )
+                            )
+                        ),
+                        body=cast(ast3.expr, node.body.gen.py_ast[0]),
+                    )
+                )
+            ]
 
     def _remove_lambda_param_annotations(self, signature: uni.FuncSignature) -> None:
         for param in signature.params:
@@ -2537,7 +2586,125 @@ class PyastGenPass(UniPass):
             ]
 
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
-        node.gen.py_ast = node.value.gen.py_ast
+        # Check if this is an IIFE (Immediately Invoked Function Expression)
+        # i.e., a parenthesized function_decl (Ability)
+        if isinstance(node.value, uni.Ability):
+            # This is an IIFE pattern: (def func(...): ...)
+            # In Python, we convert this to a lambda wrapper that uses exec to define
+            # the function and return it using walrus operator
+            # Pattern: (__func := (lambda: (exec('def...'), locals()['func_name'])[1])(), __func)[1]
+
+            func_def = node.value.gen.py_ast[0] if node.value.gen.py_ast else None
+
+            if func_def and isinstance(
+                func_def, (ast3.FunctionDef, ast3.AsyncFunctionDef)
+            ):
+                # Generate a unique temporary name for walrus
+                import random
+
+                temp_name = f"__iife_{func_def.name}_{random.randint(1000, 9999)}__"
+
+                # Compile the function definition to a code object
+                func_code = compile(
+                    ast3.Module(body=[func_def], type_ignores=[]), "<iife>", "exec"
+                )
+
+                # Create a lambda that executes the function def and returns the function object
+                # using: (exec(code, _ns := {}), _ns[func_name])[1]
+                namespace_name = f"__ns_{random.randint(1000, 9999)}__"
+
+                exec_and_return = self.sync(
+                    ast3.Subscript(
+                        value=self.sync(
+                            ast3.Tuple(
+                                elts=[
+                                    # exec(code, namespace)
+                                    self.sync(
+                                        ast3.Call(
+                                            func=self.sync(
+                                                ast3.Name(id="exec", ctx=ast3.Load())
+                                            ),
+                                            args=[
+                                                self.sync(
+                                                    ast3.Constant(value=func_code)
+                                                ),
+                                                # Use walrus to create and store namespace
+                                                self.sync(
+                                                    ast3.NamedExpr(
+                                                        target=self.sync(
+                                                            ast3.Name(
+                                                                id=namespace_name,
+                                                                ctx=ast3.Store(),
+                                                            )
+                                                        ),
+                                                        value=self.sync(
+                                                            ast3.Dict(
+                                                                keys=[], values=[]
+                                                            )
+                                                        ),
+                                                    )
+                                                ),
+                                            ],
+                                            keywords=[],
+                                        )
+                                    ),
+                                    # namespace[func_name]
+                                    self.sync(
+                                        ast3.Subscript(
+                                            value=self.sync(
+                                                ast3.Name(
+                                                    id=namespace_name, ctx=ast3.Load()
+                                                )
+                                            ),
+                                            slice=self.sync(
+                                                ast3.Constant(value=func_def.name)
+                                            ),
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                ],
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        slice=self.sync(ast3.Constant(value=1)),
+                        ctx=ast3.Load(),
+                    )
+                )
+
+                # Wrap in walrus and tuple subscript: (__iife_name := <expr>, __iife_name)[1]
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Subscript(
+                            value=self.sync(
+                                ast3.Tuple(
+                                    elts=[
+                                        self.sync(
+                                            ast3.NamedExpr(
+                                                target=self.sync(
+                                                    ast3.Name(
+                                                        id=temp_name, ctx=ast3.Store()
+                                                    )
+                                                ),
+                                                value=exec_and_return,
+                                            )
+                                        ),
+                                        self.sync(
+                                            ast3.Name(id=temp_name, ctx=ast3.Load())
+                                        ),
+                                    ],
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            slice=self.sync(ast3.Constant(value=1)),
+                            ctx=ast3.Load(),
+                        )
+                    )
+                ]
+            else:
+                # Fallback: just pass through
+                node.gen.py_ast = node.value.gen.py_ast
+        else:
+            node.gen.py_ast = node.value.gen.py_ast
 
     def gen_call_args(
         self, node: uni.FuncCall

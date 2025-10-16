@@ -21,19 +21,15 @@ graph TD
 
 `client_bundle.py` still hosts a significant block of JavaScript — chiefly the polyfill, global registration, and hydration bootstrap — because the Jac language and ECMAScript backend lack certain constructs. Bridging these gaps will let us author the entire client runtime (including bootstrap) in Jac.
 
-# Feature Gaps & Proposals
+# Implemented Features
 
-## 1. `typeof` and General Unary Operator Support
+## ✅ 1. `typeof` Support via `type()` Function
 
-### Status
+**Status**: **COMPLETED** (2025-01-15)
 
-**✅ PARTIALLY IMPLEMENTED** (2025-01-15)
+The `type()` function call is now automatically transformed to JavaScript's `typeof` operator during compilation. This enables browser environment detection in pure Jac.
 
-The `type()` function call is now automatically transformed to `typeof` operator in JavaScript compilation. See [JavaScript Compilation Implementation Notes](./js_compilation_impl_notes.md#1-the-type-keyword-transformation) for full details.
-
-### Current Behavior
-
-**Implemented**: `type(expr)` function call syntax
+### Usage
 
 ```jac
 cl def check_browser_env() {
@@ -56,50 +52,34 @@ function check_browser_env() {
 }
 ```
 
-**Not Yet Implemented**: Direct `typeof` operator syntax
-
-The following syntax is not yet supported but may be added in the future:
-
-```jac
-// This syntax doesn't work yet - use type(x) instead
-let t = typeof globalThis;  // ❌ Parser error
-```
-
-### Motivation
-
-The bootstrap must probe browser globals (`globalThis`, `window`, `document`, etc.) without throwing in non-DOM contexts. JavaScript uses `typeof` for this:
-
-```javascript
-const scope = typeof globalThis !== "undefined" ? globalThis : window;
-if (typeof document === "undefined") { return; }
-```
-
-### Implementation Details
+### Implementation
 
 * **File**: [esast_gen_pass.py:1586-1640](../jaclang/compiler/passes/ecmascript/esast_gen_pass.py#L1586-L1640)
-* **Transformation**: `type(x)` function calls → `typeof x` unary expressions
-* **Scope**: Client-side code only (server-side retains Python's `type()`)
+* **Transformation**: `type(x)` → `typeof x` (client-side only)
 * **Tests**: [test_client_codegen.py:68-113](../jaclang/compiler/tests/test_client_codegen.py#L68-L113)
+* **Documentation**: [js_compilation_impl_notes.md](./js_compilation_impl_notes.md#1-the-type-keyword-transformation)
 
-### Remaining Work (Future Enhancement)
+### Future Enhancement (Optional)
 
-To support native `typeof` operator syntax (optional):
+Native `typeof` keyword syntax could be added for consistency with JavaScript:
 
-1. **Lexer/Parser**
-   * Add `TYPEOF: "typeof"` terminal in `jac.lark`.
-   * Update `factor` rule to include `TYPEOF factor`.
+```jac
+// Potential future syntax (not currently supported)
+let t = typeof globalThis;  // Would require parser changes
+```
 
-2. **IR Node**
-   * `uni.UnaryExpr` already models unary operators; extend it to accept the new token.
+This would require:
+- Adding `TYPEOF` token to lexer
+- Extending `factor` grammar rule
+- Mapping in `exit_unary_expr`
 
-3. **ECMAScript Codegen**
-   * Extend `op_map` in `EsastGenPass.exit_unary_expr` to map `Tok.TYPEOF` to `"typeof"`.
+**However**, the current `type(x)` syntax is sufficient and maintains consistency with Python.
 
-### Migration Impact
+---
 
-The `type()` transformation enables guards around `globalThis`, `window`, and `document` to be written in pure Jac, reducing the bootstrap JS block in `client_bundle.py`.
+# Remaining Feature Gaps & Proposals
 
-## 2. Function Expressions and Closures
+## 1. Function Expressions and Closures
 
 ### Motivation
 
@@ -182,7 +162,7 @@ hydrate(init_payload);
 * Codegen tests verifying IIFE emission.
 * Formatting rules (Jac formatter) updated to handle inline `def`.
 
-## 3. Arrow Functions / Concise Lambdas
+## 2. Arrow Functions / Concise Lambdas
 
 ### Motivation
 
@@ -226,7 +206,7 @@ const apply_render = (node) => {
 
 Arrow functions capture lexical `this`; ensure Jac semantics align or document differences.
 
-## 4. Module-Scoped State Encapsulation
+## 3. Module-Scoped State Encapsulation
 
 ### Motivation
 
@@ -257,7 +237,7 @@ Generates:
 
 This could piggyback on the same IIFE infrastructure introduced for function expressions.
 
-## 5. JSON Serialization Helpers
+## 4. JSON Serialization Helpers
 
 The bootstrap serializes manifest payloads using `JSON.stringify`. Jac already wraps these in `client_runtime.jac`. No compiler changes are required, but we should expose higher-level helpers to avoid duplicating serialization logic when moving the bootstrap into Jac.
 
@@ -266,18 +246,19 @@ The bootstrap serializes manifest payloads using `JSON.stringify`. Jac already w
 ```mermaid
 timeline
     title Compiler Enhancements for Client Runtime
-    Q1 2025 : Parser - add typeof token & unary support
-    Q1 2025 : ES Codegen - unary operator mapping
-    Q2 2025 : Function expressions & IIFE support
+    January 2025 : ✅ typeof support via type() transformation
+    Q1 2025 : Function expressions & IIFE support
     Q2 2025 : Lambda/arrow expression codegen
+    Q2 2025 : Module scoping improvements
     Q3 2025 : Refactor client bootstrap into Jac runtime
 ```
 
 # Next Steps
 
-1. Implement `typeof` in lexer, parser, and codegen; add regression tests.
+1. ✅ ~~`typeof` support~~ - **COMPLETED** via `type()` function transformation
 2. Design and implement function expression syntax and semantics.
 3. Enable arrow/lambda expressions and update tooling (formatter, linter).
-4. Refactor `client_bundle.py` to call Jac-authored bootstrap once language support lands.
+4. Implement module-scoped state encapsulation.
+5. Refactor `client_bundle.py` to call Jac-authored bootstrap once language support lands.
 
 These changes will streamline the client build pipeline, reduce handwritten JS, and keep runtime logic in the Jac language proper.
