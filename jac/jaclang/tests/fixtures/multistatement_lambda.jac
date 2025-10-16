@@ -103,5 +103,14 @@ with entry {
     print("Test 8 - process_list([1, 2, 3, 4]):", process_list([1, 2, 3, 4]));
     # Expected: [2, 4, 6, 8]
 
+    # Test 9: Lambda with explicit function signature syntax
+    let format_pair = lambda (first: str, second: str) -> str {
+        let separator = "-";
+        return first + separator + second;
+    };
+
+    print("Test 9 - format_pair('foo', 'bar'):", format_pair("foo", "bar"));
+    # Expected: foo-bar
+
     print("\nAll multi-statement lambda tests completed!");
 }

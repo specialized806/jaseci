@@ -1753,7 +1753,7 @@ class EsastGenPass(UniPass):
                     params.append(param.gen.es_ast)
 
         # Check if body is a code block or single expression
-        if isinstance(node.body, uni.CodeBlockStmt):
+        if isinstance(node.body, list):
             # Multi-statement lambda: use arrow function with block body
             body_stmts: list[es.Statement] = []
             for stmt in node.body:
@@ -1763,9 +1763,9 @@ class EsastGenPass(UniPass):
                     else:
                         body_stmts.append(stmt.gen.es_ast)
 
-            body_stmts = self._prepend_hoisted(node.body, body_stmts)
+            body_stmts = self._prepend_hoisted(node, body_stmts)
             block_stmt = self.sync_loc(
-                es.BlockStatement(body=body_stmts), jac_node=node.body
+                es.BlockStatement(body=body_stmts), jac_node=node
             )
 
             arrow_func = self.sync_loc(

@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import ast as ast3
+import inspect
 import sys
 from contextlib import contextmanager
-from types import UnionType
-from typing import Callable, Iterator, TYPE_CHECKING
+from types import FunctionType, UnionType
+from typing import Any, Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
 
@@ -149,6 +150,46 @@ def traverse_graph(
                 else:
 
                     dfs(other_nd, cur_depth + 1)
+
+
+def make_block_lambda(source: str, func_name: str) -> Callable[..., Any]:
+    """Materialize a function object from synthesized source code.
+
+    The helper executes the provided source in a namespace derived from the caller's
+    globals and locals, then returns the constructed function. The resulting function is
+    rebound to the caller's globals to preserve access to module symbols.
+    """
+    frame = inspect.currentframe()
+    try:
+        caller = frame.f_back if frame else None
+        globals_env: dict[str, Any]
+        locals_env: dict[str, Any]
+        if caller:
+            globals_env = caller.f_globals
+            locals_env = caller.f_locals
+        else:
+            globals_env = globals()
+            locals_env = {}
+        exec_globals = dict(globals_env)
+        exec_globals.setdefault(
+            "__builtins__",
+            globals_env.get("__builtins__", __builtins__),
+        )  # type: ignore[name-defined]
+        exec_globals.update(locals_env)
+        namespace: dict[str, Any] = {}
+        exec(source, exec_globals, namespace)
+        func = namespace[func_name]
+        if caller:
+            func = FunctionType(
+                func.__code__,
+                globals_env,
+                func.__name__,
+                func.__defaults__,
+                func.__closure__,
+            )
+        return func
+    finally:
+        del frame
 
 
 def extract_type(node: uni.UniNode) -> list[str]:

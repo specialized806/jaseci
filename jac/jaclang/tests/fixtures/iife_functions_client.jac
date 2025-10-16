@@ -128,7 +128,7 @@ cl with entry {
     # Test 12: IIFE with closure
     let counter = (def create_counter() {
         let count = 0;
-        return lambda {
+        return lambda () {
             count = count + 1;
             return count;
         };

@@ -19,6 +19,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 
@@ -1985,6 +1986,8 @@ class FuncSignature(UniNode):
             new_kid = new_kid[:-1]
         if not is_lambda:
             new_kid.append(self.gen_token(Tok.RPAREN))
+        elif not new_kid:
+            new_kid.extend([self.gen_token(Tok.LPAREN), self.gen_token(Tok.RPAREN)])
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -3151,12 +3154,15 @@ class LambdaExpr(Expr, UniScopeNode):
 
     def __init__(
         self,
-        body: Union[Expr, list[CodeBlockStmt]],
+        body: Union[Expr, Sequence[CodeBlockStmt]],
         kid: Sequence[UniNode],
         signature: Optional[FuncSignature] = None,
     ) -> None:
         self.signature = signature
-        self.body = body
+        if isinstance(body, Sequence) and not isinstance(body, Expr):
+            self.body: Expr | Sequence[CodeBlockStmt] = list(body)
+        else:
+            self.body = cast(Expr, body)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
@@ -3728,7 +3734,7 @@ class AtomUnit(Expr):
 
     def __init__(
         self,
-        value: Expr | YieldExpr,
+        value: Expr | YieldExpr | Ability,
         kid: Sequence[UniNode],
     ) -> None:
         self.value = value

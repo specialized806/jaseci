@@ -66,7 +66,7 @@ cl with entry {
     # Expected: 15
 
     # Test 6: Lambda as higher-order function argument
-    let apply_operation = lambda op, x: int, y: int -> int {
+    let apply_operation = lambda op: any, x: int, y: int -> int {
         return op(x, y);
     };
 
@@ -99,6 +99,15 @@ cl with entry {
 
     print("Test 8 - format_name('John', 'Doe'):", format_name("John", "Doe"));
     # Expected: John Doe
+
+    # Test 9: Lambda with explicit function signature syntax
+    let join_labels = lambda (left: str, right: str) -> str {
+        let delimiter = " :: ";
+        return left + delimiter + right;
+    };
+
+    print("Test 9 - join_labels('alpha', 'beta'):", join_labels("alpha", "beta"));
+    # Expected: alpha :: beta
 
     print("\nAll client-side multi-statement lambda tests completed!");
 }
