@@ -3008,6 +3008,8 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = res and self.aug_op.normalize(deep) if self.aug_op else res
         new_kid: list[UniNode] = []
+        if self.mutable and not self.is_enum_stmt:
+            new_kid.append(self.gen_token(Tok.KW_LET))
         for idx, targ in enumerate(self.target):
             new_kid.append(targ)
             if idx < len(self.target) - 1:
