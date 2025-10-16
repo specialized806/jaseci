@@ -618,7 +618,7 @@ class TypeEvaluator {
     def _get_type_of_symbol(self: TypeEvaluator, symbol: uni.Symbol) -> TypeBase {
         node_ = symbol.decl.name_of;
         match node_ {
-            case uni.Archetype():
+            case uni.Archetype() | uni.Enum():
                 return self.get_type_of_class(node_);
 
             case uni.Ability():
