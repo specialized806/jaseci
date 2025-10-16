@@ -187,15 +187,15 @@ class JacLangServer(JacProgram , LanguageServer) {
         if file_path in self.debounce_timers {
             self.debounce_timers[file_path].cancel();
         }
-        
+
         # Cancel existing type check thread for this file if running
         if file_path in self.cancel_tokens {
             self.cancel_tokens[file_path].set();
         }
-        
+
         # Create new cancellation token for the upcoming type check
         self.cancel_tokens[file_path] = threading.Event();
-        
+
         # Create a debounced function that will run the actual type check
         def debounced_type_check() -> None {
             # Start new thread for type checking
@@ -206,11 +206,11 @@ class JacLangServer(JacProgram , LanguageServer) {
             );
             self.type_check_threads[file_path].start();
         }
-        
+
         # Set up debounce timer with the actual type check function
         self.debounce_timers[file_path] = threading.Timer(0.5, debounced_type_check);
         self.debounce_timers[file_path].start();
-        
+
         # Wait for the current type check thread to finish (if any)
         if file_path in self.type_check_threads and self.type_check_threads[file_path].is_alive() {
             await asyncio.to_thread(self.type_check_threads[file_path].join);
