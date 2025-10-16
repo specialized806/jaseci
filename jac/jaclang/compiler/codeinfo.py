@@ -36,7 +36,7 @@ class CodeGenTarget:
         self.client_manifest: ClientManifest = ClientManifest()
         self.py_ast: list[ast3.AST] = []
         self.py_bytecode: Optional[bytes] = None
-        self.es_ast: EsNode = None
+        self.es_ast: Optional[EsNode] = None
 
 
 class CodeLocInfo:
