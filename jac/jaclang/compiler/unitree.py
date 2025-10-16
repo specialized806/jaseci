@@ -3176,7 +3176,7 @@ class LambdaExpr(Expr, UniScopeNode):
             if isinstance(self.body, list):
                 for stmt in self.body:
                     res = res and stmt.normalize(deep)
-            else:
+            elif isinstance(self.body, Expr):
                 res = res and self.body.normalize(deep)
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
@@ -3186,7 +3186,7 @@ class LambdaExpr(Expr, UniScopeNode):
             new_kid.append(self.gen_token(Tok.LBRACE))
             new_kid.extend(self.body)
             new_kid.append(self.gen_token(Tok.RBRACE))
-        else:
+        elif isinstance(self.body, Expr):
             new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
