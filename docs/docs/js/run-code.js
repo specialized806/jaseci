@@ -124,7 +124,10 @@ async function setupCodeBlock(div) {
 
     div.innerHTML = `
     <div class="jac-code" style="border: 1px solid #ccc;"></div>
-    <button class="md-button md-button--primary run-code-btn">Run</button>
+    <div class="button-container" style="display: flex; gap: 8px;">
+        <button class="md-button md-button--primary run-code-btn">Run</button>
+        <button class="md-button md-button--primary serve-code-btn" style="background: linear-gradient(90deg, #0288d1 0%, #03a9f4 100%);">Serve</button>
+    </div>
     <div class="input-dialog" style="display: none; background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%); border: 1px solid #4a90e2; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="input-prompt" style="color: #ffffff; font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 500; white-space: nowrap; min-width: fit-content;"></div>
@@ -138,12 +141,20 @@ async function setupCodeBlock(div) {
 
     const container = div.querySelector(".jac-code");
     const runButton = div.querySelector(".run-code-btn");
+    const serveButton = div.querySelector(".serve-code-btn");
     const outputBlock = div.querySelector(".code-output");
     const inputDialog = div.querySelector(".input-dialog");
     const inputPrompt = div.querySelector(".input-prompt");
     const userInput = div.querySelector(".user-input");
     const submitButton = div.querySelector(".submit-input");
     const cancelButton = div.querySelector(".cancel-input");
+
+    // Handle button visibility based on classnames
+    if (div.classList.contains('run-only')) {
+        serveButton.style.display = 'none';
+    } else if (div.classList.contains('serve-only')) {
+        runButton.style.display = 'none';
+    }
 
     const editor = monaco.editor.create(container, {
         value: originalCode || '# Write your Jac code here',
@@ -235,6 +246,37 @@ async function setupCodeBlock(div) {
         }
 
         // Listen for streaming output updates
+        const outputHandler = (event) => {
+            const { output, stream } = event.detail;
+            outputBlock.textContent += output;
+            outputBlock.scrollTop = outputBlock.scrollHeight;
+        };
+
+        document.addEventListener('jacOutputUpdate', outputHandler);
+
+        try {
+            const codeToRun = editor.getValue();
+            const inputHandler = createInputHandler();
+            await runJacCodeInWorker(codeToRun, inputHandler);
+        } catch (error) {
+            outputBlock.textContent += `\nError: ${error}`;
+        } finally {
+            document.removeEventListener('jacOutputUpdate', outputHandler);
+            inputDialog.style.display = "none";
+        }
+    });
+
+    serveButton.addEventListener("click", async () => {
+        outputBlock.style.display = "block";
+        outputBlock.textContent = "Starting serve mode...\n";
+        inputDialog.style.display = "none";
+
+        if (!pyodideReady) {
+            outputBlock.textContent += "Loading Jac runner...\n";
+            await initPyodideWorker();
+            outputBlock.textContent = outputBlock.textContent.replace("Loading Jac runner...\n", "");
+        }
+
         const outputHandler = (event) => {
             const { output, stream } = event.detail;
             outputBlock.textContent += output;
