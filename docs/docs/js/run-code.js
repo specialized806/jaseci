@@ -157,10 +157,12 @@ async function setupCodeBlock(div) {
     const cancelButton = div.querySelector(".cancel-input");
 
     // Handle button visibility based on classnames
-    if (div.classList.contains('run-only')) {
-        serveButton.style.display = 'none';
-    } else if (div.classList.contains('serve-only')) {
+    serveButton.style.display = 'none';
+    if (div.classList.contains('serve-only')) {
         runButton.style.display = 'none';
+        serveButton.style.display = 'inline-block';
+    } else if (div.classList.contains('run-serve')) {
+        serveButton.style.display = 'inline-block';
     }
 
     const editor = monaco.editor.create(container, {
