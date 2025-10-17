@@ -3,9 +3,9 @@ with entry{
     match Num{
         case 2:
         case 10:
-            print("Ten");
-            print("ten");
+            print("Matched case for value: 2");
+            print("Matched case for value: 10");
         case _:
-            print("nothing");
+            print("No match found for value: " + Num);
     }
 }
