@@ -3187,15 +3187,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def match_case_block(self, _: None) -> uni.MatchCase:
             """Grammar rule.
 
-            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
+            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement*
             """
             guard: uni.Expr | None = None
+            stmts = []
             self.consume_token(Tok.KW_CASE)
             pattern = self.consume(uni.MatchPattern)
             if self.match_token(Tok.KW_IF):
                 guard = self.consume(uni.Expr)
             self.consume_token(Tok.COLON)
-            stmts = [self.consume(uni.CodeBlockStmt)]
             while stmt := self.match(uni.CodeBlockStmt):
                 stmts.append(stmt)
             return uni.MatchCase(
