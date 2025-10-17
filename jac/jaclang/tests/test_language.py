@@ -1610,9 +1610,9 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Matched a.b.c Hello Jaseci!", stdout_value[0])
-        
+
     def test_multi_case_or_pattern(self) -> None:
-        """Test multi-case with 'or' pattern matching."""
+        """Test multi-case with empty boady as 'or' pattern matching."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("multi_case_or_pattern", base_path=self.fixture_abs_path("./"))
