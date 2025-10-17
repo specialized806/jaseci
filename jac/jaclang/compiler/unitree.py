@@ -19,6 +19,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 
@@ -1442,9 +1443,8 @@ class Archetype(
         CodeBlockStmt.__init__(self)
         ClientFacingNode.__init__(self)
 
-    @property
-    def is_abstract(self) -> bool:
-        body = (
+    def _get_impl_resolved_body(self) -> list:
+        return (
             list(self.body)
             if isinstance(self.body, Sequence)
             else (
@@ -1454,17 +1454,21 @@ class Archetype(
                 else []
             )
         )
-        return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
     @property
+    def is_abstract(self) -> bool:
+        body = self._get_impl_resolved_body()
+        return any(isinstance(i, Ability) and i.is_abstract for i in body)
+
     def get_has_vars(self) -> list[HasVar]:
-        # TODO: handle impl
+        body = self._get_impl_resolved_body()
         has_vars: list[HasVar] = []
-        for nd in list(self.kid):
-            if isinstance(nd, ArchHas):
-                for has_ in nd.vars:
-                    if isinstance(has_, HasVar):
-                        has_vars.append(has_)
+        for node in body:
+            if not isinstance(node, ArchHas):
+                continue
+            for has_ in node.vars:
+                if isinstance(has_, HasVar):
+                    has_vars.append(has_)
         return has_vars
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2004,6 +2008,8 @@ class FuncSignature(UniNode):
             new_kid = new_kid[:-1]
         if not is_lambda:
             new_kid.append(self.gen_token(Tok.RPAREN))
+        elif not new_kid:
+            new_kid.extend([self.gen_token(Tok.LPAREN), self.gen_token(Tok.RPAREN)])
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -3024,6 +3030,8 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = res and self.aug_op.normalize(deep) if self.aug_op else res
         new_kid: list[UniNode] = []
+        if self.mutable and not self.is_enum_stmt:
+            new_kid.append(self.gen_token(Tok.KW_LET))
         for idx, targ in enumerate(self.target):
             new_kid.append(targ)
             if idx < len(self.target) - 1:
@@ -3170,12 +3178,15 @@ class LambdaExpr(Expr, UniScopeNode):
 
     def __init__(
         self,
-        body: Expr,
+        body: Union[Expr, Sequence[CodeBlockStmt]],
         kid: Sequence[UniNode],
         signature: Optional[FuncSignature] = None,
     ) -> None:
         self.signature = signature
-        self.body = body
+        if isinstance(body, Sequence) and not isinstance(body, Expr):
+            self.body: Expr | Sequence[CodeBlockStmt] = list(body)
+        else:
+            self.body = cast(Expr, body)
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
@@ -3184,11 +3195,21 @@ class LambdaExpr(Expr, UniScopeNode):
         res = True
         if deep:
             res = self.signature.normalize(deep) if self.signature else res
-            res = res and self.body.normalize(deep)
+            if isinstance(self.body, list):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            elif isinstance(self.body, Expr):
+                res = res and self.body.normalize(deep)
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
-        new_kid += [self.gen_token(Tok.COLON), self.body]
+        # For code block lambdas, we add LBRACE, statements, RBRACE
+        if isinstance(self.body, list):
+            new_kid.append(self.gen_token(Tok.LBRACE))
+            new_kid.extend(self.body)
+            new_kid.append(self.gen_token(Tok.RBRACE))
+        elif isinstance(self.body, Expr):
+            new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3737,7 +3758,7 @@ class AtomUnit(Expr):
 
     def __init__(
         self,
-        value: Expr | YieldExpr,
+        value: Expr | YieldExpr | Ability,
         kid: Sequence[UniNode],
     ) -> None:
         self.value = value
