@@ -30,8 +30,7 @@ function initPyodideWorker() {
     return pyodideInitPromise;
 }
 
-// Run Jac Code in Worker
-function runJacCodeInWorker(code, inputHandler) {
+function executeJacCodeInWorker(code, inputHandler, commandType = "run") {
     return new Promise(async (resolve, reject) => {
         await initPyodideWorker();
         const handleMessage = async (event) => {
@@ -74,8 +73,16 @@ function runJacCodeInWorker(code, inputHandler) {
             }
         };
         pyodideWorker.addEventListener("message", handleMessage);
-        pyodideWorker.postMessage({ type: "run", code });
+        pyodideWorker.postMessage({ type: commandType, code });
     });
+}
+
+function runJacCodeInWorker(code, inputHandler) {
+    return executeJacCodeInWorker(code, inputHandler, "run");
+}
+
+function serveJacCodeInWorker(code, inputHandler) {
+    return executeJacCodeInWorker(code, inputHandler, "serve");
 }
 
 // Load Monaco Editor Globally
@@ -288,7 +295,7 @@ async function setupCodeBlock(div) {
         try {
             const codeToRun = editor.getValue();
             const inputHandler = createInputHandler();
-            await runJacCodeInWorker(codeToRun, inputHandler);
+            await serveJacCodeInWorker(codeToRun, inputHandler);
         } catch (error) {
             outputBlock.textContent += `\nError: ${error}`;
         } finally {
