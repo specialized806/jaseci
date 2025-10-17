@@ -986,30 +986,6 @@ class TypeEvaluator {
         );
     }
 
-    def get_has_var_parameters(self: TypeEvaluator, arch: uni.Archetype) -> list[types.Parameter] {
-        has_vars: list[types.Parameter] = [];
-        arch.get_has_vars;
-        for has_var in arch.get_has_vars {
-            var_type: TypeBase = types.UnknownType();
-            if has_var.type_tag {
-                var_type = self.get_type_of_expression(has_var.type_tag.tag);
-                var_type = self._convert_to_instance(var_type);
-            }
-            has_vars.append(
-                types.Parameter(
-                    name=has_var.name.value,
-                    category=types.ParameterCategory.Positional,
-                    param_type=var_type,
-                    default_value=has_var.value,
-                    is_self=False,
-                    param_kind=types.ParamKind.NORMAL,
-                )
-            );
-        }
-        return has_vars;
-        #
-    }
-
     """
     Validate that the arguments can be assigned to the call's parameter list.
 
