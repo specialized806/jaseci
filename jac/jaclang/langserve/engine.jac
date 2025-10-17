@@ -205,6 +205,7 @@ class JacLangServer(JacProgram , LanguageServer) {
                 args=(file_path, self.cancel_tokens[file_path])
             );
             self.type_check_threads[file_path].start();
+            self.type_check_threads[file_path].join();
         }
 
         # Set up debounce timer with the actual type check function
@@ -212,9 +213,8 @@ class JacLangServer(JacProgram , LanguageServer) {
         self.debounce_timers[file_path].start();
 
         # Wait for the current type check thread to finish (if any)
-        if file_path in self.type_check_threads and self.type_check_threads[file_path].is_alive() {
-            await asyncio.to_thread(self.type_check_threads[file_path].join);
-        }
+        await asyncio.to_thread(self.debounce_timers[file_path].join);
+
     }
 
     def get_token_at_position(
