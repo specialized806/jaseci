@@ -50,10 +50,10 @@ jobs:
         echo "TEST_ENV=true" >> $GITHUB_ENV
     - name: Run tests
       run: |
-        pytest -s jac -n auto
+        pytest -x jac -n auto
         pytest -x jac-cloud jac-byllm jac-streamlit
     - name: Run jac-cloud tests with DB
-      run: pytest  jac-cloud
+      run: pytest -x jac-cloud
       env:
         DATABASE_HOST: mongodb://localhost/?retryWrites=true&w=majority
         REDIS_HOST: redis://localhost
