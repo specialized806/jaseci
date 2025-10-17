@@ -3238,15 +3238,15 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def match_case_block(self, _: None) -> uni.MatchCase:
             """Grammar rule.
 
-            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement*
+            match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
             """
             guard: uni.Expr | None = None
-            stmts = []
             self.consume_token(Tok.KW_CASE)
             pattern = self.consume(uni.MatchPattern)
             if self.match_token(Tok.KW_IF):
                 guard = self.consume(uni.Expr)
             self.consume_token(Tok.COLON)
+            stmts = [self.consume(uni.CodeBlockStmt)]
             while stmt := self.match(uni.CodeBlockStmt):
                 stmts.append(stmt)
             return uni.MatchCase(
@@ -3255,6 +3255,61 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 body=stmts,
                 kid=self.cur_nodes,
             )
+
+        def switch_stmt(self, _: None) -> uni.SwitchStmt:
+            """Grammar rule.
+
+            switch_stmt: KW_SWITCH expression LBRACE switch_case_block+ RBRACE
+            """
+            self.consume_token(Tok.KW_SWITCH)
+            target = self.consume(uni.Expr)
+            self.consume_token(Tok.LBRACE)
+            cases = [self.consume(uni.SwitchCase)]
+            patterns: list[uni.MatchPattern] = []
+            pattern: uni.MatchPattern | None = None
+            while (case := self.match(uni.SwitchCase)) or (pattern := self.match(uni.MatchPattern)):
+                if case:
+                    if patterns and case.pattern:
+                        patterns = [case.pattern] + patterns
+                        case.pattern = uni.MatchOr(
+                            patterns=patterns,
+                            kid=self.cur_nodes,
+                        )
+                        patterns = []
+                    cases.append(case)
+                elif pattern:
+                    patterns.append(pattern)
+            self.consume_token(Tok.RBRACE)
+            return uni.SwitchStmt(
+                target=target,
+                cases=cases,
+                kid=self.cur_nodes,
+            )
+
+        def switch_case_block(self, _: None) -> uni.SwitchCase | uni.MatchPattern:
+            """Grammar rule.
+
+            switch_case_block: (KW_CASE pattern_seq | KW_DEFAULT) COLON statement*
+            """
+            stmts = []
+            if self.match_token(Tok.KW_CASE):
+                self.consume_token(Tok.KW_CASE)
+                pattern = self.consume(uni.MatchPattern)
+            else:
+                self.consume_token(Tok.KW_DEFAULT)
+                pattern = None
+            self.consume_token(Tok.COLON)
+            while stmt := self.match(uni.CodeBlockStmt):
+                stmts.append(stmt)
+            if stmts:
+                return uni.SwitchCase(
+                    pattern=pattern,
+                    body=stmts,
+                    kid=self.cur_nodes,
+                )
+            else:
+                assert pattern is not None, "Default case must have statements"
+                return pattern
 
         def pattern_seq(self, _: None) -> uni.MatchPattern:
             """Grammar rule.

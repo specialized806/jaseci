@@ -145,7 +145,11 @@ finally_stmt: KW_FINALLY code_block
 
 // [Heading]: Match statements.
 match_stmt: KW_MATCH expression LBRACE match_case_block+ RBRACE
-match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement*
+match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement+
+
+// [Heading]: Switch statements.
+switch_stmt: KW_SWITCH expression LBRACE switch_case_block+ RBRACE
+switch_case_block: (KW_CASE pattern_seq | KW_DEFAULT) COLON statement*
 
 pattern_seq: (or_pattern | as_pattern)
 or_pattern: (pattern BW_OR)* pattern
@@ -583,7 +587,9 @@ KW_DEF: "def"
 KW_STATIC: "static"
 KW_OVERRIDE: "override"
 KW_MATCH: "match"
+KW_SWITCH: "switch"
 KW_CASE: "case"
+KW_DEFAULT: "default"
 KW_CLIENT: "cl"
 
 KW_INIT: "init"
