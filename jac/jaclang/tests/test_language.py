@@ -1620,4 +1620,5 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Matched case for value: 2", stdout_value[0])
         self.assertIn("Matched case for value: 10", stdout_value[1])
+        self.assertIn("Adult", stdout_value[2])
         
