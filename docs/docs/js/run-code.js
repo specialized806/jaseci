@@ -243,68 +243,42 @@ async function setupCodeBlock(div) {
         };
     }
 
-    runButton.addEventListener("click", async () => {
-        outputBlock.style.display = "block";
-        outputBlock.textContent = "";
-        inputDialog.style.display = "none";
-
-        if (!pyodideReady) {
-            outputBlock.textContent = "Loading Jac runner...";
-            await initPyodideWorker();
-            outputBlock.textContent = "";
-        }
-
-        // Listen for streaming output updates
-        const outputHandler = (event) => {
-            const { output, stream } = event.detail;
-            outputBlock.textContent += output;
-            outputBlock.scrollTop = outputBlock.scrollHeight;
-        };
-
-        document.addEventListener('jacOutputUpdate', outputHandler);
-
-        try {
-            const codeToRun = editor.getValue();
-            const inputHandler = createInputHandler();
-            await runJacCodeInWorker(codeToRun, inputHandler);
-        } catch (error) {
-            outputBlock.textContent += `\nError: ${error}`;
-        } finally {
-            document.removeEventListener('jacOutputUpdate', outputHandler);
+    function createButtonHandler(commandType, initialMessage = "") {
+        return async () => {
+            outputBlock.style.display = "block";
+            outputBlock.textContent = initialMessage;
             inputDialog.style.display = "none";
-        }
-    });
 
-    serveButton.addEventListener("click", async () => {
-        outputBlock.style.display = "block";
-        outputBlock.textContent = "Starting serve mode...\n";
-        inputDialog.style.display = "none";
+            if (!pyodideReady) {
+                const loadingMsg = "Loading Jac runner...";
+                outputBlock.textContent += loadingMsg + (initialMessage ? "\n" : "");
+                await initPyodideWorker();
+                outputBlock.textContent = outputBlock.textContent.replace(loadingMsg + (initialMessage ? "\n" : ""), "");
+            }
 
-        if (!pyodideReady) {
-            outputBlock.textContent += "Loading Jac runner...\n";
-            await initPyodideWorker();
-            outputBlock.textContent = outputBlock.textContent.replace("Loading Jac runner...\n", "");
-        }
+            const outputHandler = (event) => {
+                const { output, stream } = event.detail;
+                outputBlock.textContent += output;
+                outputBlock.scrollTop = outputBlock.scrollHeight;
+            };
 
-        const outputHandler = (event) => {
-            const { output, stream } = event.detail;
-            outputBlock.textContent += output;
-            outputBlock.scrollTop = outputBlock.scrollHeight;
+            document.addEventListener('jacOutputUpdate', outputHandler);
+
+            try {
+                const codeToRun = editor.getValue();
+                const inputHandler = createInputHandler();
+                await executeJacCodeInWorker(codeToRun, inputHandler, commandType);
+            } catch (error) {
+                outputBlock.textContent += `\nError: ${error}`;
+            } finally {
+                document.removeEventListener('jacOutputUpdate', outputHandler);
+                inputDialog.style.display = "none";
+            }
         };
+    }
 
-        document.addEventListener('jacOutputUpdate', outputHandler);
-
-        try {
-            const codeToRun = editor.getValue();
-            const inputHandler = createInputHandler();
-            await serveJacCodeInWorker(codeToRun, inputHandler);
-        } catch (error) {
-            outputBlock.textContent += `\nError: ${error}`;
-        } finally {
-            document.removeEventListener('jacOutputUpdate', outputHandler);
-            inputDialog.style.display = "none";
-        }
-    });
+    runButton.addEventListener("click", createButtonHandler("run"));
+    serveButton.addEventListener("click", createButtonHandler("serve", "Starting serve mode...\n"));
 
     userInput.addEventListener('focus', () => {
         userInput.style.borderColor = '#4a90e2';
