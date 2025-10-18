@@ -3047,18 +3047,6 @@ class PyastGenPass(UniPass):
             self.sync(ast3.Tuple(elts=[key_tup, val_tup], ctx=ast3.Load()))
         ]
 
-    def enter_match_stmt(self, node: uni.MatchStmt) -> None:
-        for i in range(len(node.cases)):
-            if not node.cases[i].body:
-                for j in range(i + 1, len(node.cases)):
-                    if node.cases[j].body:
-                        node.cases[i].body = [
-                            cast(uni.CodeBlockStmt, copy.deepcopy(b))
-                            for b in node.cases[j].body
-                        ]
-                        node.cases[i].kid = node.cases[i].kid + node.cases[i].body
-                        break
-
     def exit_match_stmt(self, node: uni.MatchStmt) -> None:
         node.gen.py_ast = [
             self.sync(
@@ -3079,6 +3067,31 @@ class PyastGenPass(UniPass):
                         if node.guard
                         else None
                     ),
+                    body=[cast(ast3.stmt, x.gen.py_ast[0]) for x in node.body],
+                )
+            )
+        ]
+
+    def exit_switch_stmt(self, node: uni.SwitchStmt) -> None:
+        node.gen.py_ast = [
+            self.sync(
+                ast3.Match(
+                    subject=cast(ast3.expr, node.target.gen.py_ast[0]),
+                    cases=[cast(ast3.match_case, x.gen.py_ast[0]) for x in node.cases],
+                )
+            )
+        ]
+
+    def exit_switch_case(self, node: uni.SwitchCase) -> None:
+        node.gen.py_ast = [
+            self.sync(
+                ast3.match_case(
+                    pattern=(
+                        cast(ast3.pattern, node.pattern.gen.py_ast[0])
+                        if node.pattern
+                        else self.sync(ast3.MatchAs())
+                    ),
+                    guard=None,
                     body=[cast(ast3.stmt, x.gen.py_ast[0]) for x in node.body],
                 )
             )
