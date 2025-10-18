@@ -3273,7 +3273,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             ):
                 if case:
                     if patterns and case.pattern:
-                        patterns = [case.pattern] + patterns
+                        patterns = patterns + [case.pattern]
                         matchor = uni.MatchOr(
                             patterns=patterns,
                             kid=patterns,
