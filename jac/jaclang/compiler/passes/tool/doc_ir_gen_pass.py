@@ -1787,8 +1787,31 @@ class DocIRGenPass(UniPass):
 
     def exit_jsx_normal_attribute(self, node: uni.JsxNormalAttribute) -> None:
         """Generate DocIR for JSX normal attributes."""
+        # Normalize to ensure LBRACE/RBRACE tokens are added for expression values
+        node.normalize()
         parts: list[doc.DocType] = []
         for i in node.kid:
+            # Tokens created by normalize() have empty doc_ir, so regenerate it
+            if (
+                isinstance(i, uni.Token)
+                and isinstance(i.gen.doc_ir, doc.Text)
+                and not i.gen.doc_ir.text
+            ):
+                i.gen.doc_ir = self.text(i.value)
+            elif not isinstance(
+                i.gen.doc_ir,
+                (
+                    doc.Text,
+                    doc.Concat,
+                    doc.Group,
+                    doc.Indent,
+                    doc.Line,
+                    doc.Align,
+                    doc.IfBreak,
+                ),
+            ):
+                # For nodes with invalid doc_ir, generate it by visiting
+                self.enter_exit(i)
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
