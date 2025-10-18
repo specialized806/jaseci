@@ -4421,6 +4421,7 @@ class MatchCase(UniScopeNode):
         self.set_kids(nodes=new_kid)
         return res
 
+
 class SwitchStmt(CodeBlockStmt):
     """SwitchStmt node type for Jac Ast."""
 
@@ -4471,7 +4472,7 @@ class SwitchCase(UniScopeNode):
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.pattern.normalize(deep)
+            res = self.pattern.normalize(deep) if self.pattern else res
             for stmt in self.body:
                 res = res and stmt.normalize(deep)
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_CASE)]
@@ -4481,6 +4482,7 @@ class SwitchCase(UniScopeNode):
             new_kid.extend([*self.body])
         self.set_kids(nodes=new_kid)
         return res
+
 
 class MatchOr(MatchPattern):
     """MatchOr node type for Jac Ast."""

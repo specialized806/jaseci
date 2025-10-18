@@ -183,7 +183,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             # We're calling try_feed_missing_token twice here because the first missing
             # will be reported as such and we don't for the consequent missing token.
             if tk := try_feed_missing_token(iparser):
-                self.log_error(f"Missing {tk.name}", self.error_to_token(e))
+                self.log_error(f"Missing {tk.name}", self.error_to_token(e), e.expected)
                 return feed_current_token(iparser, e.token)
 
             # Ignore unexpected tokens and continue parsing till we reach a known state.
@@ -3264,22 +3264,32 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_SWITCH)
             target = self.consume(uni.Expr)
             self.consume_token(Tok.LBRACE)
-            cases = [self.consume(uni.SwitchCase)]
+            cases = []
             patterns: list[uni.MatchPattern] = []
+            all_patterns: list[uni.MatchPattern] = []
             pattern: uni.MatchPattern | None = None
-            while (case := self.match(uni.SwitchCase)) or (pattern := self.match(uni.MatchPattern)):
+            while (case := self.match(uni.SwitchCase)) or (
+                pattern := self.match(uni.MatchPattern)
+            ):
                 if case:
                     if patterns and case.pattern:
                         patterns = [case.pattern] + patterns
-                        case.pattern = uni.MatchOr(
+                        matchor = uni.MatchOr(
                             patterns=patterns,
-                            kid=self.cur_nodes,
+                            kid=patterns,
                         )
+                        case.kid[case.kid.index(case.pattern)] = matchor
+                        case.pattern = matchor
+                        case.unparse()
                         patterns = []
                     cases.append(case)
                 elif pattern:
                     patterns.append(pattern)
+                    all_patterns.append(pattern)
             self.consume_token(Tok.RBRACE)
+            for p in all_patterns:
+                if p in self.cur_nodes:
+                    self.cur_nodes.remove(p)
             return uni.SwitchStmt(
                 target=target,
                 cases=cases,
@@ -3293,7 +3303,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             stmts = []
             if self.match_token(Tok.KW_CASE):
-                self.consume_token(Tok.KW_CASE)
                 pattern = self.consume(uni.MatchPattern)
             else:
                 self.consume_token(Tok.KW_DEFAULT)
