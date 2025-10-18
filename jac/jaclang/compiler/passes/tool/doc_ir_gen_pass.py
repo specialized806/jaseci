@@ -1758,82 +1758,50 @@ class DocIRGenPass(UniPass):
     def exit_jsx_element(self, node: uni.JsxElement) -> None:
         """Generate DocIR for JSX elements."""
         parts: list[doc.DocType] = []
-
-        if node.is_fragment:
-            # Fragment: <> ... </>
-            parts.append(self.text("<>"))
-            if node.children:
-                for child in node.children:
-                    parts.append(child.gen.doc_ir)
-            parts.append(self.text("</>"))
-        elif node.is_self_closing:
-            # Self-closing: <Foo />
-            parts.append(self.text("<"))
-            if node.name:
-                parts.append(node.name.gen.doc_ir)
-            if node.attributes:
-                for attr in node.attributes:
-                    parts.append(self.space())
-                    parts.append(attr.gen.doc_ir)
-            parts.append(self.space())
-            parts.append(self.text("/>"))
-        else:
-            # Opening and closing: <Foo>...</Foo>
-            parts.append(self.text("<"))
-            if node.name:
-                parts.append(node.name.gen.doc_ir)
-            if node.attributes:
-                for attr in node.attributes:
-                    parts.append(self.space())
-                    parts.append(attr.gen.doc_ir)
-            parts.append(self.text(">"))
-            if node.children:
-                for child in node.children:
-                    parts.append(child.gen.doc_ir)
-            parts.append(self.text("</"))
-            if node.name:
-                parts.append(node.name.gen.doc_ir)
-            parts.append(self.text(">"))
-
+        prev = None
+        for i in node.kid:
+            # Add space between name and attributes, and between attributes
+            if (
+                prev
+                and isinstance(prev, (uni.JsxElementName, uni.JsxAttribute))
+                and isinstance(i, uni.JsxAttribute)
+            ):
+                parts.append(self.space())
+            parts.append(i.gen.doc_ir)
+            prev = i
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_jsx_element_name(self, node: uni.JsxElementName) -> None:
         """Generate DocIR for JSX element names."""
         parts: list[doc.DocType] = []
-        for i, part in enumerate(node.parts):
-            parts.append(part.gen.doc_ir)
-            if i < len(node.parts) - 1:
-                parts.append(self.text("."))
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_spread_attribute(self, node: uni.JsxSpreadAttribute) -> None:
         """Generate DocIR for JSX spread attributes."""
-        node.gen.doc_ir = self.concat(
-            [self.text("{..."), node.expr.gen.doc_ir, self.text("}")]
-        )
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_normal_attribute(self, node: uni.JsxNormalAttribute) -> None:
         """Generate DocIR for JSX normal attributes."""
         parts: list[doc.DocType] = []
-        if node.name:
-            parts.append(node.name.gen.doc_ir)
-        if node.value:
-            parts.append(self.text("="))
-            if isinstance(node.value, uni.String):
-                parts.append(node.value.gen.doc_ir)
-            else:
-                # Expression in braces
-                parts.append(self.text("{"))
-                parts.append(node.value.gen.doc_ir)
-                parts.append(self.text("}"))
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_text(self, node: uni.JsxText) -> None:
         """Generate DocIR for JSX text."""
-        node.gen.doc_ir = node.value.gen.doc_ir
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_expression(self, node: uni.JsxExpression) -> None:
         """Generate DocIR for JSX expressions."""
-        node.gen.doc_ir = self.concat(
-            [self.text("{"), node.expr.gen.doc_ir, self.text("}")]
-        )
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.concat(parts)
