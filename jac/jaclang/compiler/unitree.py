@@ -924,7 +924,11 @@ class Module(AstDocNode, UniScopeNode):
             if os.path.exists(potential_path) and potential_path != self.loc.mod_path:
                 return potential_path
             annex_dir = os.path.split(os.path.dirname(self.loc.mod_path))[-1]
-            if annex_dir.endswith(".impl") or annex_dir.endswith(".test") or annex_dir.endswith(".cl"):
+            if (
+                annex_dir.endswith(".impl")
+                or annex_dir.endswith(".test")
+                or annex_dir.endswith(".cl")
+            ):
                 head_mod_name = os.path.split(os.path.dirname(self.loc.mod_path))[
                     -1
                 ].split(".")[0]
