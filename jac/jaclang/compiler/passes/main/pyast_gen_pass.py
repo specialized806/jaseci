@@ -3072,6 +3072,23 @@ class PyastGenPass(UniPass):
             )
         ]
 
+    def enter_switch_stmt(self, node: uni.SwitchStmt) -> None:
+        cases = []
+        all_cases = []
+        for i in range(len(node.cases)):
+            if not node.cases[i].body:
+                cases.append(node.cases[i])
+                all_cases.append(node.cases[i])
+            elif cases and node.cases[i].pattern and node.cases[i].body:
+                pattern = [case.pattern for case in cases] + [node.cases[i].pattern]
+                node.cases[i].pattern = uni.MatchOr(patterns=pattern, kid=pattern)
+                node.cases[i].unparse()
+                cases = []
+        for i in all_cases:
+            if i in node.kid:
+                node.cases.remove(i)
+                node.kid.remove(i)
+
     def exit_switch_stmt(self, node: uni.SwitchStmt) -> None:
         node.gen.py_ast = [
             self.sync(
