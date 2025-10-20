@@ -914,6 +914,7 @@ class Module(AstDocNode, UniScopeNode):
         if not self.stub_only and (
             self.loc.mod_path.endswith(".impl.jac")
             or self.loc.mod_path.endswith(".test.jac")
+            or self.loc.mod_path.endswith(".cl.jac")
         ):
             head_mod_name = self.name.split(".")[0]
             potential_path = os.path.join(
@@ -923,7 +924,11 @@ class Module(AstDocNode, UniScopeNode):
             if os.path.exists(potential_path) and potential_path != self.loc.mod_path:
                 return potential_path
             annex_dir = os.path.split(os.path.dirname(self.loc.mod_path))[-1]
-            if annex_dir.endswith(".impl") or annex_dir.endswith(".test"):
+            if (
+                annex_dir.endswith(".impl")
+                or annex_dir.endswith(".test")
+                or annex_dir.endswith(".cl")
+            ):
                 head_mod_name = os.path.split(os.path.dirname(self.loc.mod_path))[
                     -1
                 ].split(".")[0]
@@ -1792,7 +1797,7 @@ class Ability(
 
     def __init__(
         self,
-        name_ref: NameAtom,
+        name_ref: Optional[NameAtom],
         is_async: bool,
         is_override: bool,
         is_static: bool,
@@ -1813,10 +1818,36 @@ class Ability(
 
         UniNode.__init__(self, kid=kid)
         AstImplNeedingNode.__init__(self, body=body)
+
+        # Create a synthetic name_ref if none provided
+        if name_ref is None:
+            # Extract location info from kid for positioning
+            # Note: kid should always contain at least KW_CAN token from parser
+            first_tok = kid[0] if kid and isinstance(kid[0], Token) else None
+            if first_tok is None:
+                raise ValueError(
+                    "Cannot create synthetic name_ref without location info."
+                )
+            synthetic_name_ref = Name(
+                orig_src=first_tok.orig_src,
+                name=Tok.NAME,
+                value=self.py_resolve_name(),
+                line=first_tok.line_no,
+                end_line=first_tok.end_line,
+                col_start=first_tok.c_start,
+                col_end=first_tok.c_end,
+                pos_start=first_tok.pos_start,
+                pos_end=first_tok.pos_end,
+                is_enum_stmt=False,
+            )
+            name_spec_for_init: Name | NameAtom = synthetic_name_ref
+        else:
+            name_spec_for_init = name_ref
+
         AstSymbolNode.__init__(
             self,
             sym_name=self.py_resolve_name(),
-            name_spec=name_ref,
+            name_spec=name_spec_for_init,
             sym_category=SymbolType.ABILITY,
         )
         AstAccessNode.__init__(self, access=access)
@@ -1870,7 +1901,18 @@ class Ability(
         return mn, mx
 
     def py_resolve_name(self) -> str:
-        if isinstance(self.name_ref, Name):
+        if self.name_ref is None:
+            # Generate anonymous name based on event type and location
+            event_type = (
+                "entry"
+                if isinstance(self.signature, EventSignature)
+                and self.signature.event.name == Tok.KW_ENTRY
+                else "exit"
+            )
+            return (
+                f"__ability_{event_type}_{self.loc.first_line}_{self.loc.col_start}__"
+            )
+        elif isinstance(self.name_ref, Name):
             return self.name_ref.value
         elif isinstance(self.name_ref, SpecialVarRef):
             return self.name_ref.py_resolve_name()
@@ -1880,7 +1922,7 @@ class Ability(
     def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
-            res = self.name_ref.normalize(deep)
+            res = self.name_ref.normalize(deep) if self.name_ref else res
             res = res and self.access.normalize(deep) if self.access else res
             res = res and self.signature.normalize(deep) if self.signature else res
             if isinstance(self.body, ImplDef):
@@ -1918,7 +1960,8 @@ class Ability(
         )
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.name_ref)
+        if self.name_ref:
+            new_kid.append(self.name_ref)
         if self.signature:
             new_kid.append(self.signature)
         if self.is_genai_ability:
