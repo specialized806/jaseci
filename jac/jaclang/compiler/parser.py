@@ -183,7 +183,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             # We're calling try_feed_missing_token twice here because the first missing
             # will be reported as such and we don't for the consequent missing token.
             if tk := try_feed_missing_token(iparser):
-                self.log_error(f"Missing {tk.name}", self.error_to_token(e), e.expected)
+                self.log_error(f"Missing {tk.name}", self.error_to_token(e))
                 return feed_current_token(iparser, e.token)
 
             # Ignore unexpected tokens and continue parsing till we reach a known state.

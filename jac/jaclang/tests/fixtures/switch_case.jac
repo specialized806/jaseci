@@ -1,5 +1,4 @@
-with entry{
-    Num =20;
+def switch_case(Num: int) {
     switch Num{
         case 2:
         case 3:
@@ -12,4 +11,10 @@ with entry{
         default:
             print("No match found for value: " + str(Num));
     }
+}
+
+with entry{
+    switch_case(3);
+    switch_case(15);
+    switch_case(25);
 }
