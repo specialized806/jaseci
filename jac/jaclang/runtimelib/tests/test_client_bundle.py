@@ -73,6 +73,11 @@ class ClientBundleBuilderTests(TestCase):
         # Verify the imported module comment is present
         self.assertIn("// Imported .jac module: client_runtime", bundle.code)
 
+        # IMPORTANT: Ensure no ES6 import statements are in the bundle
+        # (since everything is bundled together, we don't need module imports)
+        self.assertNotIn("import {", bundle.code)
+        self.assertNotIn("from \"client_runtime\"", bundle.code)
+
         # Check that client functions are registered
         self.assertIn("test_page", bundle.client_functions)
         self.assertIn("APP_TITLE", bundle.client_globals)
