@@ -1,0 +1,16 @@
+{
+    "name": "jac-client-app",
+    "version": "1.0.0",
+    "description": "Client-side build for a Jac application.",
+    "main": "main_entry.js",
+    "scripts": {
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "vite": "^5.4.21"
+    },
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "materialize-css": "^1.0.0"
+    }
+}
