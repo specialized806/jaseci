@@ -71,13 +71,47 @@ class ClientBundleBuilder:
         runtime_path: Path,
     ) -> ClientBundle:
         """Compile bundle pieces and stitch them together."""
-        runtime_js = self._compile_to_js(runtime_path)
-
-        # Get manifest from JacProgram
+        # Get manifest from JacProgram first to check for imports
         from jaclang.runtimelib.machine import JacMachine as Jac
 
         mod = Jac.program.mod.hub.get(str(module_path))
         manifest = mod.gen.client_manifest if mod else None
+
+        # Process client imports
+        import_pieces: list[str] = []
+        if manifest and manifest.imports:
+            for import_name, import_path in manifest.imports.items():
+                import_path_obj = Path(import_path)
+                if import_path_obj.suffix == ".js":
+                    # For .js files, read and include as-is
+                    try:
+                        with open(import_path_obj, "r", encoding="utf-8") as f:
+                            js_code = f.read()
+                            import_pieces.append(
+                                f"// Imported .js module: {import_name}"
+                            )
+                            import_pieces.append(js_code)
+                            import_pieces.append("")
+                    except FileNotFoundError:
+                        import_pieces.append(
+                            f"// Warning: Could not find {import_path}"
+                        )
+                elif import_path_obj.suffix == ".jac":
+                    # For .jac files, compile to JS
+                    try:
+                        compiled_js = self._compile_to_js(import_path_obj)
+                        import_pieces.append(f"// Imported .jac module: {import_name}")
+                        import_pieces.append(compiled_js)
+                        import_pieces.append("")
+                    except ClientBundleError:
+                        import_pieces.append(
+                            f"// Warning: Could not compile {import_path}"
+                        )
+
+        # Compile runtime only if not already imported
+        runtime_js = ""
+        if not (manifest and "client_runtime" in manifest.imports):
+            runtime_js = self._compile_to_js(runtime_path)
 
         module_js = self._compile_to_js(module_path)
 
@@ -100,15 +134,32 @@ class ClientBundleBuilder:
             module.__name__, client_exports, client_globals_map
         )
 
-        bundle_pieces = [
-            "// Jac client runtime",
-            runtime_js,
-            "",
-            f"// Client module: {module.__name__}",
-            module_js,
-            "",
-            registration_js,
-        ]
+        bundle_pieces = []
+
+        # Add runtime if needed
+        if runtime_js:
+            bundle_pieces.extend(
+                [
+                    "// Jac client runtime",
+                    runtime_js,
+                    "",
+                ]
+            )
+
+        # Add imported modules
+        if import_pieces:
+            bundle_pieces.extend(import_pieces)
+
+        # Add main module
+        bundle_pieces.extend(
+            [
+                f"// Client module: {module.__name__}",
+                module_js,
+                "",
+                registration_js,
+            ]
+        )
+
         bundle_code = "\n".join(piece for piece in bundle_pieces if piece is not None)
         bundle_hash = hashlib.sha256(bundle_code.encode("utf-8")).hexdigest()
 
