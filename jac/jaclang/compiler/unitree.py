@@ -4519,7 +4519,11 @@ class SwitchCase(UniScopeNode):
             for stmt in self.body:
                 res = res and stmt.normalize(deep)
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_CASE)]
-        new_kid.append(self.pattern) if self.pattern else None
+        if self.pattern is not None:
+            new_kid.append(self.pattern)
+        else:
+            new_kid.pop()
+            new_kid.append(self.gen_token(Tok.KW_DEFAULT))
         new_kid.append(self.gen_token(Tok.COLON))
         if self.body:
             new_kid.extend([*self.body])
