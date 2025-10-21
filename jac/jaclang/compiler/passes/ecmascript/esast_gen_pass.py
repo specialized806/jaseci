@@ -125,6 +125,16 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
+        # Only filter top-level ElementStmt nodes that aren't client-marked
+        # This prevents over-aggressive pruning of nested nodes within client blocks
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and not node.is_client_decl
+            and isinstance(getattr(node, "parent", None), uni.Module)
+        ):
+            self.prune()
+            return
         if isinstance(node, uni.UniScopeNode):
             self._push_scope(node)
         if node.gen.es_ast:
@@ -134,6 +144,13 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and not node.is_client_decl
+            and isinstance(getattr(node, "parent", None), uni.Module)
+        ):
+            return
         super().exit_node(node)
         if isinstance(node, uni.UniScopeNode):
             self._pop_scope(node)

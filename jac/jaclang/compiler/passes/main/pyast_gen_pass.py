@@ -113,10 +113,14 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
-        if self._should_skip_client(node):
-            node.gen.py_ast = []
-            if hasattr(node.gen, "py"):
-                node.gen.py = ""  # type: ignore[attr-defined]
+        # Only filter top-level ElementStmt nodes that are client-marked
+        # This prevents over-aggressive pruning of nested nodes within client blocks
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and node.is_client_decl
+            and isinstance(getattr(node, "parent", None), uni.Module)
+        ):
             self.prune()
             return
         if node.gen.py_ast:
@@ -126,10 +130,12 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
-        if self._should_skip_client(node):
-            node.gen.py_ast = []
-            if hasattr(node.gen, "py"):
-                node.gen.py = ""  # type: ignore[attr-defined]
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and node.is_client_decl
+            and isinstance(getattr(node, "parent", None), uni.Module)
+        ):
             return
         super().exit_node(node)
 
@@ -306,10 +312,6 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
                 keywords=[],
             )
         )
-
-    def _should_skip_client(self, node: uni.UniNode) -> bool:
-        """Check if node is a client-facing declaration that should skip Python codegen."""
-        return isinstance(node, uni.ClientFacingNode) and node.is_client_decl
 
     def sync(
         self, py_node: T, jac_node: Optional[uni.UniNode] = None, deep: bool = False
