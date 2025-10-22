@@ -293,7 +293,14 @@ cl def check_types() {
             "Relative import with ..lib should generate ../lib"
         )
 
-        # Test 7: Module prefix notation (jac:client_runtime)
+        # Test 7: Relative path imports (triple dot - grandparent)
+        self.assertIn(
+            'import { settings } from "../../config";',
+            js_code,
+            "Relative import with ...config should generate ../../config"
+        )
+
+        # Test 8: Module prefix notation (jac:client_runtime)
         # NOTE: Current implementation strips the jac: prefix and generates "client_runtime"
         # This may be intentional for runtime resolution
         self.assertIn(
@@ -302,18 +309,18 @@ cl def check_types() {
             "Module prefix notation resolves to client_runtime"
         )
 
-        # Test 8: Ensure function definitions are generated
+        # Test 9: Ensure function definitions are generated
         self.assertIn(
             "function example_usage()",
             js_code,
             "Client function should be generated"
         )
 
-        # Test 9: Verify no Python-style imports leaked
+        # Test 10: Verify no Python-style imports leaked
         self.assertNotIn("from react import", js_code, "No Python syntax should appear")
         self.assertNotIn("from lodash import", js_code, "No Python syntax should appear")
 
-        # Test 10: Ensure balanced syntax
+        # Test 11: Ensure balanced syntax
         self.assert_balanced_syntax(js_code, fixture_path)
 
     def test_category2_default_imports_generate_correct_js(self) -> None:

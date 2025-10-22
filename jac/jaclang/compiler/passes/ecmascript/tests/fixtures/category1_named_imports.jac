@@ -22,6 +22,7 @@ import from vue { createApp, ref as reactive, computed }
 # Relative path imports
 import from .utils { helper }
 import from ..lib { formatter as format }
+import from ...config { settings }
 
 # Module prefix notation (jac:client_runtime)
 import from jac:client_runtime {
