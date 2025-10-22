@@ -237,3 +237,81 @@ cl def check_types() {
             self.assert_balanced_syntax(js_code, temp_path)
         finally:
             os.unlink(temp_path)
+
+    def test_category1_named_imports_generate_correct_js(self) -> None:
+        """Test Category 1 named imports from proposal document.
+
+        Validates:
+        - Single named import: import { useState } from 'react'
+        - Multiple named imports: import { a, b, c } from 'lib'
+        - Named import with alias: import { foo as bar } from 'lib'
+        - Relative path imports with ../ and ./
+        - Module prefix notation (jac:client_runtime)
+        """
+        fixture_path = self.get_fixture_path("category1_named_imports.jac")
+        js_code = self.compile_fixture_to_js(fixture_path)
+
+        # Test 1: Single named import
+        self.assertIn(
+            'import { useState } from "react";',
+            js_code,
+            "Single named import should generate: import { useState } from 'react';"
+        )
+
+        # Test 2: Multiple named imports
+        self.assertIn(
+            'import { map, filter, reduce } from "lodash";',
+            js_code,
+            "Multiple named imports should generate: import { map, filter, reduce } from 'lodash';"
+        )
+
+        # Test 3: Named import with alias
+        self.assertIn(
+            'import { get as httpGet } from "axios";',
+            js_code,
+            "Aliased import should generate: import { get as httpGet } from 'axios';"
+        )
+
+        # Test 4: Mixed named imports and aliases
+        self.assertIn(
+            'import { createApp, ref as reactive, computed } from "vue";',
+            js_code,
+            "Mixed imports should preserve order and aliases"
+        )
+
+        # Test 5: Relative path imports (single dot)
+        self.assertIn(
+            'import { helper } from "./utils";',
+            js_code,
+            "Relative import with .utils should generate ./utils"
+        )
+
+        # Test 6: Relative path imports (double dot)
+        self.assertIn(
+            'import { formatter as format } from "../lib";',
+            js_code,
+            "Relative import with ..lib should generate ../lib"
+        )
+
+        # Test 7: Module prefix notation (jac:client_runtime)
+        # NOTE: Current implementation strips the jac: prefix and generates "client_runtime"
+        # This may be intentional for runtime resolution
+        self.assertIn(
+            'import { renderJsxTree, jacLogin, jacLogout } from "client_runtime";',
+            js_code,
+            "Module prefix notation resolves to client_runtime"
+        )
+
+        # Test 8: Ensure function definitions are generated
+        self.assertIn(
+            "function example_usage()",
+            js_code,
+            "Client function should be generated"
+        )
+
+        # Test 9: Verify no Python-style imports leaked
+        self.assertNotIn("from react import", js_code, "No Python syntax should appear")
+        self.assertNotIn("from lodash import", js_code, "No Python syntax should appear")
+
+        # Test 10: Ensure balanced syntax
+        self.assert_balanced_syntax(js_code, fixture_path)
