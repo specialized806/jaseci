@@ -380,9 +380,15 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
                     ],
                 )
             )
+        elif isinstance(pattern, uni.MatchSingleton):
+            return self.sync(
+                ast3.Compare(
+                    left=cast(ast3.expr, target.gen.py_ast[0]),
+                    ops=[self.sync(ast3.Is())],
+                    comparators=[cast(ast3.expr, pattern.value.gen.py_ast[0])],
+                )
+            )
         # elif isinstance(pattern, uni.MatchAs):
-        #     pass
-        # elif isinstance(pattern, uni.MatchSingleton):
         #     pass
         # elif isinstance(pattern, uni.MatchSequence):
         #     pass
