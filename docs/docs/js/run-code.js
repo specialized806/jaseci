@@ -47,6 +47,10 @@ function executeJacCodeInWorker(code, inputHandler, commandType = "run") {
                     detail: { output: message.output, stream: message.stream }
                 });
                 document.dispatchEvent(event);
+                // handle DOT graph output
+            } else if (message.type === "dot") {
+                const event = new CustomEvent('jacDotOutput', { detail: { dot: message.dot }});
+                document.dispatchEvent(event);
             } else if (message.type === "execution_complete") {
                 pyodideWorker.removeEventListener("message", handleMessage);
                 resolve("");
@@ -84,6 +88,11 @@ function runJacCodeInWorker(code, inputHandler) {
 function serveJacCodeInWorker(code, inputHandler) {
     return executeJacCodeInWorker(code, inputHandler, "serve");
 }
+
+function dotJacCodeInWorker(code, inputHandler) {
+    return executeJacCodeInWorker(code, inputHandler, "dot");
+}
+
 
 // Load Monaco Editor Globally
 function loadMonacoEditor() {
@@ -134,6 +143,7 @@ async function setupCodeBlock(div) {
     <div class="button-container" style="display: flex; gap: 8px;">
         <button class="md-button md-button--primary run-code-btn">Run</button>
         <button class="md-button md-button--primary serve-code-btn" style="background: linear-gradient(90deg, #0288d1 0%, #03a9f4 100%);">Serve</button>
+        <button class="md-button md-button--primary dot-code-btn" style="background: linear-gradient(90deg, #b859e0ff 0%, #df76f1ff 100%);">Graph</button>
     </div>
     <div class="input-dialog" style="display: none; background: linear-gradient(135deg, #2a2a2a 0%, #1e1e1e 100%); border: 1px solid #4a90e2; padding: 12px; margin: 8px 0; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
         <div style="display: flex; gap: 10px; align-items: center;">
@@ -144,11 +154,14 @@ async function setupCodeBlock(div) {
         </div>
     </div>
     <pre class="code-output" style="display:none; white-space: pre-wrap; background: #1e1e1e; color: #d4d4d4; padding: 10px;"></pre>
+    <div class="graph-container" style="display:none; margin-top:12px; border-radius:8px; overflow:auto; background:#ffffff; padding:8px;"></div>
     `;
 
     const container = div.querySelector(".jac-code");
     const runButton = div.querySelector(".run-code-btn");
     const serveButton = div.querySelector(".serve-code-btn");
+    const dotButton = div.querySelector(".dot-code-btn");
+    const graphContainer = div.querySelector(".graph-container");
     const outputBlock = div.querySelector(".code-output");
     const inputDialog = div.querySelector(".input-dialog");
     const inputPrompt = div.querySelector(".input-prompt");
@@ -158,10 +171,16 @@ async function setupCodeBlock(div) {
 
     // Handle button visibility based on classnames
     serveButton.style.display = 'none';
+    dotButton.style.display = 'none';
     if (div.classList.contains('serve-only')) {
         runButton.style.display = 'none';
         serveButton.style.display = 'inline-block';
     } else if (div.classList.contains('run-serve')) {
+        serveButton.style.display = 'inline-block';
+    } else if (div.classList.contains('run-dot')) {
+        dotButton.style.display = 'inline-block';
+    } else if (div.classList.contains('run-dot-serve')) {
+        dotButton.style.display = 'inline-block';
         serveButton.style.display = 'inline-block';
     }
 
@@ -243,6 +262,46 @@ async function setupCodeBlock(div) {
         };
     }
 
+    function decodeHtmlEntities(str) {
+    // handles &amp;, &#x27;, etc.
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+    }
+
+    function renderDotToGraph(dotText) {
+        // decode any HTML entities
+        const decoded = decodeHtmlEntities(dotText || "");
+
+        if (!decoded.trim()) {
+            graphContainer.style.display = "none";
+            return;
+        }
+
+        // Ensure viz is available
+        if (typeof Viz === "undefined") {
+            graphContainer.textContent = "Graph rendering library not loaded.";
+            graphContainer.style.display = "block";
+            return;
+        }
+
+        // create a new Viz instance and render
+        const viz = new Viz();
+        viz.renderSVGElement(decoded)
+            .then(svgEl => {
+                graphContainer.innerHTML = "";          // clear old
+                graphContainer.appendChild(svgEl);      // add svg element
+                graphContainer.style.display = "block";
+            })
+            .catch(err => {
+                console.error("Viz render error:", err);
+                // fallback: show dot text
+                graphContainer.style.display = "block";
+                graphContainer.textContent = "Failed to render graph. DOT:\n\n" + decoded;
+            });
+    }
+
+
     function createButtonHandler(commandType, initialMessage = "") {
         return async () => {
             outputBlock.style.display = "block";
@@ -256,21 +315,41 @@ async function setupCodeBlock(div) {
                 outputBlock.textContent = outputBlock.textContent.replace(loadingMsg + (initialMessage ? "\n" : ""), "");
             }
 
+            // control whether streaming text outputs should be appended to the UI
+            // For graph flows we suppress streaming output from the preparatory run and dot steps
+            let showOutputs = commandType !== "dot";
+
             const outputHandler = (event) => {
+                if (!showOutputs) return;               // suppress when requested
                 const { output, stream } = event.detail;
                 outputBlock.textContent += output;
                 outputBlock.scrollTop = outputBlock.scrollHeight;
             };
 
+            const dotHandler = (event) => {
+                // render graph when DOT event arrives (always allow)
+                renderDotToGraph(event.detail.dot);
+            };
+
             document.addEventListener('jacOutputUpdate', outputHandler);
+            document.addEventListener('jacDotOutput', dotHandler);
 
             try {
                 const codeToRun = editor.getValue();
                 const inputHandler = createInputHandler();
-                await executeJacCodeInWorker(codeToRun, inputHandler, commandType);
+
+                if (commandType === "dot") {
+                    // run silently to prepare state/files, then request dot (still silent for streaming output)
+                    await executeJacCodeInWorker(codeToRun, inputHandler, "run");
+                    // keep showOutputs=false so any duplicate printed output from dot() is not shown
+                    await executeJacCodeInWorker(codeToRun, inputHandler, "dot");
+                } else {
+                    await executeJacCodeInWorker(codeToRun, inputHandler, commandType);
+                }
             } catch (error) {
                 outputBlock.textContent += `\nError: ${error}`;
             } finally {
+                document.removeEventListener('jacDotOutput', dotHandler);
                 document.removeEventListener('jacOutputUpdate', outputHandler);
                 inputDialog.style.display = "none";
             }
@@ -279,6 +358,7 @@ async function setupCodeBlock(div) {
 
     runButton.addEventListener("click", createButtonHandler("run"));
     serveButton.addEventListener("click", createButtonHandler("serve", "Starting serve mode...\n"));
+    dotButton.addEventListener("click", createButtonHandler("dot", "Generating graph...\n"));
 
     userInput.addEventListener('focus', () => {
         userInput.style.borderColor = '#4a90e2';

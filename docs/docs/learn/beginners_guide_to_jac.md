@@ -1758,7 +1758,7 @@ Now for the most exciting part: **walkers**!
 
 Walkers are objects that **move through the graph**, visiting nodes and performing actions.
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 node Person {
@@ -2016,7 +2016,7 @@ with entry {
 
 Let's build a real social network!
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 # Define our graph structure
@@ -2236,7 +2236,7 @@ with entry {
 
 ### 11.1 Example 1: Family Tree
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 node Person {

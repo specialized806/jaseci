@@ -43,6 +43,7 @@
 
 
 .code-block .run-code-btn,
+.code-block .dot-code-btn,
 .code-block .serve-code-btn {
     margin-top: 0.5em;
     padding: 0.4em 1.2em;
@@ -73,6 +74,13 @@
     box-shadow: 0 4px 16px rgba(255, 171, 64, 0.15);
 }
 
+.code-block .dot-code-btn:hover,
+.code-block .dot-code-btn:focus {
+    background: linear-gradient(90deg, #b859e0ff 0%, #df76f1ff 100%);
+    color: #111;
+    box-shadow: 0 4px 16px rgba(255, 171, 64, 0.15);
+}
+
 .code-block .run-code-btn:active {
     background: #ff9800;
     color: #fff;
@@ -80,6 +88,11 @@
 
 .code-block .serve-code-btn:active {
     background: #0288d1;
+    color: #fff;
+}
+
+.code-block .dot-code-btn:active {
+    background: #7b1fa2;
     color: #fff;
 }
 
@@ -102,9 +115,6 @@
     overflow: hidden;
     margin-top: 0;
 }
-
-
-
 
 body,
 [data-md-color-scheme="slate"] {
