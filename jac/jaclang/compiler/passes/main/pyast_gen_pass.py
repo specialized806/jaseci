@@ -113,16 +113,19 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
-        # Only filter top-level ElementStmt nodes that are client-marked
-        # This prevents over-aggressive pruning of nested nodes within client blocks
-        if (
-            isinstance(node, uni.ElementStmt)
-            and isinstance(node, uni.ClientFacingNode)
-            and node.is_client_decl
-            and isinstance(getattr(node, "parent", None), uni.Module)
-        ):
-            self.prune()
+        # Skip ClientBlock children but still allow exit_node to run
+        if isinstance(node, uni.ClientBlock):
+            node.gen.py_ast = []  # Set immediately
+            self.prune()  # Don't traverse children
             return
+        # Skip client declarations at module level - they should only generate JavaScript
+        # We check for Module parent OR treat nodes without parent as top-level (format pass)
+        if isinstance(node, uni.ClientFacingNode) and node.is_client_decl:
+            parent = getattr(node, "parent", None)
+            # Filter if parent is Module, or if parent is None (during format/early passes)
+            if parent is None or isinstance(parent, uni.Module):
+                self.prune()
+                return
         if node.gen.py_ast:
             self.prune()
             return
@@ -130,13 +133,13 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
-        if (
-            isinstance(node, uni.ElementStmt)
-            and isinstance(node, uni.ClientFacingNode)
-            and node.is_client_decl
-            and isinstance(getattr(node, "parent", None), uni.Module)
-        ):
+        # ClientBlock already handled in enter_node
+        if isinstance(node, uni.ClientBlock):
             return
+        if isinstance(node, uni.ClientFacingNode) and node.is_client_decl:
+            parent = getattr(node, "parent", None)
+            if parent is None or isinstance(parent, uni.Module):
+                return
         super().exit_node(node)
 
     def jaclib_obj(self, obj_name: str) -> ast3.Name:
@@ -562,6 +565,11 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
                     )
                 )
             ]
+
+    def exit_client_block(self, node: uni.ClientBlock) -> None:
+        """Handle ClientBlock - already set to empty in enter_node."""
+        # py_ast already set to [] in enter_node, nothing to do here
+        pass
 
     def exit_py_inline_code(self, node: uni.PyInlineCode) -> None:
         if node.doc:
