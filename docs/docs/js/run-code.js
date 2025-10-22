@@ -308,6 +308,14 @@ async function setupCodeBlock(div) {
             outputBlock.textContent = initialMessage;
             inputDialog.style.display = "none";
 
+            // clear any previous graph immediately so repeated clicks look fresh
+            try { graphContainer.innerHTML = ""; graphContainer.style.display = "none"; } catch (e) { /* ignore */ }
+
+            // disable buttons while this invocation runs to avoid concurrent runs
+            runButton.disabled = true;
+            serveButton.disabled = true;
+            dotButton.disabled = true;
+
             if (!pyodideReady) {
                 const loadingMsg = "Loading Jac runner...";
                 outputBlock.textContent += loadingMsg + (initialMessage ? "\n" : "");
@@ -315,9 +323,8 @@ async function setupCodeBlock(div) {
                 outputBlock.textContent = outputBlock.textContent.replace(loadingMsg + (initialMessage ? "\n" : ""), "");
             }
 
-            // control whether streaming text outputs should be appended to the UI
-            // For graph flows we suppress streaming output from the preparatory run and dot steps
-            let showOutputs = commandType !== "dot";
+            // show the run's output for graph,
+            let showOutputs = true;
 
             const outputHandler = (event) => {
                 if (!showOutputs) return;               // suppress when requested
@@ -327,7 +334,7 @@ async function setupCodeBlock(div) {
             };
 
             const dotHandler = (event) => {
-                // render graph when DOT event arrives (always allow)
+                try { graphContainer.innerHTML = ""; } catch (e) { /* ignore */ }   // clear olds
                 renderDotToGraph(event.detail.dot);
             };
 
@@ -339,9 +346,8 @@ async function setupCodeBlock(div) {
                 const inputHandler = createInputHandler();
 
                 if (commandType === "dot") {
-                    // run silently to prepare state/files, then request dot (still silent for streaming output)
                     await executeJacCodeInWorker(codeToRun, inputHandler, "run");
-                    // keep showOutputs=false so any duplicate printed output from dot() is not shown
+                    showOutputs = false;     // avoid duplicate outputs
                     await executeJacCodeInWorker(codeToRun, inputHandler, "dot");
                 } else {
                     await executeJacCodeInWorker(codeToRun, inputHandler, commandType);
@@ -352,6 +358,10 @@ async function setupCodeBlock(div) {
                 document.removeEventListener('jacDotOutput', dotHandler);
                 document.removeEventListener('jacOutputUpdate', outputHandler);
                 inputDialog.style.display = "none";
+                // re-enable buttons
+                runButton.disabled = false;
+                serveButton.disabled = false;
+                dotButton.disabled = false;
             }
         };
     }
