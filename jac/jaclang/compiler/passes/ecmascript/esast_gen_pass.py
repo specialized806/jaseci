@@ -390,25 +390,61 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
             for item in node.items:
                 if isinstance(item, uni.ModuleItem):
-                    imported = self.sync_loc(
-                        es.Identifier(name=item.name.sym_name), jac_node=item.name
-                    )
-                    local = self.sync_loc(
-                        es.Identifier(
-                            name=(
-                                item.alias.sym_name
-                                if item.alias
-                                else item.name.sym_name
-                            )
-                        ),
-                        jac_node=item.alias if item.alias else item.name,
-                    )
-                    specifiers.append(
-                        self.sync_loc(
-                            es.ImportSpecifier(imported=imported, local=local),
-                            jac_node=item,
+                    # Check Name first (since Name is a subclass of Token)
+                    if isinstance(item.name, uni.Name):
+                        # Regular named import (Category 1)
+                        imported = self.sync_loc(
+                            es.Identifier(name=item.name.sym_name), jac_node=item.name
                         )
-                    )
+                        local = self.sync_loc(
+                            es.Identifier(
+                                name=(
+                                    item.alias.sym_name
+                                    if item.alias
+                                    else item.name.sym_name
+                                )
+                            ),
+                            jac_node=item.alias if item.alias else item.name,
+                        )
+                        specifiers.append(
+                            self.sync_loc(
+                                es.ImportSpecifier(imported=imported, local=local),
+                                jac_node=item,
+                            )
+                        )
+                    elif isinstance(item.name, uni.Token):
+                        # Category 2: Handle default imports
+                        # Pattern: cl import from react { default as React }
+                        if item.name.value == "default":
+                            if not item.alias:
+                                # default must have an alias
+                                continue
+                            local = self.sync_loc(
+                                es.Identifier(name=item.alias.sym_name),
+                                jac_node=item.alias,
+                            )
+                            specifiers.append(
+                                self.sync_loc(
+                                    es.ImportDefaultSpecifier(local=local),
+                                    jac_node=item,
+                                )
+                            )
+                        # Category 4: Handle namespace imports
+                        # Pattern: cl import from lodash { * as _ }
+                        elif item.name.value == "*":
+                            if not item.alias:
+                                # namespace import must have an alias
+                                continue
+                            local = self.sync_loc(
+                                es.Identifier(name=item.alias.sym_name),
+                                jac_node=item.alias,
+                            )
+                            specifiers.append(
+                                self.sync_loc(
+                                    es.ImportNamespaceSpecifier(local=local),
+                                    jac_node=item,
+                                )
+                            )
 
             import_decl = self.sync_loc(
                 es.ImportDeclaration(specifiers=specifiers, source=source),

@@ -315,3 +315,134 @@ cl def check_types() {
 
         # Test 10: Ensure balanced syntax
         self.assert_balanced_syntax(js_code, fixture_path)
+
+    def test_category2_default_imports_generate_correct_js(self) -> None:
+        """Test Category 2 default imports from proposal document.
+
+        Validates:
+        - Default import: import from module { default as Name }
+        - Generates: import Name from "module"
+        - Works with relative paths
+
+        Based on table from jac_import_patterns_proposal.md
+        """
+        fixture_path = self.get_fixture_path("category2_default_imports.jac")
+        js_code = self.compile_fixture_to_js(fixture_path)
+
+        # Test 1: Default import from react
+        # cl import from react { default as React }
+        # Should generate: import React from "react";
+        self.assertIn(
+            'import React from "react";',
+            js_code,
+            "Default import should generate: import React from 'react';"
+        )
+
+        # Test 2: Default import from axios
+        self.assertIn(
+            'import axios from "axios";',
+            js_code,
+            "Default import should generate: import axios from 'axios';"
+        )
+
+        # Test 3: Default import from vue
+        self.assertIn(
+            'import Vue from "vue";',
+            js_code,
+            "Default import should generate: import Vue from 'vue';"
+        )
+
+        # Test 4: Default import with relative path (single dot)
+        self.assertIn(
+            'import Button from "./components.Button";',
+            js_code,
+            "Relative default import should work with ./ path"
+        )
+
+        # Test 5: Default import with relative path (double dot)
+        self.assertIn(
+            'import utils from "../lib.utils";',
+            js_code,
+            "Relative default import should work with ../ path"
+        )
+
+        # Test 6: Ensure function definitions are generated
+        self.assertIn(
+            "function example_usage()",
+            js_code,
+            "Client function should be generated"
+        )
+
+        # Test 7: Verify no named import syntax leaked for defaults
+        # Should NOT have: import { React } from "react"
+        self.assertNotIn('import { React }', js_code, "Default should not use named import syntax")
+        self.assertNotIn('import { axios }', js_code, "Default should not use named import syntax")
+        self.assertNotIn('import { Vue }', js_code, "Default should not use named import syntax")
+
+        # Test 8: Ensure balanced syntax
+        self.assert_balanced_syntax(js_code, fixture_path)
+
+    def test_category4_namespace_imports_generate_correct_js(self) -> None:
+        """Test Category 4 namespace imports from proposal document.
+
+        Validates:
+        - Namespace import: import from module { * as Name }
+        - Generates: import * as Name from "module"
+        - Works with relative paths
+
+        Based on table from jac_import_patterns_proposal.md
+        """
+        fixture_path = self.get_fixture_path("category4_namespace_imports.jac")
+        js_code = self.compile_fixture_to_js(fixture_path)
+
+        # Test 1: Namespace import from react
+        # cl import from react { * as React }
+        # Should generate: import * as React from "react";
+        self.assertIn(
+            'import * as React from "react";',
+            js_code,
+            "Namespace import should generate: import * as React from 'react';"
+        )
+
+        # Test 2: Namespace import from lodash
+        self.assertIn(
+            'import * as _ from "lodash";',
+            js_code,
+            "Namespace import should generate: import * as _ from 'lodash';"
+        )
+
+        # Test 3: Namespace import from dateutils
+        self.assertIn(
+            'import * as DateUtils from "dateutils";',
+            js_code,
+            "Namespace import should generate: import * as DateUtils from 'dateutils';"
+        )
+
+        # Test 4: Namespace import with relative path (single dot)
+        self.assertIn(
+            'import * as utils from "./utils";',
+            js_code,
+            "Relative namespace import should work with ./ path"
+        )
+
+        # Test 5: Namespace import with relative path (double dot)
+        self.assertIn(
+            'import * as helpers from "../lib.helpers";',
+            js_code,
+            "Relative namespace import should work with ../ path"
+        )
+
+        # Test 6: Ensure function definitions are generated
+        self.assertIn(
+            "function example_usage()",
+            js_code,
+            "Client function should be generated"
+        )
+
+        # Test 7: Verify no named import syntax leaked for namespace
+        # Should NOT have: import { React } from "react"
+        self.assertNotIn('import { * }', js_code, "Namespace should not use braces around *")
+        self.assertNotIn('import { * as', js_code, "Namespace should not have * inside braces")
+
+        # Test 8: Ensure balanced syntax
+        self.assert_balanced_syntax(js_code, fixture_path)

@@ -104,14 +104,22 @@ class SymTabBuildPass(UniPass):
                 )
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
-        sym_node = node.alias or node.name
-        sym_node.sym_tab.def_insert(sym_node, single_decl="import")
-        if node.alias:
-            # create symbol for module item
-            node.name.sym = node.name.create_symbol(
-                access=SymbolAccess.PUBLIC,
-                imported=True,
-            )
+        # Handle special tokens (default, *) - only alias should be added to symbol table
+        if isinstance(node.name, uni.Token):
+            # For default and namespace imports, only the alias matters for symbols
+            if node.alias:
+                sym_node = node.alias
+                sym_node.sym_tab.def_insert(sym_node, single_decl="import")
+        else:
+            # Regular named import
+            sym_node = node.alias or node.name
+            sym_node.sym_tab.def_insert(sym_node, single_decl="import")
+            if node.alias:
+                # create symbol for module item
+                node.name.sym = node.name.create_symbol(
+                    access=SymbolAccess.PUBLIC,
+                    imported=True,
+                )
 
     def enter_archetype(self, node: uni.Archetype) -> None:
         self.push_scope_and_link(node)
