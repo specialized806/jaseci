@@ -1624,13 +1624,17 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Matched a.b.c Hello Jaseci!", stdout_value[0])
 
-    def test_switch_case(self) -> None:
+def test_switch_case(self) -> None:
         """Test switch-case."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("switch_case", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("Matched case for value: 2, 3, 10", stdout_value[0])
-        self.assertIn("Matched case for value: 15, 20", stdout_value[1])
-        self.assertIn("No match found for value: 25", stdout_value[2])
+        self.assertIn("Matched case for value: apple", stdout_value[0])
+        self.assertIn("Matched case for value: banana, orange", stdout_value[1])
+        self.assertIn("Matched case for value: grape", stdout_value[2])
+        self.assertIn("Matched case for value: kiwi", stdout_value[3])
+        self.assertIn("Matched case for value: Berry or Cherry", stdout_value[4])
+        self.assertIn("No match found for value: banana", stdout_value[5])
+        self.assertIn("No match found for value: mango", stdout_value[6])

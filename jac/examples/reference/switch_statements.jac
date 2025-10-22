@@ -7,6 +7,7 @@ def switch_case(Num: int) {
         case 15:
         case 20:
             print("Matched case for value: 15, 20");
+            break;
         case 25:
         default:
             print("No match found for value: " + str(Num));
