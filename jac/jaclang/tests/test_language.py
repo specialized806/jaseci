@@ -1624,7 +1624,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Matched a.b.c Hello Jaseci!", stdout_value[0])
 
-def test_switch_case(self) -> None:
+    def test_switch_case(self) -> None:
         """Test switch-case."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
