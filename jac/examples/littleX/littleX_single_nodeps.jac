@@ -6,7 +6,6 @@ cl import from jac:client_runtime {
     renderJsxTree,
 }
 
-
 node Profile {
     has username: str = "";
 
@@ -316,7 +315,7 @@ cl def TweetCard(tweet: ClientTweet) -> any {
         {"border" : "1px solid #e1e8ed" , "padding" : "15px" , "margin" : "10px 0" , "borderRadius" : "8px" }}>
     <div
             class="tweet-header"
-            style={{"fontWeight" : "bold" , "marginBottom" : "8px" }}>
+            style={{"fontWeight" : "bold" , "marginBottom" : "80px" }}>
         @
         {tweet.username}
         </div>

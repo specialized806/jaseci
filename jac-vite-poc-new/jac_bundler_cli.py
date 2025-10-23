@@ -8,6 +8,31 @@ APP_LOGIC_FILE = "app_logic.js"
 RUNTIME_FILE = "runtime.js"
 PACKAGE_JSON_FILE = "package.json"
 JAC_CLIENT_MODULE_NAME = "littleX_single_nodeps"
+client_functions = [
+    "navigate_to", "render_app", "get_current_route", "handle_popstate", 
+    "init_router", "TweetCard", "like_tweet_action", "FeedView", 
+    "LoginForm", "handle_login", "SignupForm", "go_to_login", 
+    "go_to_signup", "go_to_home", "go_to_profile", "handle_signup", 
+    "logout_action", "App", "get_view_for_route", "HomeViewLoader", 
+    "load_home_view", "build_nav_bar", "HomeView", "ProfileView", 
+    "littlex_app"
+]
+
+
+def generate_function_map(functions):
+    """
+    Dynamically generates the functionMap object from a list of function names.
+    This replaces the hardcoded functionMap with a dynamic one.
+    """
+    if not functions:
+        return "{}"
+    
+    # Create the functionMap object dynamically
+    map_entries = []
+    for func_name in functions:
+        map_entries.append(f'    "{func_name}": {func_name}')
+    
+    return "{\n" + ",\n".join(map_entries) + "\n}"
 
 
 TEMP_ENTRY_FILE = "temp_main_entry.js" # Temporary file for Vite input
@@ -16,7 +41,7 @@ FINAL_OUTPUT_DIR = Path("static/client/js")
 FINAL_BUNDLE_NAME = "client" # The output file will be client.[hash].js
 
 
-def create_temp_entry(app_logic_path: Path, runtime_path: Path, output_path: Path):
+def create_temp_entry(app_logic_path: Path, runtime_path: Path, output_path: Path, functions_list=None):
     """
     Reads the app_logic and runtime files, injects the necessary Jac runtime
     initialization, and combines them into a single temporary output file.
@@ -27,50 +52,20 @@ def create_temp_entry(app_logic_path: Path, runtime_path: Path, output_path: Pat
         runtime_content = runtime_path.read_text(encoding="utf-8")
         app_logic_content = app_logic_path.read_text(encoding="utf-8")
         
-        # NOTE: We must list all top-level functions from app_logic.js here
-        # to ensure the Jac runtime (in runtime.js) can register them.
-        client_functions = [
-            "navigate_to", "render_app", "get_current_route", "handle_popstate", 
-            "init_router", "TweetCard", "like_tweet_action", "FeedView", 
-            "LoginForm", "handle_login", "SignupForm", "go_to_login", 
-            "go_to_signup", "go_to_home", "go_to_profile", "handle_signup", 
-            "logout_action", "App", "get_view_for_route", "HomeViewLoader", 
-            "load_home_view", "build_nav_bar", "HomeView", "ProfileView", 
-            "littlex_app"
-        ]
+        # Use provided functions list or fall back to default
+        functions_to_use = functions_list if functions_list is not None else client_functions
+        
+        print(f"🔧 Using {len(functions_to_use)} functions: {', '.join(functions_to_use)}")
+        
+        # Generate the functionMap dynamically from the functions list
+        function_map_str = generate_function_map(functions_to_use)
 
         # Create the essential Jac runtime initialization logic
         jac_init_script = f"""
 // --- JAC CLIENT INITIALIZATION SCRIPT ---
 // Expose functions globally for Jac runtime registration
-const clientFunctions = {client_functions};
-const functionMap = {{
-    "navigate_to": navigate_to,
-    "render_app": render_app,
-    "get_current_route": get_current_route,
-    "handle_popstate": handle_popstate,
-    "init_router": init_router,
-    "TweetCard": TweetCard,
-    "like_tweet_action": like_tweet_action,
-    "FeedView": FeedView,
-    "LoginForm": LoginForm,
-    "handle_login": handle_login,
-    "SignupForm": SignupForm,
-    "go_to_login": go_to_login,
-    "go_to_signup": go_to_signup,
-    "go_to_home": go_to_home,
-    "go_to_profile": go_to_profile,
-    "handle_signup": handle_signup,
-    "logout_action": logout_action,
-    "App": App,
-    "get_view_for_route": get_view_for_route,
-    "HomeViewLoader": HomeViewLoader,
-    "load_home_view": load_home_view,
-    "build_nav_bar": build_nav_bar,
-    "HomeView": HomeView,
-    "ProfileView": ProfileView,
-    "littlex_app": littlex_app
-}};
+const clientFunctions = {functions_to_use};
+const functionMap = {function_map_str};
 for (const funcName of clientFunctions) {{
     globalThis[funcName] = functionMap[funcName];
 }}
@@ -231,6 +226,12 @@ def main():
         default=Path(PACKAGE_JSON_FILE),
         help=f"Path to package.json (needed for npx to find Vite) (default: {PACKAGE_JSON_FILE})",
     )
+    parser.add_argument(
+        "--functions",
+        type=str,
+        nargs="*",
+        help="List of function names to include in the bundle (if not provided, uses default client_functions)",
+    )
     
     args = parser.parse_args()
     
@@ -239,7 +240,7 @@ def main():
 
     try:
         # 1. Combine files
-        if not create_temp_entry(args.app_logic, args.runtime, temp_entry_path):
+        if not create_temp_entry(args.app_logic, args.runtime, temp_entry_path, args.functions):
             return
 
         # 2. Generate Vite config
