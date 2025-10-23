@@ -284,7 +284,7 @@ async function setupCodeBlock(div) {
                 measureWrap.appendChild(svgEl);
                 graphContainer.appendChild(measureWrap);
 
-                // determine intrinsic svg size 
+                // determine intrinsic svg size
                 let svgW = NaN, svgH = NaN;
                 const vb = svgEl.getAttribute("viewBox");
                 if (vb) {
@@ -314,7 +314,7 @@ async function setupCodeBlock(div) {
                 const displayW = Math.max(1, Math.round(svgW * fitScale));
                 const displayH = Math.max(1, Math.round(svgH * fitScale));
 
-                // set SVG attributes so it fits perfectly 
+                // set SVG attributes so it fits perfectly
                 svgEl.setAttribute("width", displayW);
                 svgEl.setAttribute("height", displayH);
                 svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
@@ -415,7 +415,7 @@ async function setupCodeBlock(div) {
             };
 
             const dotHandler = (event) => {
-                graphContainer.innerHTML = ""; 
+                graphContainer.innerHTML = "";
                 renderDotToGraph(event.detail.dot);
             };
 
