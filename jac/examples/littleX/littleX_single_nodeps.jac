@@ -7,6 +7,7 @@ cl import from jac:client_runtime {
 }
 cl import from lodash { * as _ }
 cl import from antd { Button, Input, Card, Typography, Space }
+cl import from pluralize { default as pluralize }
 
 node Profile {
     has username: str = "";
@@ -383,6 +384,10 @@ cl def FeedView(tweets: list) -> any {
 cl def LoginForm()  -> any {
     suggestions = ['alice', 'bob', 'charlie', 'diana', 'eve'];
     randomSuggestion = _.sample(suggestions);
+    item = 'apple';
+    count = 5;
+    result = pluralize(item, count, true); 
+
     return <div
         class="login-container"
         style={
@@ -393,6 +398,9 @@ cl def LoginForm()  -> any {
     <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
         # Add random suggestion
         {randomSuggestion}
+        </div>
+        <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
+            {result}
         </div>
     <form onsubmit={handle_login}>
         <div style={{"marginBottom" : "15px" }}>

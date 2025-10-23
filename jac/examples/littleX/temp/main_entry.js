@@ -423,6 +423,7 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
 // Client module: littleX_single_nodeps
 import * as _ from "lodash";
 import { Button, Input, Card, Typography, Space } from "antd";
+import pluralize from "pluralize";
 const appState = {"current_route": "login", "tweets": [], "loading": false};
 function navigate_to(route) {
   console.log("Navigating to:", route);
@@ -498,7 +499,10 @@ function FeedView(tweets) {
 function LoginForm() {
   let suggestions = ["alice", "bob", "charlie", "diana", "eve"];
   let randomSuggestion = _.sample(suggestions);
-  return __jacJsx("div", {"class": "login-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Login to LittleX"]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [randomSuggestion]), __jacJsx("form", {"onsubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#signup", "onclick": go_to_signup, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Don't have an account? Sign up"])])]);
+  let item = "apple";
+  let count = 5;
+  let result = pluralize(item, count, true);
+  return __jacJsx("div", {"class": "login-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Login to LittleX"]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [randomSuggestion]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [result]), __jacJsx("form", {"onsubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#signup", "onclick": go_to_signup, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Don't have an account? Sign up"])])]);
 }
 async function handle_login(event) {
   event.preventDefault();

@@ -12,6 +12,7 @@
   "dependencies": {
     "antd": "^5.27.6",
     "lodash": "^4.17.21",
+    "pluralize": "^8.0.0",
     "precise-ui": "^2.1.17"
   }
 }
