@@ -824,8 +824,9 @@ body[data-domain="https://www.jac-lang.org/"] .feedback-container {
 }
 
 /* when user is panning, toggle this class in JS for cursor feedback */
-.viz-viewport.grabbing { cursor: grabbing; }
-
+.viz-viewport.grabbing {
+    cursor: grabbing;
+}
 /* container for controls (Reset button) should be absolute inside graph container */
 .graph-controls {
   position: absolute;
@@ -853,5 +854,7 @@ body[data-domain="https://www.jac-lang.org/"] .feedback-container {
 
 /* responsive tweak: allow scrolling on small screens */
 @media (max-width: 600px) {
-  .viz-viewport { overflow: auto; }
+  .viz-viewport {
+    overflow: auto;
+  }
 }

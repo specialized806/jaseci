@@ -415,7 +415,7 @@ async function setupCodeBlock(div) {
             };
 
             const dotHandler = (event) => {
-                try { graphContainer.innerHTML = ""; } catch (e) { /* ignore */ }   // clear olds
+                graphContainer.innerHTML = ""; 
                 renderDotToGraph(event.detail.dot);
             };
 
