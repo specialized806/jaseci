@@ -2296,7 +2296,7 @@ with entry {
 
 ### 11.2 Example 2: Course Prerequisites
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 node Course {
@@ -2468,7 +2468,7 @@ with entry {
 
 ### 11.4 Example 4: Simple Task Manager with Dependencies
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 node Task {

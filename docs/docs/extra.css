@@ -808,3 +808,50 @@ body[data-domain="https://www.jac-lang.org/"] .feedback-container {
         right: 0;
     }
 }
+
+/* viewport for rendered SVG */
+.viz-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;        /* change to auto if scrollbars are desired */
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* when user is panning, toggle this class in JS for cursor feedback */
+.viz-viewport.grabbing { cursor: grabbing; }
+
+/* container for controls (Reset button) should be absolute inside graph container */
+.graph-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 120;
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+/* reset button styling */
+.graph-reset-btn {
+  color: #111;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 56px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.95);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+/* responsive tweak: allow scrolling on small screens */
+@media (max-width: 600px) {
+  .viz-viewport { overflow: auto; }
+}
