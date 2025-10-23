@@ -383,7 +383,6 @@ async function setupCodeBlock(div) {
             });
     }
 
-
     function createButtonHandler(commandType, initialMessage = "") {
         return async () => {
             outputBlock.style.display = "block";
