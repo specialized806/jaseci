@@ -1,4 +1,5 @@
 import { jacLogin, jacLogout, jacSignup, renderJsxTree } from "client_runtime";
+import * as _ from "lodash";
 const appState = {"current_route": "login", "tweets": [], "loading": false};
 function navigate_to(route) {
   console.log("Navigating to:", route);
@@ -7,7 +8,7 @@ function navigate_to(route) {
   render_app();
 }
 function render_app() {
-  console.log("render_app called, route:", appState.get("current_route", "unknown"));
+  console.log("render_app called, route:", appState.gedt("current_route", "unknown"));
   let root_element = document.getElementById("__jac_root");
   if (root_element) {
     let component = App();
@@ -57,7 +58,7 @@ class ClientProfile {
   }
 }
 function TweetCard(tweet) {
-  return __jacJsx("div", {"class": "tweet-card", "style": {"border": "1px solid #e1e8ed", "padding": "15px", "margin": "10px 0", "borderRadius": "8px"}}, [__jacJsx("div", {"class": "tweet-header", "style": {"fontWeight": "bold", "marginBottom": "8px"}}, ["@", tweet.username]), __jacJsx("div", {"class": "tweet-content", "style": {"marginBottom": "12px"}}, [tweet.content]), __jacJsx("div", {"class": "tweet-actions", "style": {"display": "flex", "gap": "15px"}}, [__jacJsx("button", {"onclick": like_tweet_action(tweet.id), "style": {"padding": "5px 10px", "cursor": "pointer"}}, ["Like (", tweet.likes.length, ")"]), __jacJsx("button", {"style": {"padding": "5px 10px"}}, ["Comment (", tweet.comments.length, ")"])])]);
+  return __jacJsx("div", {"class": "tweet-card", "style": {"border": "1px solid #e1e8ed", "padding": "15px", "margin": "10px 0", "borderRadius": "8px"}}, [__jacJsx("div", {"class": "tweet-header", "style": {"fontWeight": "bold", "marginBottom": "80px"}}, ["@", tweet.username]), __jacJsx("div", {"class": "tweet-content", "style": {"marginBottom": "12px"}}, [tweet.content]), __jacJsx("div", {"class": "tweet-actions", "style": {"display": "flex", "gap": "15px"}}, [__jacJsx("button", {"onclick": like_tweet_action(tweet.id), "style": {"padding": "5px 10px", "cursor": "pointer"}}, ["Like (", tweet.likes.length, ")"]), __jacJsx("button", {"style": {"padding": "5px 10px"}}, ["Comment (", tweet.comments.length, ")"])])]);
 }
 async function like_tweet_action(tweet_id) {
   try {
@@ -72,7 +73,9 @@ function FeedView(tweets) {
   return __jacJsx("div", {"class": "feed-container", "style": {"maxWidth": "600px", "margin": "0 auto", "fontFamily": "sans-serif"}}, [__jacJsx("div", {"class": "feed-header", "style": {"padding": "20px", "borderBottom": "1px solid #e1e8ed"}}, [__jacJsx("h1", {"style": {"margin": "0"}}, ["LittleX Feed"])]), __jacJsx("div", {"class": "feed-content"}, [null])]);
 }
 function LoginForm() {
-  return __jacJsx("div", {"class": "login-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Login to LittleX"]), __jacJsx("form", {"onsubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#signup", "onclick": go_to_signup, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Don't have an account? Sign up"])])]);
+  let suggestions = ["alice", "bob", "charlie", "diana", "eve"];
+  let randomSuggestion = _.sample(suggestions);
+  return __jacJsx("div", {"class": "login-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Login to LittleX"]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [randomSuggestion]), __jacJsx("form", {"onsubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#signup", "onclick": go_to_signup, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Don't have an account? Sign up"])])]);
 }
 async function handle_login(event) {
   event.preventDefault();

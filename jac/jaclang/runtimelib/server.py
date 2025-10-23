@@ -11,10 +11,11 @@ import secrets
 from contextlib import suppress
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from typing import Any, Callable, Literal, TypeAlias, get_type_hints
 from urllib.parse import parse_qs, urlparse
 
-from jaclang.runtimelib.client_bundle import ClientBundleBuilder, ClientBundleError
+from jaclang.runtimelib.client_bundle import ClientBundleError
 from jaclang.runtimelib.constructs import (
     Archetype,
     NodeArchetype,
@@ -22,7 +23,8 @@ from jaclang.runtimelib.constructs import (
     WalkerArchetype,
 )
 from jaclang.runtimelib.machine import ExecutionContext, JacMachine as Jac
-
+from jaclang.runtimelib.vite_client_bundle import ViteClientBundleBuilder
+    
 # Type Aliases
 JsonValue: TypeAlias = (
     None | str | int | float | bool | list["JsonValue"] | dict[str, "JsonValue"]
@@ -278,9 +280,24 @@ class ModuleIntrospector:
     _client_manifest: dict[str, Any] = field(default_factory=dict, init=False)
     _bundle: Any = field(default=None, init=False)
     _bundle_error: str | None = field(default=None, init=False)
-    _bundle_builder: ClientBundleBuilder = field(
-        default_factory=ClientBundleBuilder, init=False
-    )
+    _bundle_builder: ViteClientBundleBuilder = field(init=False)
+
+    def __post_init__(self) -> None:
+        """Initialize bundle builder with proper configuration."""
+        # Determine package.json path based on base_path
+        package_json_path = None
+        vite_output_dir = None
+        
+        if self.base_path:
+            base_path_obj = Path(self.base_path)
+            package_json_path = base_path_obj / "package.json"
+            vite_output_dir = base_path_obj / "static" / "client" / "js"
+        
+        self._bundle_builder = ViteClientBundleBuilder(
+            vite_package_json=package_json_path,
+            vite_output_dir=vite_output_dir,
+            vite_minify=False  # Disable minification to preserve function names
+        )
 
     def load(self, force_reload: bool = False) -> None:
         """Load module and refresh caches."""

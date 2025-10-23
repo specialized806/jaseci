@@ -1,0 +1,15 @@
+{
+  "name": "littlex-vite-bundler",
+  "version": "1.0.0",
+  "description": "Vite bundler for LittleX Jac application",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}

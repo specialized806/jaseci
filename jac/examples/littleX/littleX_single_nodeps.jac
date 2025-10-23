@@ -5,6 +5,7 @@ cl import from jac:client_runtime {
     jacSignup,
     renderJsxTree,
 }
+cl import from lodash { * as _ }
 
 node Profile {
     has username: str = "";
@@ -29,6 +30,7 @@ node Profile {
     }
 
     can un_follow with un_follow_request entry {
+        
         current_profile = [root-->( ` ? Profile ) ];
         follow_edge = [edge current_profile[0]->:Follow :->self];
         del follow_edge[0] ;
@@ -378,6 +380,8 @@ cl def FeedView(tweets: list) -> any {
 
 # Render login form
 cl def LoginForm()  -> any {
+    suggestions = ['alice', 'bob', 'charlie', 'diana', 'eve'];
+    randomSuggestion = _.sample(suggestions);
     return <div
         class="login-container"
         style={
@@ -385,6 +389,10 @@ cl def LoginForm()  -> any {
     <h2 style={{"marginTop" : "0" }}>
         Login to LittleX
         </h2>
+    <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
+        # Add random suggestion
+        {randomSuggestion}
+        </div>
     <form onsubmit={handle_login}>
         <div style={{"marginBottom" : "15px" }}>
             <label style={{"display" : "block" , "marginBottom" : "5px" }}>
