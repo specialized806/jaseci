@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -27,7 +27,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         
         Args:
             runtime_path: Path to client runtime file
-            vite_output_dir: Output directory for Vite builds (defaults to temp dir)
+            vite_output_dir: Output directory for Vite builds (defaults to temp/dist)
             vite_package_json: Path to package.json for Vite (required)
             vite_minify: Whether to enable minification in Vite build
         """
@@ -35,9 +35,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         self.vite_output_dir = vite_output_dir
         self.vite_package_json = vite_package_json
         self.vite_minify = vite_minify
-        print(f"Vite output directory: {self.vite_output_dir}")
-        print(f"Vite package JSON: {self.vite_package_json}")
-        print(f"Vite minify: {self.vite_minify}")
+
 
     def _compile_bundle(
         self,
@@ -162,59 +160,58 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 "Vite package.json not found. Set vite_package_json when using ViteClientBundleBuilder"
             )
         
-        # Create temporary directory for Vite build
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            
-            
-            # Create entry file with stitched content
-            entry_file = temp_path / "main_entry.js"
-            entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
-            entry_file.write_text(entry_content, encoding="utf-8")
-            
-            # Create Vite config in the project directory (where node_modules exists)
-            project_dir = self.vite_package_json.parent
-            vite_config = project_dir / "temp_vite.config.js"
-            output_dir = self.vite_output_dir or temp_path / "dist"
-            output_dir.mkdir(exist_ok=True)
-            
-            config_content = self._generate_vite_config(entry_file, output_dir)
-            vite_config.write_text(config_content, encoding="utf-8")
-            
-            try:
-                # Run Vite build from project directory
-                # need to install packages you told in package.json inside here
-                command = ["npx", "vite", "build", "--config", str(vite_config)]
-                subprocess.run(
-                    command,
-                    cwd=project_dir,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-            except subprocess.CalledProcessError as e:
-                raise ClientBundleError(
-                    f"Vite build failed: {e.stderr}"
-                ) from e
-            except FileNotFoundError:
-                raise ClientBundleError(
-                    "npx or vite command not found. Ensure Node.js and npm are installed."
-                )
-            finally:
-                # Clean up temp config file
-                if vite_config.exists():
-                    vite_config.unlink()
-            
-            # Find the generated bundle file
-            bundle_file = self._find_vite_bundle(output_dir)
-            if not bundle_file:
-                raise ClientBundleError("Vite build completed but no bundle file found")
-            
-            # Read the bundled code
-            bundle_code = bundle_file.read_text(encoding="utf-8")
-            bundle_hash = hashlib.sha256(bundle_code.encode("utf-8")).hexdigest()
-            
-            return bundle_code, bundle_hash
+        # Create temp directory for Vite build
+        project_dir = self.vite_package_json.parent
+        temp_dir = project_dir / "temp"
+        temp_dir.mkdir(exist_ok=True)
+        
+        # Create entry file with stitched content
+        entry_file = temp_dir / "main_entry.js"
+        entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
+        entry_file.write_text(entry_content, encoding="utf-8")
+        
+        # Create Vite config in the project directory (where node_modules exists)
+        vite_config = project_dir / "temp_vite.config.js"
+        output_dir = self.vite_output_dir or temp_dir / "dist"
+        output_dir.mkdir(exist_ok=True)
+        
+        config_content = self._generate_vite_config(entry_file, output_dir)
+        vite_config.write_text(config_content, encoding="utf-8")
+        
+        try:
+            # Run Vite build from project directory
+            # need to install packages you told in package.json inside here
+            command = ["npx", "vite", "build", "--config", str(vite_config)]
+            subprocess.run(
+                command,
+                cwd=project_dir,
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError as e:
+            raise ClientBundleError(
+                f"Vite build failed: {e.stderr}"
+            ) from e
+        except FileNotFoundError:
+            raise ClientBundleError(
+                "npx or vite command not found. Ensure Node.js and npm are installed."
+            )
+        finally:
+            # Clean up temp config file
+            if vite_config.exists():
+                vite_config.unlink()
+        
+        # Find the generated bundle file
+        bundle_file = self._find_vite_bundle(output_dir)
+        if not bundle_file:
+            raise ClientBundleError("Vite build completed but no bundle file found")
+        
+        # Read the bundled code
+        bundle_code = bundle_file.read_text(encoding="utf-8")
+        bundle_hash = hashlib.sha256(bundle_code.encode("utf-8")).hexdigest()
+        
+        return bundle_code, bundle_hash
 
     def _generate_vite_config(self, entry_file: Path, output_dir: Path) -> str:
         """Generate Vite configuration for bundling."""
@@ -223,34 +220,27 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         minify_setting = "true" if self.vite_minify else "false"
         
         return f"""
-import {{ defineConfig }} from 'vite';
-import {{ resolve }} from 'path';
+            import {{ defineConfig }} from 'vite';
+            import {{ resolve }} from 'path';
 
-export default defineConfig({{
-  build: {{
-    outDir: '{output_dir_name}',
-    emptyOutDir: true,
-    rollupOptions: {{
-      input: {{
-        main: resolve(__dirname, '{entry_name}'),
-      }},
-      output: {{
-        entryFileNames: 'client.[hash].js',
-        format: 'iife',
-        name: 'JacClient',
-      }},
-    }},
-    minify: {minify_setting}, // Configurable minification
-  }},
-  // Resolve common dependencies TODO: fix this based on package.json
-  resolve: {{
-    alias: {{
-      'lodash': resolve(__dirname, 'node_modules/lodash'),
-      'antd': resolve(__dirname, 'node_modules/antd'),
-    }},
-  }},
-}});
-"""
+            export default defineConfig({{
+            build: {{
+                outDir: '{output_dir_name}',
+                emptyOutDir: true,
+                rollupOptions: {{
+                input: {{
+                    main: resolve(__dirname, '{entry_name}'),
+                }},
+                output: {{
+                    entryFileNames: 'client.[hash].js',
+                    format: 'iife',
+                    name: 'JacClient',
+                }},
+                }},
+                minify: {minify_setting}, // Configurable minification
+            }}
+            }});
+        """
 
     def _find_vite_bundle(self, output_dir: Path) -> Path | None:
         """Find the generated Vite bundle file."""
@@ -292,21 +282,21 @@ export default defineConfig({{
             main_app_func = client_functions[-1] if client_functions else "App"
         
         return f"""
-// --- JAC CLIENT INITIALIZATION SCRIPT ---
-// Expose functions globally for Jac runtime registration
-const clientFunctions = {client_functions};
-const functionMap = {function_map_str};
-for (const funcName of clientFunctions) {{
-    globalThis[funcName] = functionMap[funcName];
-}}
-__jacRegisterClientModule("{module_name}", clientFunctions, {globals_literal});
-globalThis.start_app = {main_app_func};
-// Call the start function immediately if we're not hydrating from the server
-if (!document.getElementById('__jac_init__')) {{
-    globalThis.start_app();
-}}
-// --- END JAC CLIENT INITIALIZATION SCRIPT ---
-"""
+            // --- JAC CLIENT INITIALIZATION SCRIPT ---
+            // Expose functions globally for Jac runtime registration
+            const clientFunctions = {client_functions};
+            const functionMap = {function_map_str};
+            for (const funcName of clientFunctions) {{
+                globalThis[funcName] = functionMap[funcName];
+            }}
+            __jacRegisterClientModule("{module_name}", clientFunctions, {globals_literal});
+            globalThis.start_app = {main_app_func};
+            // Call the start function immediately if we're not hydrating from the server
+            if (!document.getElementById('__jac_init__')) {{
+                globalThis.start_app();
+            }}
+            // --- END JAC CLIENT INITIALIZATION SCRIPT ---
+        """
 
     def _generate_global_exposure_code(self, client_functions: list[str]) -> str:
         """Generate code to expose functions globally for Vite IIFE."""
@@ -320,12 +310,26 @@ if (!document.getElementById('__jac_init__')) {{
         function_map_str = "{\n" + ",\n".join(map_entries) + "\n}"
         
         return f"""
-// --- GLOBAL EXPOSURE FOR VITE IIFE ---
-// Expose functions globally so they're available on globalThis
-const globalClientFunctions = {client_functions};
-const globalFunctionMap = {function_map_str};
-for (const funcName of globalClientFunctions) {{
-    globalThis[funcName] = globalFunctionMap[funcName];
-}}
-// --- END GLOBAL EXPOSURE ---
-"""
+            // --- GLOBAL EXPOSURE FOR VITE IIFE ---
+            // Expose functions globally so they're available on globalThis
+            const globalClientFunctions = {client_functions};
+            const globalFunctionMap = {function_map_str};
+            for (const funcName of globalClientFunctions) {{
+                globalThis[funcName] = globalFunctionMap[funcName];
+            }}
+            // --- END GLOBAL EXPOSURE ---
+        """
+
+    def cleanup_temp_dir(self) -> None:
+        """Clean up the temp directory and its contents."""
+        if not self.vite_package_json or not self.vite_package_json.exists():
+            return
+        
+        project_dir = self.vite_package_json.parent
+        temp_dir = project_dir / "temp"
+        
+        if temp_dir.exists():
+            try:
+                shutil.rmtree(temp_dir)
+            except OSError:
+                pass  # Ignore errors during cleanup
