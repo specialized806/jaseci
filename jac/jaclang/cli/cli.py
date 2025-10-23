@@ -1,9 +1,12 @@
 """Command line interface tool for the Jac language."""
 
 import ast as ast3
+import json
 import marshal
 import os
 import pickle
+import re
+import subprocess
 import sys
 import types
 from importlib.metadata import version as pkg_version
@@ -708,6 +711,135 @@ def js(filename: str) -> None:
 
 # Register core commands first (before plugins load)
 # These can be overridden by plugins with higher priority
+
+
+@cmd_registry.register
+def create_jac_app(name: str) -> None:
+    """Create a new Jac application with npm and Vite setup.
+
+    Bootstraps a new Jac project by creating a temporary directory, initializing
+    npm, installing Vite, and setting up the basic project structure.
+
+    Args:
+        name: Name of the project to create
+
+    Examples:
+        jac create_jac_app my-app
+        jac create_jac_app my-jac-project
+    """
+    if not name:
+        print("Error: Project name is required. Use --name=your-project-name", file=sys.stderr)
+        exit(1)
+    
+    # Validate project name (basic npm package name validation)
+    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        print("Error: Project name must contain only letters, numbers, hyphens, and underscores", file=sys.stderr)
+        exit(1)
+    
+    print(f"Creating new Jac application: {name}")
+    
+    # Create project directory in current working directory
+    project_path = os.path.join(os.getcwd(), name)
+    
+    if os.path.exists(project_path):
+        print(f"Error: Directory '{name}' already exists in current location", file=sys.stderr)
+        exit(1)
+    
+    os.makedirs(project_path, exist_ok=True)
+    
+    try:
+        # Change to project directory
+        original_cwd = os.getcwd()
+        os.chdir(project_path)
+        
+        # Initialize npm package
+        print("Initializing npm package...")
+        npm_init_cmd = [
+            "npm", "init", "-y"
+        ]
+        subprocess.run(npm_init_cmd, capture_output=True, text=True, check=True)
+        
+        # Read the generated package.json
+        package_json_path = os.path.join(project_path, "package.json")
+        with open(package_json_path, "r") as f:
+            package_data = json.load(f)
+        
+        # Update package.json with Jac-specific configuration
+        package_data.update({
+            "name": name,
+            "description": f"Jac application: {name}",
+            "type": "module",
+            "scripts": {
+                "build": "vite build",
+                "dev": "vite dev",
+                "preview": "vite preview"
+            },
+            "devDependencies": {
+                "vite": "^5.0.0"
+            }
+        })
+        
+        # Write updated package.json
+        with open(package_json_path, "w") as f:
+            json.dump(package_data, f, indent=2)
+        
+        print("Installing Vite...")
+        # Install Vite
+        npm_install_cmd = ["npm", "install"]
+        subprocess.run(npm_install_cmd, capture_output=True, text=True, check=True)
+        
+        # Create basic project structure
+        print("Setting up project structure...")
+        
+        
+
+        
+        # Create a basic Jac file
+        main_jac_content = """# Example code
+
+        """
+        
+        with open(os.path.join(project_path, "app.jac"), "w") as f:
+            f.write(main_jac_content)
+        
+        # Create README.md
+        readme_content = f"""# {name}
+
+        ## Running Jac Code
+
+        To run your Jac code, use the Jac CLI:
+
+        ```bash
+        jac serve app.jac
+        ```
+
+        Happy coding with Jac!
+        """
+        
+        with open(os.path.join(project_path, "README.md"), "w") as f:
+            f.write(readme_content)
+        
+        # Return to original directory
+        os.chdir(original_cwd)
+        
+        print(f"✅ Successfully created Jac application '{name}'!")
+        print(f"📁 Project location: {os.path.abspath(project_path)}")
+        print("\nNext steps:")
+        print(f"  cd {name}")
+        print("  jac serve app.jac")
+        
+    except subprocess.CalledProcessError as e:
+        # Return to original directory on error
+        os.chdir(original_cwd)
+        print(f"Error running npm command: {e}", file=sys.stderr)
+        print(f"Command output: {e.stdout}", file=sys.stderr)
+        print(f"Command error: {e.stderr}", file=sys.stderr)
+        exit(1)
+    except Exception as e:
+        # Return to original directory on error
+        os.chdir(original_cwd)
+        print(f"Error creating project: {e}", file=sys.stderr)
+        exit(1)
 
 
 @cmd_registry.register
