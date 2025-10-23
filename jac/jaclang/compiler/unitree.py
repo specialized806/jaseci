@@ -1173,6 +1173,32 @@ class ModuleCode(ClientFacingNode, ElementStmt, ArchBlockStmt, EnumBlockStmt):
         return res
 
 
+class ClientBlock(ElementStmt):
+    """ClientBlock node type for cl { ... } blocks in Jac Ast."""
+
+    def __init__(
+        self,
+        body: Sequence[ElementStmt],
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.body = list(body)
+        UniNode.__init__(self, kid=kid)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+        new_kid: list[UniNode] = []
+        new_kid.append(self.gen_token(Tok.KW_CLIENT))
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        for stmt in self.body:
+            new_kid.append(stmt)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        self.set_kids(nodes=new_kid)
+        return res
+
+
 class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
     """PyInlineCode node type for Jac Ast."""
 
@@ -1390,11 +1416,17 @@ class ModulePath(UniNode):
 
 
 class ModuleItem(UniNode):
-    """ModuleItem node type for Jac Ast."""
+    """ModuleItem node type for Jac Ast.
+
+    Name can be either:
+    - Name: for regular named imports (e.g., useState, axios)
+    - Token (KW_DEFAULT): for default imports (Category 2)
+    - Token (STAR_MUL): for namespace imports (Category 4)
+    """
 
     def __init__(
         self,
-        name: Name,
+        name: Name | Token,
         alias: Optional[Name],
         kid: Sequence[UniNode],
     ) -> None:
@@ -4493,6 +4525,72 @@ class MatchCase(UniScopeNode):
         if self.guard:
             new_kid.append(self.gen_token(Tok.KW_IF))
             new_kid.append(self.guard)
+        new_kid.append(self.gen_token(Tok.COLON))
+        if self.body:
+            new_kid.extend([*self.body])
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class SwitchStmt(CodeBlockStmt):
+    """SwitchStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        target: Expr,
+        cases: list[SwitchCase],
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.target = target
+        self.cases = cases
+        UniNode.__init__(self, kid=kid)
+        CodeBlockStmt.__init__(self)
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+            for case in self.cases:
+                res = res and case.normalize(deep)
+        new_kid: list[UniNode] = [
+            self.gen_token(Tok.KW_SWITCH),
+            self.target,
+        ]
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        for case in self.cases:
+            new_kid.append(case)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+
+        self.set_kids(nodes=new_kid)
+        return res
+
+
+class SwitchCase(UniScopeNode):
+    """SwitchCase node type for Jac Ast."""
+
+    def __init__(
+        self,
+        pattern: Optional[MatchPattern],
+        body: list[CodeBlockStmt],
+        kid: Sequence[UniNode],
+    ) -> None:
+        self.pattern = pattern
+        self.body = body
+        UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
+
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.pattern.normalize(deep) if self.pattern else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+        new_kid: list[UniNode] = [self.gen_token(Tok.KW_CASE)]
+        if self.pattern is not None:
+            new_kid.append(self.pattern)
+        else:
+            new_kid.pop()
+            new_kid.append(self.gen_token(Tok.KW_DEFAULT))
         new_kid.append(self.gen_token(Tok.COLON))
         if self.body:
             new_kid.extend([*self.body])

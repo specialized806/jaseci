@@ -123,8 +123,51 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
         self.client_scope_stack: list[bool] = []  # Track client scope nesting
         self.jsx_processor = EsJsxProcessor(self)
 
+    def _convert_to_js_import_path(self, path: str) -> str:
+        """Convert Jac-style import path to JavaScript-style import path.
+
+        Transforms relative paths to be valid JavaScript:
+        - .utils -> ./utils
+        - ..lib -> ../lib
+        - ...config -> ../../config
+        """
+        if not path:
+            return path
+
+        # Count leading dots
+        dot_count = 0
+        for char in path:
+            if char == ".":
+                dot_count += 1
+            else:
+                break
+
+        # If path starts with dots (relative import)
+        if dot_count > 0:
+            # Extract the path after the dots
+            rest_of_path = path[dot_count:]
+
+            # For single dot, we need ./
+            # For multiple dots, convert to ../ patterns
+            if dot_count == 1:
+                return "./" + rest_of_path if rest_of_path else "."
+            else:
+                # Convert multiple dots to ../.. pattern
+                parent_dirs = "../" * (dot_count - 1)
+                return parent_dirs[:-1] + ("/" + rest_of_path if rest_of_path else "")
+
+        return path
+
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and not node.is_client_decl
+            and (node.parent is None or isinstance(node.parent, uni.Module))
+        ):
+            self.prune()
+            return
         if isinstance(node, uni.UniScopeNode):
             self._push_scope(node)
         if node.gen.es_ast:
@@ -134,6 +177,13 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
+        if (
+            isinstance(node, uni.ElementStmt)
+            and isinstance(node, uni.ClientFacingNode)
+            and not node.is_client_decl
+            and (node.parent is None or isinstance(node.parent, uni.Module))
+        ):
+            return
         super().exit_node(node)
         if isinstance(node, uni.UniScopeNode):
             self._pop_scope(node)
@@ -175,6 +225,14 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
         """Check if a name is already declared in the active scope."""
         scope = self._current_scope()
         return name in scope.declared if scope else False
+
+    def _is_declared_in_any_scope(self, name: str) -> bool:
+        """Check if a name is declared in the current scope or any parent scope.
+
+        This is essential for proper closure support - we need to avoid re-declaring
+        variables that exist in parent scopes when generating nested functions.
+        """
+        return any(name in scope.declared for scope in reversed(self.scope_stack))
 
     def _register_declaration(self, name: str) -> None:
         """Mark a name as declared within the current scope."""
@@ -324,8 +382,11 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
                 self.client_manifest.imports[import_key] = resolved_path
                 self.client_manifest.has_client = True
 
+            # Convert Jac-style path to JavaScript-style path
+            js_import_path = self._convert_to_js_import_path(node.from_loc.dot_path_str)
+
             source = self.sync_loc(
-                es.Literal(value=node.from_loc.dot_path_str), jac_node=node.from_loc
+                es.Literal(value=js_import_path), jac_node=node.from_loc
             )
             specifiers: list[
                 Union[
@@ -337,25 +398,61 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
             for item in node.items:
                 if isinstance(item, uni.ModuleItem):
-                    imported = self.sync_loc(
-                        es.Identifier(name=item.name.sym_name), jac_node=item.name
-                    )
-                    local = self.sync_loc(
-                        es.Identifier(
-                            name=(
-                                item.alias.sym_name
-                                if item.alias
-                                else item.name.sym_name
-                            )
-                        ),
-                        jac_node=item.alias if item.alias else item.name,
-                    )
-                    specifiers.append(
-                        self.sync_loc(
-                            es.ImportSpecifier(imported=imported, local=local),
-                            jac_node=item,
+                    # Check Name first (since Name is a subclass of Token)
+                    if isinstance(item.name, uni.Name):
+                        # Regular named import (Category 1)
+                        imported = self.sync_loc(
+                            es.Identifier(name=item.name.sym_name), jac_node=item.name
                         )
-                    )
+                        local = self.sync_loc(
+                            es.Identifier(
+                                name=(
+                                    item.alias.sym_name
+                                    if item.alias
+                                    else item.name.sym_name
+                                )
+                            ),
+                            jac_node=item.alias if item.alias else item.name,
+                        )
+                        specifiers.append(
+                            self.sync_loc(
+                                es.ImportSpecifier(imported=imported, local=local),
+                                jac_node=item,
+                            )
+                        )
+                    elif isinstance(item.name, uni.Token):
+                        # Category 2: Handle default imports
+                        # Pattern: cl import from react { default as React }
+                        if item.name.value == "default":
+                            if not item.alias:
+                                # default must have an alias
+                                continue
+                            local = self.sync_loc(
+                                es.Identifier(name=item.alias.sym_name),
+                                jac_node=item.alias,
+                            )
+                            specifiers.append(
+                                self.sync_loc(
+                                    es.ImportDefaultSpecifier(local=local),
+                                    jac_node=item,
+                                )
+                            )
+                        # Category 4: Handle namespace imports
+                        # Pattern: cl import from lodash { * as _ }
+                        elif item.name.value == "*":
+                            if not item.alias:
+                                # namespace import must have an alias
+                                continue
+                            local = self.sync_loc(
+                                es.Identifier(name=item.alias.sym_name),
+                                jac_node=item.alias,
+                            )
+                            specifiers.append(
+                                self.sync_loc(
+                                    es.ImportNamespaceSpecifier(local=local),
+                                    jac_node=item,
+                                )
+                            )
 
             import_decl = self.sync_loc(
                 es.ImportDeclaration(specifiers=specifiers, source=source),
@@ -1288,13 +1385,15 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
 
             should_declare = False
             if decl_name:
-                should_declare = is_first and not self._is_declared_in_current_scope(
+                # Check if this variable is already declared in ANY scope (including parent scopes)
+                # This enables proper closure support - nested functions can access parent scope variables
+                should_declare = is_first and not self._is_declared_in_any_scope(
                     decl_name
                 )
             elif pattern_names:
                 should_declare = any(
                     self._is_name_first_definition(name_node)
-                    and not self._is_declared_in_current_scope(name)
+                    and not self._is_declared_in_any_scope(name)
                     for name, name_node in pattern_names
                 )
 
@@ -1997,6 +2096,21 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
                         body_stmts.append(stmt.gen.es_ast)
 
         # Module code is executed at module level, so just output the statements
+        node.gen.es_ast = body_stmts
+
+    def exit_client_block(self, node: uni.ClientBlock) -> None:
+        """Process client block (cl { ... })."""
+        # Generate the body statements directly - unwrap the block
+        body_stmts: list[es.Statement] = []
+        if node.body:
+            for stmt in node.body:
+                if stmt.gen.es_ast:
+                    if isinstance(stmt.gen.es_ast, list):
+                        body_stmts.extend(stmt.gen.es_ast)
+                    else:
+                        body_stmts.append(stmt.gen.es_ast)
+
+        # ClientBlock is just a grouping construct, output the statements directly
         node.gen.es_ast = body_stmts
 
     def exit_test(self, node: uni.Test) -> None:
