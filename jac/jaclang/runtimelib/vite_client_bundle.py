@@ -35,6 +35,9 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         self.vite_output_dir = vite_output_dir
         self.vite_package_json = vite_package_json
         self.vite_minify = vite_minify
+        print(f"Vite output directory: {self.vite_output_dir}")
+        print(f"Vite package JSON: {self.vite_package_json}")
+        print(f"Vite minify: {self.vite_minify}")
 
     def _compile_bundle(
         self,
@@ -44,7 +47,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         """Override to use Vite bundling instead of simple concatenation."""
         # Get manifest from JacProgram first to check for imports
         from jaclang.runtimelib.machine import JacMachine as Jac
-
         mod = Jac.program.mod.hub.get(str(module_path))
         manifest = mod.gen.client_manifest if mod else None
 
@@ -164,6 +166,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
+            
             # Create entry file with stitched content
             entry_file = temp_path / "main_entry.js"
             entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
@@ -180,6 +183,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             
             try:
                 # Run Vite build from project directory
+                # need to install packages you told in package.json inside here
                 command = ["npx", "vite", "build", "--config", str(vite_config)]
                 subprocess.run(
                     command,
@@ -237,6 +241,13 @@ export default defineConfig({{
       }},
     }},
     minify: {minify_setting}, // Configurable minification
+  }},
+  // Resolve common dependencies TODO: fix this based on package.json
+  resolve: {{
+    alias: {{
+      'lodash': resolve(__dirname, 'node_modules/lodash'),
+      'antd': resolve(__dirname, 'node_modules/antd'),
+    }},
   }},
 }});
 """

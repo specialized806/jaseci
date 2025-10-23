@@ -6,6 +6,7 @@ cl import from jac:client_runtime {
     renderJsxTree,
 }
 cl import from lodash { * as _ }
+cl import from antd { Button, Input, Card, Typography, Space }
 
 node Profile {
     has username: str = "";
