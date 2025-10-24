@@ -354,7 +354,7 @@ cl def LoginForm()  -> any {
         <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
             {result}
         </div>
-    <form onsubmit={handle_login}>
+    <form onSubmit={handle_login}>
         <div style={{"marginBottom" : "15px" }}>
             <label style={{"display" : "block" , "marginBottom" : "5px" }}>
                 Username:
@@ -376,7 +376,7 @@ cl def LoginForm()  -> any {
                 {"width" : "100%" , "padding" : "8px" , "boxSizing" : "border-box" }}/>
             </div>
         <Button
-                type="submit"
+                htmlType="submit"
                 >
             Login
             </Button>
@@ -425,7 +425,7 @@ cl def SignupForm()  -> any {
     <Typography.Title level={2} style={{"marginTop" : "0" }}>
         Sign Up for LittleX
         </Typography.Title>
-    <form onsubmit={handle_signup}>
+    <form onSubmit={handle_signup}>
         <div style={{"marginBottom" : "15px" }}>
             <label style={{"display" : "block" , "marginBottom" : "5px" }}>
                 Username:
