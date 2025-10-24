@@ -5,10 +5,21 @@ cl import from 'react-dom/client' {* as ReactDOM}
 
 cl {
 # JSX factory function - uses React.createElement
-def __jacJsx(tag: any, props: dict = {}, children: list = []) -> any {
+def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
+    # Ensure children is iterable - convert to array if needed
+    childrenArray = [];
+    if children != None {
+        if Array.isArray(children) {
+            childrenArray = children;
+        } else {
+            # Single child - wrap in array
+            childrenArray = [children];
+        }
+    }
+    
     # Filter out null/undefined children
     reactChildren = [];
-    for child in children {
+    for child in childrenArray {
         if child != None {
             reactChildren.push(child);
         }
@@ -330,8 +341,18 @@ def Link(props: dict) -> any {
         navigate(href);
     }
 
+    # Ensure children is properly handled - convert to array if it's not already
+    childrenArray = [];
+    if children != None {
+        if Array.isArray(children) {
+            childrenArray = children;
+        } else {
+            childrenArray = [children];
+        }
+    }
+
     # Return JSX node manually to properly spread children
-    return __jacJsx("a", {"href": "#" + href, "onclick": handleClick}, children);
+    return __jacJsx("a", {"href": "#" + href, "onclick": handleClick}, childrenArray);
 }
 
 # Navigate programmatically
