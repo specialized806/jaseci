@@ -1,74 +1,39 @@
 """Client-side runtime for Jac JSX and walker interactions."""
+
+cl import from 'react' {* as React}
+cl import from 'react-dom/client' {* as ReactDOM}
+
 cl {
-# JSX factory function
-def __jacJsx(tag: any, props: dict = {}, children: list = []) -> dict {
-    return {"tag": tag, "props": props, "children": children};
-}
-
-# DOM rendering function
-def renderJsxTree(node: any, container: any) -> None {
-    container.replaceChildren(__buildDom(node));
-}
-
-# Internal: Build DOM from JSX tree
-def __buildDom(node: any) -> any {
-    if node == None {
-        return document.createTextNode("");
-    }
-
-    if not __isObject(node) {
-        return document.createTextNode(String(node));
-    }
-
-    # Handle component functions
-    tag = node.get("tag");
-    if __isFunction(tag) {
-        props = node.get("props", {});
-        children = node.get("children", []);
-        # Merge children into props for component
-        if children and children.length > 0 {
-            props["children"] = children;
-        }
-        return __buildDom(tag(props));
-    }
-
-    # Create element
-    element = document.createElement(tag if tag else "div");
-
-    # Apply properties
-    props = node.get("props", {});
-    for key in __objectKeys(props) {
-        value = props.get(key);
-        __applyProp(element, key, value);
-    }
-
-    # Render children
-    children = node.get("children", []);
+# JSX factory function - uses React.createElement
+def __jacJsx(tag: any, props: dict = {}, children: list = []) -> any {
+    # Filter out null/undefined children
+    reactChildren = [];
     for child in children {
-        childDom = __buildDom(child);
-        if childDom {
-            element.appendChild(childDom);
+        if child != None {
+            reactChildren.push(child);
         }
     }
-
-    return element;
+    
+    # Use React.createElement with proper children handling
+    if reactChildren.length > 0 {
+        # Convert children array to individual arguments using apply
+        args = [tag, props];
+        for child in reactChildren {
+            args.push(child);
+        }
+        return React.createElement.apply(React, args);
+    } else {
+        return React.createElement(tag, props);
+    }
 }
 
-# Internal: Apply property to DOM element
-def __applyProp(element: any, key: str, value: any) -> None {
-    if key.startswith("on") {
-        # Event handler: onclick -> click
-        event = key[2:].lower();
-        element.addEventListener(event, value);
-    } elif key == "className" or key == "class" {
-        element.className = value;
-    } elif key == "style" and __isObject(value) {
-        # Style object
-        for styleKey in __objectKeys(value) {
-            element.style[styleKey] = value[styleKey];
-        }
-    } elif key != "children" {
-        element.setAttribute(key, String(value));
+def renderJsxTree(node: any, container: any) -> None {
+    # For React 18+, you could use ReactDOM.createRoot(container).render(node)
+    # The hydration logic will handle this
+    try {
+        ReactDOM.createRoot(container).render(node);
+    } except Exception as err {
+        console.error("[Jac] Error in renderJsxTree:", err);
     }
 }
 
@@ -82,6 +47,7 @@ let __jacReactiveContext = {
     "pendingRenders": [],       # Batched re-renders queue
     "flushScheduled": False,    # Debounce flag for batching
     "rootComponent": None,      # Root function to re-render
+    "reactRoot": None,          # <--- FIXED: Store the React 18 root instance
     "currentComponent": None,   # Current component ID being rendered
     "currentEffect": None,      # Current effect for dependency tracking
     "router": None             # Global router instance
@@ -245,8 +211,10 @@ def __jacFlushRenders() -> None {
 
 # Re-render the root component
 def __jacRerenderComponent(componentId: any) -> None {
-    rootEl = document.getElementById("__jac_root");
-    if not rootEl {
+    # Use the stored React 18 root for re-rendering
+    reactRoot = __jacReactiveContext.reactRoot;
+    if not reactRoot {
+        console.error("[Jac] React root not initialized. Cannot re-render.");
         return;
     }
 
@@ -260,7 +228,9 @@ def __jacRerenderComponent(componentId: any) -> None {
         __jacReactiveContext.currentComponent = componentId;
 
         component = rootComponent();
-        renderJsxTree(component, rootEl);
+        
+        # FIXED: Use the stored React 18 root's render method
+        reactRoot.render(component);
 
         __jacReactiveContext.currentComponent = previousComponent;
     } except Exception as err {
@@ -317,14 +287,14 @@ def createRouter(routes: list, defaultRoute: str = "/") -> dict {
             if route.path == path {
                 # Check guard if present
                 if route.guard and not route.guard() {
-                    return <div>Access Denied</div>;
+                    return __jacJsx("div", {}, ["Access Denied"]);
                 }
                 return route.component();
             }
         }
 
         # No match - show 404
-        return <div>404 - Route not found: {path}</div>;
+        return __jacJsx("div", {}, ["404 - Route not found: ", path]);
     }
 
     # Navigate method
@@ -583,9 +553,11 @@ def __jacEnsureObjectGetPolyfill() -> None {
 def __jacGetDocument(scope: any) -> any {
     try {
         return scope.document;
-    } except Exception {
-        return None;
-    }
+    } except Exception {}
+    try {
+        return window.document;
+    } except Exception {}
+    return None;
 }
 
 def __jacParseJsonObject(text: str) -> any {
@@ -713,13 +685,19 @@ def __jacEnsureRegistry() -> dict {
 }
 
 def __jacApplyRender(renderer: any, container: any, node: any) -> None {
-    if not renderer or not container {
+    if not container {
         return;
     }
     try {
-        renderer(node, container);
+        # This function is now mostly legacy/fallback. 
+        # The main hydration path in __jacHydrateFromDom handles React 18.
+        if renderer {
+            renderer(node, container); 
+        } else {
+            console.warn("[Jac] No JSX renderer available.");
+        }
     } except Exception as err {
-        console.error("[Jac] Failed to render JSX tree", err);
+        console.error("[Jac] Failed to render JSX tree (fallback path)", err);
     }
 }
 
@@ -801,14 +779,27 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
     if not renderer {
         console.warn("[Jac] renderJsxTree is not available in client bundle");
     }
+    
+    # FIX: Declare reactRoot in the function scope
+    let reactRoot = None;
+    
+    # 1. Create and store the React 18 root instance
+    try {
+        reactRoot = ReactDOM.createRoot(rootEl);
+        __jacReactiveContext.reactRoot = reactRoot; # Store the root instance
+    } except Exception as err {
+        console.error("[Jac] Failed to create React root for hydration:", err);
+        return;
+    }
 
-    # Initial render - call the root component
+    # 2. Initial render - call the root component
     value = __jacReactiveContext.rootComponent();
-
+    
+    # 3. Use the stored root for the initial render (hydration)
     if value and __isObject(value) and __isFunction(value.then) {
         value.then(
             lambda node: any -> None {
-                __jacApplyRender(renderer, rootEl, node);
+                reactRoot.render(node);
             }
         ).catch(
             lambda err: any -> None {
@@ -816,7 +807,7 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
             }
         );
     } else {
-        __jacApplyRender(renderer, rootEl, value);
+        reactRoot.render(value);
     }
 }
 
