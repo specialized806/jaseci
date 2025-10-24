@@ -12,6 +12,8 @@ cl import from jac:client_runtime {
 cl import from lodash { * as _ }
 cl import from antd { Button, Input, Card, Typography, Space }
 cl import from pluralize { default as pluralize }
+cl import from 'react-animated-components' { Rotate }
+
 
 node Profile {
     has username: str = "";
@@ -334,26 +336,14 @@ cl def FeedView(tweets: list) -> any {
 
 # Render login form
 cl def LoginForm()  -> any {
-    suggestions = ['alice', 'bob', 'charlie', 'diana', 'eve'];
+    suggestions = ['good luck', 'have fun', 'enjoy the ride'];
     randomSuggestion = _.sample(suggestions);
-    item = 'apple';
-    count = 5;
-    result = pluralize(item, count, true); 
-
-    return <div
-        class="login-container"
+    result = "Good luck with your journey!";
+    return <Card
+        title="Login to LittleX"
         style={
-        {"maxWidth" : "400px" , "margin" : "50px auto" , "padding" : "20px" , "border" : "1px solid #e1e8ed" , "borderRadius" : "8px" , "fontFamily" : "sans-serif" }}>
-    <h2 style={{"marginTop" : "0" }}>
-        Login to LittleX
-        </h2>
-    <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
-        # Add random suggestion
-        {randomSuggestion}
-        </div>
-        <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
-            {result}
-        </div>
+        {"maxWidth" : "400px" , "margin" : "50px auto" }}>
+    <Card.Meta title={randomSuggestion} description={result} />
     <form onSubmit={handle_login}>
         <div style={{"marginBottom" : "15px" }}>
             <label style={{"display" : "block" , "marginBottom" : "5px" }}>
@@ -377,6 +367,7 @@ cl def LoginForm()  -> any {
             </div>
         <Button
                 htmlType="submit"
+                style={{"width" : "100%" , "padding" : "10px" , "backgroundColor" : "#1da1f2" , "color" : "white" , "border" : "none" , "borderRadius" : "4px" , "cursor" : "pointer" }}
                 >
             Login
             </Button>
@@ -398,7 +389,7 @@ cl def LoginForm()  -> any {
             Don't have an account? Sign up
         </Link>
         </div>
-    </div>;
+    </Card>;
 }
 
 
@@ -547,6 +538,11 @@ cl def App() -> any {
 
     return <div class="app-container">
         {build_nav_bar(currentPath)}
+        <Rotate>
+        <span>
+        😂
+        </span>
+        </Rotate>
         {router.render()}
     </div>;
 }
@@ -574,7 +570,7 @@ cl def build_nav_bar(route: str) -> any {
             </span>
         </Link>
         <button
-                onclick={logout_action}
+                onClick={logout_action}
                 style={
                 {"marginLeft" : "auto" , "padding" : "5px 15px" , "backgroundColor" : "white" , "color" : "#1da1f2" , "border" : "none" , "borderRadius" : "4px" , "cursor" : "pointer" , "fontWeight" : "bold" }}>
             Logout
