@@ -264,14 +264,14 @@ class TestServeCommand(TestCase):
 
         self.assertIn("error", login_fail)
 
-    # def test_server_authentication_required(self) -> None:
-    #     """Test that protected endpoints require authentication."""
-    #     self._start_server()
+    def test_server_authentication_required(self) -> None:
+        """Test that protected endpoints require authentication."""
+        self._start_server()
 
-    #     # Try to access protected endpoint without token
-    #     result = self._request("GET", "/functions")
-    #     self.assertIn("error", result)
-    #     self.assertIn("Unauthorized", result["error"])
+        # Try to access protected endpoint without token
+        result = self._request("GET", "/protected")
+        self.assertIn("error", result)
+        self.assertIn("Unauthorized", result["error"])
 
     def test_server_list_functions(self) -> None:
         """Test listing functions endpoint."""

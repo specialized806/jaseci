@@ -848,13 +848,15 @@ class JacAPIServer:
                         server.introspection_handler.get_walker_info(name)
                     )
                     return
+                elif path == "/protected":
+                    username = self._authenticate()
+                    if not username:
+                        ResponseBuilder.send_json(self, 401, {"error": "Unauthorized"})
+                        return
+                    self._send_response(Response(200, {"message": "sucessful"}))
                 else:
                     ResponseBuilder.send_json(self, 404, {"error": "Not found"})
                 # # Protected endpoints
-                username = self._authenticate()
-                if not username:
-                    ResponseBuilder.send_json(self, 401, {"error": "Unauthorized"})
-                    return
 
             def do_POST(self) -> None:  # noqa: N802
                 """Handle POST requests."""
