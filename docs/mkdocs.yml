@@ -257,12 +257,6 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
   - tables
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - pymdownx.tabbed
-  - pymdownx.tasklist
-  - pymdownx.tilde
-  - pymdownx.extra
   - mkdocs_graphviz
 
   - toc:
