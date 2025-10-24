@@ -410,7 +410,7 @@ async def __jacCallFunction(function_name: str, args: dict = {}) -> any {
     }
 
     data = JSON.parse(await response.text());
-    return data.get("result");
+    return data["result"];
 }
 
 # Authentication helpers
@@ -426,7 +426,7 @@ async def jacSignup(username: str, password: str) -> dict {
 
     if response.ok {
         data = JSON.parse(await response.text());
-        token = data.get("token");
+        token = data["token"];
         if token {
             __setLocalStorage("jac_token", token);
             return {"success": True, "token": token, "username": username};
@@ -436,7 +436,7 @@ async def jacSignup(username: str, password: str) -> dict {
         error_text = await response.text();
         try {
             error_data = JSON.parse(error_text);
-            return {"success": False, "error": error_data.get("error", "Signup failed")};
+            return {"success": False, "error": error_data["error"] if error_data["error"] != None else "Signup failed"};
         } except Exception {
             return {"success": False, "error": error_text};
         }
@@ -455,7 +455,7 @@ async def jacLogin(username: str, password: str) -> bool {
 
     if response.ok {
         data = JSON.parse(await response.text());
-        token = data.get("token");
+        token = data["token"];
         if token {
             __setLocalStorage("jac_token", token);
             return True;
@@ -522,31 +522,8 @@ def __jacHasOwn(obj: any, key: any) -> bool {
 
 # Internal polyfill for Python-style dict.get on plain JS objects
 def __jacEnsureObjectGetPolyfill() -> None {
-    proto = Object.prototype;
-    if proto.get {
-        return;
-    }
-
-    # Define the polyfill function inline
-    def get_polyfill(key: any, defaultValue: any = None) -> any {
-        if __jacHasOwn(this, key) {
-            return this[key];
-        }
-        if defaultValue != None {
-            return defaultValue;
-        }
-        return None;
-    }
-
-    Object.defineProperty(
-        proto,
-        "get",
-        {
-            "value": get_polyfill,
-            "configurable": True,
-            "writable": True
-        }
-    );
+    # No longer needed - we use standard JavaScript object access instead of .get() method
+    return;
 }
 
 # Common utility helpers
@@ -581,7 +558,7 @@ def __jacBuildOrderedArgs(order: list, argsDict: dict) -> list {
     }
     values = argsDict if __isObject(argsDict) else {};
     for name in order {
-        result.push(values.get(name));
+        result.push(values[name]);
     }
     return result;
 }
@@ -729,13 +706,13 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
         return;
     }
 
-    targetName = payload.get("function");
+    targetName = payload["function"];
     if not targetName {
         return;
     }
 
     fallbackModule = defaultModuleName if defaultModuleName else "";
-    moduleCandidate = payload.get("module");
+    moduleCandidate = payload["module"];
     moduleName = moduleCandidate if moduleCandidate else fallbackModule;
 
     registry = __jacEnsureRegistry();
@@ -746,13 +723,13 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
         return;
     }
 
-    argOrderRaw = payload.get("argOrder", []);
+    argOrderRaw = payload["argOrder"] if payload["argOrder"] != None else [];
     argOrder = argOrderRaw if Array.isArray(argOrderRaw) else [];
-    argsDictRaw = payload.get("args", {});
+    argsDictRaw = payload["args"] if payload["args"] != None else {};
     argsDict = argsDictRaw if __isObject(argsDictRaw) else {};
     orderedArgs = __jacBuildOrderedArgs(argOrder, argsDict);
 
-    payloadGlobalsRaw = payload.get("globals", {});
+    payloadGlobalsRaw = payload["globals"] if payload["globals"] != None else {};
     payloadGlobals = payloadGlobalsRaw if __isObject(payloadGlobalsRaw) else {};
     registry.state.globals[moduleName] = payloadGlobals;
     for gName in __objectKeys(payloadGlobals) {

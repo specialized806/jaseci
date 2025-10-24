@@ -375,12 +375,23 @@ cl def LoginForm()  -> any {
                 style={
                 {"width" : "100%" , "padding" : "8px" , "boxSizing" : "border-box" }}/>
             </div>
-        <button
+        <Button
                 type="submit"
-                style={
-                {"width" : "100%" , "padding" : "10px" , "backgroundColor" : "#1da1f2" , "color" : "white" , "border" : "none" , "borderRadius" : "4px" , "cursor" : "pointer" }}>
+                >
             Login
-            </button>
+            </Button>
+             <Button color="default" variant="dashed">
+            Dashed
+          </Button>
+          <Button color="default" variant="filled">
+            Filled
+          </Button>
+          <Button color="default" variant="text">
+            Text
+          </Button>
+          <Button color="default" variant="link">
+            Link
+          </Button>
         </form>
     <div style={{"marginTop" : "15px" , "textAlign" : "center" }}>
         <Link href="/signup">
@@ -411,9 +422,9 @@ cl def SignupForm()  -> any {
         class="signup-container"
         style={
         {"maxWidth" : "400px" , "margin" : "50px auto" , "padding" : "20px" , "border" : "1px solid #e1e8ed" , "borderRadius" : "8px" , "fontFamily" : "sans-serif" }}>
-    <h2 style={{"marginTop" : "0" }}>
+    <Typography.Title level={2} style={{"marginTop" : "0" }}>
         Sign Up for LittleX
-        </h2>
+        </Typography.Title>
     <form onsubmit={handle_signup}>
         <div style={{"marginBottom" : "15px" }}>
             <label style={{"display" : "block" , "marginBottom" : "5px" }}>
