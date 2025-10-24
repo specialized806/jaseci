@@ -109,7 +109,9 @@ import_item: (KW_DEFAULT | STAR_MUL | named_ref) (KW_AS NAME)?
 - String literal imports: `ModulePath.path` contains a single `String` node
 
 ### Validation
-- `pyast_gen_pass.py`: Logs error if `default` or `*` used without `cl`
+- `pyast_gen_pass.py`:
+  - Logs error if `default` or `*` used without `cl`
+  - Logs error if string literal imports used without `cl` (Python doesn't support string literal module names)
 - `sym_tab_build_pass.py`: Only alias added to symbol table for default/namespace; skips symbol creation for String paths
 - `esast_gen_pass.py`: Generates appropriate `ImportSpecifier`, `ImportDefaultSpecifier`, or `ImportNamespaceSpecifier`
 - `parser.py`: Handles both `dotted_name` (list of Names) and `STRING` in import paths
@@ -122,6 +124,8 @@ All patterns tested and verified in:
 - `test_js_generation.py::test_category2_default_imports_generate_correct_js`
 - `test_js_generation.py::test_category4_namespace_imports_generate_correct_js`
 - `test_js_generation.py::test_hyphenated_package_imports_generate_correct_js`
+- `test_pyast_gen_pass.py::test_string_literal_import_requires_cl`
+- `test_pyast_gen_pass.py::test_string_literal_import_works_with_cl`
 
 ## Examples
 
