@@ -8,13 +8,12 @@ cl import from jac:client_runtime {
     Link,
 }
 
-cl {
-# Shared app state
-[appState, setAppState] = createState({
+cl let [appState, setAppState] = createState({
     "user": None,
     "loggedIn": False
 });
 
+cl {
 # Counter component using reactive signal
 def CounterApp() -> any {
     [count, setCount] = createSignal(0);
