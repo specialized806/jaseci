@@ -70,6 +70,11 @@ class StreamingOutput:
     def flush(self):
         pass
 
+    def isatty(self):
+        # Always return False for web playground to disable colors
+        # This prevents messy ANSI color codes in the output
+        return False
+
 def pyodide_input(prompt=""):
     prompt_str = str(prompt)
 
