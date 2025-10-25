@@ -127,13 +127,12 @@ try:
     else:
         run("/tmp/temp.jac")
 except SystemExit:
-    # Jac compiler exits with code 1 on syntax errors(jac run)
-    # The actual error messages are already printed to stderr
-    # by the parser's report_errors() method
+    # The Jac compiler may call SystemExit on fatal errors (e.g., syntax errors).
+    # Detailed error reports are already emitted to stderr by the parser,
+    # so we suppress the exit here to avoid re-raising or duplicating messages.
     pass
 except Exception as e:
-    # Only show unexpected errors, not compilation errors
-    print(f"Unexpected error: {e}", file=sys.stderr)
+    print(f"Error: {e}", file=sys.stderr)
 
 # Restore original streams
 sys.stdout = original_stdout
