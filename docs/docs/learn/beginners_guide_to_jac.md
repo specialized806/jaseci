@@ -1653,7 +1653,7 @@ with entry {
 
 This is where OSP starts to shine:
 
-<div class="code-block">
+<div class="code-block run-dot">
 
 ```jac
 node Person {
@@ -1671,6 +1671,10 @@ with entry {
     bob ++> charlie;    # Bob → Charlie
 
     # That's it! You've built a graph!
+
+    # root is a special global node
+    # that is always available (more on root later)
+    root ++> alice;
 }
 ```
 
