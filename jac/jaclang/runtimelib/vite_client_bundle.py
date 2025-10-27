@@ -81,11 +81,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                         import_pieces.append(
                             f"// Warning: Could not compile {import_path}"
                         )
-        if "client_runtime" not in import_pieces:
-            import_pieces.append(f"// Imported .jac module: client_runtime")
-            import_pieces.append(self._compile_to_js(Path(__file__).with_name("client_runtime.jac")))
-            import_pieces.append("")
-
         # Compile main module and strip import statements for bundled modules
         module_js = self._compile_to_js(module_path)
         module_js = self._strip_import_statements(module_js, bundled_module_names)
@@ -276,8 +271,11 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         globals_literal = "{ " + ", ".join(globals_entries) + " }" if globals_entries else "{}"
         
         # Find the main app function (usually the last function or one ending with '_app')
-        main_app_func = 'littlex_app' # this need to be always same and defined by our run time
-
+        main_app_func = 'jac_app' # this need to be always same and defined by our run time
+        # for func_name in reversed(client_functions):
+        #     if func_name.endswith('_app') or func_name == 'App':
+        #         main_app_func = func_name
+        #         break
         
         if not main_app_func:
             main_app_func = client_functions[-1] if client_functions else "App"

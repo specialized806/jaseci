@@ -256,7 +256,7 @@ obj RouteConfig {
 }
 
 # Create a router instance
-def createRouter(routes: list, defaultRoute: str = "/") -> dict {
+def initRouter(routes: list, defaultRoute: str = "/") -> dict {
     # Get initial path from hash or use default
     initialPath = __jacGetHashPath();
     if not initialPath {
