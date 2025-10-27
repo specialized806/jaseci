@@ -248,7 +248,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         return None
 
     def _generate_jac_init_script(self, module_name: str, client_functions: list[str], client_globals: dict[str, Any]) -> str:
-        print(f"client_functions: {client_functions}")
         """Generate Jac runtime initialization script."""
         if not client_functions:
             return ""
