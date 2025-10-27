@@ -573,6 +573,10 @@ class AstAccessNode(UniNode):
             )
         )
 
+    @property
+    def public_access(self) -> bool:
+        return self.access_type == SymbolAccess.PUBLIC
+
 
 T = TypeVar("T", bound=UniNode)
 
@@ -1327,7 +1331,7 @@ class ModulePath(UniNode):
 
     def __init__(
         self,
-        path: Optional[Sequence[Name]],
+        path: Optional[Sequence[Name | String]],
         level: int,
         alias: Optional[Name],
         kid: Sequence[UniNode],
@@ -1350,6 +1354,9 @@ class ModulePath(UniNode):
     @property
     def dot_path_str(self) -> str:
         """Get path string."""
+        if self.path and len(self.path) == 1 and isinstance(self.path[0], String):
+            # Handle string literal import path
+            return ("." * self.level) + self.path[0].lit_value
         return ("." * self.level) + ".".join(
             [p.value for p in self.path] if self.path else []
         )
@@ -1416,11 +1423,17 @@ class ModulePath(UniNode):
 
 
 class ModuleItem(UniNode):
-    """ModuleItem node type for Jac Ast."""
+    """ModuleItem node type for Jac Ast.
+
+    Name can be either:
+    - Name: for regular named imports (e.g., useState, axios)
+    - Token (KW_DEFAULT): for default imports (Category 2)
+    - Token (STAR_MUL): for namespace imports (Category 4)
+    """
 
     def __init__(
         self,
-        name: Name,
+        name: Name | Token,
         alias: Optional[Name],
         kid: Sequence[UniNode],
     ) -> None:

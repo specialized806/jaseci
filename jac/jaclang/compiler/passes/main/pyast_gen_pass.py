@@ -758,6 +758,18 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
         node.gen.py_ast = py_nodes
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
+        # Check if this is a string literal import in a non-client context
+        if node.path and len(node.path) == 1 and isinstance(node.path[0], uni.String):
+            # String literal imports are only supported in client (cl) imports
+            import_node = node.parent_of_type(uni.Import)
+            if import_node and not import_node.is_client_decl:
+                self.log_error(
+                    f'String literal imports (e.g., from "{node.path[0].lit_value}") are only supported '
+                    f"in client (cl) imports, not Python imports. "
+                    f"Use 'cl import from \"{node.path[0].lit_value}\" {{ ... }}' instead.",
+                    node,
+                )
+
         node.gen.py_ast = [
             self.sync(
                 ast3.alias(
@@ -768,10 +780,25 @@ class PyastGenPass(BaseAstGenPass[ast3.AST]):
         ]
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
+        # Validate that default and namespace imports are only used in cl imports
+        if isinstance(node.name, uni.Token) and node.name.value in ["default", "*"]:
+            import_node = node.from_parent
+            if not import_node.is_client_decl:
+                import_type = "Default" if node.name.value == "default" else "Namespace"
+                self.log_error(
+                    f"{import_type} imports (using '{node.name.value}') are only supported "
+                    f"in client (cl) imports, not Python imports",
+                    node,
+                )
+                # Skip generating Python AST for invalid imports
+                node.gen.py_ast = []
+                return
+
+        # Generate Python AST for regular imports
         node.gen.py_ast = [
             self.sync(
                 ast3.alias(
-                    name=f"{node.name.sym_name}",
+                    name=f"{node.name.sym_name if isinstance(node.name, uni.Name) else node.name.value}",
                     asname=node.alias.sym_name if node.alias else None,
                 )
             )
