@@ -81,6 +81,10 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                         import_pieces.append(
                             f"// Warning: Could not compile {import_path}"
                         )
+        if "client_runtime" not in import_pieces:
+            import_pieces.append(f"// Imported .jac module: client_runtime")
+            import_pieces.append(self._compile_to_js(Path(__file__).with_name("client_runtime.jac")))
+            import_pieces.append("")
 
         # Compile main module and strip import statements for bundled modules
         module_js = self._compile_to_js(module_path)
