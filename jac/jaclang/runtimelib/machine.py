@@ -1451,20 +1451,17 @@ class JacClientBundle:
     """Jac Client Bundle Operations - Generic interface for client bundling."""
 
     @staticmethod
-    def get_client_bundle_builder(**kwargs: Any) -> ClientBundleBuilder:  # noqa: ANN401
+    def get_client_bundle_builder() -> ClientBundleBuilder:
         """Get the client bundle builder instance."""
-        from jaclang.runtimelib.client_bundle import ClientBundleBuilder
-
         return ClientBundleBuilder()
 
     @staticmethod
     def build_client_bundle(
         module: types.ModuleType,
         force: bool = False,
-        **kwargs: Any,  # noqa: ANN401
     ) -> ClientBundle:
         """Build a client bundle for the supplied module."""
-        builder = JacMachineInterface.get_client_bundle_builder(**kwargs)
+        builder = JacMachineInterface.get_client_bundle_builder()
         return builder.build(module, force=force)
 
 
