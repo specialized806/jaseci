@@ -902,30 +902,30 @@ class JacAPIServer:
                     return
                 elif path.startswith("/function/"):
                     name = path.split("/")[-1]
-                    # # Check if this function requires authentication
-                    # server.introspector.load()
-                    # if server.introspector.is_auth_required_for_function(name):
-                    #     username = self._authenticate()
-                    #     if not username:
-                    #         ResponseBuilder.send_json(
-                    #             self, 401, {"error": "Unauthorized"}
-                    #         )
-                    #         return
+                    # Check if this function requires authentication
+                    server.introspector.load()
+                    if server.introspector.is_auth_required_for_function(name):
+                        username = self._authenticate()
+                        if not username:
+                            ResponseBuilder.send_json(
+                                self, 401, {"error": "Unauthorized"}
+                            )
+                            return
                     self._send_response(
                         server.introspection_handler.get_function_info(name)
                     )
                     return
                 elif path.startswith("/walker/"):
                     name = path.split("/")[-1]
-                    # # Check if this walker requires authentication
-                    # server.introspector.load()
-                    # if server.introspector.is_auth_required_for_walker(name):
-                    #     username = self._authenticate()
-                    #     if not username:
-                    #         ResponseBuilder.send_json(
-                    #             self, 401, {"error": "Unauthorized"}
-                    #         )
-                    #         return
+                    # Check if this walker requires authentication
+                    server.introspector.load()
+                    if server.introspector.is_auth_required_for_walker(name):
+                        username = self._authenticate()
+                        if not username:
+                            ResponseBuilder.send_json(
+                                self, 401, {"error": "Unauthorized"}
+                            )
+                            return
                     self._send_response(
                         server.introspection_handler.get_walker_info(name)
                     )
