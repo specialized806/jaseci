@@ -1446,6 +1446,27 @@ class JacBasics:
         return func
 
 
+class JacClientBundle:
+    """Jac Client Bundle Operations - Generic interface for client bundling."""
+
+    @staticmethod
+    def get_client_bundle_builder(**kwargs: Any) -> Any:  # noqa: ANN401
+        """Get the client bundle builder instance."""
+        from jaclang.runtimelib.client_bundle import ClientBundleBuilder
+
+        return ClientBundleBuilder()
+
+    @staticmethod
+    def build_client_bundle(
+        module: types.ModuleType,
+        force: bool = False,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> Any:  # noqa: ANN401
+        """Build a client bundle for the supplied module."""
+        builder = JacMachineInterface.get_client_bundle_builder(**kwargs)
+        return builder.build(module, force=force)
+
+
 class JacByLLM:
     """Jac byLLM integration."""
 
@@ -1732,6 +1753,7 @@ class JacMachineInterface(
     JacBuiltin,
     JacCmd,
     JacBasics,
+    JacClientBundle,
     JacByLLM,
     JacUtils,
 ):
