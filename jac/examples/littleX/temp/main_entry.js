@@ -1,50 +1,264 @@
 // Imported .jac module: client_runtime
+import * as React from "react";
+import * as ReactDOM from "react-dom/client";
 function __jacJsx(tag, props, children) {
-  return {"tag": tag, "props": props, "children": children};
+  let childrenArray = [];
+  if (children !== null) {
+    if (Array.isArray(children)) {
+      childrenArray = children;
+    } else {
+      childrenArray = [children];
+    }
+  }
+  let reactChildren = [];
+  for (const child of childrenArray) {
+    if (child !== null) {
+      reactChildren.push(child);
+    }
+  }
+  if (reactChildren.length > 0) {
+    let args = [tag, props];
+    for (const child of reactChildren) {
+      args.push(child);
+    }
+    return React.createElement.apply(React, args);
+  } else {
+    return React.createElement(tag, props);
+  }
 }
 function renderJsxTree(node, container) {
-  container.replaceChildren(__buildDom(node));
+  try {
+    ReactDOM.createRoot(container).render(node);
+  } catch (err) {
+    console.error("[Jac] Error in renderJsxTree:", err);
+  }
 }
-function __buildDom(node) {
-  if (node === null) {
-    return document.createTextNode("");
+const __jacReactiveContext = {"signals": [], "pendingRenders": [], "flushScheduled": false, "rootComponent": null, "reactRoot": null, "currentComponent": null, "currentEffect": null, "router": null};
+function createSignal(initialValue) {
+  let signalId = __jacReactiveContext.signals.length;
+  let signalData = {"value": initialValue, "subscribers": []};
+  __jacReactiveContext.signals.push(signalData);
+  function getter() {
+    __jacTrackDependency(signalData.subscribers);
+    return signalData.value;
   }
-  if (!__isObject(node)) {
-    return document.createTextNode(String(node));
-  }
-  let tag = node.get("tag");
-  if (__isFunction(tag)) {
-    let props = node.get("props", {});
-    return __buildDom(tag(props));
-  }
-  let element = document.createElement(tag ? tag : "div");
-  let props = node.get("props", {});
-  for (const key of __objectKeys(props)) {
-    let value = props.get(key);
-    __applyProp(element, key, value);
-  }
-  let children = node.get("children", []);
-  for (const child of children) {
-    let childDom = __buildDom(child);
-    if (childDom) {
-      element.appendChild(childDom);
+  function setter(newValue) {
+    if (newValue !== signalData.value) {
+      signalData.value = newValue;
+      __jacNotifySubscribers(signalData.subscribers);
     }
   }
-  return element;
+  return [getter, setter];
 }
-function __applyProp(element, key, value) {
-  if (key.startsWith("on")) {
-    let event = key.slice(2).toLowerCase();
-    element.addEventListener(event, value);
-  } else if (key === "className" || key === "class") {
-    element.className = value;
-  } else if (key === "style" && __isObject(value)) {
-    for (const styleKey of __objectKeys(value)) {
-      element.style[styleKey] = value.get(styleKey);
-    }
-  } else if (key !== "children") {
-    element.setAttribute(key, String(value));
+function createState(initialState) {
+  let signalId = __jacReactiveContext.signals.length;
+  let signalData = {"value": initialState, "subscribers": []};
+  __jacReactiveContext.signals.push(signalData);
+  function getter() {
+    __jacTrackDependency(signalData.subscribers);
+    return signalData.value;
   }
+  function setter(updates) {
+    let newState = {};
+    let stateValue = signalData.value;
+    for (const key of __objectKeys(stateValue)) {
+      newState[key] = stateValue[key];
+    }
+    for (const key of __objectKeys(updates)) {
+      newState[key] = updates[key];
+    }
+    signalData.value = newState;
+    __jacNotifySubscribers(signalData.subscribers);
+  }
+  return [getter, setter];
+}
+function createEffect(effectFn) {
+  __jacRunEffect(effectFn);
+}
+function __jacTrackDependency(subscribers) {
+  let currentEffect = __jacReactiveContext.currentEffect;
+  if (currentEffect) {
+    let alreadySubscribed = false;
+    for (const sub of subscribers) {
+      if (sub === currentEffect) {
+        alreadySubscribed = true;
+      }
+    }
+    if (!alreadySubscribed) {
+      subscribers.push(currentEffect);
+    }
+  }
+  let currentComponent = __jacReactiveContext.currentComponent;
+  if (currentComponent) {
+    let alreadySubscribed = false;
+    for (const sub of subscribers) {
+      if (sub === currentComponent) {
+        alreadySubscribed = true;
+      }
+    }
+    if (!alreadySubscribed) {
+      subscribers.push(currentComponent);
+    }
+  }
+}
+function __jacNotifySubscribers(subscribers) {
+  for (const subscriber of subscribers) {
+    if (__isFunction(subscriber)) {
+      __jacRunEffect(subscriber);
+    } else {
+      __jacScheduleRerender(subscriber);
+    }
+  }
+}
+function __jacRunEffect(effectFn) {
+  let previousEffect = __jacReactiveContext.currentEffect;
+  __jacReactiveContext.currentEffect = effectFn;
+  try {
+    effectFn();
+  } catch (err) {
+    console.error("[Jac] Error in effect:", err);
+  }
+  __jacReactiveContext.currentEffect = previousEffect;
+}
+function __jacScheduleRerender(componentId) {
+  let pending = __jacReactiveContext.pendingRenders;
+  let alreadyScheduled = false;
+  for (const item of pending) {
+    if (item === componentId) {
+      alreadyScheduled = true;
+    }
+  }
+  if (!alreadyScheduled) {
+    pending.push(componentId);
+    __jacScheduleFlush();
+  }
+}
+function __jacScheduleFlush() {
+  if (!__jacReactiveContext.flushScheduled) {
+    __jacReactiveContext.flushScheduled = true;
+    try {
+      requestAnimationFrame(__jacFlushRenders);
+    } catch {
+      setTimeout(__jacFlushRenders, 0);
+    }
+  }
+}
+function __jacFlushRenders() {
+  let pending = __jacReactiveContext.pendingRenders;
+  __jacReactiveContext.pendingRenders = [];
+  __jacReactiveContext.flushScheduled = false;
+  for (const componentId of pending) {
+    __jacRerenderComponent(componentId);
+  }
+}
+function __jacRerenderComponent(componentId) {
+  let reactRoot = __jacReactiveContext.reactRoot;
+  if (!reactRoot) {
+    console.error("[Jac] React root not initialized. Cannot re-render.");
+    return;
+  }
+  let rootComponent = __jacReactiveContext.rootComponent;
+  if (!rootComponent) {
+    return;
+  }
+  try {
+    let previousComponent = __jacReactiveContext.currentComponent;
+    __jacReactiveContext.currentComponent = componentId;
+    let component = rootComponent();
+    reactRoot.render(component);
+    __jacReactiveContext.currentComponent = previousComponent;
+  } catch (err) {
+    console.error("[Jac] Error re-rendering component:", err);
+  }
+}
+class RouteConfig {
+  constructor(props = {}) {
+    this.path = props.hasOwnProperty("path") ? props.path : null;
+    this.component = props.hasOwnProperty("component") ? props.component : null;
+    this.guard = props.hasOwnProperty("guard") ? props.guard : null;
+  }
+}
+function createRouter(routes, defaultRoute) {
+  let initialPath = __jacGetHashPath();
+  if (!initialPath) {
+    initialPath = defaultRoute;
+  }
+  let [currentPath, setCurrentPath] = createSignal(initialPath);
+  window.addEventListener("hashchange", event => {
+    let newPath = __jacGetHashPath();
+    if (!newPath) {
+      newPath = defaultRoute;
+    }
+    setCurrentPath(newPath);
+  });
+  window.addEventListener("popstate", event => {
+    let newPath = __jacGetHashPath();
+    if (!newPath) {
+      newPath = defaultRoute;
+    }
+    setCurrentPath(newPath);
+  });
+  function render() {
+    let path = currentPath();
+    for (const route of routes) {
+      if (route.path === path) {
+        if (route.guard && !route.guard()) {
+          return __jacJsx("div", {}, ["Access Denied"]);
+        }
+        return route.component();
+      }
+    }
+    return __jacJsx("div", {}, ["404 - Route not found: ", path]);
+  }
+  function navigateTo(path) {
+    window.location.hash = "#" + path;
+    setCurrentPath(path);
+  }
+  let router = {"path": currentPath, "render": render, "navigate": navigateTo};
+  __jacReactiveContext.router = router;
+  return router;
+}
+function Route(path, component, guard) {
+  return {"path": path, "component": component, "guard": guard};
+}
+function Link(props) {
+  let href = "href" in props ? props["href"] : "/";
+  let children = "children" in props ? props["children"] : [];
+  function handleClick(event) {
+    console.log("Link clicked, navigating to:", href);
+    event.preventDefault();
+    navigate(href);
+  }
+  let childrenArray = [];
+  if (children !== null) {
+    if (Array.isArray(children)) {
+      childrenArray = children;
+    } else {
+      childrenArray = [children];
+    }
+  }
+  return __jacJsx("a", {"href": "#" + href, "onclick": handleClick}, childrenArray);
+}
+function navigate(path) {
+  console.log("navigate() called with path:", path);
+  let router = __jacReactiveContext.router;
+  if (router) {
+    console.log("Router found, calling router.navigate()");
+    router.navigate(path);
+  } else {
+    console.log("No router, setting hash directly");
+    window.location.hash = "#" + path;
+  }
+}
+function useRouter() {
+  return __jacReactiveContext.router;
+}
+function __jacGetHashPath() {
+  let hash = window.location.hash;
+  if (hash) {
+    return hash.slice(1);
+  }
+  return "";
 }
 async function __jacSpawn(walker, fields) {
   let token = __getLocalStorage("jac_token");
@@ -63,13 +277,13 @@ async function __jacCallFunction(function_name, args) {
     throw new Error("Function " + " failed: ");
   }
   let data = JSON.parse(await response.text());
-  return data.get("result");
+  return data["result"];
 }
 async function jacSignup(username, password) {
   let response = await fetch("/user/create", {"method": "POST", "headers": {"Content-Type": "application/json"}, "body": JSON.stringify({"username": username, "password": password})});
   if (response.ok) {
     let data = JSON.parse(await response.text());
-    let token = data.get("token");
+    let token = data["token"];
     if (token) {
       __setLocalStorage("jac_token", token);
       return {"success": true, "token": token, "username": username};
@@ -79,7 +293,7 @@ async function jacSignup(username, password) {
     let error_text = await response.text();
     try {
       let error_data = JSON.parse(error_text);
-      return {"success": false, "error": error_data.get("error", "Signup failed")};
+      return {"success": false, "error": error_data["error"] !== null ? error_data["error"] : "Signup failed"};
     } catch {
       return {"success": false, "error": error_text};
     }
@@ -89,7 +303,7 @@ async function jacLogin(username, password) {
   let response = await fetch("/user/login", {"method": "POST", "headers": {"Content-Type": "application/json"}, "body": JSON.stringify({"username": username, "password": password})});
   if (response.ok) {
     let data = JSON.parse(await response.text());
-    let token = data.get("token");
+    let token = data["token"];
     if (token) {
       __setLocalStorage("jac_token", token);
       return true;
@@ -143,27 +357,16 @@ function __jacHasOwn(obj, key) {
   }
 }
 function __jacEnsureObjectGetPolyfill() {
-  let proto = Object.prototype;
-  if (proto.get) {
-    return;
-  }
-  function get_polyfill(key, defaultValue) {
-    if (__jacHasOwn(this, key)) {
-      return this[key];
-    }
-    if (defaultValue !== null) {
-      return defaultValue;
-    }
-    return null;
-  }
-  Object.defineProperty(proto, "get", {"value": get_polyfill, "configurable": true, "writable": true});
+  return;
 }
 function __jacGetDocument(scope) {
   try {
     return scope.document;
-  } catch {
-    return null;
-  }
+  } catch {}
+  try {
+    return window.document;
+  } catch {}
+  return null;
 }
 function __jacParseJsonObject(text) {
   try {
@@ -185,7 +388,7 @@ function __jacBuildOrderedArgs(order, argsDict) {
   }
   let values = __isObject(argsDict) ? argsDict : {};
   for (const name of order) {
-    result.push(values.get(name));
+    result.push(values[name]);
   }
   return result;
 }
@@ -258,13 +461,17 @@ function __jacEnsureRegistry() {
   return registry;
 }
 function __jacApplyRender(renderer, container, node) {
-  if (!renderer || !container) {
+  if (!container) {
     return;
   }
   try {
-    renderer(node, container);
+    if (renderer) {
+      renderer(node, container);
+    } else {
+      console.warn("[Jac] No JSX renderer available.");
+    }
   } catch (err) {
-    console.error("[Jac] Failed to render JSX tree", err);
+    console.error("[Jac] Failed to render JSX tree (fallback path)", err);
   }
 }
 function __jacHydrateFromDom(defaultModuleName) {
@@ -291,12 +498,12 @@ function __jacHydrateFromDom(defaultModuleName) {
   if (!payload) {
     return;
   }
-  let targetName = payload.get("function");
+  let targetName = payload["function"];
   if (!targetName) {
     return;
   }
   let fallbackModule = defaultModuleName ? defaultModuleName : "";
-  let moduleCandidate = payload.get("module");
+  let moduleCandidate = payload["module"];
   let moduleName = moduleCandidate ? moduleCandidate : fallbackModule;
   let registry = __jacEnsureRegistry();
   let modulesStore = registry.modules ? registry.modules : {};
@@ -305,12 +512,12 @@ function __jacHydrateFromDom(defaultModuleName) {
     console.error("[Jac] Client module not registered: " + moduleName);
     return;
   }
-  let argOrderRaw = payload.get("argOrder", []);
+  let argOrderRaw = payload["argOrder"] !== null ? payload["argOrder"] : [];
   let argOrder = Array.isArray(argOrderRaw) ? argOrderRaw : [];
-  let argsDictRaw = payload.get("args", {});
+  let argsDictRaw = payload["args"] !== null ? payload["args"] : {};
   let argsDict = __isObject(argsDictRaw) ? argsDictRaw : {};
   let orderedArgs = __jacBuildOrderedArgs(argOrder, argsDict);
-  let payloadGlobalsRaw = payload.get("globals", {});
+  let payloadGlobalsRaw = payload["globals"] !== null ? payload["globals"] : {};
   let payloadGlobals = __isObject(payloadGlobalsRaw) ? payloadGlobalsRaw : {};
   registry.state.globals[moduleName] = payloadGlobals;
   for (const gName of __objectKeys(payloadGlobals)) {
@@ -323,23 +530,33 @@ function __jacHydrateFromDom(defaultModuleName) {
     console.error("[Jac] Client function not found: " + targetName);
     return;
   }
+  __jacReactiveContext.rootComponent = () => {
+    __jacReactiveContext.currentComponent = "__root__";
+    let result = target.apply(scope, orderedArgs);
+    __jacReactiveContext.currentComponent = null;
+    return result;
+  };
   let renderer = __jacResolveRenderer(scope);
   if (!renderer) {
     console.warn("[Jac] renderJsxTree is not available in client bundle");
   }
-  let callOutcome = __jacSafeCallTarget(target, scope, orderedArgs, targetName);
-  if (!callOutcome || !callOutcome.get("ok")) {
+  let reactRoot = null;
+  try {
+    reactRoot = ReactDOM.createRoot(rootEl);
+    __jacReactiveContext.reactRoot = reactRoot;
+  } catch (err) {
+    console.error("[Jac] Failed to create React root for hydration:", err);
     return;
   }
-  let value = callOutcome.get("value");
+  let value = __jacReactiveContext.rootComponent();
   if (value && __isObject(value) && __isFunction(value.then)) {
     value.then(node => {
-      __jacApplyRender(renderer, rootEl, node);
+      reactRoot.render(node);
     }).catch(err => {
       console.error("[Jac] Error resolving client function promise", err);
     });
   } else {
-    __jacApplyRender(renderer, rootEl, value);
+    reactRoot.render(value);
   }
 }
 function __jacExecuteHydration() {
@@ -424,48 +641,8 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
 import * as _ from "lodash";
 import { Button, Input, Card, Typography, Space } from "antd";
 import pluralize from "pluralize";
-const appState = {"current_route": "login", "tweets": [], "loading": false};
-function navigate_to(route) {
-  console.log("Navigating to:", route);
-  appState["current_route"] = route;
-  window.history.pushState({}, "", "#" + route);
-  render_app();
-}
-function render_app() {
-  console.log("render_app called, route:", appState.get("current_route", "unknown"));
-  let root_element = document.getElementById("__jac_root");
-  if (root_element) {
-    let component = App();
-    console.log("Rendering component to root");
-    renderJsxTree(component, root_element);
-    console.log("Render complete");
-  }
-}
-function get_current_route() {
-  return appState.get("current_route", "login");
-}
-function handle_popstate(event) {
-  let hash = window.location.hash;
-  if (hash) {
-    appState["current_route"] = hash.slice(1);
-  } else {
-    appState["current_route"] = "login";
-  }
-  render_app();
-}
-function init_router() {
-  let hash = window.location.hash;
-  if (hash) {
-    appState["current_route"] = hash.slice(1);
-  } else {
-    if (jacIsLoggedIn()) {
-      appState["current_route"] = "home";
-    } else {
-      appState["current_route"] = "login";
-    }
-  }
-  window.addEventListener("popstate", handle_popstate);
-}
+import { Rotate } from "react-animated-components";
+const [appState, setAppState] = createState({"tweets": [], "loading": false});
 class ClientTweet {
   constructor(props = {}) {
     this.username = props.hasOwnProperty("username") ? props.username : "";
@@ -497,12 +674,10 @@ function FeedView(tweets) {
   return __jacJsx("div", {"class": "feed-container", "style": {"maxWidth": "600px", "margin": "0 auto", "fontFamily": "sans-serif"}}, [__jacJsx("div", {"class": "feed-header", "style": {"padding": "20px", "borderBottom": "1px solid #e1e8ed"}}, [__jacJsx("h1", {"style": {"margin": "0"}}, ["LittleX Feed"])]), __jacJsx("div", {"class": "feed-content"}, [null])]);
 }
 function LoginForm() {
-  let suggestions = ["alice", "bob", "charlie", "diana", "eve"];
+  let suggestions = ["good luck", "have fun", "enjoy the ride"];
   let randomSuggestion = _.sample(suggestions);
-  let item = "apple";
-  let count = 5;
-  let result = pluralize(item, count, true);
-  return __jacJsx("div", {"class": "login-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Login to LittleX"]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [randomSuggestion]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [result]), __jacJsx("form", {"onsubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#signup", "onclick": go_to_signup, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Don't have an account? Sign up"])])]);
+  let result = "Good luck with your journey!";
+  return __jacJsx(Card, {"title": "Login to LittleX", "style": {"maxWidth": "400px", "margin": "50px auto"}}, [__jacJsx(Card.Meta, {"title": randomSuggestion, "description": result}, []), __jacJsx("form", {"onSubmit": handle_login}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "username", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "password", "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx(Button, {"htmlType": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Login"]), __jacJsx(Button, {"color": "default", "variant": "dashed"}, ["Dashed"]), __jacJsx(Button, {"color": "default", "variant": "filled"}, ["Filled"]), __jacJsx(Button, {"color": "default", "variant": "text"}, ["Text"]), __jacJsx(Button, {"color": "default", "variant": "link"}, ["Link"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx(Link, {"href": "/signup"}, ["Don't have an account? Sign up"])])]);
 }
 async function handle_login(event) {
   event.preventDefault();
@@ -510,29 +685,13 @@ async function handle_login(event) {
   let password = document.getElementById("password").value;
   let success = await jacLogin(username, password);
   if (success) {
-    navigate_to("home");
+    navigate("/home");
   } else {
     alert("Login failed. Please try again.");
   }
 }
 function SignupForm() {
-  return __jacJsx("div", {"class": "signup-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {"style": {"marginTop": "0"}}, ["Sign Up for LittleX"]), __jacJsx("form", {"onsubmit": handle_signup}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "signup-username", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "signup-password", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Confirm Password:"]), __jacJsx("input", {"type": "password", "id": "signup-password-confirm", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Sign Up"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx("a", {"href": "#login", "onclick": go_to_login, "style": {"color": "#1da1f2", "textDecoration": "none", "cursor": "pointer"}}, ["Already have an account? Login"])])]);
-}
-function go_to_login(event) {
-  event.preventDefault();
-  navigate_to("login");
-}
-function go_to_signup(event) {
-  event.preventDefault();
-  navigate_to("signup");
-}
-function go_to_home(event) {
-  event.preventDefault();
-  navigate_to("home");
-}
-function go_to_profile(event) {
-  event.preventDefault();
-  navigate_to("profile");
+  return __jacJsx("div", {"class": "signup-container", "style": {"maxWidth": "400px", "margin": "50px auto", "padding": "20px", "border": "1px solid #e1e8ed", "borderRadius": "8px", "fontFamily": "sans-serif"}}, [__jacJsx(Typography.Title, {"level": 2, "style": {"marginTop": "0"}}, ["Sign Up for LittleX"]), __jacJsx("form", {"onSubmit": handle_signup}, [__jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Username:"]), __jacJsx("input", {"type": "text", "id": "signup-username", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Password:"]), __jacJsx("input", {"type": "password", "id": "signup-password", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("div", {"style": {"marginBottom": "15px"}}, [__jacJsx("label", {"style": {"display": "block", "marginBottom": "5px"}}, ["Confirm Password:"]), __jacJsx("input", {"type": "password", "id": "signup-password-confirm", "required": true, "style": {"width": "100%", "padding": "8px", "boxSizing": "border-box"}}, [])]), __jacJsx("button", {"type": "submit", "style": {"width": "100%", "padding": "10px", "backgroundColor": "#1da1f2", "color": "white", "border": "none", "borderRadius": "4px", "cursor": "pointer"}}, ["Sign Up"])]), __jacJsx("div", {"style": {"marginTop": "15px", "textAlign": "center"}}, [__jacJsx(Link, {"href": "/login"}, ["Already have an account? Login"])])]);
 }
 async function handle_signup(event) {
   event.preventDefault();
@@ -552,118 +711,79 @@ async function handle_signup(event) {
     return;
   }
   let result = await jacSignup(username, password);
-  if (result.get("success")) {
+  if ("success" in result ? result["success"] : false) {
     alert("Account created successfully! Welcome to LittleX!");
-    navigate_to("home");
+    navigate("/home");
   } else {
-    alert(result.get("error", "Signup failed"));
+    alert("error" in result ? result["error"] : "Signup failed");
   }
 }
 function logout_action() {
   jacLogout();
-  navigate_to("login");
+  navigate("/login");
 }
 function App() {
-  let route = get_current_route();
-  let nav_bar = build_nav_bar(route);
-  let content_view = get_view_for_route(route);
-  return __jacJsx("div", {"class": "app-container"}, [nav_bar, content_view]);
-}
-function get_view_for_route(route) {
-  if (route === "signup") {
+  let login_route = {"path": "/login", "component": () => {
+    return LoginForm();
+  }, "guard": null};
+  let signup_route = {"path": "/signup", "component": () => {
     return SignupForm();
-  }
-  if (route === "home") {
-    return HomeViewLoader();
-  }
-  if (route === "profile") {
+  }, "guard": null};
+  let home_route = {"path": "/home", "component": () => {
+    return HomeView();
+  }, "guard": jacIsLoggedIn};
+  let profile_route = {"path": "/profile", "component": () => {
     return ProfileView();
-  }
-  return LoginForm();
-}
-function HomeViewLoader() {
-  load_home_view();
-  return __jacJsx("div", {"style": {"textAlign": "center", "padding": "50px", "fontFamily": "sans-serif"}}, [__jacJsx("h2", {}, ["Loading feed..."])]);
-}
-async function load_home_view() {
-  let view = await HomeView();
-  let root = document.getElementById("__jac_root");
-  if (true) {
-    renderJsxTree(__jacJsx("div", {"class": "app-container"}, [build_nav_bar("home"), view]));
-  }
+  }, "guard": jacIsLoggedIn};
+  let routes = [login_route, signup_route, home_route, profile_route];
+  let router = createRouter(routes, "/login");
+  let currentPath = router.path();
+  return __jacJsx("div", {"class": "app-container"}, [build_nav_bar(currentPath), __jacJsx(Rotate, {}, [__jacJsx("span", {}, ["😂"])]), router.render()]);
 }
 function build_nav_bar(route) {
-  if (!jacIsLoggedIn() || route === "login" || route === "signup") {
+  if (!jacIsLoggedIn() || route === "/login" || route === "/signup") {
     return null;
   }
-  return __jacJsx("nav", {"style": {"backgroundColor": "#1da1f2", "padding": "15px", "marginBottom": "20px"}}, [__jacJsx("div", {"style": {"maxWidth": "600px", "margin": "0 auto", "display": "flex", "gap": "20px", "alignItems": "center"}}, [__jacJsx("a", {"href": "#home", "onclick": go_to_home, "style": {"color": "white", "textDecoration": "none", "fontWeight": "bold", "cursor": "pointer"}}, ["Home"]), __jacJsx("a", {"href": "#profile", "onclick": go_to_profile, "style": {"color": "white", "textDecoration": "none", "fontWeight": "bold", "cursor": "pointer"}}, ["Profile"]), __jacJsx("button", {"onclick": logout_action, "style": {"marginLeft": "auto", "padding": "5px 15px", "backgroundColor": "white", "color": "#1da1f2", "border": "none", "borderRadius": "4px", "cursor": "pointer", "fontWeight": "bold"}}, ["Logout"])])]);
+  return __jacJsx("nav", {"style": {"backgroundColor": "#1da1f2", "padding": "15px", "marginBottom": "20px"}}, [__jacJsx("div", {"style": {"maxWidth": "600px", "margin": "0 auto", "display": "flex", "gap": "20px", "alignItems": "center"}}, [__jacJsx(Link, {"href": "/home"}, [__jacJsx("span", {"style": {"color": "white", "textDecoration": "none", "fontWeight": "bold"}}, ["Home"])]), __jacJsx(Link, {"href": "/profile"}, [__jacJsx("span", {"style": {"color": "white", "textDecoration": "none", "fontWeight": "bold"}}, ["Profile"])]), __jacJsx("button", {"onClick": logout_action, "style": {"marginLeft": "auto", "padding": "5px 15px", "backgroundColor": "white", "color": "#1da1f2", "border": "none", "borderRadius": "4px", "cursor": "pointer", "fontWeight": "bold"}}, ["Logout"])])]);
 }
-async function HomeView() {
+function HomeView() {
   if (!jacIsLoggedIn()) {
-    navigate_to("login");
+    navigate("/login");
     return __jacJsx("div", {}, []);
   }
-  try {
-    let result = await load_feed();
-    let tweets = [];
-    if (result && result.reports && result.reports.length > 0) {
-      let feed_data = result.reports[0];
-      for (const item of feed_data) {
-        if (item.Tweet_Info) {
-          let tweet_info = item.Tweet_Info;
-          tweets.append(ClientTweet());
-        }
-      }
-    }
-    return FeedView(tweets);
-  } catch (e) {
-    return __jacJsx("div", {"style": {"padding": "20px", "color": "red"}}, ["Error loading feed:", String(e)]);
-  }
+  return __jacJsx("div", {"style": {"textAlign": "center", "padding": "50px", "fontFamily": "sans-serif"}}, [__jacJsx("h1", {}, ["Home Feed"]), __jacJsx("p", {}, ["Welcome to LittleX! This is the home page."]), __jacJsx("p", {}, ["The reactive router is working!"])]);
 }
 function ProfileView() {
   if (!jacIsLoggedIn()) {
-    navigate_to("login");
+    navigate("/login");
     return __jacJsx("div", {}, []);
   }
   return __jacJsx("div", {"class": "profile-container", "style": {"maxWidth": "600px", "margin": "20px auto", "padding": "20px", "fontFamily": "sans-serif"}}, [__jacJsx("h1", {}, ["Profile"]), __jacJsx("div", {"style": {"padding": "15px", "border": "1px solid #e1e8ed", "borderRadius": "8px"}}, [__jacJsx("p", {}, ["Profile information will be displayed here."])])]);
 }
 function littlex_app() {
-  init_router();
   return App();
 }
 
 
             // --- GLOBAL EXPOSURE FOR VITE IIFE ---
             // Expose functions globally so they're available on globalThis
-            const globalClientFunctions = ['App', 'ClientProfile', 'ClientTweet', 'FeedView', 'HomeView', 'HomeViewLoader', 'LoginForm', 'ProfileView', 'SignupForm', 'TweetCard', 'build_nav_bar', 'get_current_route', 'get_view_for_route', 'go_to_home', 'go_to_login', 'go_to_profile', 'go_to_signup', 'handle_login', 'handle_popstate', 'handle_signup', 'init_router', 'like_tweet_action', 'littlex_app', 'load_home_view', 'logout_action', 'navigate_to', 'render_app'];
+            const globalClientFunctions = ['App', 'ClientProfile', 'ClientTweet', 'FeedView', 'HomeView', 'LoginForm', 'ProfileView', 'SignupForm', 'TweetCard', 'build_nav_bar', 'handle_login', 'handle_signup', 'like_tweet_action', 'littlex_app', 'logout_action'];
             const globalFunctionMap = {
     "App": App,
     "ClientProfile": ClientProfile,
     "ClientTweet": ClientTweet,
     "FeedView": FeedView,
     "HomeView": HomeView,
-    "HomeViewLoader": HomeViewLoader,
     "LoginForm": LoginForm,
     "ProfileView": ProfileView,
     "SignupForm": SignupForm,
     "TweetCard": TweetCard,
     "build_nav_bar": build_nav_bar,
-    "get_current_route": get_current_route,
-    "get_view_for_route": get_view_for_route,
-    "go_to_home": go_to_home,
-    "go_to_login": go_to_login,
-    "go_to_profile": go_to_profile,
-    "go_to_signup": go_to_signup,
     "handle_login": handle_login,
-    "handle_popstate": handle_popstate,
     "handle_signup": handle_signup,
-    "init_router": init_router,
     "like_tweet_action": like_tweet_action,
     "littlex_app": littlex_app,
-    "load_home_view": load_home_view,
-    "logout_action": logout_action,
-    "navigate_to": navigate_to,
-    "render_app": render_app
+    "logout_action": logout_action
 };
             for (const funcName of globalClientFunctions) {
                 globalThis[funcName] = globalFunctionMap[funcName];
@@ -673,40 +793,28 @@ function littlex_app() {
 
             // --- JAC CLIENT INITIALIZATION SCRIPT ---
             // Expose functions globally for Jac runtime registration
-            const clientFunctions = ['App', 'ClientProfile', 'ClientTweet', 'FeedView', 'HomeView', 'HomeViewLoader', 'LoginForm', 'ProfileView', 'SignupForm', 'TweetCard', 'build_nav_bar', 'get_current_route', 'get_view_for_route', 'go_to_home', 'go_to_login', 'go_to_profile', 'go_to_signup', 'handle_login', 'handle_popstate', 'handle_signup', 'init_router', 'like_tweet_action', 'littlex_app', 'load_home_view', 'logout_action', 'navigate_to', 'render_app'];
+            const clientFunctions = ['App', 'ClientProfile', 'ClientTweet', 'FeedView', 'HomeView', 'LoginForm', 'ProfileView', 'SignupForm', 'TweetCard', 'build_nav_bar', 'handle_login', 'handle_signup', 'like_tweet_action', 'littlex_app', 'logout_action'];
             const functionMap = {
     "App": App,
     "ClientProfile": ClientProfile,
     "ClientTweet": ClientTweet,
     "FeedView": FeedView,
     "HomeView": HomeView,
-    "HomeViewLoader": HomeViewLoader,
     "LoginForm": LoginForm,
     "ProfileView": ProfileView,
     "SignupForm": SignupForm,
     "TweetCard": TweetCard,
     "build_nav_bar": build_nav_bar,
-    "get_current_route": get_current_route,
-    "get_view_for_route": get_view_for_route,
-    "go_to_home": go_to_home,
-    "go_to_login": go_to_login,
-    "go_to_profile": go_to_profile,
-    "go_to_signup": go_to_signup,
     "handle_login": handle_login,
-    "handle_popstate": handle_popstate,
     "handle_signup": handle_signup,
-    "init_router": init_router,
     "like_tweet_action": like_tweet_action,
     "littlex_app": littlex_app,
-    "load_home_view": load_home_view,
-    "logout_action": logout_action,
-    "navigate_to": navigate_to,
-    "render_app": render_app
+    "logout_action": logout_action
 };
             for (const funcName of clientFunctions) {
                 globalThis[funcName] = functionMap[funcName];
             }
-            __jacRegisterClientModule("littleX_single_nodeps", clientFunctions, { "appState": {"current_route": "login", "tweets": [], "loading": false} });
+            __jacRegisterClientModule("littleX_single_nodeps", clientFunctions, { "[ListVal]": null });
             globalThis.start_app = littlex_app;
             // Call the start function immediately if we're not hydrating from the server
             if (!document.getElementById('__jac_init__')) {

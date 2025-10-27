@@ -6,13 +6,12 @@ cl import from 'react-dom/client' {* as ReactDOM}
 cl {
 # JSX factory function - uses React.createElement
 def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
-    # Ensure children is iterable - convert to array if needed
+
     childrenArray = [];
     if children != None {
         if Array.isArray(children) {
             childrenArray = children;
         } else {
-            # Single child - wrap in array
             childrenArray = [children];
         }
     }
@@ -25,9 +24,7 @@ def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
         }
     }
     
-    # Use React.createElement with proper children handling
     if reactChildren.length > 0 {
-        # Convert children array to individual arguments using apply
         args = [tag, props];
         for child in reactChildren {
             args.push(child);
@@ -39,8 +36,6 @@ def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
 }
 
 def renderJsxTree(node: any, container: any) -> None {
-    # For React 18+, you could use ReactDOM.createRoot(container).render(node)
-    # The hydration logic will handle this
     try {
         ReactDOM.createRoot(container).render(node);
     } except Exception as err {
@@ -58,7 +53,7 @@ let __jacReactiveContext = {
     "pendingRenders": [],       # Batched re-renders queue
     "flushScheduled": False,    # Debounce flag for batching
     "rootComponent": None,      # Root function to re-render
-    "reactRoot": None,          # <--- FIXED: Store the React 18 root instance
+    "reactRoot": None,          # Store the React 18 root instance
     "currentComponent": None,   # Current component ID being rendered
     "currentEffect": None,      # Current effect for dependency tracking
     "router": None             # Global router instance
