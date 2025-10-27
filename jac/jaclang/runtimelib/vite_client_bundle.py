@@ -277,10 +277,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         
         # Find the main app function (usually the last function or one ending with '_app')
         main_app_func = 'littlex_app' # this need to be always same and defined by our run time
-        # for func_name in reversed(client_functions):
-        #     if func_name.endswith('_app') or func_name == 'App':
-        #         main_app_func = func_name
-        #         break
+
         
         if not main_app_func:
             main_app_func = client_functions[-1] if client_functions else "App"
