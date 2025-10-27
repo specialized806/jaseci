@@ -13,11 +13,11 @@ You’ll write code, test it, and see AI-generated levels come to life.
 </div> -->
 
 <div align="center">
-    <img src="/learn/examples/mtp_examples/assets/rpg_demo.gif" 
-         alt="Animated demo of AI-powered RPG level generation" 
-         width="528" 
-         height="330" 
-         loading="lazy" 
+    <img src="/learn/examples/mtp_examples/assets/rpg_demo.gif"
+         alt="Animated demo of AI-powered RPG level generation"
+         width="528"
+         height="330"
+         loading="lazy"
          style="mix-blend-mode: screen;" />
 </div>
 
