@@ -764,6 +764,14 @@ def create_jac_app(name: str) -> None:
         with open(package_json_path, "r") as f:
             package_data = json.load(f)
         
+        # create temp folder
+        temp_folder = os.path.join(project_path, "temp")
+        os.makedirs(temp_folder, exist_ok=True)
+        
+        # create static/client/js folder
+        client_js_folder = os.path.join(project_path, "static", "client", "js")
+        os.makedirs(client_js_folder, exist_ok=True)
+        
         # Update package.json with Jac-specific configuration
         package_data.update({
             "name": name,
@@ -799,8 +807,14 @@ def create_jac_app(name: str) -> None:
 
         
         # Create a basic Jac file
-        main_jac_content = """# Example code
-
+        main_jac_content = """
+        # Example code
+        cl def my_app() -> any {
+            return <div>
+                <h1>LittleX</h1>
+                <p>Welcome to the LittleX app</p>
+            </div>;
+        }
         """
         
         with open(os.path.join(project_path, "app.jac"), "w") as f:
