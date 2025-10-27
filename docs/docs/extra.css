@@ -137,7 +137,7 @@ body,
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    z-index: 1001 !important;
+    z-index: 1100 !important;
     height: 64px !important;
     padding: 0 24px !important;
 }
@@ -797,4 +797,4 @@ body[data-domain="https://www.jac-lang.org/"] .feedback-container {
         width: 280px;
         right: 0;
     }
-}
+}   
