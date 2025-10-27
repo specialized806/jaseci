@@ -42,6 +42,7 @@ from jaclang.runtimelib.archetype import (
     ObjectSpatialPath,
     Root as _Root,
 )
+from jaclang.runtimelib.client_bundle import ClientBundle, ClientBundleBuilder
 from jaclang.runtimelib.constructs import (
     AccessLevel,
     Anchor,
@@ -1450,7 +1451,7 @@ class JacClientBundle:
     """Jac Client Bundle Operations - Generic interface for client bundling."""
 
     @staticmethod
-    def get_client_bundle_builder(**kwargs: Any) -> Any:  # noqa: ANN401
+    def get_client_bundle_builder(**kwargs: Any) -> ClientBundleBuilder:  # noqa: ANN401
         """Get the client bundle builder instance."""
         from jaclang.runtimelib.client_bundle import ClientBundleBuilder
 
@@ -1461,7 +1462,7 @@ class JacClientBundle:
         module: types.ModuleType,
         force: bool = False,
         **kwargs: Any,  # noqa: ANN401
-    ) -> Any:  # noqa: ANN401
+    ) -> ClientBundle:
         """Build a client bundle for the supplied module."""
         builder = JacMachineInterface.get_client_bundle_builder(**kwargs)
         return builder.build(module, force=force)
