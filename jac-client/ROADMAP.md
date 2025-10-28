@@ -1,4 +1,9 @@
-1. Multiple file handling
+1. Relative path resolving - 
 2. Bundler Plugin
-2. Dev mode with HRM
-3. OSP in FE
+
+4. Dev mode with HRM
+5. OSP in FE
+
+
+---
+3. Library agnostic
