@@ -27,7 +27,7 @@ class RouterTests(TestCase):
         bundle = builder.build(module)
 
         # Check that router functions are included
-        self.assertIn("function createRouter(", bundle.code)
+        self.assertIn("function initRouter(", bundle.code)
         self.assertIn("function Route(", bundle.code)
         self.assertIn("function Link(", bundle.code)
         self.assertIn("function navigate(", bundle.code)
