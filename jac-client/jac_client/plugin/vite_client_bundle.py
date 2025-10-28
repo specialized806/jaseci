@@ -85,27 +85,37 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                         transitive_imports: set[str] = set()
                         if imported_mod and imported_mod.gen.client_manifest:
                             # Process transitive imports (imports from the imported module)
-                            for sub_import_name, sub_import_path in imported_mod.gen.client_manifest.imports.items():
+                            for (
+                                sub_import_name,
+                                sub_import_path,
+                            ) in imported_mod.gen.client_manifest.imports.items():
                                 bundled_module_names.add(sub_import_name)
                                 transitive_imports.add(sub_import_name)
 
                                 # Recursively include the transitive import in the bundle
                                 sub_import_path_obj = PathLib(sub_import_path)
-                                if sub_import_path_obj.suffix == ".jac" and sub_import_path_obj.exists():
+                                if (
+                                    sub_import_path_obj.suffix == ".jac"
+                                    and sub_import_path_obj.exists()
+                                ):
                                     try:
-                                        sub_compiled_js, _ = self._compile_to_js(sub_import_path_obj)
-                                        import_pieces.append(f"// Imported .jac module: {sub_import_name}")
+                                        sub_compiled_js, _ = self._compile_to_js(
+                                            sub_import_path_obj
+                                        )
+                                        import_pieces.append(
+                                            f"// Imported .jac module: {sub_import_name}"
+                                        )
                                         import_pieces.append(sub_compiled_js)
                                         import_pieces.append("")
                                     except ClientBundleError:
                                         pass
 
                         # Strip import statements from the imported module
-                        compiled_js = self._strip_import_statements(compiled_js, transitive_imports)
-
-                        import_pieces.append(
-                            f"// Imported .jac module: {import_name}"
+                        compiled_js = self._strip_import_statements(
+                            compiled_js, transitive_imports
                         )
+
+                        import_pieces.append(f"// Imported .jac module: {import_name}")
                         import_pieces.append(compiled_js)
                         import_pieces.append("")
                     except ClientBundleError:
