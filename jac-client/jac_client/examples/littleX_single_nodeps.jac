@@ -38,7 +38,7 @@ node Profile {
     }
 
     can un_follow with un_follow_request entry {
-        
+
         current_profile = [root-->( ` ? Profile ) ];
         follow_edge = [edge current_profile[0]->:Follow :->self];
         del follow_edge[0] ;
