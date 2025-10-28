@@ -23,7 +23,6 @@ from jaclang.runtimelib.constructs import (
     WalkerArchetype,
 )
 from jaclang.runtimelib.machine import ExecutionContext, JacMachine as Jac
-from jaclang.runtimelib.vite_client_bundle import ViteClientBundleBuilder
     
 # Type Aliases
 JsonValue: TypeAlias = (
