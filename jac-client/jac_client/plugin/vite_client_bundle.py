@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import shutil
@@ -330,7 +331,5 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         temp_dir = project_dir / "temp"
 
         if temp_dir.exists():
-            try:
+            with contextlib.suppress(OSError):
                 shutil.rmtree(temp_dir)
-            except OSError:
-                pass  # Ignore errors during cleanup
