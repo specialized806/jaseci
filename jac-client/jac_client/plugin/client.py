@@ -1,7 +1,9 @@
 from jaclang.runtimelib.machine import (
+    JacMachine as Jac,
     hookimpl,
 )
 import types
+from pathlib import Path
 from .vite_client_bundle import ViteClientBundleBuilder
 from jaclang.runtimelib.client_bundle import ClientBundle
 
@@ -13,7 +15,14 @@ class JacClient:
     @hookimpl
     def get_client_bundle_builder() -> ViteClientBundleBuilder:
         """Get the client bundle builder instance."""
-        return ViteClientBundleBuilder()
+        base_path = Path(Jac.base_path_dir)
+        package_json_path = base_path / "package.json"
+        output_dir = base_path / "static" / "client" / "js"
+
+        return ViteClientBundleBuilder(
+            vite_package_json=package_json_path,
+            vite_output_dir=output_dir,
+        )
 
     @staticmethod
     @hookimpl
