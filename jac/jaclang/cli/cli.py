@@ -728,84 +728,85 @@ def create_jac_app(name: str) -> None:
         jac create_jac_app my-jac-project
     """
     if not name:
-        print("Error: Project name is required. Use --name=your-project-name", file=sys.stderr)
+        print(
+            "Error: Project name is required. Use --name=your-project-name",
+            file=sys.stderr,
+        )
         exit(1)
-    
+
     # Validate project name (basic npm package name validation)
-    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
-        print("Error: Project name must contain only letters, numbers, hyphens, and underscores", file=sys.stderr)
+    if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+        print(
+            "Error: Project name must contain only letters, numbers, hyphens, and underscores",
+            file=sys.stderr,
+        )
         exit(1)
-    
+
     print(f"Creating new Jac application: {name}")
-    
+
     # Create project directory in current working directory
     project_path = os.path.join(os.getcwd(), name)
-    
+
     if os.path.exists(project_path):
-        print(f"Error: Directory '{name}' already exists in current location", file=sys.stderr)
+        print(
+            f"Error: Directory '{name}' already exists in current location",
+            file=sys.stderr,
+        )
         exit(1)
-    
+
     os.makedirs(project_path, exist_ok=True)
-    
+
     try:
         # Change to project directory
         original_cwd = os.getcwd()
         os.chdir(project_path)
-        
+
         # Initialize npm package
         print("Initializing npm package...")
-        npm_init_cmd = [
-            "npm", "init", "-y"
-        ]
+        npm_init_cmd = ["npm", "init", "-y"]
         subprocess.run(npm_init_cmd, capture_output=True, text=True, check=True)
-        
+
         # Read the generated package.json
         package_json_path = os.path.join(project_path, "package.json")
         with open(package_json_path, "r") as f:
             package_data = json.load(f)
-        
+
         # create temp folder
         temp_folder = os.path.join(project_path, "temp")
         os.makedirs(temp_folder, exist_ok=True)
-        
+
         # create static/client/js folder
         client_js_folder = os.path.join(project_path, "static", "client", "js")
         os.makedirs(client_js_folder, exist_ok=True)
-        
+
         # Update package.json with Jac-specific configuration
-        package_data.update({
-            "name": name,
-            "description": f"Jac application: {name}",
-            "type": "module",
-            "scripts": {
-                "build": "vite build",
-                "dev": "vite dev",
-                "preview": "vite preview"
-            },
-            "devDependencies": {
-                "vite": "^5.0.0"
-            },
-            "dependencies": {
-                "react": "^18.2.0",
-                "react-dom": "^18.2.0"
+        package_data.update(
+            {
+                "name": name,
+                "description": f"Jac application: {name}",
+                "type": "module",
+                "scripts": {
+                    "build": "vite build",
+                    "dev": "vite dev",
+                    "preview": "vite preview",
+                },
+                "devDependencies": {"vite": "^5.0.0"},
+                "dependencies": {"react": "^18.2.0", "react-dom": "^18.2.0"},
             }
-        })
-        
+        )
+
         # Write updated package.json
         with open(package_json_path, "w") as f:
             json.dump(package_data, f, indent=2)
-        
+
         print("Installing Vite...")
         # Install Vite
         npm_install_cmd = ["npm", "install"]
         subprocess.run(npm_install_cmd, capture_output=True, text=True, check=True)
-        
+
         # Create basic project structure
         print("Setting up project structure...")
-        
-        
 
-        
         # Create a basic Jac file
         main_jac_content = """
 cl import from jac:client_runtime {
@@ -872,10 +873,10 @@ cl def jac_app() -> any {
 }
 
         """
-        
+
         with open(os.path.join(project_path, "app.jac"), "w") as f:
             f.write(main_jac_content)
-        
+
         # Create README.md
         readme_content = f"""# {name}
 
@@ -889,19 +890,19 @@ cl def jac_app() -> any {
 
         Happy coding with Jac!
         """
-        
+
         with open(os.path.join(project_path, "README.md"), "w") as f:
             f.write(readme_content)
-        
+
         # Return to original directory
         os.chdir(original_cwd)
-        
+
         print(f"✅ Successfully created Jac application '{name}'!")
         print(f"📁 Project location: {os.path.abspath(project_path)}")
         print("\nNext steps:")
         print(f"  cd {name}")
         print("  jac serve app.jac")
-        
+
     except subprocess.CalledProcessError as e:
         # Return to original directory on error
         os.chdir(original_cwd)

@@ -10,7 +10,7 @@
                 padding: 20px;
                 background-color: #f5f5f5;
             }
-            
+
             .dev-banner {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
@@ -20,7 +20,7 @@
                 font-weight: bold;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            
+
             .dev-info {
                 background: white;
                 border: 1px solid #e1e8ed;
@@ -30,7 +30,7 @@
                 font-size: 14px;
                 color: #666;
             }
-            
+
             #__jac_root {
                 background: white;
                 border-radius: 8px;
@@ -43,10 +43,10 @@
         <div class="dev-banner">
             🚀 Jac Development Mode - Hot Module Replacement Active
         </div>
-        
-        
+
+
         <div id="__jac_root"></div>
-        
+
         <!-- Jac Hydration Configuration -->
         <script id="__jac_init__" type="application/json">
             {
@@ -66,14 +66,14 @@
                 ]
             }
         </script>
-        
+
         <!-- Development Entry Point -->
         <script type="module" src="/dev_entry.js"></script>
-        
+
         <script>
             // Development-specific logging
             console.log('[Jac Dev] HTML loaded, waiting for module...');
-            
+
             // Add development helpers to global scope
             window.jacDev = {
                 version: '1.0.0',

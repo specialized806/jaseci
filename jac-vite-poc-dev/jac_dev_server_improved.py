@@ -11,18 +11,36 @@ APP_LOGIC_FILE = "app_logic.js"
 RUNTIME_FILE = "runtime.js"
 PACKAGE_JSON_FILE = "package.json"
 JAC_CLIENT_MODULE_NAME = "littleX_single_nodeps"
-# List all functions that need to be registered (same as production) 
+# List all functions that need to be registered (same as production)
 client_functions = [
-    "navigate_to", "render_app", "get_current_route", "handle_popstate", 
-    "init_router", "TweetCard", "like_tweet_action", "FeedView", 
-    "LoginForm", "handle_login", "SignupForm", "go_to_login", 
-    "go_to_signup", "go_to_home", "go_to_profile", "handle_signup", 
-    "logout_action", "App", "get_view_for_route", "HomeViewLoader", 
-    "load_home_view", "build_nav_bar", "HomeView", "ProfileView", 
-    "littlex_app"
+    "navigate_to",
+    "render_app",
+    "get_current_route",
+    "handle_popstate",
+    "init_router",
+    "TweetCard",
+    "like_tweet_action",
+    "FeedView",
+    "LoginForm",
+    "handle_login",
+    "SignupForm",
+    "go_to_login",
+    "go_to_signup",
+    "go_to_home",
+    "go_to_profile",
+    "handle_signup",
+    "logout_action",
+    "App",
+    "get_view_for_route",
+    "HomeViewLoader",
+    "load_home_view",
+    "build_nav_bar",
+    "HomeView",
+    "ProfileView",
+    "littlex_app",
 ]
 
-DEV_ENTRY_FILE = "dev_entry.js"      # Development entry point
+DEV_ENTRY_FILE = "dev_entry.js"  # Development entry point
 VITE_CONFIG_FILE = "vite.config.js"  # Temporary Vite config
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 3000
@@ -34,12 +52,11 @@ def create_dev_entry(app_logic_path: Path, runtime_path: Path, output_path: Path
     with Jac runtime registration, similar to production but optimized for dev.
     """
     print("--- 1. Creating Development Entry Point ---")
-    
+
     try:
         # Read files
         runtime_content = runtime_path.read_text(encoding="utf-8")
-        app_logic_content = app_logic_path.read_text(encoding="utf-8")        
-
+        app_logic_content = app_logic_path.read_text(encoding="utf-8")
 
         # Create development-specific initialization
         dev_init_script = f"""
@@ -121,19 +138,20 @@ if (!document.getElementById('__jac_init__')) {{
         print(f"❌ An unexpected error during file combination occurred: {e}")
         return False
 
+
 def setup_dev_html():
     """
     Copy the development HTML template to index.html for Vite to serve.
     """
     print("\n--- 2. Setting up Development HTML ---")
-    
+
     dev_html_path = Path("index_dev.html")
     main_html_path = Path("index.html")
-    
+
     if not dev_html_path.exists():
         print(f"❌ Development HTML template not found: {dev_html_path}")
         return False
-    
+
     try:
         # Copy dev HTML to main HTML for Vite to serve
         dev_html_content = dev_html_path.read_text(encoding="utf-8")
@@ -144,14 +162,15 @@ def setup_dev_html():
         print(f"❌ Error setting up HTML: {e}")
         return False
 
+
 def create_vite_config(entry_file: Path, config_file: Path):
     """
     Generates a Vite config optimized for development with HMR and proper module resolution.
     """
     print("\n--- 3. Generating Vite Development Configuration ---")
-    
+
     entry_name = entry_file.as_posix()
-    
+
     config_content = f"""
 import {{ defineConfig }} from 'vite';
 import {{ resolve }} from 'path';
@@ -159,7 +178,7 @@ import {{ resolve }} from 'path';
 export default defineConfig({{
   // Development-specific configuration
   root: '.',
-  
+
   build: {{
     outDir: 'dist',
     rollupOptions: {{
@@ -170,7 +189,7 @@ export default defineConfig({{
     // Keep function names for easier debugging
     minify: false,
   }},
-  
+
   // Development server configuration
   server: {{
     host: 'localhost',
@@ -181,25 +200,25 @@ export default defineConfig({{
       overlay: true,
     }},
   }},
-  
+
   // Module resolution
   resolve: {{
     alias: {{
       // No alias needed since we're combining files directly
     }},
   }},
-  
+
   // Development optimizations
   optimizeDeps: {{
     // Force re-optimization on changes
     force: true,
   }},
-  
+
   // Better error reporting
   logLevel: 'info',
 }});
 """
-    
+
     try:
         config_file.write_text(config_content, encoding="utf-8")
         print(f"✅ Development Vite config created: {config_file.name}")
@@ -208,18 +227,26 @@ export default defineConfig({{
         print(f"❌ Error creating config file: {e}")
         return False
 
+
 def run_vite_dev(config_file: Path, host: str, port: int):
     """
     Executes the Vite development server with proper error handling.
     """
     print("\n--- 4. Starting Vite Development Server ---")
-    
+
     try:
-        command = ["npx", "vite", "dev", 
-                   "--config", config_file.as_posix(), 
-                   "--host", host, 
-                   "--port", str(port)]
-        
+        command = [
+            "npx",
+            "vite",
+            "dev",
+            "--config",
+            config_file.as_posix(),
+            "--host",
+            host,
+            "--port",
+            str(port),
+        ]
+
         print(f"Executing: {' '.join(command)}")
         print(f"🚀 Development server starting at http://{host}:{port}/")
         print("📝 Hot Module Replacement (HMR) enabled")
@@ -229,7 +256,7 @@ def run_vite_dev(config_file: Path, host: str, port: int):
 
         # Execute the command
         subprocess.run(command, check=True)
-        
+
     except subprocess.CalledProcessError as e:
         print(f"\n❌ Vite Dev Server failed with exit code {e.returncode}.")
         print("💡 Make sure 'npm install' has been run to install Vite.")
@@ -241,6 +268,7 @@ def run_vite_dev(config_file: Path, host: str, port: int):
         print(f"\n❌ An unexpected error during server execution: {e}")
         return False
 
+
 def clean_up_files(*files):
     """
     Removes temporary files created during development.
@@ -250,6 +278,7 @@ def clean_up_files(*files):
         if file_path.exists():
             file_path.unlink()
             print(f"🧹 Removed {file_path.name}")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -272,9 +301,9 @@ def main():
         action="store_true",
         help="Don't clean up temporary files on exit (useful for debugging)",
     )
-    
+
     args = parser.parse_args()
-    
+
     dev_entry_path = Path(DEV_ENTRY_FILE)
     vite_config_path = Path(VITE_CONFIG_FILE)
     app_logic_path = Path(APP_LOGIC_FILE)
@@ -306,7 +335,7 @@ def main():
 
         # 4. Run development server
         success = run_vite_dev(vite_config_path, args.host, args.port)
-        
+
         if not success:
             sys.exit(1)
 
@@ -319,18 +348,22 @@ def main():
                 # Check if we have a backup or need to restore from git
                 try:
                     # Try to restore from git if available
-                    subprocess.run(["git", "checkout", "--", "index.html"], 
-                                 capture_output=True, check=False)
+                    subprocess.run(
+                        ["git", "checkout", "--", "index.html"],
+                        capture_output=True,
+                        check=False,
+                    )
                     print("🔄 Restored original index.html")
                 except:
                     print("⚠️  Could not restore original index.html")
-            
+
             clean_up_files(dev_entry_path, vite_config_path)
         else:
             print("\n🔧 Temporary files preserved (--no-cleanup specified)")
             print(f"   Entry file: {dev_entry_path}")
             print(f"   Config file: {vite_config_path}")
             print(f"   HTML file: index.html (modified for dev)")
+
 
 if __name__ == "__main__":
     main()

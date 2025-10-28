@@ -23,7 +23,7 @@ from jaclang.runtimelib.constructs import (
     WalkerArchetype,
 )
 from jaclang.runtimelib.machine import ExecutionContext, JacMachine as Jac
-    
+
 # Type Aliases
 JsonValue: TypeAlias = (
     None | str | int | float | bool | list["JsonValue"] | dict[str, "JsonValue"]

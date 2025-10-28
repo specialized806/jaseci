@@ -15,7 +15,7 @@ def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
             childrenArray = [children];
         }
     }
-    
+
     # Filter out null/undefined children
     reactChildren = [];
     for child in childrenArray {
@@ -23,7 +23,7 @@ def __jacJsx(tag: any, props: dict = {}, children: any = []) -> any {
             reactChildren.push(child);
         }
     }
-    
+
     if reactChildren.length > 0 {
         args = [tag, props];
         for child in reactChildren {
@@ -234,7 +234,7 @@ def __jacRerenderComponent(componentId: any) -> None {
         __jacReactiveContext.currentComponent = componentId;
 
         component = rootComponent();
-        
+
         # FIXED: Use the stored React 18 root's render method
         reactRoot.render(component);
 
@@ -682,10 +682,10 @@ def __jacApplyRender(renderer: any, container: any, node: any) -> None {
         return;
     }
     try {
-        # This function is now mostly legacy/fallback. 
+        # This function is now mostly legacy/fallback.
         # The main hydration path in __jacHydrateFromDom handles React 18.
         if renderer {
-            renderer(node, container); 
+            renderer(node, container);
         } else {
             console.warn("[Jac] No JSX renderer available.");
         }
@@ -772,10 +772,10 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
     if not renderer {
         console.warn("[Jac] renderJsxTree is not available in client bundle");
     }
-    
+
     # FIX: Declare reactRoot in the function scope
     let reactRoot = None;
-    
+
     # 1. Create and store the React 18 root instance
     try {
         reactRoot = ReactDOM.createRoot(rootEl);
@@ -787,7 +787,7 @@ def __jacHydrateFromDom(defaultModuleName: str) -> None {
 
     # 2. Initial render - call the root component
     value = __jacReactiveContext.rootComponent();
-    
+
     # 3. Use the stored root for the initial render (hydration)
     if value and __isObject(value) and __isFunction(value.then) {
         value.then(

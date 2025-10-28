@@ -5,6 +5,7 @@ import types
 from .vite_client_bundle import ViteClientBundleBuilder
 from jaclang.runtimelib.client_bundle import ClientBundle
 
+
 class JacClient:
     """Jac Client."""
 
