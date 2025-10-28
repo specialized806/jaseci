@@ -1,11 +1,13 @@
+import types
+from pathlib import Path
+
+from jaclang.runtimelib.client_bundle import ClientBundle
 from jaclang.runtimelib.machine import (
     JacMachine as Jac,
     hookimpl,
 )
-import types
-from pathlib import Path
+
 from .vite_client_bundle import ViteClientBundleBuilder
-from jaclang.runtimelib.client_bundle import ClientBundle
 
 
 class JacClient:
