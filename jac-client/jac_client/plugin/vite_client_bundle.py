@@ -78,7 +78,9 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                     # For .jac files, compile to JS
                     try:
                         compiled_js = self._compile_to_js(import_path_obj)
-                        import_pieces.append(f"// Imported .jac module changed: {import_name}")
+                        import_pieces.append(
+                            f"// Imported .jac module changed: {import_name}"
+                        )
                         import_pieces.append(compiled_js)
                         import_pieces.append("")
                     except ClientBundleError:
@@ -88,7 +90,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         # Compile main module and strip import statements for bundled modules
         module_js = self._compile_to_js(module_path)
         module_js = self._strip_import_statements(module_js, bundled_module_names)
-        
+
         # compile runtime to js
         runtime_js = self._compile_to_js(self.runtime_path)
         import_pieces.append(f"// Imported runtime module: {self.runtime_path}")
