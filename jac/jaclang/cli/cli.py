@@ -706,6 +706,10 @@ def js(filename: str) -> None:
         exit(1)
 
 
+# Register core commands first (before plugins load)
+# These can be overridden by plugins with higher priority
+
+
 @cmd_registry.register
 def serve(
     filename: str,
