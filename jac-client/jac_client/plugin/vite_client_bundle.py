@@ -75,11 +75,36 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                             f"// Warning: Could not find {import_path}"
                         )
                 elif import_path_obj.suffix == ".jac":
-                    # For .jac files, compile to JS
+                    # For .jac files, compile to JS and recursively process transitive imports
                     try:
-                        compiled_js = self._compile_to_js(import_path_obj)
+                        from pathlib import Path as PathLib
+
+                        compiled_js, imported_mod = self._compile_to_js(import_path_obj)
+
+                        # Get the manifest of the imported module to recursively process its imports
+                        transitive_imports: set[str] = set()
+                        if imported_mod and imported_mod.gen.client_manifest:
+                            # Process transitive imports (imports from the imported module)
+                            for sub_import_name, sub_import_path in imported_mod.gen.client_manifest.imports.items():
+                                bundled_module_names.add(sub_import_name)
+                                transitive_imports.add(sub_import_name)
+
+                                # Recursively include the transitive import in the bundle
+                                sub_import_path_obj = PathLib(sub_import_path)
+                                if sub_import_path_obj.suffix == ".jac" and sub_import_path_obj.exists():
+                                    try:
+                                        sub_compiled_js, _ = self._compile_to_js(sub_import_path_obj)
+                                        import_pieces.append(f"// Imported .jac module: {sub_import_name}")
+                                        import_pieces.append(sub_compiled_js)
+                                        import_pieces.append("")
+                                    except ClientBundleError:
+                                        pass
+
+                        # Strip import statements from the imported module
+                        compiled_js = self._strip_import_statements(compiled_js, transitive_imports)
+
                         import_pieces.append(
-                            f"// Imported .jac module changed: {import_name}"
+                            f"// Imported .jac module: {import_name}"
                         )
                         import_pieces.append(compiled_js)
                         import_pieces.append("")
@@ -88,11 +113,11 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                             f"// Warning: Could not compile {import_path}"
                         )
         # Compile main module and strip import statements for bundled modules
-        module_js = self._compile_to_js(module_path)
+        module_js, _ = self._compile_to_js(module_path)
         module_js = self._strip_import_statements(module_js, bundled_module_names)
 
         # compile runtime to js
-        runtime_js = self._compile_to_js(self.runtime_path)
+        runtime_js, _ = self._compile_to_js(self.runtime_path)
         import_pieces.append(f"// Imported runtime module: {self.runtime_path}")
         import_pieces.append(runtime_js)
         import_pieces.append("")

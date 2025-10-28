@@ -111,9 +111,32 @@ class ClientBundleBuilder:
                             f"// Warning: Could not find {import_path}"
                         )
                 elif import_path_obj.suffix == ".jac":
-                    # For .jac files, compile to JS
+                    # For .jac files, compile to JS and recursively process transitive imports
                     try:
-                        compiled_js = self._compile_to_js(import_path_obj)
+                        compiled_js, imported_mod = self._compile_to_js(import_path_obj)
+
+                        # Get the manifest of the imported module to recursively process its imports
+                        transitive_imports: set[str] = set()
+                        if imported_mod and imported_mod.gen.client_manifest:
+                            # Process transitive imports (imports from the imported module)
+                            for sub_import_name, sub_import_path in imported_mod.gen.client_manifest.imports.items():
+                                bundled_module_names.add(sub_import_name)
+                                transitive_imports.add(sub_import_name)
+
+                                # Recursively include the transitive import in the bundle
+                                sub_import_path_obj = Path(sub_import_path)
+                                if sub_import_path_obj.suffix == ".jac" and sub_import_path_obj.exists():
+                                    try:
+                                        sub_compiled_js, _ = self._compile_to_js(sub_import_path_obj)
+                                        import_pieces.append(f"// Imported .jac module: {sub_import_name}")
+                                        import_pieces.append(sub_compiled_js)
+                                        import_pieces.append("")
+                                    except ClientBundleError:
+                                        pass
+
+                        # Strip import statements from the imported module
+                        compiled_js = self._strip_import_statements(compiled_js, transitive_imports)
+
                         import_pieces.append(f"// Imported .jac module: {import_name}")
                         import_pieces.append(compiled_js)
                         import_pieces.append("")
@@ -123,7 +146,7 @@ class ClientBundleBuilder:
                         )
 
         # Compile main module and strip import statements for bundled modules
-        module_js = self._compile_to_js(module_path)
+        module_js, _ = self._compile_to_js(module_path)
         module_js = self._strip_import_statements(module_js, bundled_module_names)
 
         client_exports = sorted(dict.fromkeys(manifest.exports)) if manifest else []
@@ -172,8 +195,12 @@ class ClientBundleBuilder:
             hash=bundle_hash,
         )
 
-    def _compile_to_js(self, source_path: Path) -> str:
-        """Compile the provided Jac file into JavaScript."""
+    def _compile_to_js(self, source_path: Path) -> tuple[str, Any]:
+        """Compile the provided Jac file into JavaScript.
+
+        Returns:
+            Tuple of (js_code, module_info) where module_info contains the client_manifest
+        """
         program = JacProgram()
         mod = program.compile(str(source_path))
         if program.errors_had:
@@ -181,7 +208,38 @@ class ClientBundleBuilder:
             raise ClientBundleError(
                 f"Failed to compile '{source_path}' for client bundle:\n{formatted}"
             )
-        return mod.gen.js or ""
+        return mod.gen.js or "", mod
+
+    @staticmethod
+    def _convert_to_js_import_path(path: str) -> str:
+        """Convert Jac-style import path to JavaScript-style import path."""
+        if not path:
+            return path
+
+        # Count leading dots
+        dot_count = 0
+        for char in path:
+            if char == ".":
+                dot_count += 1
+            else:
+                break
+
+        # If path starts with dots (relative import)
+        if dot_count > 0:
+            # Extract the path after the dots
+            rest_of_path = path[dot_count:]
+
+            # For single dot, we need ./
+            if dot_count == 1:
+                return "./" + rest_of_path
+            # For double dot, we need ../
+            elif dot_count == 2:
+                return "../" + rest_of_path
+            # For triple dot and more, add extra ../ for each dot beyond 1
+            else:
+                return ("../" * (dot_count - 1)) + rest_of_path
+
+        return path
 
     @staticmethod
     def _strip_import_statements(js_code: str, bundled_modules: set[str]) -> str:
@@ -196,6 +254,13 @@ class ClientBundleBuilder:
         """
         import re
 
+        # Convert bundled module names to their JS import paths for matching
+        bundled_js_paths = {
+            ClientBundleBuilder._convert_to_js_import_path(mod) for mod in bundled_modules
+        }
+        # Also keep the original names for backward compatibility
+        all_bundled = bundled_modules | bundled_js_paths
+
         lines = js_code.split("\n")
         filtered_lines = []
 
@@ -207,7 +272,7 @@ class ClientBundleBuilder:
             if import_match:
                 module_name = import_match.group(1)
                 # Skip this line if the module is being bundled
-                if module_name in bundled_modules:
+                if module_name in all_bundled:
                     continue
             filtered_lines.append(line)
 
