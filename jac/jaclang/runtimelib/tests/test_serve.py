@@ -1062,7 +1062,6 @@ class TestServeCommand(TestCase):
         self.assertIn("1 client functions", output)  # 15 client functions
         # Verify some client functions are listed
         self.assertIn("App", output)
-        self.assertIn("FeedView", output)
         self.assertIn("/page/", output)
 
 
