@@ -9,7 +9,7 @@ This document provides a summary of new features, improvements, and bug fixes in
   - `get_client_bundle_builder()`: Returns the client bundle builder instance, allowing plugins to provide custom bundler implementations
   - `build_client_bundle()`: Builds client bundles for modules, can be overridden by plugins to use custom bundling strategies
 
-- **ViteBundlerPlugin (jac-client)**: Official Vite-based bundler plugin providing production-ready JavaScript bundling with HMR, tree shaking, code splitting, TypeScript support, and asset optimization. Implements the `build_client_bundle()` hook to replace default bundling with Vite's optimized build system. Install `jac-client` library with `pip install jac-client` and use it for automatic Vite-powered client bundle generation.
+- **ViteBundlerPlugin (jac-client)**: Official Vite-based bundler plugin providing production-ready JavaScript bundling with HMR, tree shaking, code splitting, TypeScript support, and asset optimization. Implements the `build_client_bundle()` hook to replace default bundling with Vite's optimized build system. Install `jac-client` library from the source and use it for automatic Vite-powered client bundle generation.
 
 ## jaclang 0.8.10 / jac-cloud 0.2.10 / byllm 0.4.5
 
