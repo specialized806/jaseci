@@ -6,8 +6,8 @@
 
 ----Runtime---
 [DONE]
-1. Basic JSX factory and React.createElement integration - Done 
-    a.(supports spread props, fragments) - Done 
+1. Basic JSX factory and React.createElement integration - Done
+    a.(supports spread props, fragments) - Done
 2. React 18 createRoot rendering - Done
 3. Custom signal-based state management (createSignal, createState) - [Improvement needed: computed signals, deep updates]
 4. Effects system (createEffect with dependency tracking) - [Improvement needed: cleanup functions, explicit deps]
