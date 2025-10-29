@@ -5,6 +5,12 @@ This document provides a summary of new features, improvements, and bug fixes in
 
 ## jaclang 0.9.0 / jac-cloud 0.2.11 / byllm 0.4.6 (Unreleased)
 
+- **Client Bundler Plugin Support**: Extended the existing `pluggy`-based plugin architecture to support custom client bundling implementations. Two static methods were added to `JacMachineInterface` to enable client bundler plugins:
+  - `get_client_bundle_builder()`: Returns the client bundle builder instance, allowing plugins to provide custom bundler implementations
+  - `build_client_bundle()`: Builds client bundles for modules, can be overridden by plugins to use custom bundling strategies
+
+- **ViteBundlerPlugin (jac-client)**: Official Vite-based bundler plugin providing production-ready JavaScript bundling with HMR, tree shaking, code splitting, TypeScript support, and asset optimization. Implements the `build_client_bundle()` hook to replace default bundling with Vite's optimized build system. Install `jac-client` and register the plugin to enable automatic Vite-powered client bundle generation.
+
 ## jaclang 0.8.10 / jac-cloud 0.2.10 / byllm 0.4.5
 
 - **Frontend + Backend with `cl` Keyword (Experimental)**: Introduced a major experimental feature enabling unified frontend and backend development in a single Jac codebase. The new `cl` (client) keyword marks declarations for client-side compilation, creating a dual compilation pipeline that generates both Python (server) and pure JavaScript (client) code. Includes full JSX language integration for building modern web UIs, allowing developers to write React-style components directly in Jac with seamless interoperability between server and client code.
