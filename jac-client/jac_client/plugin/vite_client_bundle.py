@@ -15,6 +15,7 @@ from jaclang.runtimelib.client_bundle import (
     ClientBundle,
     ClientBundleBuilder,
     ClientBundleError,
+    ProcessedImports,
 )
 
 
@@ -40,6 +41,75 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         self.vite_output_dir = vite_output_dir
         self.vite_package_json = vite_package_json
         self.vite_minify = vite_minify
+
+    def _process_imports(self, manifest, module_path: Path) -> ProcessedImports:  # type: ignore[override]
+        """Process client imports for Vite bundling.
+
+        Only mark modules as bundled when we actually inline their code (.jac files we compile
+        and local .js files we embed). Bare package specifiers (e.g., "antd") are left as real
+        ES imports so Vite can resolve and bundle them.
+        """
+        import_pieces: list[str] = []
+        bundled_module_names: set[str] = set()
+
+        if manifest and manifest.imports:
+            for import_name, import_path in manifest.imports.items():
+                import_path_obj = Path(import_path)
+
+                if import_path_obj.suffix == ".js":
+                    # Inline local JS files and mark as bundled
+                    try:
+                        with open(import_path_obj, "r", encoding="utf-8") as f:
+                            js_code = f.read()
+                            import_pieces.append(f"// Imported .js module: {import_name}")
+                            import_pieces.append(js_code)
+                            import_pieces.append("")
+                            bundled_module_names.add(import_name)
+                    except FileNotFoundError:
+                        import_pieces.append(f"// Warning: Could not find {import_path}")
+
+                elif import_path_obj.suffix == ".jac":
+                    # Compile .jac imports and include transitive .jac imports
+                    try:
+                        compiled_js, imported_mod = self._compile_to_js(import_path_obj)
+
+                        transitive_imports: set[str] = set()
+                        if imported_mod and imported_mod.gen.client_manifest:
+                            for (
+                                sub_import_name,
+                                sub_import_path,
+                            ) in imported_mod.gen.client_manifest.imports.items():
+                                transitive_imports.add(sub_import_name)
+
+                                sub_import_path_obj = Path(sub_import_path)
+                                if sub_import_path_obj.suffix == ".jac" and sub_import_path_obj.exists():
+                                    try:
+                                        sub_compiled_js, _ = self._compile_to_js(sub_import_path_obj)
+                                        import_pieces.append(
+                                            f"// Imported .jac module: {sub_import_name}"
+                                        )
+                                        import_pieces.append(sub_compiled_js)
+                                        import_pieces.append("")
+                                        bundled_module_names.add(sub_import_name)
+                                    except ClientBundleError:
+                                        pass
+
+                        # Strip bundled imports from the compiled JS for this module
+                        compiled_js = self._strip_import_statements(compiled_js, transitive_imports)
+
+                        import_pieces.append(f"// Imported .jac module: {import_name}")
+                        import_pieces.append(compiled_js)
+                        import_pieces.append("")
+                        bundled_module_names.add(import_name)
+                    except ClientBundleError:
+                        import_pieces.append(f"// Warning: Could not compile {import_path}")
+
+                else:
+                    # Non .jac/.js entries (likely bare specifiers) should be handled by Vite.
+                    # Do not inline or mark as bundled so their import lines are preserved.
+                    pass
+
+        return ProcessedImports(import_pieces, bundled_module_names)
 
     def _compile_bundle(
         self,
