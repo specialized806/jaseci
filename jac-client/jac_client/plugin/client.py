@@ -27,7 +27,7 @@ class JacClient:
             runtime_path=runtime_path,
             vite_package_json=package_json_path,
             vite_output_dir=output_dir,
-            vite_minify=False,
+            vite_minify=True,
         )
 
     @staticmethod

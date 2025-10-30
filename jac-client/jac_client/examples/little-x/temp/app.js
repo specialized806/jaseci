@@ -507,11 +507,7 @@ function __jacHydrateFromDom(defaultModuleName) {
   let moduleName = moduleCandidate ? moduleCandidate : fallbackModule;
   let registry = __jacEnsureRegistry();
   let modulesStore = registry.modules ? registry.modules : {};
-  console.log("moduleName", moduleName);
-  console.log("modulesStore", modulesStore);
-  console.log("modulesStoreSnapshot", JSON.stringify(modulesStore));
   let moduleRecord = __jacHasOwn(modulesStore, moduleName) ? modulesStore[moduleName] : null;
-  console.log("moduleRecord", moduleRecord);
   if (!moduleRecord) {
     console.error("[Jac] Client module not registered: " + moduleName);
     return;
