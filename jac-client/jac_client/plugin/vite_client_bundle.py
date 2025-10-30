@@ -321,7 +321,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         entry_name = entry_file.as_posix()
         output_dir_name = output_dir.as_posix()
         minify_setting = "true" if self.vite_minify else "false"
-        temp_dir_name = entry_file.parent.as_posix()
 
         return f"""
             import {{ defineConfig }} from 'vite';
