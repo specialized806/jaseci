@@ -635,3 +635,4 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
   }
   __jacEnsureHydration(moduleName);
 }
+export { Link, Route, RouteConfig, __getLocalStorage, __isFunction, __isObject, __jacApplyRender, __jacBuildOrderedArgs, __jacCallFunction, __jacEnsureHydration, __jacEnsureObjectGetPolyfill, __jacEnsureRegistry, __jacExecuteHydration, __jacFlushRenders, __jacGetDocument, __jacGetHashPath, __jacGlobalScope, __jacHasOwn, __jacHydrateFromDom, __jacJsx, __jacNotifySubscribers, __jacParseJsonObject, __jacRegisterClientModule, __jacRerenderComponent, __jacResolveRenderer, __jacResolveTarget, __jacRunEffect, __jacSafeCallTarget, __jacScheduleFlush, __jacScheduleRerender, __jacSpawn, __jacTrackDependency, __objectKeys, __removeLocalStorage, __setLocalStorage, createEffect, createSignal, createState, initRouter, jacIsLoggedIn, jacLogin, jacLogout, jacSignup, navigate, renderJsxTree, useRouter };
