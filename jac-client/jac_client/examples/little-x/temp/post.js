@@ -1,3 +1,21 @@
+import { Feed } from "./feed";
+import { Button } from "antd";
+function Post() {
+  return __jacJsx("div", {}, [__jacJsx("h1", {}, ["Post"]), __jacJsx(Feed, {}, []), __jacJsx(Button, {}, ["Click Me"])]);
+}
+
+            // --- GLOBAL EXPOSURE FOR VITE IIFE ---
+            // Expose functions globally so they're available on globalThis
+            const globalClientFunctions = ['Post'];
+            const globalFunctionMap = {
+    "Post": Post
+};
+            for (const funcName of globalClientFunctions) {
+                globalThis[funcName] = globalFunctionMap[funcName];
+            }
+            // --- END GLOBAL EXPOSURE ---
+        
+__jacRegisterClientModule("post", ["Post"], {});
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
 function __jacJsx(tag, props, children) {
@@ -506,7 +524,11 @@ function __jacHydrateFromDom(defaultModuleName) {
   let moduleName = moduleCandidate ? moduleCandidate : fallbackModule;
   let registry = __jacEnsureRegistry();
   let modulesStore = registry.modules ? registry.modules : {};
+  console.log("moduleName", moduleName);
+  console.log("modulesStore", modulesStore);
+  console.log("modulesStoreSnapshot", JSON.stringify(modulesStore));
   let moduleRecord = __jacHasOwn(modulesStore, moduleName) ? modulesStore[moduleName] : null;
+  console.log("moduleRecord", moduleRecord);
   if (!moduleRecord) {
     console.error("[Jac] Client module not registered: " + moduleName);
     return;
@@ -582,9 +604,6 @@ function __jacEnsureHydration(moduleName) {
       __jacExecuteHydration();
     }, {"once": true});
   }
-  if (documentRef.readyState !== "loading") {
-    __jacExecuteHydration();
-  }
 }
 function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
   __jacEnsureObjectGetPolyfill();
@@ -635,4 +654,4 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
   }
   __jacEnsureHydration(moduleName);
 }
-export { Link, Route, RouteConfig, __getLocalStorage, __isFunction, __isObject, __jacApplyRender, __jacBuildOrderedArgs, __jacCallFunction, __jacEnsureHydration, __jacEnsureObjectGetPolyfill, __jacEnsureRegistry, __jacExecuteHydration, __jacFlushRenders, __jacGetDocument, __jacGetHashPath, __jacGlobalScope, __jacHasOwn, __jacHydrateFromDom, __jacJsx, __jacNotifySubscribers, __jacParseJsonObject, __jacRegisterClientModule, __jacRerenderComponent, __jacResolveRenderer, __jacResolveTarget, __jacRunEffect, __jacSafeCallTarget, __jacScheduleFlush, __jacScheduleRerender, __jacSpawn, __jacTrackDependency, __objectKeys, __removeLocalStorage, __setLocalStorage, createEffect, createSignal, createState, initRouter, jacIsLoggedIn, jacLogin, jacLogout, jacSignup, navigate, renderJsxTree, useRouter };
+export { Post };

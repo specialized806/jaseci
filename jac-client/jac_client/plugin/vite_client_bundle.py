@@ -85,6 +85,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         is_root: bool = False,
         collected_exports: set[str] | None = None,
         collected_globals: dict[str, Any] | None = None,
+        runtime_js: str | None = None,
     ) -> None:
         """Recursively compile/copy .jac/.js imports to temp, skipping bundling.
 
@@ -134,8 +135,8 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             export_block = (
                 f"export {{ {', '.join(exports_list)} }};\n" if exports_list else ""
             )
-            runtime_import = 'import * as JacRuntime from "@client_runtime.js";\n'
-            combined_js = f"{runtime_import}{module_js}\n{exposure_js}\n{registration_js}\n{export_block}"
+
+            combined_js = f"{module_js}\n{exposure_js}\n{registration_js}\n{runtime_js}\n{export_block}"
             (self.vite_package_json.parent / "temp" / f"{module_path.stem}.js").write_text(combined_js, encoding="utf-8")
         else:
             mod = Jac.program.mod.hub.get(str(module_path))
@@ -158,13 +159,14 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                     is_root=False,
                     collected_exports=collected_exports,
                     collected_globals=collected_globals,
+                    runtime_js=runtime_js,
                 )
             elif path_obj.suffix == ".js":
-                # Copy local JS for Vite to pick up     
+                # Copy local JS for Vite to pick up
+                # FIX: Removed redundant JacRuntime import injection for local .js files.
                 try:
                     js_code = path_obj.read_text(encoding="utf-8")
-                    runtime_import = 'import * as JacRuntime from "@client_runtime.js";\n'
-                    (self.vite_package_json.parent / "temp" / path_obj.name).write_text(runtime_import + js_code, encoding="utf-8")
+                    (self.vite_package_json.parent / "temp" / path_obj.name).write_text(js_code, encoding="utf-8")
                 except FileNotFoundError:
                     pass
             else:
@@ -187,11 +189,12 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         
         # Compile runtime to JS and add to temp for Vite to consume
         runtime_js, mod= self._compile_to_js(self.runtime_path)
-    #    export the runtime js funtions
+        #    export the runtime js funtions
         runtime_export_block = (
                 f"export {{ {', '.join(mod.gen.client_manifest.exports)} }};\n" if mod.gen.client_manifest.exports else ""
             )
         (self.vite_package_json.parent / "temp" / "client_runtime.js").write_text(runtime_js + "\n" + runtime_export_block, encoding="utf-8")    
+        
         
         # Collect exports/globals across root and recursive deps
         collected_exports: set[str] = set(self._extract_client_exports(manifest))
@@ -204,6 +207,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             is_root=True,
             collected_exports=collected_exports,
             collected_globals=collected_globals,
+            runtime_js=runtime_js,
         )
 
         client_exports = sorted(collected_exports)
@@ -211,13 +215,14 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
 
         bundle_pieces = []
 
-
         # Add main module (without registration_js - we'll handle that in Jac init script)
         bundle_pieces.extend(
             [
+                "// Runtime module:",
+                runtime_js,
                 f"// Client module: {module.__name__}",
                 module_js,
-                "",
+                "",               
             ]
         )
 
@@ -274,9 +279,9 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
 
         # Create entry file with stitched content
         entry_file = temp_dir / "app.js"
-        # Ensure runtime is imported at top of entry
-        runtime_import = 'import * as JacRuntime from "@client_runtime.js";\n'
-        entry_content = runtime_import + "\n".join(piece for piece in bundle_pieces if piece is not None)
+        
+
+        entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
         entry_file.write_text(entry_content, encoding="utf-8")
 
         # Create Vite config in the project directory (where node_modules exists)
@@ -403,7 +408,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             for (const funcName of clientFunctions) {{
                 globalThis[funcName] = functionMap[funcName];
             }}
-            JacRuntime.__jacRegisterClientModule("{module_name}", clientFunctions, {globals_literal});
+            __jacRegisterClientModule("{module_name}", clientFunctions, {globals_literal});
             globalThis.start_app = {main_app_func};
             // Call the start function immediately if we're not hydrating from the server
             if (!document.getElementById('__jac_init__')) {{
@@ -469,5 +474,4 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         module_literal = json.dumps(module_name)
 
         # Use the registration function from client_runtime.jac
-        return f"JacRuntime.__jacRegisterClientModule({module_literal}, {functions_literal}, {globals_literal});"
-
+        return f"__jacRegisterClientModule({module_literal}, {functions_literal}, {globals_literal});"

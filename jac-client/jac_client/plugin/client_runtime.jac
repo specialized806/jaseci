@@ -836,10 +836,6 @@ def __jacEnsureHydration(moduleName: str) -> None {
             {"once": True}
         );
     }
-
-    if documentRef.readyState != "loading" {
-        __jacExecuteHydration();
-    }
 }
 
 def __jacRegisterClientModule(
@@ -891,6 +887,9 @@ def __jacRegisterClientModule(
     moduleRecord.functions = registeredFunctions;
     moduleRecord.globals = globalNames;
     moduleRecord.defaults = globalsMap;
+    
+
+    # 1. Ensure the module is written to the registry FIRST.
     registry.modules[moduleName] = moduleRecord;
 
     stateGlobals = registry.state.globals;
@@ -898,6 +897,7 @@ def __jacRegisterClientModule(
         stateGlobals[moduleName] = {};
     }
 
+    # 2. ONLY THEN, trigger the hydration/lookup process.
     __jacEnsureHydration(moduleName);
 }
 }

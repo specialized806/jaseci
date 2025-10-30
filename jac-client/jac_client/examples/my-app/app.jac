@@ -1,9 +1,5 @@
-# cl import from antd {
-#     Button
-# }
-cl import from .feed {
-    Feed
-}
+cl import from .post {Post}
+
 # Pages
 cl def HomeView() -> any {
     return <div
@@ -28,8 +24,9 @@ cl def HomeView() -> any {
                     "marginBottom": "20px"
                 }}>
                     Welcome to
-                    # <Button>OneLang</Button>
+                    <span style={{"color": "#007bff"}}>OneLang</span>
                 </h1>
+                <Post />
                 <p
                 style={{
                     "fontSize": "20px",
@@ -37,7 +34,6 @@ cl def HomeView() -> any {
                 }}>
                     One Language. One Stack. Zero Friction.
                 </p>
-                <Feed />
             </div>
 
             <div
