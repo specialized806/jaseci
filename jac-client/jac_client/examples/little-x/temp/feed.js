@@ -12,7 +12,7 @@ function Feed() {
                 globalThis[funcName] = globalFunctionMap[funcName];
             }
             // --- END GLOBAL EXPOSURE ---
-        
+
 __jacRegisterClientModule("feed", ["Feed"], {});
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";

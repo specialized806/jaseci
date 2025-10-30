@@ -887,7 +887,7 @@ def __jacRegisterClientModule(
     moduleRecord.functions = registeredFunctions;
     moduleRecord.globals = globalNames;
     moduleRecord.defaults = globalsMap;
-    
+
 
     # 1. Ensure the module is written to the registry FIRST.
     registry.modules[moduleName] = moduleRecord;

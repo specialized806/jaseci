@@ -50,7 +50,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         """
         # TODO: return pure js files seperately
         imported_js_modules: list[Path] = []
-        
 
         if manifest and manifest.imports:
             for import_name, import_path in manifest.imports.items():
@@ -59,7 +58,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 if import_path_obj.suffix == ".js":
                     # Inline local JS files and mark as bundled
                     try:
-                       
+
                         imported_js_modules.append(import_path_obj)
                     except FileNotFoundError:
                         imported_js_modules.append(None)
@@ -137,11 +136,13 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             )
 
             combined_js = f"{module_js}\n{exposure_js}\n{registration_js}\n{runtime_js}\n{export_block}"
-            (self.vite_package_json.parent / "temp" / f"{module_path.stem}.js").write_text(combined_js, encoding="utf-8")
+            (
+                self.vite_package_json.parent / "temp" / f"{module_path.stem}.js"
+            ).write_text(combined_js, encoding="utf-8")
         else:
             mod = Jac.program.mod.hub.get(str(module_path))
             manifest = mod.gen.client_manifest if mod else None
-        
+
         if not manifest or not manifest.imports:
             return
 
@@ -166,7 +167,9 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 # FIX: Removed redundant JacRuntime import injection for local .js files.
                 try:
                     js_code = path_obj.read_text(encoding="utf-8")
-                    (self.vite_package_json.parent / "temp" / path_obj.name).write_text(js_code, encoding="utf-8")
+                    (self.vite_package_json.parent / "temp" / path_obj.name).write_text(
+                        js_code, encoding="utf-8"
+                    )
                 except FileNotFoundError:
                     pass
             else:
@@ -183,14 +186,13 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         from jaclang.runtimelib.machine import JacMachine as Jac
 
         mod = Jac.program.mod.hub.get(str(module_path))
-        manifest = mod.gen.client_manifest if mod else None  
+        manifest = mod.gen.client_manifest if mod else None
 
         module_js, _ = self._compile_to_js(module_path)
-        
+
         # Compile runtime to JS and add to temp for Vite to consume
-        runtime_js, mod= self._compile_to_js(self.runtime_path)
-        
-        
+        runtime_js, mod = self._compile_to_js(self.runtime_path)
+
         # Collect exports/globals across root and recursive deps
         collected_exports: set[str] = set(self._extract_client_exports(manifest))
         client_globals_map = self._extract_client_globals(manifest, module)
@@ -217,7 +219,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 runtime_js,
                 f"// Client module: {module.__name__}",
                 module_js,
-                "",               
+                "",
             ]
         )
 
@@ -274,7 +276,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
 
         # Create entry file with stitched content
         entry_file = temp_dir / "app.js"
-        
 
         entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
         entry_file.write_text(entry_content, encoding="utf-8")
@@ -441,7 +442,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         if temp_dir.exists():
             with contextlib.suppress(OSError):
                 shutil.rmtree(temp_dir)
-                
+
     @staticmethod
     def _generate_registration_js(
         module_name: str,
