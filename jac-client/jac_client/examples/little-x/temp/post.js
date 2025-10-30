@@ -14,7 +14,7 @@ function Post() {
                 globalThis[funcName] = globalFunctionMap[funcName];
             }
             // --- END GLOBAL EXPOSURE ---
-        
+
 __jacRegisterClientModule("post", ["Post"], {});
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";

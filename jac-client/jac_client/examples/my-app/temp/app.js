@@ -668,7 +668,7 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
                 globalThis[funcName] = globalFunctionMap[funcName];
             }
             // --- END GLOBAL EXPOSURE ---
-        
+
 
             // --- JAC CLIENT INITIALIZATION SCRIPT ---
             // Expose functions globally for Jac runtime registration
@@ -690,4 +690,3 @@ function __jacRegisterClientModule(moduleName, clientFunctions, clientGlobals) {
                 globalThis.start_app();
             }
             // --- END JAC CLIENT INITIALIZATION SCRIPT ---
-        
