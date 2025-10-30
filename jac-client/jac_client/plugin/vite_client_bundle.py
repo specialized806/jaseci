@@ -189,11 +189,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         
         # Compile runtime to JS and add to temp for Vite to consume
         runtime_js, mod= self._compile_to_js(self.runtime_path)
-        #    export the runtime js funtions
-        runtime_export_block = (
-                f"export {{ {', '.join(mod.gen.client_manifest.exports)} }};\n" if mod.gen.client_manifest.exports else ""
-            )
-        (self.vite_package_json.parent / "temp" / "client_runtime.js").write_text(runtime_js + "\n" + runtime_export_block, encoding="utf-8")    
         
         
         # Collect exports/globals across root and recursive deps
@@ -349,9 +344,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 minify: {minify_setting}, // Configurable minification
             }},
             resolve: {{
-                alias: {{
-                    '@client_runtime.js': resolve(__dirname, '{temp_dir_name}/client_runtime.js'),
-                }}
             }}
             }});
         """
