@@ -1,0 +1,1 @@
+(function(){"use strict";const o=["App","HomeView","jac_app"],c={App,HomeView,jac_app};for(const p of o)globalThis[p]=c[p];const a=["App","HomeView","jac_app"],e={App,HomeView,jac_app};for(const p of a)globalThis[p]=e[p];__jacRegisterClientModule("app",a,{}),globalThis.start_app=jac_app,document.getElementById("__jac_init__")||globalThis.start_app()})();

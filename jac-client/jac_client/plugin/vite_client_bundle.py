@@ -15,7 +15,6 @@ from jaclang.runtimelib.client_bundle import (
     ClientBundle,
     ClientBundleBuilder,
     ClientBundleError,
-    ProcessedImports,
 )
 
 
@@ -42,14 +41,16 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         self.vite_package_json = vite_package_json
         self.vite_minify = vite_minify
 
-    def _process_imports(self, manifest, module_path: Path) -> dict[str, str]:  # type: ignore[override]
+    def _process_imports(self, manifest, module_path: Path) -> list[Path]:  # type: ignore[override]
         """Process client imports for Vite bundling.
 
         Only mark modules as bundled when we actually inline their code (.jac files we compile
         and local .js files we embed). Bare package specifiers (e.g., "antd") are left as real
         ES imports so Vite can resolve and bundle them.
         """
-        imported_js_modules: dict[str, str] = {}
+        # TODO: return pure js files seperately
+        imported_js_modules: list[Path] = []
+        
 
         if manifest and manifest.imports:
             for import_name, import_path in manifest.imports.items():
@@ -58,36 +59,17 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 if import_path_obj.suffix == ".js":
                     # Inline local JS files and mark as bundled
                     try:
-                        with open(import_path_obj, "r", encoding="utf-8") as f:
-                            js_code = f.read()
-                            imported_js_modules[import_name] = js_code
+                       
+                        imported_js_modules.append(import_path_obj)
                     except FileNotFoundError:
-                        imported_js_modules[import_name] = ""
+                        imported_js_modules.append(None)
 
                 elif import_path_obj.suffix == ".jac":
                     # Compile .jac imports and include transitive .jac imports
                     try:
-                        compiled_js, imported_mod = self._compile_to_js(import_path_obj)
-
-                        transitive_imports: set[str] = set()
-                        if imported_mod and imported_mod.gen.client_manifest:
-                            for (
-                                sub_import_name,
-                                sub_import_path,
-                            ) in imported_mod.gen.client_manifest.imports.items():
-                                transitive_imports.add(sub_import_name)
-
-                                sub_import_path_obj = Path(sub_import_path)
-                                if sub_import_path_obj.suffix == ".jac" and sub_import_path_obj.exists():
-                                    try:
-                                        sub_compiled_js, _ = self._compile_to_js(sub_import_path_obj)
-                                        imported_js_modules[sub_import_name] = sub_compiled_js
-                                    except ClientBundleError:
-                                        pass
-
-                        imported_js_modules[import_name] = compiled_js
+                        imported_js_modules.append(import_path_obj)
                     except ClientBundleError:
-                        imported_js_modules[import_name] = ""
+                        imported_js_modules.append(None)
 
                 else:
                     # Non .jac/.js entries (likely bare specifiers) should be handled by Vite.
@@ -95,6 +77,51 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                     pass
 
         return imported_js_modules
+
+    def _compile_dependencies_recursively(self, module_path: Path, visited: set[Path] | None = None, is_root: bool = False) -> None:
+        """Recursively compile/copy .jac/.js imports to temp, skipping bundling.
+
+        Only prepares dependency JS artifacts for Vite by writing compiled JS (.jac)
+        or copying local JS (.js) into the temp directory. Bare specifiers are left
+        untouched for Vite to resolve.
+        """
+        from jaclang.runtimelib.machine import JacMachine as Jac
+
+        if visited is None:
+            visited = set()
+
+        module_path = module_path.resolve()
+        if module_path in visited:
+            return
+        visited.add(module_path)
+        
+        if not is_root:
+            module_js, mod = self._compile_to_js(module_path)
+            (self.vite_package_json.parent / "temp" / f"{module_path.stem}.js").write_text(module_js, encoding="utf-8")
+            manifest = mod.gen.client_manifest if mod else None
+        else:
+            mod = Jac.program.mod.hub.get(str(module_path))
+            manifest = mod.gen.client_manifest if mod else None
+        
+        
+        if not manifest or not manifest.imports:
+            return
+
+        for _name, import_path in manifest.imports.items():
+            path_obj = Path(import_path).resolve()
+            # Avoid re-processing
+            if path_obj in visited:
+                continue
+
+            if path_obj.suffix == ".jac":
+                # Recurse into transitive deps
+                self._compile_dependencies_recursively(path_obj, visited, is_root=False)
+            elif path_obj.suffix == ".js":
+                # TODO: This is not correct, we need to compile the js file
+                pass
+            else:
+                # Bare specifiers or other assets handled by Vite
+                continue
 
     def _compile_bundle(
         self,
@@ -106,32 +133,23 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         from jaclang.runtimelib.machine import JacMachine as Jac
 
         mod = Jac.program.mod.hub.get(str(module_path))
-        manifest = mod.gen.client_manifest if mod else None
-
-        # Use base class method to process imports
-        import_pieces, bundled_module_names = self._process_imports(
-            manifest, module_path
-        )
-
-        # Compile main module and strip import statements for bundled modules
+        manifest = mod.gen.client_manifest if mod else None  
+        
         module_js, _ = self._compile_to_js(module_path)
-        module_js = self._strip_import_statements(module_js, bundled_module_names)
-
-        # compile runtime to js and add to import_pieces
+        
+        # Compile runtime to JS and add to temp for Vite to consume
         runtime_js, _ = self._compile_to_js(self.runtime_path)
-        import_pieces.append(f"// Imported runtime module: {self.runtime_path}")
-        import_pieces.append(runtime_js)
-        import_pieces.append("")
+        (self.vite_package_json.parent / "temp" / "client_runtime.js").write_text(runtime_js, encoding="utf-8")    
 
+        # Recursively prepare dependencies (only compile/copy to temp)
+        self._compile_dependencies_recursively(module_path, is_root=True)
+        
         # Use base class methods to extract exports and globals
         client_exports = self._extract_client_exports(manifest)
         client_globals_map = self._extract_client_globals(manifest, module)
 
         bundle_pieces = []
 
-        # Add imported modules (which may include client_runtime if explicitly imported)
-        if import_pieces:
-            bundle_pieces.extend(import_pieces)
 
         # Add main module (without registration_js - we'll handle that in Jac init script)
         bundle_pieces.extend(
@@ -192,7 +210,7 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         temp_dir.mkdir(exist_ok=True)
 
         # Create entry file with stitched content
-        entry_file = temp_dir / "main_entry.js"
+        entry_file = temp_dir / "app.js"
         entry_content = "\n".join(piece for piece in bundle_pieces if piece is not None)
         entry_file.write_text(entry_content, encoding="utf-8")
 
