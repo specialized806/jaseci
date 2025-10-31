@@ -345,7 +345,7 @@ class EsastGenPass(BaseAstGenPass[es.Statement]):
             if node.is_client_decl:
                 resolved_path = node.from_loc.resolve_relative_path()
                 import_key = node.from_loc.dot_path_str
-                self.client_manifest.imports[import_key] = convert_to_js_import_path(resolved_path)
+                self.client_manifest.imports[import_key] = resolved_path
                 self.client_manifest.has_client = True
 
             # Convert Jac-style path to JavaScript-style path
