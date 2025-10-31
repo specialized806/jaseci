@@ -9,13 +9,16 @@ import shutil
 import subprocess
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Sequence
+from typing import Any, Sequence, TYPE_CHECKING
 
 from jaclang.runtimelib.client_bundle import (
     ClientBundle,
     ClientBundleBuilder,
     ClientBundleError,
 )
+
+if TYPE_CHECKING:
+    from jaclang.compiler.codeinfo import ClientManifest
 
 
 class ViteClientBundleBuilder(ClientBundleBuilder):
@@ -41,18 +44,20 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
         self.vite_package_json = vite_package_json
         self.vite_minify = vite_minify
 
-    def _process_imports(self, manifest, module_path: Path) -> list[Path]:  # type: ignore[override]
+    def _process_imports(
+        self, manifest: ClientManifest | None, module_path: Path
+    ) -> list[Path | None]:  # type: ignore[override]
         """Process client imports for Vite bundling.
 
         Only mark modules as bundled when we actually inline their code (.jac files we compile
         and local .js files we embed). Bare package specifiers (e.g., "antd") are left as real
         ES imports so Vite can resolve and bundle them.
         """
-        # TODO: return pure js files seperately
-        imported_js_modules: list[Path] = []
+        # TODO: return pure js files separately
+        imported_js_modules: list[Path | None] = []
 
         if manifest and manifest.imports:
-            for import_name, import_path in manifest.imports.items():
+            for _, import_path in manifest.imports.items():
                 import_path_obj = Path(import_path)
 
                 if import_path_obj.suffix == ".js":
@@ -119,11 +124,8 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             non_root_globals: dict[str, Any] = {}
             if manifest:
                 for name in manifest.globals:
-                    if name in manifest.globals_values:
-                        non_root_globals[name] = manifest.globals_values[name]
-                    else:
-                        non_root_globals[name] = None
-            collected_globals.update({k: v for k, v in non_root_globals.items()})
+                    non_root_globals[name] = manifest.globals_values.get(name)
+            collected_globals.update(non_root_globals)
 
             exposure_js = self._generate_global_exposure_code(exports_list)
             registration_js = self._generate_registration_js(
@@ -136,9 +138,10 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             )
 
             combined_js = f"{module_js}\n{exposure_js}\n{registration_js}\n{runtime_js}\n{export_block}"
-            (
-                self.vite_package_json.parent / "temp" / f"{module_path.stem}.js"
-            ).write_text(combined_js, encoding="utf-8")
+            if self.vite_package_json is not None:
+                (
+                    self.vite_package_json.parent / "temp" / f"{module_path.stem}.js"
+                ).write_text(combined_js, encoding="utf-8")
         else:
             mod = Jac.program.mod.hub.get(str(module_path))
             manifest = mod.gen.client_manifest if mod else None
@@ -169,9 +172,10 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                 # FIX: Removed redundant JacRuntime import injection for local .js files.
                 try:
                     js_code = path_obj.read_text(encoding="utf-8")
-                    (self.vite_package_json.parent / "temp" / path_obj.name).write_text(
-                        js_code, encoding="utf-8"
-                    )
+                    if self.vite_package_json is not None:
+                        (
+                            self.vite_package_json.parent / "temp" / path_obj.name
+                        ).write_text(js_code, encoding="utf-8")
                 except FileNotFoundError:
                     pass
             else:
