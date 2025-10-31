@@ -221,7 +221,7 @@ class TestLittleXServer:
             update_result = self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice_Wonderland"}},
+                {"new_username": "Alice_Wonderland"},
                 token=alice_token
             )
             assert "result" in update_result
@@ -230,7 +230,7 @@ class TestLittleXServer:
             profile_result = self._request(
                 "POST",
                 "/walker/get_profile",
-                {"fields": {}},
+                {},
                 token=alice_token
             )
             assert "result" in profile_result
@@ -239,7 +239,7 @@ class TestLittleXServer:
             update_result2 = self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Bob_Builder"}},
+                {"new_username": "Bob_Builder"},
                 token=bob_token
             )
             assert "result" in update_result2
@@ -266,13 +266,13 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Bob"}},
+                {"new_username": "Bob"},
                 token=bob_token
             )
 
@@ -280,7 +280,7 @@ class TestLittleXServer:
             bob_profile = self._request(
                 "POST",
                 "/walker/get_profile",
-                {"fields": {}},
+                {},
                 token=bob_token
             )
 
@@ -304,7 +304,7 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
 
@@ -312,7 +312,7 @@ class TestLittleXServer:
             tweet1 = self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Hello World! This is my first tweet!"}},
+                {"content": "Hello World! This is my first tweet!"},
                 token=alice_token
             )
             assert "result" in tweet1 or "reports" in tweet1
@@ -320,7 +320,7 @@ class TestLittleXServer:
             tweet2 = self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Having a great day coding in Jac!"}},
+                {"content": "Having a great day coding in Jac!"},
                 token=alice_token
             )
             assert "result" in tweet2 or "reports" in tweet2
@@ -328,7 +328,7 @@ class TestLittleXServer:
             tweet3 = self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Check out this amazing project!"}},
+                {"content": "Check out this amazing project!"},
                 token=alice_token
             )
             assert "result" in tweet3 or "reports" in tweet3
@@ -354,13 +354,13 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Bob"}},
+                {"new_username": "Bob"},
                 token=bob_token
             )
 
@@ -368,7 +368,7 @@ class TestLittleXServer:
             tweet_result = self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Like this tweet!"}},
+                {"content": "Like this tweet!"},
                 token=alice_token
             )
             assert "result" in tweet_result or "reports" in tweet_result
@@ -394,13 +394,13 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Bob"}},
+                {"new_username": "Bob"},
                 token=bob_token
             )
 
@@ -408,7 +408,7 @@ class TestLittleXServer:
             tweet_result = self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "What do you think about this?"}},
+                {"content": "What do you think about this?"},
                 token=alice_token
             )
             assert "result" in tweet_result or "reports" in tweet_result
@@ -433,7 +433,7 @@ class TestLittleXServer:
                 self._request(
                     "POST",
                     "/walker/update_profile",
-                    {"fields": {"new_username": user.capitalize()}},
+                    {"new_username": user.capitalize()},
                     token=self.users[user]["token"]
                 )
 
@@ -451,7 +451,7 @@ class TestLittleXServer:
                     tweet = self._request(
                         "POST",
                         "/walker/create_tweet",
-                        {"fields": {"content": f"{user.capitalize()}: {content}"}},
+                        {"content": f"{user.capitalize()}: {content}"},
                         token=self.users[user]["token"]
                     )
                     # Small delay between tweets
@@ -461,7 +461,7 @@ class TestLittleXServer:
             feed_result = self._request(
                 "POST",
                 "/walker/load_feed",
-                {"fields": {}},  # Empty search to get all tweets
+                {},  # Empty search to get all tweets
                 token=self.users["alice"]["token"]
             )
 
@@ -500,7 +500,7 @@ class TestLittleXServer:
                 self._request(
                     "POST",
                     "/walker/update_profile",
-                    {"fields": {"new_username": user.capitalize()}},
+                    {"new_username": user.capitalize()},
                     token=self.users[user]["token"]
                 )
 
@@ -510,7 +510,7 @@ class TestLittleXServer:
             profiles_result = self._request(
                 "POST",
                 "/walker/load_user_profiles",
-                {"fields": {}},
+                {},
                 token=self.users["alice"]["token"]
             )
 
@@ -540,13 +540,13 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Bob"}},
+                {"new_username": "Bob"},
                 token=bob_token
             )
 
@@ -554,13 +554,13 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Alice's tweet 1"}},
+                {"content": "Alice's tweet 1"},
                 token=alice_token
             )
             self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Alice's tweet 2"}},
+                {"content": "Alice's tweet 2"},
                 token=alice_token
             )
 
@@ -568,7 +568,7 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Bob's tweet 1"}},
+                {"content": "Bob's tweet 1"},
                 token=bob_token
             )
 
@@ -594,7 +594,7 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/update_profile",
-                {"fields": {"new_username": "Alice"}},
+                {"new_username": "Alice"},
                 token=alice_token
             )
 
@@ -602,7 +602,7 @@ class TestLittleXServer:
             self._request(
                 "POST",
                 "/walker/create_tweet",
-                {"fields": {"content": "Persistent tweet 1"}},
+                {"content": "Persistent tweet 1"},
                 token=alice_token
             )
 
