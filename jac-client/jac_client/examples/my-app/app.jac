@@ -12,7 +12,7 @@ cl def HomeView() -> any {
     let greeting = formatMessage("Jac");
     let sum = calculateSum(5, 3);
     let formatter = MessageFormatter("JS");
-    let formatted = formatter.format("Hello from JS class");    
+    let formatted = formatter.format("Hello from JS class");
     return <div
     style={{
         "minHeight": "100vh",

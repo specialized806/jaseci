@@ -9,4 +9,3 @@
                 ```
 
                 Happy coding with Jac!
-                
