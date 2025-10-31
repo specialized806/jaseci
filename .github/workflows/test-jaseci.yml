@@ -52,16 +52,16 @@ jobs:
       run: |
         pytest -x jac -n auto
         pytest -x jac-cloud jac-byllm jac-streamlit
-    - name: Run Jac-Client tests
-      run: |
-        pip install -e jac-client
-        pytest -x jac-client
     - name: Run jac-cloud tests with DB
       run: pytest -x jac-cloud
       env:
         DATABASE_HOST: mongodb://localhost/?retryWrites=true&w=majority
         REDIS_HOST: redis://localhost
         TASK_CONSUMER_CRON_SECOND: "*"
+    - name: Run Jac-Client tests
+      run: |
+        pip install -e jac-client
+        pytest -x jac-client
     - name: Run littleX tests
       run: |
         pip install numpy
