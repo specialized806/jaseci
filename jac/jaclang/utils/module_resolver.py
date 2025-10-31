@@ -51,6 +51,8 @@ def _candidate_from(base: str, parts: list[str]) -> Optional[Tuple[str, str]]:
         return candidate + ".jac", "jac"
     if os.path.isfile(candidate + ".py"):
         return candidate + ".py", "py"
+    if os.path.isfile(candidate + ".js"):
+        return candidate + ".js", "js"
     return None
 
 
