@@ -21,6 +21,7 @@ class CommentInjectionPass(UniPass):
         """Initialize pass with comment tracking."""
         self.comment_map: dict[int, list[tuple[int, uni.CommentToken]]] = {}
         self.used_comments: Set[int] = set()
+        self.inline_comments: Set[int] = set()  # Track which comments are inline
 
         if isinstance(self.ir_out, uni.Module):
             # Build a map of line number -> comments on that line
@@ -30,7 +31,45 @@ class CommentInjectionPass(UniPass):
                     self.comment_map[line] = []
                 self.comment_map[line].append((idx, comment))
 
+            # Use src_terminals to detect inline comments
+            self._detect_inline_comments()
+
         return super().before_pass()
+
+    def _detect_inline_comments(self) -> None:
+        """Detect which comments are inline (same line as code before them)."""
+        if not isinstance(self.ir_out, uni.Module):
+            return
+
+        # Build a linear list of all tokens and comments in order
+        all_items = []
+
+        # Add all non-comment tokens from src_terminals
+        for token in self.ir_out.src_terminals:
+            if not isinstance(token, uni.CommentToken):
+                all_items.append(("token", token))
+
+        # Add all comments
+        for idx, comment in enumerate(self.ir_out.source.comments):
+            all_items.append(("comment", idx, comment))
+
+        # Sort by position
+        all_items.sort(key=lambda x: (x[-1].loc.first_line, x[-1].loc.col_start))
+
+        # Mark comments that have code before them on the same line
+        for i, item in enumerate(all_items):
+            if item[0] == "comment":
+                comment_idx = item[1]
+                comment = item[2]
+
+                # Check if there's a code token before this comment on the same line
+                if i > 0:
+                    prev_item = all_items[i - 1]
+                    if prev_item[0] == "token":
+                        prev_token = prev_item[1]
+                        if prev_token.loc.last_line == comment.loc.first_line:
+                            # This is an inline comment!
+                            self.inline_comments.add(comment_idx)
 
     def after_pass(self) -> None:
         """Inject comments into the module's DocIR."""
@@ -129,19 +168,31 @@ class CommentInjectionPass(UniPass):
             if child_idx < len(module.kid):
                 child = module.kid[child_idx]
 
-                # Add comments before this child
+                # Add standalone comments BEFORE this child (on previous lines only)
                 if hasattr(child, "loc") and child.loc:
-                    comments_before = self._get_comments_in_range(
+                    standalone_before = self._get_comments_in_range(
                         current_line, child.loc.first_line - 1
                     )
-                    for comment_id, comment in comments_before:
-                        new_parts.append(self._create_comment_doc(comment))
-                        self.used_comments.add(comment_id)
-
-                    current_line = child.loc.last_line + 1
+                    for comment_id, comment in standalone_before:
+                        if comment_id not in self.inline_comments:  # Only standalone
+                            new_parts.append(
+                                self._create_standalone_comment_doc(comment)
+                            )
+                            self.used_comments.add(comment_id)
 
                 # Recursively process this child's DocIR
                 new_parts.append(self._inject_comments(child, part))
+
+                # Add inline comments AFTER (on child's last line)
+                if hasattr(child, "loc") and child.loc:
+                    inline_after = self._get_comments_on_line(child.loc.last_line)
+                    for comment_id, comment in inline_after:
+                        if comment_id in self.inline_comments:  # Only inline
+                            new_parts.append(self._create_inline_comment_doc(comment))
+                            self.used_comments.add(comment_id)
+
+                    current_line = child.loc.last_line + 1
+
                 child_idx += 1
             else:
                 new_parts.append(self._inject_comments(module, part))
@@ -149,7 +200,7 @@ class CommentInjectionPass(UniPass):
         # Add any remaining comments at the end
         remaining_comments = self._get_comments_in_range(current_line, module_end)
         for comment_id, comment in remaining_comments:
-            new_parts.append(self._create_comment_doc(comment))
+            new_parts.append(self._create_standalone_comment_doc(comment))
             self.used_comments.add(comment_id)
 
         return doc.Concat(new_parts, ast_node=module)
@@ -190,19 +241,31 @@ class CommentInjectionPass(UniPass):
             if body_idx < len(ast_node.body):
                 body_item = ast_node.body[body_idx]
 
-                # Add comments before this body item
+                # Add standalone comments BEFORE this body item (on previous lines only)
                 if hasattr(body_item, "loc") and body_item.loc:
-                    comments_before = self._get_comments_in_range(
+                    standalone_before = self._get_comments_in_range(
                         current_line, body_item.loc.first_line - 1
                     )
-                    for comment_id, comment in comments_before:
-                        new_parts.append(self._create_comment_doc(comment))
-                        self.used_comments.add(comment_id)
-
-                    current_line = body_item.loc.last_line + 1
+                    for comment_id, comment in standalone_before:
+                        if comment_id not in self.inline_comments:  # Only standalone
+                            new_parts.append(
+                                self._create_standalone_comment_doc(comment)
+                            )
+                            self.used_comments.add(comment_id)
 
                 # Recursively process this body item's DocIR
                 new_parts.append(self._inject_comments(body_item, part))
+
+                # Add inline comments AFTER (on body item's last line)
+                if hasattr(body_item, "loc") and body_item.loc:
+                    inline_after = self._get_comments_on_line(body_item.loc.last_line)
+                    for comment_id, comment in inline_after:
+                        if comment_id in self.inline_comments:  # Only inline
+                            new_parts.append(self._create_inline_comment_doc(comment))
+                            self.used_comments.add(comment_id)
+
+                    current_line = body_item.loc.last_line + 1
+
                 body_idx += 1
             else:
                 new_parts.append(self._inject_comments(ast_node, part))
@@ -215,7 +278,7 @@ class CommentInjectionPass(UniPass):
                         current_line, kid.loc.first_line - 1
                     )
                     for comment_id, comment in remaining:
-                        new_parts.append(self._create_comment_doc(comment))
+                        new_parts.append(self._create_standalone_comment_doc(comment))
                         self.used_comments.add(comment_id)
                     break
 
@@ -235,6 +298,24 @@ class CommentInjectionPass(UniPass):
 
         return result
 
-    def _create_comment_doc(self, comment: uni.CommentToken) -> doc.DocType:
-        """Create DocIR for a comment."""
+    def _get_comments_on_line(self, line: int) -> list[tuple[int, uni.CommentToken]]:
+        """Get all unused comments on a specific line (for inline comments)."""
+        result: list[tuple[int, uni.CommentToken]] = []
+
+        if line in self.comment_map:
+            for comment_id, comment in self.comment_map[line]:
+                if comment_id not in self.used_comments:
+                    result.append((comment_id, comment))
+
+        return result
+
+    def _create_standalone_comment_doc(self, comment: uni.CommentToken) -> doc.DocType:
+        """Create DocIR for a standalone comment."""
         return doc.Concat([doc.Text(comment.value), doc.Line(hard=True)])
+
+    def _create_inline_comment_doc(self, comment: uni.CommentToken) -> doc.DocType:
+        """Create DocIR for an inline comment (appears at end of line)."""
+        # Inline comments: two spaces before comment, then hard line
+        return doc.Concat(
+            [doc.Text("  "), doc.Text(comment.value), doc.Line(hard=True)]
+        )
