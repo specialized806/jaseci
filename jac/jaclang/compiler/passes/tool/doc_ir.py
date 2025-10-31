@@ -79,11 +79,13 @@ class Group(Doc):
         contents: DocType,
         break_contiguous: bool = False,
         id: Optional[str] = None,
+        ast_node: Optional[object] = None,
     ) -> None:
         """Initialize a Group object."""
         self.contents: DocType = contents
         self.break_contiguous: bool = break_contiguous
         self.id: Optional[str] = id
+        self.ast_node: Optional[object] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Group object."""
@@ -101,9 +103,10 @@ class Group(Doc):
 class Indent(Doc):
     """Indented content."""
 
-    def __init__(self, contents: DocType) -> None:
+    def __init__(self, contents: DocType, ast_node: Optional[object] = None) -> None:
         """Initialize an Indent object."""
         self.contents: DocType = contents
+        self.ast_node: Optional[object] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Indent object."""
@@ -119,9 +122,10 @@ class Indent(Doc):
 class Concat(Doc):
     """A sequence of doc parts."""
 
-    def __init__(self, parts: list[DocType]) -> None:
+    def __init__(self, parts: list[DocType], ast_node: Optional[object] = None) -> None:
         """Initialize a Concat object."""
         self.parts: list[DocType] = parts
+        self.ast_node: Optional[object] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Concat object."""

@@ -3,7 +3,7 @@
 This is a pass for generating DocIr for Jac code.
 """
 
-from typing import List, Optional, Sequence, Set
+from typing import List, Optional, Sequence
 
 import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
@@ -13,74 +13,6 @@ from jaclang.compiler.passes import UniPass
 
 class DocIRGenPass(UniPass):
     """DocIrGenPass generate DocIr for Jac code."""
-
-    def before_pass(self) -> None:
-        """Initialize pass with comment tracking."""
-        self.comment_map: dict[int, list[uni.CommentToken]] = {}
-        self.used_comments: set[int] = set()  # Track comment IDs we've used
-
-        if isinstance(self.ir_out, uni.Module):
-            # Build a map of line number -> comments on that line
-            for idx, comment in enumerate(self.ir_out.source.comments):
-                line = comment.loc.first_line
-                if line not in self.comment_map:
-                    self.comment_map[line] = []
-                self.comment_map[line].append((idx, comment))
-
-        return super().before_pass()
-
-    def get_comments_in_range(
-        self, start_line: int, end_line: int, exclude_lines: Optional[Set[int]] = None
-    ) -> list[tuple[int, uni.CommentToken]]:
-        """
-        Get all unused comments in the line range [start_line, end_line].
-
-        Args:
-            start_line: Starting line number (inclusive)
-            end_line: Ending line number (inclusive)
-            exclude_lines: Lines to skip (for inline comments already handled)
-
-        Returns:
-            List of (comment_id, comment) tuples in range
-        """
-        result: list[tuple[int, uni.CommentToken]] = []
-        exclude_lines = exclude_lines or set()
-
-        for line in range(start_line, end_line + 1):
-            if line in exclude_lines:
-                continue
-            if line in self.comment_map:
-                for comment_id, comment in self.comment_map[line]:
-                    if comment_id not in self.used_comments:
-                        result.append((comment_id, comment))
-
-        return result
-
-    def mark_comment_used(self, comment_id: int) -> None:
-        """Mark a comment as used so it won't be processed again."""
-        self.used_comments.add(comment_id)
-
-    def create_comment_doc(
-        self, comment: uni.CommentToken, inline: bool = False
-    ) -> doc.DocType:
-        """
-        Create DocIR for a comment.
-
-        Args:
-            comment: The comment token
-            inline: If True, format as inline comment (with leading space)
-
-        Returns:
-            DocIR for the comment
-        """
-        if inline:
-            # Inline comment: two spaces + comment + hard line
-            return self.concat(
-                [self.text("  "), self.text(comment.value), self.hard_line()]
-            )
-        else:
-            # Standalone comment: comment + hard line
-            return self.concat([self.text(comment.value), self.hard_line()])
 
     def text(self, text: str) -> doc.Text:
         """Create a Text node."""
@@ -110,6 +42,7 @@ class DocIRGenPass(UniPass):
         self,
         contents: doc.DocType,
         break_contiguous: bool = False,
+        ast_node: Optional[object] = None,
     ) -> doc.Group:
         """
         Create a Group node.
@@ -117,16 +50,21 @@ class DocIRGenPass(UniPass):
         Args:
             contents: The contents to group
             break_contiguous: If True, break when parent group breaks (currently unused in formatter)
+            ast_node: Optional reference to the AST node this represents
         """
-        return doc.Group(contents, break_contiguous)
+        return doc.Group(contents, break_contiguous, ast_node=ast_node)
 
-    def indent(self, contents: doc.DocType) -> doc.Indent:
+    def indent(
+        self, contents: doc.DocType, ast_node: Optional[object] = None
+    ) -> doc.Indent:
         """Create an Indent node."""
-        return doc.Indent(contents)
+        return doc.Indent(contents, ast_node=ast_node)
 
-    def concat(self, parts: List[doc.DocType]) -> doc.Concat:
+    def concat(
+        self, parts: List[doc.DocType], ast_node: Optional[object] = None
+    ) -> doc.Concat:
         """Create a Concat node."""
-        return doc.Concat(parts)
+        return doc.Concat(parts, ast_node=ast_node)
 
     def if_break(
         self,
@@ -207,7 +145,7 @@ class DocIRGenPass(UniPass):
         if body_parts and isinstance(body_parts[-1], doc.Line):
             body_parts.pop()
 
-        return self.group(self.concat(parts))
+        return self.group(self.concat(parts), ast_node=node)
 
     def format_comprehension(self, parts: List[doc.DocType]) -> doc.DocType:
         """
@@ -313,20 +251,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         prev_kid = None
         first_kid = True
-        current_line = 1
-
-        # Get module's line range
-        module_end = node.loc.last_line if node.loc else 99999
-
         for i in node.kid:
-            # Add standalone comments that appear before this node
-            if hasattr(i, "loc") and i.loc:
-                end_line = i.loc.first_line - 1
-                comments_before = self.get_comments_in_range(current_line, end_line)
-                for comment_id, comment in comments_before:
-                    parts.append(self.create_comment_doc(comment))
-                    self.mark_comment_used(comment_id)
-
             if (isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import)) or (
                 isinstance(i, uni.GlobalVars)
                 and isinstance(prev_kid, uni.GlobalVars)
@@ -345,21 +270,9 @@ class DocIRGenPass(UniPass):
                     parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
             parts.append(self.hard_line())
-
-            # Update current line to after this node
-            if hasattr(i, "loc") and i.loc:
-                current_line = i.loc.last_line + 1
-
             prev_kid = i
             first_kid = False
-
-        # Add any remaining comments at the end of the module
-        remaining_comments = self.get_comments_in_range(current_line, module_end)
-        for comment_id, comment in remaining_comments:
-            parts.append(self.create_comment_doc(comment))
-            self.mark_comment_used(comment_id)
-
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = self.concat(parts, ast_node=node)
 
     def exit_import(self, node: uni.Import) -> None:
         """Exit import node."""
@@ -437,9 +350,6 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = []
         prev_item = None
         in_body = False
-        current_line = node.loc.first_line if node.loc else 1
-        body_start_line = None
-
         for i in node.kid:
             if (node.doc and i is node.doc) or (
                 node.decorators and i in node.decorators
@@ -451,7 +361,6 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.LBRACE:
                 parts.append(i.gen.doc_ir)
-                body_start_line = i.loc.last_line + 1 if i.loc else current_line
             elif isinstance(i, uni.Token) and i.name == Tok.LPAREN:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -462,18 +371,6 @@ class DocIRGenPass(UniPass):
             elif isinstance(node.body, Sequence) and i in node.body:
                 if not in_body:
                     body_parts.append(self.hard_line())
-                    in_body = True
-
-                # Add comments before this body item
-                if body_start_line and i.loc:
-                    comments_before = self.get_comments_in_range(
-                        body_start_line, i.loc.first_line - 1
-                    )
-                    for comment_id, comment in comments_before:
-                        body_parts.append(self.create_comment_doc(comment))
-                        self.mark_comment_used(comment_id)
-                    body_start_line = i.loc.last_line + 1
-
                 if (prev_item and type(prev_item) is not type(i)) or (
                     prev_item and not self.is_one_line(prev_item)
                 ):
@@ -481,18 +378,11 @@ class DocIRGenPass(UniPass):
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
                 prev_item = i
+                in_body = True
             elif in_body:
                 in_body = False
-                # Add any remaining comments in the body before closing
-                if body_start_line and i.loc:
-                    remaining_body_comments = self.get_comments_in_range(
-                        body_start_line, i.loc.first_line - 1
-                    )
-                    for comment_id, comment in remaining_body_comments:
-                        body_parts.append(self.create_comment_doc(comment))
-                        self.mark_comment_used(comment_id)
                 body_parts.pop()
-                parts.append(self.indent(self.concat(body_parts)))
+                parts.append(self.indent(self.concat(body_parts), ast_node=node))
                 parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -505,10 +395,6 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-
-            if i.loc:
-                current_line = i.loc.last_line + 1
-
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_ability(self, node: uni.Ability) -> None:
@@ -516,8 +402,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
         in_body = False
-        body_start_line = None
-
         for i in node.kid:
             if i == node.doc or (node.decorators and i in node.decorators):
                 parts.append(i.gen.doc_ir)
@@ -530,19 +414,10 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
                 in_body = True
-                body_start_line = i.loc.last_line + 1 if i.loc else 1
             elif isinstance(i, uni.Token) and i.name == Tok.RBRACE:
                 in_body = False
-                # Add any remaining comments in the body before closing
-                if body_start_line and i.loc:
-                    remaining_body_comments = self.get_comments_in_range(
-                        body_start_line, i.loc.first_line - 1
-                    )
-                    for comment_id, comment in remaining_body_comments:
-                        body_parts.append(self.create_comment_doc(comment))
-                        self.mark_comment_used(comment_id)
                 self.trim_trailing_line(body_parts)
-                parts.append(self.indent(self.concat(body_parts)))
+                parts.append(self.indent(self.concat(body_parts), ast_node=node))
                 if len(body_parts) > 0:
                     parts.append(self.hard_line())
                 else:
@@ -550,16 +425,6 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             elif in_body:
-                # Add comments before this body statement
-                if body_start_line and i.loc:
-                    comments_before = self.get_comments_in_range(
-                        body_start_line, i.loc.first_line - 1
-                    )
-                    for comment_id, comment in comments_before:
-                        body_parts.append(self.create_comment_doc(comment))
-                        self.mark_comment_used(comment_id)
-                    body_start_line = i.loc.last_line + 1
-
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
             elif not in_body and isinstance(i, uni.Token) and i.name == Tok.DECOR_OP:
@@ -687,7 +552,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
-                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.indent(self.concat(body_parts), ast_node=node))
                     parts.append(self.hard_line())
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
@@ -714,7 +579,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
         parts.pop()
         body_parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(self.concat(parts), ast_node=node)
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Generate DocIR for else if statements."""
@@ -723,7 +588,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
-                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.indent(self.concat(body_parts), ast_node=node))
                     parts.append(self.hard_line())
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
@@ -750,7 +615,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         body_parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(self.concat(parts), ast_node=node)
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
         """Generate DocIR for else statements."""
@@ -759,7 +624,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
-                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.indent(self.concat(body_parts), ast_node=node))
                     parts.append(self.hard_line())
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
@@ -771,7 +636,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         body_parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(self.concat(parts), ast_node=node)
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Generate DocIR for binary expressions."""
@@ -1020,7 +885,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
-                    parts.append(self.indent(self.concat(body_parts)))
+                    parts.append(self.indent(self.concat(body_parts), ast_node=node))
                     parts.append(self.hard_line())
                 body_parts.append(i.gen.doc_ir)
                 body_parts.append(self.hard_line())
@@ -1033,7 +898,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
         parts.pop()
         body_parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.group(self.concat(parts), ast_node=node)
 
     def exit_list_compr(self, node: uni.ListCompr) -> None:
         """Generate DocIR for list comprehensions."""
@@ -1344,7 +1209,7 @@ class DocIRGenPass(UniPass):
             elif isinstance(i, uni.Token) and i.name == Tok.RBRACE:
                 in_body = False
                 self.trim_trailing_line(body_parts)
-                parts.append(self.indent(self.concat(body_parts)))
+                parts.append(self.indent(self.concat(body_parts), ast_node=node))
                 if len(body_parts):
                     parts.append(self.hard_line())
                 else:
@@ -1823,12 +1688,6 @@ class DocIRGenPass(UniPass):
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         """Generate DocIR for ellipsis."""
         node.gen.doc_ir = self.text(node.value)
-
-    def exit_comment_token(self, node: uni.CommentToken) -> None:
-        """Generate DocIR for comment tokens (no-op now, comments handled in exit_module)."""
-        # Comments are now handled directly in exit_module and other exit methods
-        # This method is kept for compatibility but does nothing
-        pass
 
     def exit_jsx_element(self, node: uni.JsxElement) -> None:
         """Generate DocIR for JSX elements - kid-centric beautiful formatting!"""

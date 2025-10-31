@@ -29,6 +29,7 @@ from jaclang.compiler.passes.main import (
     TypeCheckPass,
 )
 from jaclang.compiler.passes.tool import (
+    CommentInjectionPass,
     DocIRGenPass,
     JacFormatPass,
 )
@@ -54,7 +55,7 @@ py_code_gen = [
     PyJacAstLinkPass,
     PyBytecodeGenPass,
 ]
-format_sched = [DocIRGenPass, JacFormatPass]
+format_sched = [DocIRGenPass, CommentInjectionPass, JacFormatPass]
 
 
 class JacProgram:
