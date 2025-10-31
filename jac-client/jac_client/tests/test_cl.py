@@ -71,200 +71,198 @@ class ViteClientBundleBuilderTests(TestCase):
         
         return package_json, output_dir
 
-    # def test_build_bundle_with_vite(self) -> None:
-    #     """Test that Vite bundling produces optimized output with proper structure."""
-    #     # Create a temporary directory for our test project
-    #     with tempfile.TemporaryDirectory() as temp_dir:
-    #         temp_path = Path(temp_dir)
+    def test_build_bundle_with_vite(self) -> None:
+        """Test that Vite bundling produces optimized output with proper structure."""
+        # Create a temporary directory for our test project
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
             
-    #         # Create project with Vite installed
-    #         package_json, output_dir = self._create_test_project_with_vite(temp_path)
+            # Create project with Vite installed
+            package_json, output_dir = self._create_test_project_with_vite(temp_path)
             
-    #         # Initialize the Vite builder
-    #         builder = ViteClientBundleBuilder(
-    #             vite_package_json=package_json,
-    #             vite_output_dir=output_dir,
-    #             vite_minify=False,  # Disable minification for easier inspection
-    #         )
+            # Initialize the Vite builder
+            builder = ViteClientBundleBuilder(
+                vite_package_json=package_json,
+                vite_output_dir=output_dir,
+                vite_minify=False,  # Disable minification for easier inspection
+            )
             
-    #         # Import the test module
-    #         fixtures_dir = Path(__file__).parent / "fixtures"
-    #         (module,) = Jac.jac_import("client_app", str(fixtures_dir))
+            # Import the test module
+            fixtures_dir = Path(__file__).parent / "fixtures"
+            (module,) = Jac.jac_import("client_app", str(fixtures_dir))
             
-    #         # Build the bundle
-    #         bundle = builder.build(module, force=True)
+            # Build the bundle
+            bundle = builder.build(module, force=True)
             
-    #         # Verify bundle structure
-    #         self.assertIsNotNone(bundle)
-    #         self.assertEqual(bundle.module_name, "client_app")
-    #         self.assertIn("client_page", bundle.client_functions)
-    #         self.assertIn("ButtonProps", bundle.client_functions)
-    #         self.assertIn("API_LABEL", bundle.client_globals)
-    #         self.assertGreater(len(bundle.hash), 10)
+            # Verify bundle structure
+            self.assertIsNotNone(bundle)
+            self.assertEqual(bundle.module_name, "client_app")
+            self.assertIn("client_page", bundle.client_functions)
+            self.assertIn("ButtonProps", bundle.client_functions)
+            self.assertIn("API_LABEL", bundle.client_globals)
+            self.assertGreater(len(bundle.hash), 10)
             
-    #         # Verify bundle code contains expected content
-    #         self.assertIn("function client_page()", bundle.code)
-    #         self.assertIn('const API_LABEL = "Runtime Test";', bundle.code)
+            # Verify bundle code contains expected content
+            self.assertIn("function client_page()", bundle.code)
+            self.assertIn('const API_LABEL = "Runtime Test";', bundle.code)
             
-    #         # Verify the Jac initialization is present
-    #         self.assertIn("__jacRegisterClientModule", bundle.code)
-    #         self.assertIn("globalThis.start_app", bundle.code)
+            # Verify the Jac initialization is present
+            self.assertIn("__jacRegisterClientModule", bundle.code)
+            self.assertIn("globalThis.start_app", bundle.code)
             
-    #         # Verify bundle was written to output directory
-    #         bundle_files = list(output_dir.glob("client.*.js"))
-    #         self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
+            # Verify bundle was written to output directory
+            bundle_files = list(output_dir.glob("client.*.js"))
+            self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
             
-    #         # Verify cached bundle is identical
-    #         cached = builder.build(module, force=False)
-    #         self.assertEqual(bundle.hash, cached.hash)
-    #         self.assertEqual(bundle.code, cached.code)
+            # Verify cached bundle is identical
+            cached = builder.build(module, force=False)
+            self.assertEqual(bundle.hash, cached.hash)
+            self.assertEqual(bundle.code, cached.code)
 
-    # def test_vite_bundle_without_package_json(self) -> None:
-    #     """Test that missing package.json raises appropriate error."""
-    #     fixtures_dir = Path(__file__).parent / "fixtures"
-    #     (module,) = Jac.jac_import("client_app", str(fixtures_dir))
+    def test_vite_bundle_without_package_json(self) -> None:
+        """Test that missing package.json raises appropriate error."""
+        fixtures_dir = Path(__file__).parent / "fixtures"
+        (module,) = Jac.jac_import("client_app", str(fixtures_dir))
         
-    #     # Create builder without package.json
-    #     builder = ViteClientBundleBuilder(
-    #         vite_package_json=Path("/nonexistent/package.json"),
-    #         vite_output_dir=Path("/tmp/output"),
-    #     )
+        # Create builder without package.json
+        builder = ViteClientBundleBuilder(
+            vite_package_json=Path("/nonexistent/package.json"),
+            vite_output_dir=Path("/tmp/output"),
+        )
         
-    #     # Building should raise an error
-    #     from jaclang.runtimelib.client_bundle import ClientBundleError
-    #     with self.assertRaises(ClientBundleError) as cm:
-    #         builder.build(module, force=True)
+        # Building should raise an error
+        from jaclang.runtimelib.client_bundle import ClientBundleError
+        with self.assertRaises(ClientBundleError) as cm:
+            builder.build(module, force=True)
         
-    #     self.assertIn("Vite package.json not found", str(cm.exception))
+        self.assertIn("Vite package.json not found", str(cm.exception))
 
-    # def test_global_exposure_in_bundle(self) -> None:
-    #     """Test that client functions are properly exposed globally for Vite IIFE."""
-    #     with tempfile.TemporaryDirectory() as temp_dir:
-    #         temp_path = Path(temp_dir)
+    def test_global_exposure_in_bundle(self) -> None:
+        """Test that client functions are properly exposed globally for Vite IIFE."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
             
-    #         # Create project with Vite installed
-    #         package_json, output_dir = self._create_test_project_with_vite(temp_path)
+            # Create project with Vite installed
+            package_json, output_dir = self._create_test_project_with_vite(temp_path)
             
-    #         # Initialize the Vite builder
-    #         builder = ViteClientBundleBuilder(
-    #             vite_package_json=package_json,
-    #             vite_output_dir=output_dir,
-    #         )
+            # Initialize the Vite builder
+            builder = ViteClientBundleBuilder(
+                vite_package_json=package_json,
+                vite_output_dir=output_dir,
+            )
             
-    #         # Import the test module
-    #         fixtures_dir = Path(__file__).parent / "fixtures"
-    #         (module,) = Jac.jac_import("client_app", str(fixtures_dir))
+            # Import the test module
+            fixtures_dir = Path(__file__).parent / "fixtures"
+            (module,) = Jac.jac_import("client_app", str(fixtures_dir))
             
-    #         # Build the bundle
-    #         bundle = builder.build(module, force=True)
+            # Build the bundle
+            bundle = builder.build(module, force=True)
             
-    #         # Verify global exposure code is present
-    #         # Note: Variable names may be minified, so we check for the concept rather than exact strings
-    #         self.assertIn("__jacEnsureHydration", bundle.code)
-    #         self.assertIn("globalThis.start_app()", bundle.code)
+            # Verify global exposure code is present
+            # Note: Variable names may be minified, so we check for the concept rather than exact strings
+            self.assertIn("__jacEnsureHydration", bundle.code)
+            self.assertIn("globalThis.start_app()", bundle.code)
             
-    #         # Cleanup
-    #         builder.cleanup_temp_dir()
+            # Cleanup
+            builder.cleanup_temp_dir()
 
-    # def test_build_bundle_with_antd(self) -> None:
-    #     """Test that Vite bundling works with Ant Design components."""
-    #     with tempfile.TemporaryDirectory() as temp_dir:
-    #         temp_path = Path(temp_dir)
+    def test_build_bundle_with_antd(self) -> None:
+        """Test that Vite bundling works with Ant Design components."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
             
-    #         # Create project with Vite and Ant Design installed
-    #         package_json, output_dir = self._create_test_project_with_vite(temp_path, include_antd=True)
+            # Create project with Vite and Ant Design installed
+            package_json, output_dir = self._create_test_project_with_vite(temp_path, include_antd=True)
             
-    #         # Initialize the Vite builder
-    #         builder = ViteClientBundleBuilder(
-    #             vite_package_json=package_json,
-    #             vite_output_dir=output_dir,
-    #             vite_minify=False,
-    #         )
+            # Initialize the Vite builder
+            builder = ViteClientBundleBuilder(
+                vite_package_json=package_json,
+                vite_output_dir=output_dir,
+                vite_minify=False,
+            )
             
-    #         # Import the test module with Ant Design
-    #         fixtures_dir = Path(__file__).parent / "fixtures"
-    #         (module,) = Jac.jac_import("client_app_with_antd", str(fixtures_dir))
+            # Import the test module with Ant Design
+            fixtures_dir = Path(__file__).parent / "fixtures"
+            (module,) = Jac.jac_import("client_app_with_antd", str(fixtures_dir))
             
-    #         # Build the bundle
-    #         bundle = builder.build(module, force=True)
+            # Build the bundle
+            bundle = builder.build(module, force=True)
             
-    #         # Verify bundle structure
-    #         self.assertIsNotNone(bundle)
-    #         self.assertEqual(bundle.module_name, "client_app_with_antd")
-    #         self.assertIn("ButtonTest", bundle.client_functions)
-    #         self.assertIn("CardTest", bundle.client_functions)
-    #         self.assertIn("APP_NAME", bundle.client_globals)
+            # Verify bundle structure
+            self.assertIsNotNone(bundle)
+            self.assertEqual(bundle.module_name, "client_app_with_antd")
+            self.assertIn("ButtonTest", bundle.client_functions)
+            self.assertIn("CardTest", bundle.client_functions)
+            self.assertIn("APP_NAME", bundle.client_globals)
             
-    #         # Verify bundle code contains expected content
-    #         self.assertIn("function ButtonTest()", bundle.code)
-    #         self.assertIn("function CardTest()", bundle.code)
-    #         self.assertIn('const APP_NAME = "Ant Design Test";', bundle.code)
+            # Verify bundle code contains expected content
+            self.assertIn("function ButtonTest()", bundle.code)
+            self.assertIn("function CardTest()", bundle.code)
+            self.assertIn('const APP_NAME = "Ant Design Test";', bundle.code)
             
-    #         # verify antd components are present
-    #         self.assertIn("ButtonGroup", bundle.code)
+            # verify antd components are present
+            self.assertIn("ButtonGroup", bundle.code)
 
-    #         # Verify the Ant Design fixture content is present
-    #         self.assertIn("Testing Ant Design integration", bundle.code)
+            # Verify the Ant Design fixture content is present
+            self.assertIn("Testing Ant Design integration", bundle.code)
             
-    #         # Verify bundle was written to output directory
-    #         bundle_files = list(output_dir.glob("client.*.js"))
-    #         self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
+            # Verify bundle was written to output directory
+            bundle_files = list(output_dir.glob("client.*.js"))
+            self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
             
-    #         # Cleanup
-    #         builder.cleanup_temp_dir()
+            # Cleanup
+            builder.cleanup_temp_dir()
 
-    # def test_relative_import(self) -> None:
-    #     """Test that relative imports work correctly in Vite bundling."""
-    #     with tempfile.TemporaryDirectory() as temp_dir:
-    #         temp_path = Path(temp_dir)
+    def test_relative_import(self) -> None:
+        """Test that relative imports work correctly in Vite bundling."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
             
-    #         # Create project with Vite installed
-    #         package_json, output_dir = self._create_test_project_with_vite(temp_path, include_antd=True)
+            # Create project with Vite installed
+            package_json, output_dir = self._create_test_project_with_vite(temp_path, include_antd=True)
             
-    #         # Initialize the Vite builder
-    #         builder = ViteClientBundleBuilder(
-    #             vite_package_json=package_json,
-    #             vite_output_dir=output_dir,
-    #             vite_minify=False,
-    #         )
+            # Initialize the Vite builder
+            builder = ViteClientBundleBuilder(
+                vite_package_json=package_json,
+                vite_output_dir=output_dir,
+                vite_minify=False,
+            )
             
-    #         # Import the test module with relative import
-    #         fixtures_dir = Path(__file__).parent / "fixtures"
-    #         (module,) = Jac.jac_import("relative_import", str(fixtures_dir))
+            # Import the test module with relative import
+            fixtures_dir = Path(__file__).parent / "fixtures"
+            (module,) = Jac.jac_import("relative_import", str(fixtures_dir))
             
-    #         # Build the bundle
-    #         bundle = builder.build(module, force=True)
+            # Build the bundle
+            bundle = builder.build(module, force=True)
             
-    #         # Verify bundle structure
-    #         self.assertIsNotNone(bundle)
-    #         self.assertEqual(bundle.module_name, "relative_import")
-    #         self.assertIn("RelativeImport", bundle.client_functions)
-    #         self.assertIn("main", bundle.client_functions)
-    #         self.assertIn("CustomButton", bundle.code)
+            # Verify bundle structure
+            self.assertIsNotNone(bundle)
+            self.assertEqual(bundle.module_name, "relative_import")
+            self.assertIn("RelativeImport", bundle.client_functions)
+            self.assertIn("main", bundle.client_functions)
+            self.assertIn("CustomButton", bundle.code)
             
-    #         # Verify bundle code contains expected content
-    #         self.assertIn("function RelativeImport()", bundle.code)
-    #         self.assertIn("function main()", bundle.code)
+            # Verify bundle code contains expected content
+            self.assertIn("function RelativeImport()", bundle.code)
+            self.assertIn("function main()", bundle.code)
             
-    #         # Verify that the relative import (Button from .button) is properly resolved
-    #         self.assertIn("ButtonGroup", bundle.code)
+            # Verify that the relative import (Button from .button) is properly resolved
+            self.assertIn("ButtonGroup", bundle.code)
             
-    #         # Verify the Jac initialization is present
-    #         self.assertIn("__jacRegisterClientModule", bundle.code)
+            # Verify the Jac initialization is present
+            self.assertIn("__jacRegisterClientModule", bundle.code)
             
-    #         # Verify bundle was written to output directory
-    #         bundle_files = list(output_dir.glob("client.*.js"))
-    #         self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
+            # Verify bundle was written to output directory
+            bundle_files = list(output_dir.glob("client.*.js"))
+            self.assertGreater(len(bundle_files), 0, "Expected at least one bundle file")
             
-    #         # Cleanup
-    #         builder.cleanup_temp_dir()
+            # Cleanup
+            builder.cleanup_temp_dir()
 
     def test_js_import(self) -> None:
         """Test that JavaScript file imports work correctly in Vite bundling."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # temp_path = Path(temp_dir)
-
-            temp_path = Path(__file__).parent / "fixtures"
+            temp_path = Path(temp_dir)
             # Create project with Vite installed
             package_json, output_dir = self._create_test_project_with_vite(temp_path)
             

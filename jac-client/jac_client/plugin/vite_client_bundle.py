@@ -154,9 +154,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             # Avoid re-processing
             if path_obj in visited:
                 continue
-            print(f"Processing import: {path_obj}")
-            print(f"Suffix: {path_obj.suffix}")
-            print(f"Name: {import_path}")
             if path_obj.suffix == ".jac":
                 # Recurse into transitive deps
                 self._compile_dependencies_recursively(
@@ -168,8 +165,6 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
                     runtime_js=runtime_js,
                 )
             elif path_obj.suffix == ".js":
-                # Copy local JS for Vite to pick up
-                # FIX: Removed redundant JacRuntime import injection for local .js files.
                 try:
                     js_code = path_obj.read_text(encoding="utf-8")
                     if self.vite_package_json is not None:

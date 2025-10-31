@@ -1,6 +1,6 @@
 """Test module that imports JavaScript functions."""
 
-cl import from .utils.js {
+cl import from .utils {
     formatMessage,
     calculateSum,
     JS_CONSTANT,
