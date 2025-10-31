@@ -447,15 +447,6 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif i == node.name:
-                # Check for inline comment on the first line (like obj Vehicle(x) {  # comment)
-                if node.loc and node.loc.first_line:
-                    first_line_comments = self.get_comments_in_range(
-                        node.loc.first_line, node.loc.first_line
-                    )
-                    for comment_id, comment in first_line_comments:
-                        parts.append(self.text("  "))
-                        parts.append(self.text(comment.value))
-                        self.mark_comment_used(comment_id)
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.LBRACE:
