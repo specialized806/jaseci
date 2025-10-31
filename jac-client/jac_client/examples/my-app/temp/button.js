@@ -12,7 +12,7 @@ function CustomButton() {
                 globalThis[funcName] = globalFunctionMap[funcName];
             }
             // --- END GLOBAL EXPOSURE ---
-        
+
 __jacRegisterClientModule("button", ["CustomButton"], {});
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
