@@ -1019,7 +1019,7 @@ class JacAPIServer:
                                 )
 
                     response = server.execution_handler.spawn_walker(
-                        name, data, username
+                        name, data.get("fields", {}), username
                     )
                     self._send_response(response)
                 else:
