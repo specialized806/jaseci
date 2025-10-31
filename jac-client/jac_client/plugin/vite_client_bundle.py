@@ -151,7 +151,9 @@ class ViteClientBundleBuilder(ClientBundleBuilder):
             # Avoid re-processing
             if path_obj in visited:
                 continue
-
+            print(f"Processing import: {path_obj}")
+            print(f"Suffix: {path_obj.suffix}")
+            print(f"Name: {import_path}")
             if path_obj.suffix == ".jac":
                 # Recurse into transitive deps
                 self._compile_dependencies_recursively(
