@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    import jaclang.compiler.unitree as uni
 
 # Define DocType for self-referential typing
 DocType = Union["Doc", "Text", "Line", "Group", "Indent", "Concat", "IfBreak", "Align"]
@@ -79,13 +82,13 @@ class Group(Doc):
         contents: DocType,
         break_contiguous: bool = False,
         id: Optional[str] = None,
-        ast_node: Optional[object] = None,
+        ast_node: Optional[uni.UniNode] = None,
     ) -> None:
         """Initialize a Group object."""
         self.contents: DocType = contents
         self.break_contiguous: bool = break_contiguous
         self.id: Optional[str] = id
-        self.ast_node: Optional[object] = ast_node  # Reference to AST node
+        self.ast_node: Optional[uni.UniNode] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Group object."""
@@ -103,10 +106,12 @@ class Group(Doc):
 class Indent(Doc):
     """Indented content."""
 
-    def __init__(self, contents: DocType, ast_node: Optional[object] = None) -> None:
+    def __init__(
+        self, contents: DocType, ast_node: Optional[uni.UniNode] = None
+    ) -> None:
         """Initialize an Indent object."""
         self.contents: DocType = contents
-        self.ast_node: Optional[object] = ast_node  # Reference to AST node
+        self.ast_node: Optional[uni.UniNode] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Indent object."""
@@ -122,10 +127,12 @@ class Indent(Doc):
 class Concat(Doc):
     """A sequence of doc parts."""
 
-    def __init__(self, parts: list[DocType], ast_node: Optional[object] = None) -> None:
+    def __init__(
+        self, parts: list[DocType], ast_node: Optional[uni.UniNode] = None
+    ) -> None:
         """Initialize a Concat object."""
         self.parts: list[DocType] = parts
-        self.ast_node: Optional[object] = ast_node  # Reference to AST node
+        self.ast_node: Optional[uni.UniNode] = ast_node  # Reference to AST node
 
     def __str__(self) -> str:
         """Return a string representation of the Concat object."""

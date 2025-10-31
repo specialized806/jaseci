@@ -42,7 +42,7 @@ class DocIRGenPass(UniPass):
         self,
         contents: doc.DocType,
         break_contiguous: bool = False,
-        ast_node: Optional[object] = None,
+        ast_node: Optional[uni.UniNode] = None,
     ) -> doc.Group:
         """
         Create a Group node.
@@ -55,13 +55,13 @@ class DocIRGenPass(UniPass):
         return doc.Group(contents, break_contiguous, ast_node=ast_node)
 
     def indent(
-        self, contents: doc.DocType, ast_node: Optional[object] = None
+        self, contents: doc.DocType, ast_node: Optional[uni.UniNode] = None
     ) -> doc.Indent:
         """Create an Indent node."""
         return doc.Indent(contents, ast_node=ast_node)
 
     def concat(
-        self, parts: List[doc.DocType], ast_node: Optional[object] = None
+        self, parts: List[doc.DocType], ast_node: Optional[uni.UniNode] = None
     ) -> doc.Concat:
         """Create a Concat node."""
         return doc.Concat(parts, ast_node=ast_node)
