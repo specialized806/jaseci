@@ -163,7 +163,8 @@ class DocIRGenPass(UniPass):
         """
         Format comprehension with defensive checks.
 
-        Expected structure: [opening, expr, space, inner_compr..., space, closing]
+        Expected structure: [opening, space, expr, space, inner_compr..., space, closing, space]
+        We need to remove spaces adjacent to brackets.
         """
         # Remove trailing space if present
         if parts and isinstance(parts[-1], doc.Text) and parts[-1].text == " ":
@@ -174,6 +175,14 @@ class DocIRGenPass(UniPass):
             opening = parts[0]
             closing = parts[-1]
             middle = parts[1:-1] if len(parts) > 2 else []
+
+            # Remove space immediately after opening bracket
+            if middle and isinstance(middle[0], doc.Text) and middle[0].text == " ":
+                middle = middle[1:]
+
+            # Remove space immediately before closing bracket
+            if middle and isinstance(middle[-1], doc.Text) and middle[-1].text == " ":
+                middle = middle[:-1]
 
             return self.group(
                 self.concat(
