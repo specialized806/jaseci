@@ -434,7 +434,7 @@ class TestServeCommand(TestCase):
         result = self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "Test Task", "priority": 2}},
+            {"title": "Test Task", "priority": 2},
             token=token
         )
 
@@ -451,7 +451,7 @@ class TestServeCommand(TestCase):
         result2 = self._request(
             "POST",
             "/walker/ListTasks",
-            {"fields": {}},
+            {},
             token=token
         )
 
@@ -480,7 +480,7 @@ class TestServeCommand(TestCase):
         self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "User1 Task", "priority": 1}},
+            {"title": "User1 Task", "priority": 1},
             token=token1
         )
 
@@ -488,7 +488,7 @@ class TestServeCommand(TestCase):
         self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "User2 Task", "priority": 2}},
+            {"title": "User2 Task", "priority": 2},
             token=token2
         )
 
@@ -533,7 +533,7 @@ class TestServeCommand(TestCase):
         result = self._request(
             "POST",
             "/walker/NonExistentWalker",
-            {"fields": {}},
+            {},
             token=token
         )
 
@@ -757,7 +757,7 @@ class TestServeCommand(TestCase):
         task1_result = self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "Persistent Task 1", "priority": 1}},
+            {"title": "Persistent Task 1", "priority": 1},
             token=token
         )
         self.assertIn("result", task1_result)
@@ -765,7 +765,7 @@ class TestServeCommand(TestCase):
         task2_result = self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "Persistent Task 2", "priority": 2}},
+            {"title": "Persistent Task 2", "priority": 2},
             token=token
         )
         self.assertIn("result", task2_result)
@@ -773,7 +773,7 @@ class TestServeCommand(TestCase):
         task3_result = self._request(
             "POST",
             "/walker/CreateTask",
-            {"fields": {"title": "Persistent Task 3", "priority": 3}},
+            {"title": "Persistent Task 3", "priority": 3},
             token=token
         )
         self.assertIn("result", task3_result)
@@ -782,7 +782,7 @@ class TestServeCommand(TestCase):
         list_before = self._request(
             "POST",
             "/walker/ListTasks",
-            {"fields": {}},
+            {},
             token=token
         )
         self.assertIn("result", list_before)
@@ -830,7 +830,7 @@ class TestServeCommand(TestCase):
         list_after = self._request(
             "POST",
             "/walker/ListTasks",
-            {"fields": {}},
+            {},
             token=new_token
         )
 
@@ -841,7 +841,7 @@ class TestServeCommand(TestCase):
         complete_result = self._request(
             "POST",
             "/walker/CompleteTask",
-            {"fields": {"title": "Persistent Task 2"}},
+            {"title": "Persistent Task 2"},
             token=new_token
         )
         self.assertIn("result", complete_result)
@@ -1305,7 +1305,7 @@ class TestAccessLevelAuthentication(TestCase):
         result = self._request(
             "POST",
             "/walker/PublicWalker",
-            {"fields": {"message": "hello"}}
+            {"message": "hello"}
         )
 
         self.assertIn("result", result)
@@ -1319,7 +1319,7 @@ class TestAccessLevelAuthentication(TestCase):
         result = self._request(
             "POST",
             "/walker/ProtectedWalker",
-            {"fields": {"data": "test"}}
+            {"data": "test"}
         )
 
         self.assertIn("error", result)
@@ -1341,7 +1341,7 @@ class TestAccessLevelAuthentication(TestCase):
         result = self._request(
             "POST",
             "/walker/ProtectedWalker",
-            {"fields": {"data": "mydata"}},
+            {"data": "mydata"},
             token=token
         )
 
@@ -1356,7 +1356,7 @@ class TestAccessLevelAuthentication(TestCase):
         result = self._request(
             "POST",
             "/walker/PrivateWalker",
-            {"fields": {"secret": "test"}}
+            {"secret": "test"}
         )
 
         self.assertIn("error", result)
@@ -1378,7 +1378,7 @@ class TestAccessLevelAuthentication(TestCase):
         result = self._request(
             "POST",
             "/walker/PrivateWalker",
-            {"fields": {"secret": "verysecret"}},
+            {"secret": "verysecret"},
             token=token
         )
 
