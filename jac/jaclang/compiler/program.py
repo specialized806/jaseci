@@ -30,7 +30,6 @@ from jaclang.compiler.passes.main import (
 )
 from jaclang.compiler.passes.tool import (
     DocIRGenPass,
-    FuseCommentsPass,
     JacFormatPass,
 )
 from jaclang.runtimelib.utils import read_file_with_encoding
@@ -55,7 +54,7 @@ py_code_gen = [
     PyJacAstLinkPass,
     PyBytecodeGenPass,
 ]
-format_sched = [FuseCommentsPass, DocIRGenPass, JacFormatPass]
+format_sched = [DocIRGenPass, JacFormatPass]
 
 
 class JacProgram:
