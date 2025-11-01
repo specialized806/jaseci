@@ -66,15 +66,12 @@ class CommentInjectionPass(UniPass):
                 self.token_to_comment[token_id].append((comment_idx, comment))
 
     def after_pass(self) -> None:
-        """Inject and collapse."""
+        """Inject comments."""
         if not isinstance(self.ir_out, uni.Module):
             return
 
         if hasattr(self.ir_out.gen, "doc_ir"):
             self.ir_out.gen.doc_ir = self._process(self.ir_out, self.ir_out.gen.doc_ir)
-            # Only collapse if we actually used any comments
-            if self.used_comments:
-                self.ir_out.gen.doc_ir = self._collapse_lines(self.ir_out.gen.doc_ir)
 
     def _process(self, ctx: uni.UniNode, node: doc.DocType) -> doc.DocType:
         """Main recursive processor with type-specific handling."""
@@ -111,17 +108,37 @@ class CommentInjectionPass(UniPass):
         """Inject comments into a parts list using token detection."""
         result = []
 
-        for part in parts:
+        for i, part in enumerate(parts):
             processed = self._process(ctx, part)
             result.append(processed)
 
-            # Find tokens in this part and inject their comments
-            for token in self._get_tokens(processed):
-                token_id = id(token)
+            # Find tokens in this part and inject their inline comments
+            tokens = self._get_tokens(processed)
+            if tokens:
+                last_token = max(tokens, key=lambda t: (t.loc.last_line, t.loc.col_end))
+                token_id = id(last_token)
+
                 if token_id in self.token_to_comment:
                     for comment_idx, comment in self.token_to_comment[token_id]:
                         if comment_idx not in self.used_comments:
-                            result.append(self._make_inline_comment(comment))
+                            # Check if next part is a hard Line - if so, skip it to avoid double break
+                            next_is_hard_line = (
+                                i + 1 < len(parts)
+                                and isinstance(parts[i + 1], doc.Line)
+                                and parts[i + 1].hard
+                            )
+
+                            if next_is_hard_line:
+                                # Inject comment without Line, use the existing next Line
+                                result.append(
+                                    doc.Concat(
+                                        [doc.Text("  "), doc.Text(comment.value)]
+                                    )
+                                )
+                            else:
+                                # Inject comment with Line
+                                result.append(self._make_inline_comment(comment))
+
                             self.used_comments.add(comment_idx)
 
         return result
@@ -239,62 +256,6 @@ class CommentInjectionPass(UniPass):
                 result.append(self._process(node, part))
 
         return doc.Indent(doc.Concat(result), ast_node=node)
-
-    def _collapse_lines(self, node: doc.DocType) -> doc.DocType:
-        """
-        Collapse consecutive hard Lines only when they're truly duplicates.
-
-        Only collapses when we have multiple hard Lines directly adjacent
-        (not separated by other content), which happens when comments
-        inject their own Line next to existing Lines.
-        """
-        if isinstance(node, doc.Concat):
-            result = []
-
-            for part in node.parts:
-                collapsed = self._collapse_lines(part)
-
-                # Only skip if this is a Line and previous part was also a Line
-                # (direct adjacency, not nested)
-                if (
-                    isinstance(collapsed, doc.Line)
-                    and collapsed.hard
-                    and result
-                    and isinstance(result[-1], doc.Line)
-                    and result[-1].hard
-                ):
-                    # Skip this duplicate Line
-                    continue
-
-                # Add unless it's an empty Concat
-                if not (isinstance(collapsed, doc.Concat) and not collapsed.parts):
-                    result.append(collapsed)
-
-            return doc.Concat(
-                result, ast_node=node.ast_node if hasattr(node, "ast_node") else None
-            )
-
-        elif isinstance(node, doc.Group):
-            return doc.Group(
-                self._collapse_lines(node.contents),
-                node.break_contiguous,
-                node.id,
-                ast_node=node.ast_node if hasattr(node, "ast_node") else None,
-            )
-        elif isinstance(node, doc.Indent):
-            return doc.Indent(
-                self._collapse_lines(node.contents),
-                ast_node=node.ast_node if hasattr(node, "ast_node") else None,
-            )
-        elif isinstance(node, doc.IfBreak):
-            return doc.IfBreak(
-                self._collapse_lines(node.break_contents),
-                self._collapse_lines(node.flat_contents),
-            )
-        elif isinstance(node, doc.Align):
-            return doc.Align(self._collapse_lines(node.contents), node.n)
-
-        return node
 
     def _make_standalone_comment(self, comment: uni.CommentToken) -> doc.DocType:
         """Create standalone comment DocIR."""
