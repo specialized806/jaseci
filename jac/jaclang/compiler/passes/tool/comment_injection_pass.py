@@ -70,18 +70,17 @@ class CommentInjectionPass(UniPass):
         if not isinstance(self.ir_out, uni.Module):
             return
 
-        if hasattr(self.ir_out.gen, "doc_ir"):
-            self.ir_out.gen.doc_ir = self._process(self.ir_out, self.ir_out.gen.doc_ir)
+        self.ir_out.gen.doc_ir = self._process(self.ir_out, self.ir_out.gen.doc_ir)
 
     def _process(self, ctx: uni.UniNode, node: doc.DocType) -> doc.DocType:
         """Main recursive processor with type-specific handling."""
         if isinstance(node, doc.Concat):
-            ctx = node.ast_node if hasattr(node, "ast_node") else ctx
+            ctx = node.ast_node if node.ast_node else ctx
             if isinstance(ctx, uni.Module):
                 return self._handle_module(ctx, node)
             return doc.Concat(self._inject_into_parts(node.parts, ctx), ast_node=ctx)
         elif isinstance(node, doc.Group):
-            ctx = node.ast_node if hasattr(node, "ast_node") else ctx
+            ctx = node.ast_node if node.ast_node else ctx
             return doc.Group(
                 self._process(ctx, node.contents),
                 node.break_contiguous,
@@ -89,8 +88,8 @@ class CommentInjectionPass(UniPass):
                 ast_node=ctx,
             )
         elif isinstance(node, doc.Indent):
-            ctx = node.ast_node if hasattr(node, "ast_node") else ctx
-            if node.ast_node and hasattr(ctx, "body"):
+            ctx = node.ast_node if node.ast_node else ctx
+            if node.ast_node and getattr(ctx, "body", None) is not None:
                 return self._handle_body(ctx, node)
             return doc.Indent(self._process(ctx, node.contents), ast_node=ctx)
         elif isinstance(node, doc.IfBreak):
@@ -166,7 +165,7 @@ class CommentInjectionPass(UniPass):
                 child = module.kid[child_idx]
 
                 # Add standalone comments before child
-                if hasattr(child, "loc") and child.loc:
+                if child.loc:
                     for idx, comment in enumerate(self.ir_out.source.comments):
                         if (
                             idx not in self.used_comments
@@ -238,16 +237,14 @@ class CommentInjectionPass(UniPass):
             part_line = None
             tokens = self._get_tokens(part)
             if tokens:
-                part_line = min(
-                    t.loc.first_line for t in tokens if hasattr(t, "loc") and t.loc
-                )
+                part_line = min(t.loc.first_line for t in tokens if t.loc)
 
             # If we have a part_line and there are more body items to process
             if part_line and body_idx < len(node.body):
                 # Check if this part belongs to the current body item or a later one
                 while body_idx < len(node.body):
                     body_item = node.body[body_idx]
-                    if not hasattr(body_item, "loc") or not body_item.loc:
+                    if not body_item.loc:
                         body_idx += 1
                         continue
 
@@ -288,9 +285,7 @@ class CommentInjectionPass(UniPass):
         # Add any remaining comments after all body items but before closing brace
         if body_end and node.body:
             last_body_line = (
-                node.body[-1].loc.last_line + 1
-                if hasattr(node.body[-1], "loc") and node.body[-1].loc
-                else current_line
+                node.body[-1].loc.last_line + 1 if node.body[-1].loc else current_line
             )
             for idx, comment in enumerate(self.ir_out.source.comments):
                 if (
