@@ -1521,7 +1521,7 @@ class DocIRGenPass(UniPass):
                 in_body = False
                 if len(body_parts) and isinstance(body_parts[-1], doc.Line):
                     body_parts.pop()
-                parts.append(self.indent(self.concat(body_parts)))
+                parts.append(self.indent(self.concat(body_parts), ast_node=node))
                 parts.append(self.line())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())

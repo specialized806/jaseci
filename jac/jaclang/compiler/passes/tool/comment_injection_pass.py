@@ -203,12 +203,20 @@ class CommentInjectionPass(UniPass):
         ):
             return indent
 
-        # Find body start
+        # Find body start and end
         body_start = next(
             (
                 k.loc.last_line + 1
                 for k in node.kid
                 if isinstance(k, uni.Token) and k.name == Tok.LBRACE and k.loc
+            ),
+            None,
+        )
+        body_end = next(
+            (
+                k.loc.first_line
+                for k in node.kid
+                if isinstance(k, uni.Token) and k.name == Tok.RBRACE and k.loc
             ),
             None,
         )
@@ -218,17 +226,37 @@ class CommentInjectionPass(UniPass):
         result = []
         current_line = body_start
         body_idx = 0
+        parts_with_standalone = []
 
+        # First pass: inject standalone comments before body items
         for part in indent.contents.parts:
             if isinstance(part, doc.Line):
-                result.append(part)
+                parts_with_standalone.append(part)
                 continue
 
-            if body_idx < len(node.body):
-                body_item = node.body[body_idx]
+            # Check if this part corresponds to a body item by examining its tokens
+            part_line = None
+            tokens = self._get_tokens(part)
+            if tokens:
+                part_line = min(
+                    t.loc.first_line for t in tokens if hasattr(t, "loc") and t.loc
+                )
 
-                # Add standalone comments before
-                if hasattr(body_item, "loc") and body_item.loc:
+            # If we have a part_line and there are more body items to process
+            if part_line and body_idx < len(node.body):
+                # Check if this part belongs to the current body item or a later one
+                while body_idx < len(node.body):
+                    body_item = node.body[body_idx]
+                    if not hasattr(body_item, "loc") or not body_item.loc:
+                        body_idx += 1
+                        continue
+
+                    # If part is before current body item, don't increment body_idx
+                    if part_line < body_item.loc.first_line:
+                        break
+
+                    # If part is part of current body item or after it
+                    # Add standalone comments before this body item
                     for idx, comment in enumerate(self.ir_out.source.comments):
                         if (
                             idx not in self.used_comments
@@ -237,15 +265,41 @@ class CommentInjectionPass(UniPass):
                             <= comment.loc.first_line
                             < body_item.loc.first_line
                         ):
-                            result.append(self._make_standalone_comment(comment))
+                            parts_with_standalone.append(
+                                self._make_standalone_comment(comment)
+                            )
                             self.used_comments.add(idx)
 
                     current_line = body_item.loc.last_line + 1
 
-                result.append(self._process(body_item, part))
-                body_idx += 1
-            else:
-                result.append(self._process(node, part))
+                    # If part is within or at the body item, process it and move to next body item
+                    if part_line <= body_item.loc.last_line:
+                        body_idx += 1
+                        break
+                    else:
+                        # Part is after this body item, move to next body item
+                        body_idx += 1
+
+            parts_with_standalone.append(part)
+
+        # Second pass: process all parts with inline comment injection
+        result = self._inject_into_parts(parts_with_standalone, node)
+
+        # Add any remaining comments after all body items but before closing brace
+        if body_end and node.body:
+            last_body_line = (
+                node.body[-1].loc.last_line + 1
+                if hasattr(node.body[-1], "loc") and node.body[-1].loc
+                else current_line
+            )
+            for idx, comment in enumerate(self.ir_out.source.comments):
+                if (
+                    idx not in self.used_comments
+                    and idx not in self.inline_comment_ids
+                    and last_body_line <= comment.loc.first_line < body_end
+                ):
+                    result.append(self._make_standalone_comment(comment))
+                    self.used_comments.add(idx)
 
         return doc.Indent(doc.Concat(result), ast_node=node)
 
