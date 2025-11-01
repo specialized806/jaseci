@@ -14,9 +14,9 @@ from jaclang.compiler.passes import UniPass
 class DocIRGenPass(UniPass):
     """DocIrGenPass generate DocIr for Jac code."""
 
-    def text(self, text: str) -> doc.Text:
+    def text(self, text: str, source_token: Optional[uni.Token] = None) -> doc.Text:
         """Create a Text node."""
-        return doc.Text(text)
+        return doc.Text(text, source_token=source_token)
 
     def space(self) -> doc.Text:
         """Create a space node."""
@@ -1630,30 +1630,30 @@ class DocIRGenPass(UniPass):
 
     def exit_token(self, node: uni.Token) -> None:
         """Generate DocIR for tokens."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_semi(self, node: uni.Semi) -> None:
         """Generate DocIR for semicolons."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_name(self, node: uni.Name) -> None:
         """Generate DocIR for names."""
         if node.is_kwesc:
-            node.gen.doc_ir = self.text(f"<>{node.value}")
+            node.gen.doc_ir = self.text(f"<>{node.value}", source_token=node)
         else:
-            node.gen.doc_ir = self.text(node.value)
+            node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_int(self, node: uni.Int) -> None:
         """Generate DocIR for integers."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_builtin_type(self, node: uni.BuiltinType) -> None:
         """Generate DocIR for builtin type nodes."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_float(self, node: uni.Float) -> None:
         """Generate DocIR for floats."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_string(self, node: uni.String) -> None:
         """Generate DocIR for strings."""
@@ -1666,28 +1666,31 @@ class DocIRGenPass(UniPass):
 
         if is_escaped_curly:
             node.gen.doc_ir = self.concat(
-                [self.text(node.value), self.text(node.value)]
+                [
+                    self.text(node.value, source_token=node),
+                    self.text(node.value, source_token=node),
+                ]
             )
             return
 
         # Regular string
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
-        node.gen.doc_ir = self.text(node.value.replace("_", ""))
+        node.gen.doc_ir = self.text(node.value.replace("_", ""), source_token=node)
 
     def exit_bool(self, node: uni.Bool) -> None:
         """Generate DocIR for boolean values."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_null(self, node: uni.Null) -> None:
         """Generate DocIR for null values."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         """Generate DocIR for ellipsis."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value, source_token=node)
 
     def exit_jsx_element(self, node: uni.JsxElement) -> None:
         """Generate DocIR for JSX elements - kid-centric beautiful formatting!"""

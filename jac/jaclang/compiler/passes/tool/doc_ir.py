@@ -31,9 +31,12 @@ class Doc:
 class Text(Doc):
     """Simple text content."""
 
-    def __init__(self, text: str) -> None:
+    def __init__(self, text: str, source_token: Optional[uni.Token] = None) -> None:
         """Initialize a Text object."""
         self.text: str = text
+        self.source_token: Optional[uni.Token] = (
+            source_token  # Reference to source token
+        )
 
     def __str__(self) -> str:
         """Return a string representation of the Text object."""
@@ -41,7 +44,12 @@ class Text(Doc):
 
     def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
-        return f'{indent}Text("{self.text}")'
+        token_info = (
+            f" [token@L{self.source_token.loc.first_line}]"
+            if self.source_token and hasattr(self.source_token, "loc")
+            else ""
+        )
+        return f'{indent}Text("{self.text}"){token_info}'
 
 
 class Line(Doc):
