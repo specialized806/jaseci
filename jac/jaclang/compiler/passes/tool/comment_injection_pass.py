@@ -151,12 +151,6 @@ class CommentInjectionPass(UniPass):
             )
         return []
 
-    def _get_ast_node(self, node: doc.DocType) -> uni.UniNode | None:
-        """Extract the ast_node from a DocType node."""
-        if hasattr(node, "ast_node"):
-            return node.ast_node
-        return None
-
     def _handle_module(self, module: uni.Module, concat: doc.Concat) -> doc.Concat:
         """Handle module-level comment injection."""
         result = []
@@ -230,13 +224,7 @@ class CommentInjectionPass(UniPass):
                 result.append(part)
                 continue
 
-            # Check if this part corresponds to a body item
-            part_ast_node = self._get_ast_node(part)
-            is_body_item = (
-                body_idx < len(node.body) and part_ast_node is node.body[body_idx]
-            )
-
-            if is_body_item:
+            if body_idx < len(node.body):
                 body_item = node.body[body_idx]
 
                 # Add standalone comments before
@@ -257,44 +245,7 @@ class CommentInjectionPass(UniPass):
                 result.append(self._process(body_item, part))
                 body_idx += 1
             else:
-                # For non-body items (like comma tokens), still check for inline comments
-                processed_part = self._process(node, part)
-                result.append(processed_part)
-
-                # Inject inline comments for tokens in this part
-                tokens = self._get_tokens(processed_part)
-                if tokens:
-                    last_token = max(
-                        tokens, key=lambda t: (t.loc.last_line, t.loc.col_end)
-                    )
-                    token_id = id(last_token)
-
-                    if token_id in self.token_to_comment:
-                        for comment_idx, comment in self.token_to_comment[token_id]:
-                            if comment_idx not in self.used_comments:
-                                result.append(
-                                    self._make_inline_comment(comment, add_line=False)
-                                )
-                                self.used_comments.add(comment_idx)
-
-        # Find closing brace and add any remaining standalone comments
-        body_end = next(
-            (
-                k.loc.first_line
-                for k in node.kid
-                if isinstance(k, uni.Token) and k.name == Tok.RBRACE and k.loc
-            ),
-            None,
-        )
-        if body_end:
-            for idx, comment in enumerate(self.ir_out.source.comments):
-                if (
-                    idx not in self.used_comments
-                    and idx not in self.inline_comment_ids
-                    and current_line <= comment.loc.first_line < body_end
-                ):
-                    result.append(self._make_standalone_comment(comment))
-                    self.used_comments.add(idx)
+                result.append(self._process(node, part))
 
         return doc.Indent(doc.Concat(result), ast_node=node)
 

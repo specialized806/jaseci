@@ -540,13 +540,10 @@ class DocIRGenPass(UniPass):
                         eq_tok,
                         self.concat([self.space(), rhs_concat]),
                     ]
-                ),
-                ast_node=node,
+                )
             )
         else:
-            node.gen.doc_ir = self.group(
-                self.concat(lhs_parts + rhs_parts), ast_node=node
-            )
+            node.gen.doc_ir = self.group(self.concat(lhs_parts + rhs_parts))
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
@@ -1524,7 +1521,7 @@ class DocIRGenPass(UniPass):
                 in_body = False
                 if len(body_parts) and isinstance(body_parts[-1], doc.Line):
                     body_parts.pop()
-                parts.append(self.indent(self.concat(body_parts), ast_node=node))
+                parts.append(self.indent(self.concat(body_parts)))
                 parts.append(self.line())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
