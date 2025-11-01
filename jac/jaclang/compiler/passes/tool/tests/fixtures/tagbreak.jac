@@ -181,13 +181,10 @@ def x() {
 
 
 @decorator()
-class KK {
-}
+class KK {}
 
 
 # kkk
-
-
 import pygame, random, math;
 
 
@@ -199,8 +196,7 @@ with entry {
 
 
 # kkk
-class X {
-}
+class X {}
 
 
 # comment
@@ -319,7 +315,6 @@ def main() {
 
 
 obj Vehicle(ssdsd) {  # Has statements with type annotations (instance variables in obj)
-
     # Has statements with type annotations (instance variables in obj)
     """sadasd"""
     has name2: str,  # C1
@@ -331,4 +326,5 @@ obj Vehicle(ssdsd) {  # Has statements with type annotations (instance variables
     def py_method(self):
         return "Python code"
     ::py::
+
 }
