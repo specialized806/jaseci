@@ -130,18 +130,18 @@ def onMount(mountFn: any) -> None {
         __jacRunEffect(mountFn);
         return;
     }
-    
+
     # Track mounted components
     if not __jacReactiveContext.mountedComponents {
         __jacReactiveContext.mountedComponents = {};
     }
-    
+
     # Check if this component has already mounted
     componentId = f"{currentComponent}";
     if not __jacHasOwn(__jacReactiveContext.mountedComponents, componentId) {
         # Mark as mounted and run the effect
         __jacReactiveContext.mountedComponents[componentId] = True;
-        
+
         # Run in next tick to ensure component is fully rendered
         try {
             setTimeout(lambda -> None {

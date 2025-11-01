@@ -111,8 +111,8 @@ async def onAddTodo(e: any) -> None {
     def TodoItem(item: dict) -> any {
         console.log(item.text,"-",typeof (item.done)== 'boolean');
         return <li key={item.id} style={{
-            "display": "flex", 
-            "gap": "12px", 
+            "display": "flex",
+            "gap": "12px",
             "alignItems": "center",
             "background": "#FFFFFF",
             "padding": "12px 16px",
@@ -124,7 +124,7 @@ async def onAddTodo(e: any) -> None {
             <input
                 type="checkbox"
                 checked={item.done}
-                
+
                 onChange={lambda -> None { toggleTodo(item.id); }}
                 style={{
                     "width": "18px",
@@ -143,7 +143,7 @@ async def onAddTodo(e: any) -> None {
             </span>
             <button
                 style={{
-                    "marginLeft": "auto", 
+                    "marginLeft": "auto",
                     "padding": "6px 12px",
                     "background": "#FFFFFF",
                     "color": "#EF4444",
@@ -179,7 +179,7 @@ async def onAddTodo(e: any) -> None {
         onMount(lambda -> None {
             read_todos_action();
         });
-        
+
 
         itemsArr = filteredItems();
         if not Array.isArray(itemsArr) {
@@ -193,8 +193,8 @@ async def onAddTodo(e: any) -> None {
         children = [];
         for it in itemsArr { children.push(TodoItem(it)); }
 
-        
-    
+
+
 
         return <div style={{
             "maxWidth": "640px",
@@ -217,7 +217,7 @@ async def onAddTodo(e: any) -> None {
             }}>My Todos</h2>
 
             <form id="todo_submit" onSubmit={onAddTodo} style={{
-                "display": "flex", 
+                "display": "flex",
                 "gap": "12px",
                 "marginBottom": "16px",
                 "background": "#FFFFFF",
@@ -231,7 +231,7 @@ async def onAddTodo(e: any) -> None {
                     type="text"
                     placeholder="What needs to be done?"
                     style={{
-                        "flex": "1", 
+                        "flex": "1",
                         "padding": "12px 14px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -256,8 +256,8 @@ async def onAddTodo(e: any) -> None {
             </form>
 
             <div style={{
-                "display": "flex", 
-                "gap": "8px", 
+                "display": "flex",
+                "gap": "8px",
                 "marginTop": "8px",
                 "background": "#FFFFFF",
                 "padding": "10px",
@@ -315,7 +315,7 @@ async def onAddTodo(e: any) -> None {
                 </button>
                 <button
                     style={{
-                        "marginLeft": "auto", 
+                        "marginLeft": "auto",
                         "padding": "8px 14px",
                         "background": "#F9FAFB",
                         "color": "#374151",
@@ -333,8 +333,8 @@ async def onAddTodo(e: any) -> None {
             </div>
 
             {RenderUl(children, {
-                "listStyle": "none", 
-                "padding": "0", 
+                "listStyle": "none",
+                "padding": "0",
                 "marginTop": "12px",
                 "background": "#FFFFFF",
                 "borderRadius": "12px",
@@ -345,7 +345,7 @@ async def onAddTodo(e: any) -> None {
             })}
              {[TodoItem(item) for item in items]}
             <div style={{
-                "marginTop": "12px", 
+                "marginTop": "12px",
                 "color": "#374151",
                 "textAlign": "center",
                 "fontSize": "14px",
@@ -393,7 +393,7 @@ async def onAddTodo(e: any) -> None {
                         "fontWeight": "600"
                     }}>Username</label>
                     <input id="login-username" type="text" style={{
-                        "width": "100%", 
+                        "width": "100%",
                         "padding": "12px 16px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -413,7 +413,7 @@ async def onAddTodo(e: any) -> None {
                         "fontWeight": "600"
                     }}>Password</label>
                     <input id="login-password" type="password" style={{
-                        "width": "100%", 
+                        "width": "100%",
                         "padding": "12px 16px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -425,7 +425,7 @@ async def onAddTodo(e: any) -> None {
                     }}/>
                 </div>
                 <button type="submit" style={{
-                    "width": "100%", 
+                    "width": "100%",
                     "padding": "12px",
                     "background": "#7C3AED",
                     "color": "#FFFFFF",
@@ -439,7 +439,7 @@ async def onAddTodo(e: any) -> None {
                 }}>Sign In</button>
             </form>
             <div style={{
-                "marginTop": "16px", 
+                "marginTop": "16px",
                 "textAlign": "center",
                 "background": "#F9FAFB",
                 "padding": "10px",
@@ -493,7 +493,7 @@ async def onAddTodo(e: any) -> None {
                         "fontWeight": "600"
                     }}>Username</label>
                     <input id="signup-username" type="text" required style={{
-                        "width": "100%", 
+                        "width": "100%",
                         "padding": "12px 16px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -513,7 +513,7 @@ async def onAddTodo(e: any) -> None {
                         "fontWeight": "600"
                     }}>Password</label>
                     <input id="signup-password" type="password" required style={{
-                        "width": "100%", 
+                        "width": "100%",
                         "padding": "12px 16px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -533,7 +533,7 @@ async def onAddTodo(e: any) -> None {
                         "fontWeight": "600"
                     }}>Confirm Password</label>
                     <input id="signup-password-confirm" type="password" required style={{
-                        "width": "100%", 
+                        "width": "100%",
                         "padding": "12px 16px",
                         "border": "1px solid #E5E7EB",
                         "borderRadius": "8px",
@@ -545,7 +545,7 @@ async def onAddTodo(e: any) -> None {
                     }}/>
                 </div>
                 <button type="submit" style={{
-                    "width": "100%", 
+                    "width": "100%",
                     "padding": "12px",
                     "background": "#7C3AED",
                     "color": "#FFFFFF",
@@ -559,7 +559,7 @@ async def onAddTodo(e: any) -> None {
                 }}>Create Account</button>
             </form>
             <div style={{
-                "marginTop": "16px", 
+                "marginTop": "16px",
                 "textAlign": "center",
                 "background": "#F9FAFB",
                 "padding": "10px",
@@ -586,7 +586,7 @@ async def onAddTodo(e: any) -> None {
         if password.length < 6 { alert("Password must be at least 6 characters"); return; }
 
         result = await jacSignup(username, password);
-        
+
         if result["success"] if "success" in result else False {
             alert("Account created successfully! Welcome to My Todo!");
             navigate("/todos");
@@ -621,16 +621,16 @@ async def onAddTodo(e: any) -> None {
             "borderRadius": "10px"
         }}>
             <div style={{
-                "maxWidth": "960px", 
-                "margin": "0 auto", 
-                "display": "flex", 
-                "gap": "16px", 
+                "maxWidth": "960px",
+                "margin": "0 auto",
+                "display": "flex",
+                "gap": "16px",
                 "alignItems": "center",
                 "padding": "0 12px"
             }}>
                 <Link href="/todos" style={{"textDecoration": "none"}}>
                     <span style={{
-                        "color": "#111827", 
+                        "color": "#111827",
                         "fontWeight": "800",
                         "fontSize": "18px"
                     }}>📝 My Todos</span>
@@ -638,12 +638,12 @@ async def onAddTodo(e: any) -> None {
                 <button
                     onClick={logout_action}
                     style={{
-                        "marginLeft": "auto", 
-                        "padding": "8px 12px", 
-                        "background": "#FFFFFF", 
-                        "color": "#374151", 
-                        "border": "1px solid #E5E7EB", 
-                        "borderRadius": "18px", 
+                        "marginLeft": "auto",
+                        "padding": "8px 12px",
+                        "background": "#FFFFFF",
+                        "color": "#374151",
+                        "border": "1px solid #E5E7EB",
+                        "borderRadius": "18px",
                         "cursor": "pointer",
                         "fontSize": "14px",
                         "fontWeight": "600",
@@ -653,7 +653,7 @@ async def onAddTodo(e: any) -> None {
                 >
                     Logout
                 </button>
-                
+
             </div>
         </nav>;
     }

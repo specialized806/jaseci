@@ -26,21 +26,21 @@ cl {
     let [todoState, setTodoState] = createState({
         "items": []
     });
-    
+
     let [filterState, setFilterState] = createState({
         "filter": "all"
     });
-    
+
     let [uiState, setUiState] = createState({
         "loading": False,
         "error": None
     });
-    
+
     def TodoApp() -> any {
         todos = todoState();
         filter = filterState();
         ui = uiState();
-        
+
         return <div>
             {ui.loading and <div>Loading...</div>}
             {ui.error and <div>Error: {ui.error}</div>}
@@ -71,20 +71,20 @@ cl {
         "profile": None,
         "isLoggedIn": False
     });
-    
+
     # Todo state
     let [todoState, setTodoState] = createState({
         "items": [],
         "selectedId": None
     });
-    
+
     # UI state
     let [uiState, setUiState] = createState({
         "theme": "light",
         "sidebarOpen": False,
         "modalOpen": False
     });
-    
+
     # Settings state
     let [settingsState, setSettingsState] = createState({
         "notifications": True,
@@ -96,7 +96,7 @@ cl {
         todos = todoState();
         ui = uiState();
         settings = settingsState();
-        
+
         return <div className={ui.theme}>
             {ui.sidebarOpen and <Sidebar />}
             {todos.items.length > 0 and <TodoList items={todos.items} />}
@@ -116,7 +116,7 @@ cl {
         "currentUser": None,
         "theme": "light"
     });
-    
+
     # Component-specific state (can be defined inside components)
     def TodoForm() -> any {
         # Local component state
@@ -124,12 +124,12 @@ cl {
             "text": "",
             "valid": False
         });
-        
+
         def validate() -> None {
             text = formState().text;
             setFormState({"valid": len(text.trim()) > 0});
         }
-        
+
         return <form>
             <input
                 value={formState().text}
@@ -140,17 +140,17 @@ cl {
             />
         </form>;
     }
-    
+
     def TodoList() -> any {
         # Local list state
         let [listState, setListState] = createState({
             "sortBy": "date",
             "order": "asc"
         });
-        
+
         todos = appState().todos;
         sorted = sortTodos(todos, listState());
-        
+
         return <div>
             {[TodoItem(item) for item in sorted]}
         </div>;
@@ -170,7 +170,7 @@ cl {
         "isLoading": False,
         "error": None
     });
-    
+
     async def loadUser() -> None {
         setUserState({"isLoading": True, "error": None});
         try {
@@ -180,19 +180,19 @@ cl {
             setUserState({"error": str(err), "isLoading": False});
         }
     }
-    
+
     def logout() -> None {
         jacLogout();
         setUserState({"currentUser": None});
     }
-    
+
     # State module: Todo management
     let [todoState, setTodoState] = createState({
         "items": [],
         "filter": "all",
         "loading": False
     });
-    
+
     async def loadTodos() -> None {
         setTodoState({"loading": True});
         try {
@@ -202,7 +202,7 @@ cl {
             setTodoState({"loading": False});
         }
     }
-    
+
     async def addTodo(text: str) -> None {
         new_todo = await __jacSpawn("create_todo", {"text": text});
         s = todoState();
@@ -224,15 +224,15 @@ cl {
     let [todoState, setTodoState] = createState({
         "items": []
     });
-    
+
     let [filterState, setFilterState] = createState({
         "filter": "all"
     });
-    
+
     def getFilteredTodos() -> list {
         todos = todoState();
         filter = filterState();
-        
+
         if filter == "active" {
             return [item for item in todos.items if not item.done];
         } elif filter == "completed" {
@@ -240,13 +240,13 @@ cl {
         }
         return todos.items;
     }
-    
+
     def getStats() -> dict {
         todos = todoState();
         total = len(todos.items);
         active = len([item for item in todos.items if not item.done]);
         completed = total - active;
-        
+
         return {
             "total": total,
             "active": active,
@@ -257,7 +257,7 @@ cl {
     def TodoApp() -> any {
         filtered = getFilteredTodos();
         stats = getStats();
-        
+
         return <div>
             <div>
                 Total: {stats.total}, Active: {stats.active}, Completed: {stats.completed}
@@ -277,31 +277,31 @@ cl {
     let [todoState, setTodoState] = createState({
         "items": []
     });
-    
+
     let [statsState, setStatsState] = createState({
         "total": 0,
         "active": 0,
         "completed": 0
     });
-    
+
     # Automatically update stats when todos change
     createEffect(lambda -> None {
         todos = todoState();
         total = len(todos.items);
         active = len([item for item in todos.items if not item.done]);
         completed = total - active;
-        
+
         setStatsState({
             "total": total,
             "active": active,
             "completed": completed
         });
     });
-    
+
     def TodoApp() -> any {
         todos = todoState();
         stats = statsState();
-        
+
         return <div>
             <StatsDisplay stats={stats} />
             {[TodoItem(item) for item in todos.items]}
@@ -325,10 +325,10 @@ cl {
         "filter": "all",
         "input": ""
     });
-    
+
     def todoReducer(action: str, payload: any) -> None {
         s = todoState();
-        
+
         if action == "ADD_TODO" {
             newItem = {
                 "id": payload.id,
@@ -336,7 +336,7 @@ cl {
                 "done": False
             };
             setTodoState({"items": s.items.concat([newItem])});
-            
+
         } elif action == "TOGGLE_TODO" {
             updated = [item for item in s.items {
                 if item.id == payload.id {
@@ -345,20 +345,20 @@ cl {
                 return item;
             }];
             setTodoState({"items": updated});
-            
+
         } elif action == "REMOVE_TODO" {
             remaining = [item for item in s.items if item.id != payload.id];
             setTodoState({"items": remaining});
-            
+
         } elif action == "SET_FILTER" {
             setTodoState({"filter": payload.filter});
-            
+
         } elif action == "CLEAR_COMPLETED" {
             remaining = [item for item in s.items if not item.done];
             setTodoState({"items": remaining});
         }
     }
-    
+
     async def addTodo(text: str) -> None {
         new_todo = await __jacSpawn("create_todo", {"text": text});
         todoReducer("ADD_TODO", {
@@ -366,12 +366,12 @@ cl {
             "text": new_todo.text
         });
     }
-    
+
     async def toggleTodo(id: str) -> None {
         await __jacSpawn("toggle_todo", {}, id);
         todoReducer("TOGGLE_TODO", {"id": id});
     }
-    
+
     def setFilter(filter: str) -> None {
         todoReducer("SET_FILTER", {"filter": filter});
     }
@@ -390,20 +390,20 @@ cl {
         "loading": False,
         "error": None
     });
-    
+
     # Selectors
     def getTodos() -> list {
         return todoState().items;
     }
-    
+
     def getActiveTodos() -> list {
         return [item for item in todoState().items if not item.done];
     }
-    
+
     def getCompletedTodos() -> list {
         return [item for item in todoState().items if item.done];
     }
-    
+
     def getFilteredTodos() -> list {
         s = todoState();
         if s.filter == "active" {
@@ -413,11 +413,11 @@ cl {
         }
         return getTodos();
     }
-    
+
     def isLoading() -> bool {
         return todoState().loading;
     }
-    
+
     def getError() -> str | None {
         return todoState().error;
     }
@@ -434,13 +434,13 @@ cl {
         "items": [],
         "filter": "all"
     });
-    
+
     # Action creators
     async def createTodoAction(text: str) -> None {
         if not text.trim() {
             return;
         }
-        
+
         new_todo = await __jacSpawn("create_todo", {"text": text});
         s = todoState();
         newItem = {
@@ -450,7 +450,7 @@ cl {
         };
         setTodoState({"items": s.items.concat([newItem])});
     }
-    
+
     async def toggleTodoAction(id: str) -> None {
         await __jacSpawn("toggle_todo", {}, id);
         s = todoState();
@@ -462,17 +462,17 @@ cl {
         }];
         setTodoState({"items": updated});
     }
-    
+
     def removeTodoAction(id: str) -> None {
         s = todoState();
         remaining = [item for item in s.items if item.id != id];
         setTodoState({"items": remaining});
     }
-    
+
     def setFilterAction(filter: str) -> None {
         setTodoState({"filter": filter});
     }
-    
+
     def clearCompletedAction() -> None {
         s = todoState();
         remaining = [item for item in s.items if not item.done];
@@ -494,30 +494,30 @@ cl {
         "profile": None,
         "isLoading": False
     });
-    
+
     # Todo state
     let [todoState, setTodoState] = createState({
         "items": [],
         "loading": False,
         "error": None
     });
-    
+
     # Filter state
     let [filterState, setFilterState] = createState({
         "filter": "all"
     });
-    
+
     # UI state
     let [uiState, setUiState] = createState({
         "sidebarOpen": False,
         "modalOpen": False
     });
-    
+
     # Derived state functions
     def getFilteredTodos() -> list {
         todos = todoState();
         filter = filterState();
-        
+
         if filter == "active" {
             return [item for item in todos.items if not item.done];
         } elif filter == "completed" {
@@ -525,16 +525,16 @@ cl {
         }
         return todos.items;
     }
-    
+
     def getStats() -> dict {
         todos = todoState();
         total = len(todos.items);
         active = len([item for item in todos.items if not item.done]);
         completed = total - active;
-        
+
         return {"total": total, "active": active, "completed": completed};
     }
-    
+
     # Actions
     async def loadTodos() -> None {
         setTodoState({"loading": True, "error": None});
@@ -550,7 +550,7 @@ cl {
             setTodoState({"error": str(err), "loading": False});
         }
     }
-    
+
     async def addTodo(text: str) -> None {
         new_todo = await __jacSpawn("create_todo", {"text": text});
         s = todoState();
@@ -561,37 +561,37 @@ cl {
         };
         setTodoState({"items": s.items.concat([newItem])});
     }
-    
+
     def setFilter(filter: str) -> None {
         setFilterState({"filter": filter});
     }
-    
+
     def toggleSidebar() -> None {
         s = uiState();
         setUiState({"sidebarOpen": not s.sidebarOpen});
     }
-    
+
     # Components
     def TodoApp() -> any {
         onMount(lambda -> None {
             loadTodos();
         });
-        
+
         todos = todoState();
         filter = filterState();
         ui = uiState();
-        
+
         if todos.loading {
             return <div>Loading...</div>;
         }
-        
+
         if todos.error {
             return <div>Error: {todos.error}</div>;
         }
-        
+
         filtered = getFilteredTodos();
         stats = getStats();
-        
+
         return <div>
             <Header stats={stats} onToggleSidebar={toggleSidebar} />
             {ui.sidebarOpen and <Sidebar filter={filter} onSetFilter={setFilter} />}

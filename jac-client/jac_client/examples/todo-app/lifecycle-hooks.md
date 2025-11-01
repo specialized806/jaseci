@@ -43,7 +43,7 @@ cl {
             # Load initial data
             loadData();
         });
-        
+
         return <div>My Component</div>;
     }
 }
@@ -79,10 +79,10 @@ cl {
 
     async def loadTodos() -> None {
         setTodoState({"loading": True});
-        
+
         # Fetch todos from backend
         todos = await __jacSpawn("read_todos");
-        
+
         items = [];
         for todo in todos.reports {
             items.push({
@@ -91,7 +91,7 @@ cl {
                 "done": todo.done
             });
         }
-        
+
         setTodoState({"items": items, "loading": False});
     }
 
@@ -100,13 +100,13 @@ cl {
         onMount(lambda -> None {
             loadTodos();
         });
-        
+
         s = todoState();
-        
+
         if s.loading {
             return <div>Loading...</div>;
         }
-        
+
         return <div>
             {[TodoItem(item) for item in s.items]}
         </div>;
@@ -125,29 +125,29 @@ cl {
             "width": 0,
             "height": 0
         });
-        
+
         def handleResize() -> None {
             setWindowSize({
                 "width": window.innerWidth,
                 "height": window.innerHeight
             });
         }
-        
+
         def ResizeDisplay() -> any {
             onMount(lambda -> None {
                 # Set initial size
                 handleResize();
-                
+
                 # Add listener
                 window.addEventListener("resize", handleResize);
             });
-            
+
             s = windowSize();
             return <div>
                 Window size: {s.width} x {s.height}
             </div>;
         }
-        
+
         return ResizeDisplay();
     }
 }
@@ -169,10 +169,10 @@ cl {
             navigate("/login");
             return;
         }
-        
+
         # Fetch user profile
         profile = await __jacSpawn("get_user_profile");
-        
+
         setUserState({
             "profile": profile,
             "loading": False
@@ -183,17 +183,17 @@ cl {
         onMount(lambda -> None {
             loadUserProfile();
         });
-        
+
         s = userState();
-        
+
         if s.loading {
             return <div>Loading profile...</div>;
         }
-        
+
         if not s.profile {
             return <div>No profile found</div>;
         }
-        
+
         return <div>
             <h1>{s.profile.username}</h1>
             <p>{s.profile.email}</p>
@@ -217,7 +217,7 @@ cl {
                 "options": chartOptions
             });
         });
-        
+
         return <canvas id="myChart"></canvas>;
     }
 }
@@ -237,7 +237,7 @@ cl {
                 inputEl.focus();
             }
         });
-        
+
         return <input
             id="search-input"
             type="text"
@@ -263,10 +263,10 @@ cl {
 
     async def read_todos_action() -> None {
         setTodoState({"loading": True});
-        
+
         try {
             todos = await __jacSpawn("read_todos");
-            
+
             items = [];
             for todo in todos.reports {
                 items.push({
@@ -275,7 +275,7 @@ cl {
                     "done": todo.done
                 });
             }
-            
+
             setTodoState({"items": items, "loading": False});
         } except Exception as err {
             console.error("Failed to load todos:", err);
@@ -288,9 +288,9 @@ cl {
         onMount(lambda -> None {
             read_todos_action();
         });
-        
+
         s = todoState();
-        
+
         if s.loading {
             return <div style={{
                 "textAlign": "center",
@@ -299,13 +299,13 @@ cl {
                 Loading todos...
             </div>;
         }
-        
+
         itemsArr = filteredItems();
         children = [];
         for it in itemsArr {
             children.push(TodoItem(it));
         }
-        
+
         return <div>
             <h2>My Todos</h2>
             <form onSubmit={onAddTodo}>
@@ -330,13 +330,13 @@ cl {
 
     async def loadDashboardData() -> None {
         setDashboardState({"loading": True});
-        
+
         # Load multiple data sources in parallel
         [stats, activity] = await Promise.all([
             __jacSpawn("get_stats"),
             __jacSpawn("get_recent_activity")
         ]);
-        
+
         setDashboardState({
             "stats": stats,
             "recentActivity": activity.reports,
@@ -349,13 +349,13 @@ cl {
         onMount(lambda -> None {
             loadDashboardData();
         });
-        
+
         s = dashboardState();
-        
+
         if s.loading {
             return <div>Loading dashboard...</div>;
         }
-        
+
         return <div>
             <StatsView stats={s.stats} />
             <ActivityList activities={s.recentActivity} />
@@ -378,13 +378,13 @@ cl {
             intervalId = setInterval(lambda -> None {
                 console.log("Timer tick");
             }, 1000);
-            
+
             # Store cleanup function
             cleanupFunctions.push(lambda -> None {
                 clearInterval(intervalId);
             });
         });
-        
+
         return <div>Timer Component</div>;
     }
 }
@@ -467,16 +467,16 @@ def Component() -> any {
         "data": None,
         "loading": True
     });
-    
+
     onMount(lambda -> None {
         loadData();
     });
-    
+
     s = dataState();
     if s.loading {
         return <div>Loading...</div>;
     }
-    
+
     return <div>{s.data}</div>;
 }
 ```
@@ -517,11 +517,11 @@ If you need code to run when state changes, use `createEffect()` instead:
 # ✅ Use createEffect() for state-dependent side effects
 def Component() -> any {
     let [count, setCount] = createSignal(0);
-    
+
     createEffect(lambda -> None {
         console.log("Count changed:", count());
     });
-    
+
     return <div>
         <button onClick={lambda -> None { setCount(count() + 1); }}>
             Count: {count()}
@@ -532,11 +532,11 @@ def Component() -> any {
 # ❌ onMount() won't run when state changes
 def Component() -> any {
     let [count, setCount] = createSignal(0);
-    
+
     onMount(lambda -> None {
         console.log("Count:", count());  # Only logs initial value
     });
-    
+
     return <div>Component</div>;
 }
 ```

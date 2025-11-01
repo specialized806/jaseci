@@ -205,7 +205,7 @@ Always call the getter as a function:
 ```jac
 def TodoApp() -> any {
     s = todoState();  # Call getter function
-    
+
     return <div>
         <p>Total todos: {s.items.length}</p>
         <p>Current filter: {s.filter}</p>
@@ -254,7 +254,7 @@ cl {
         itemsArr = s.items;
 
         return <div>
-            <input 
+            <input
                 value={s.input}
                 onChange={lambda e: any -> None {
                     setTodoState({"input": e.target.value});
@@ -270,7 +270,7 @@ cl {
     async def onAddTodo(e: any) -> None {
         e.preventDefault();
         text = document.getElementById("todo-input").value.trim();
-        
+
         if not text { return; }
 
         # Create todo on backend
@@ -310,7 +310,7 @@ def Button() -> any {
 
 ```jac
 def InputField() -> any {
-    return <input 
+    return <input
         type="text"
         onChange={lambda e: any -> None {
             console.log("Input value:", e.target.value);
@@ -334,9 +334,9 @@ async def onAddTodo(e: any) -> None {
     e.preventDefault();  # Prevent page refresh
     inputEl = document.getElementById("todo-input");
     text = inputEl.value.trim();
-    
+
     if not text { return; }
-    
+
     # Handle form submission
     new_todo = await __jacSpawn("create_todo", {"text": text});
     # ... update state
@@ -358,7 +358,7 @@ async def onAddTodo(e: any) -> None {
 def FilterButton(filterType: str) -> any {
     s = todoState();
     isActive = s.filter == filterType;
-    
+
     return <button
         onClick={lambda -> None {
             setFilter(filterType);
@@ -496,11 +496,11 @@ walker create_todo {
 
 ### Benefits of `__jacSpawn()`
 
-✅ **No HTTP Configuration**: No need to set up API endpoints, CORS, or request/response formats  
-✅ **Type Safety**: Jac handles serialization automatically  
-✅ **Authentication**: Built-in token management via `jacLogin()` / `jacLogout()`  
-✅ **Error Handling**: Exceptions are properly propagated  
-✅ **Graph Operations**: Direct access to graph-based data operations  
+✅ **No HTTP Configuration**: No need to set up API endpoints, CORS, or request/response formats
+✅ **Type Safety**: Jac handles serialization automatically
+✅ **Authentication**: Built-in token management via `jacLogin()` / `jacLogout()`
+✅ **Error Handling**: Exceptions are properly propagated
+✅ **Graph Operations**: Direct access to graph-based data operations
 ✅ **Less Code**: Eliminates boilerplate HTTP client code
 
 ### Authentication Helpers

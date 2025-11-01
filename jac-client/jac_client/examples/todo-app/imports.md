@@ -251,7 +251,7 @@ cl import from antd {
 cl def MyComponent() -> any {
     return <div>
         <Card title="My Card">
-            <Button 
+            <Button
                 type="primary"
                 onClick={lambda -> None {
                     console.log("Button clicked!");
@@ -378,7 +378,7 @@ export class MessageFormatter {
     constructor(prefix) {
         this.prefix = prefix;
     }
-    
+
     format(message) {
         return `[${this.prefix}] ${message}`;
     }
@@ -407,7 +407,7 @@ cl def JsImportTest() -> any {
     sum = calculateSum(5, 3);
     formatter = MessageFormatter("JS");
     formatted = formatter.format("Hello from JS class");
-    
+
     return <div>
         <h1>{JS_CONSTANT}</h1>
         <p>Greeting: {greeting}</p>
@@ -441,7 +441,7 @@ cl import from .stringUtils {
 cl def DateComponent() -> any {
     today = new Date();
     formatted = formatDate(today);
-    
+
     return <div>
         <p>Today: {formatted}</p>
         <p>Capitalized: {capitalize("hello world")}</p>
@@ -462,7 +462,7 @@ cl import from .validators {
 cl def ValidationForm() -> any {
     emailValidator = EmailValidator();
     passwordValidator = PasswordValidator();
-    
+
     return <form>
         <input
             type="email"

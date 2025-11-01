@@ -41,10 +41,10 @@ cl {
             {"path": "/", "component": lambda -> any { return HomeView(); }, "guard": None},
             {"path": "/about", "component": lambda -> any { return AboutView(); }, "guard": None}
         ];
-        
+
         # Initialize router with default route
         router = initRouter(routes, "/");
-        
+
         # Render the router
         return <div>
             {router.render()}
@@ -99,19 +99,19 @@ cl {
             "component": lambda -> any { return HomeView(); },
             "guard": None
         };
-        
+
         login_route = {
             "path": "/login",
             "component": lambda -> any { return LoginForm(); },
             "guard": None
         };
-        
+
         todos_route = {
             "path": "/todos",
             "component": lambda -> any { return TodoApp(); },
             "guard": jacIsLoggedIn  # Requires authentication
         };
-        
+
         profile_route = {
             "path": "/profile",
             "component": lambda -> any { return ProfileView(); },
@@ -120,10 +120,10 @@ cl {
 
         # Combine all routes
         routes = [home_route, login_route, todos_route, profile_route];
-        
+
         # Initialize router with default route
         router = initRouter(routes, "/");
-        
+
         return <div>
             {Nav(router.path())}
             {router.render()}
@@ -209,7 +209,7 @@ cl {
         routes = [/* routes */];
         router = initRouter(routes, "/");
         currentPath = router.path();
-        
+
         return <div>
             {Nav(currentPath)}
             {router.render()}
@@ -240,16 +240,16 @@ cl {
             "component": lambda -> any { return PublicView(); },
             "guard": None  # No guard - always accessible
         };
-        
+
         protected_route = {
             "path": "/private",
             "component": lambda -> any { return PrivateView(); },
             "guard": jacIsLoggedIn  # Requires authentication
         };
-        
+
         routes = [public_route, protected_route];
         router = initRouter(routes, "/");
-        
+
         return <div>{router.render()}</div>;
     }
 }
@@ -269,7 +269,7 @@ cl {
         user = getCurrentUser();  # Your custom function
         return user.role == "admin";
     }
-    
+
     # Check if user has specific permission
     def hasPermission(permission: str) -> bool {
         if not jacIsLoggedIn() {
@@ -285,16 +285,16 @@ cl {
             "component": lambda -> any { return AdminView(); },
             "guard": isAdmin  # Custom guard
         };
-        
+
         settings_route = {
             "path": "/settings",
             "component": lambda -> any { return SettingsView(); },
             "guard": lambda -> bool { return hasPermission("settings:edit"); }  # Inline guard
         };
-        
+
         routes = [admin_route, settings_route];
         router = initRouter(routes, "/");
-        
+
         return <div>{router.render()}</div>;
     }
 }
@@ -320,10 +320,10 @@ cl {
             "component": lambda -> any { return TodoApp(); },
             "guard": protectedGuard
         };
-        
+
         routes = [protected_route];
         router = initRouter(routes, "/login");
-        
+
         return <div>{router.render()}</div>;
     }
 }
@@ -385,13 +385,13 @@ cl {
             "component": lambda -> any { return LoginForm(); },
             "guard": None
         };
-        
+
         signup_route = {
             "path": "/signup",
             "component": lambda -> any { return SignupForm(); },
             "guard": None
         };
-        
+
         todos_route = {
             "path": "/todos",
             "component": lambda -> any { return TodoApp(); },
@@ -404,7 +404,7 @@ cl {
 
         # Get current path for navigation
         currentPath = router.path();
-        
+
         return <div style={{
             "minHeight": "95vh",
             "background": "#F7F8FA",
@@ -440,9 +440,9 @@ cl {
     def App() -> any {
         routes = [/* routes */];
         router = initRouter(routes, "/");
-        
+
         currentPath = router.path();  # Get current route
-        
+
         # Use currentPath for conditional rendering
         return <div>
             {Nav(currentPath)}
@@ -468,7 +468,7 @@ cl {
             }
         }
     }
-    
+
     def logout_action() -> None {
         jacLogout();
         navigate("/login");  # Or use router.navigate()
@@ -487,7 +487,7 @@ cl {
         setTodoId(id);
         navigate("/todo-detail");
     }
-    
+
     def TodoDetailView() -> any {
         id = todoId();
         todo = getTodoById(id);  # Fetch todo by ID

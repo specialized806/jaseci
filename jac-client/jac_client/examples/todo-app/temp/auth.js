@@ -80,7 +80,7 @@ function jac_app() {
                 globalThis[funcName] = globalFunctionMap[funcName];
             }
             // --- END GLOBAL EXPOSURE ---
-        
+
 __jacRegisterClientModule("auth", ["App", "LoginForm", "SignupForm", "handle_login", "handle_signup", "jac_app", "logout_action"], {});
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
