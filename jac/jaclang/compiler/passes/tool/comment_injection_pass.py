@@ -1,6 +1,6 @@
 """Pass to inject comments using token-level precision."""
 
-from typing import Optional, Sequence, Set
+from typing import Sequence, Set
 
 import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
@@ -121,23 +121,15 @@ class CommentInjectionPass(UniPass):
                 if token_id in self.token_to_comment:
                     for comment_idx, comment in self.token_to_comment[token_id]:
                         if comment_idx not in self.used_comments:
-                            # Check if next part is a hard Line - if so, skip it to avoid double break
-                            next_is_hard_line = (
-                                i + 1 < len(parts)
-                                and isinstance(parts[i + 1], doc.Line)
-                                and parts[i + 1].hard
-                            )
+                            add_line = True
+                            if i + 1 < len(parts) and self._starts_with_line(
+                                parts[i + 1]
+                            ):
+                                add_line = False
 
-                            if next_is_hard_line:
-                                # Inject comment without Line, use the existing next Line
-                                result.append(
-                                    doc.Concat(
-                                        [doc.Text("  "), doc.Text(comment.value)]
-                                    )
-                                )
-                            else:
-                                # Inject comment with Line
-                                result.append(self._make_inline_comment(comment))
+                            result.append(
+                                self._make_inline_comment(comment, add_line=add_line)
+                            )
 
                             self.used_comments.add(comment_idx)
 
@@ -261,8 +253,31 @@ class CommentInjectionPass(UniPass):
         """Create standalone comment DocIR."""
         return doc.Concat([doc.Text(comment.value), doc.Line(hard=True)])
 
-    def _make_inline_comment(self, comment: uni.CommentToken) -> doc.DocType:
+    def _make_inline_comment(
+        self, comment: uni.CommentToken, add_line: bool = True
+    ) -> doc.DocType:
         """Create inline comment DocIR."""
-        return doc.Concat(
-            [doc.Text("  "), doc.Text(comment.value), doc.Line(hard=True)]
-        )
+        parts: list[doc.DocType] = [doc.Text("  "), doc.Text(comment.value)]
+        if add_line:
+            parts.append(doc.Line(hard=True))
+        return doc.Concat(parts)
+
+    def _starts_with_line(self, part: doc.DocType) -> bool:
+        """Check whether the given doc part begins with a line break."""
+        if isinstance(part, doc.Line):
+            return True
+        if isinstance(part, doc.Concat):
+            for child in part.parts:
+                if isinstance(child, doc.Text) and not child.text.strip():
+                    continue
+                return self._starts_with_line(child)
+            return False
+        if isinstance(part, doc.Group):
+            return self._starts_with_line(part.contents)
+        if isinstance(part, doc.Indent):
+            return self._starts_with_line(part.contents)
+        if isinstance(part, doc.Align):
+            return self._starts_with_line(part.contents)
+        if isinstance(part, doc.IfBreak):
+            return self._starts_with_line(part.break_contents)
+        return False
