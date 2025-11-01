@@ -71,6 +71,8 @@ class CommentInjectionPass(UniPass):
             return
 
         self.ir_out.gen.doc_ir = self._process(self.ir_out, self.ir_out.gen.doc_ir)
+        # Post-process to remove unnecessary line breaks after inline comments
+        self.ir_out.gen.doc_ir = self._remove_redundant_lines(self.ir_out.gen.doc_ir)
 
     def _process(self, ctx: uni.UniNode, node: doc.DocType) -> doc.DocType:
         """Main recursive processor with type-specific handling."""
@@ -121,10 +123,13 @@ class CommentInjectionPass(UniPass):
                     for comment_idx, comment in self.token_to_comment[token_id]:
                         if comment_idx not in self.used_comments:
                             add_line = True
-                            if i + 1 < len(parts) and self._starts_with_line(
-                                parts[i + 1]
-                            ):
-                                add_line = False
+                            if i + 1 < len(parts):
+                                next_part = parts[i + 1]
+                                # Don't add line if next part starts with a line or is a standalone comment
+                                if self._starts_with_line(
+                                    next_part
+                                ) or self._is_standalone_comment(next_part):
+                                    add_line = False
 
                             result.append(
                                 self._make_inline_comment(comment, add_line=add_line)
@@ -330,3 +335,192 @@ class CommentInjectionPass(UniPass):
         if isinstance(part, doc.IfBreak):
             return self._starts_with_line(part.break_contents)
         return False
+
+    def _is_standalone_comment(self, part: doc.DocType) -> bool:
+        """Check if a doc part is a standalone comment."""
+        if isinstance(part, doc.Concat) and len(part.parts) == 2:
+            first, second = part.parts
+            return (
+                isinstance(first, doc.Text)
+                and first.text.strip().startswith("#")
+                and isinstance(second, doc.Line)
+            )
+        return False
+
+    def _is_inline_comment_with_line(self, part: doc.DocType) -> bool:
+        """Check if a doc part is an inline comment with a hard line break."""
+        if isinstance(part, doc.Concat) and len(part.parts) == 3:
+            first, second, third = part.parts
+            return (
+                isinstance(first, doc.Text)
+                and first.text.strip() == ""
+                and isinstance(second, doc.Text)
+                and second.text.strip().startswith("#")
+                and isinstance(third, doc.Line)
+                and third.hard
+            )
+        return False
+
+    def _ends_with_inline_comment_line(self, node: doc.DocType) -> bool:
+        """Check if a node ends with an inline comment that has a hard line break."""
+        if self._is_inline_comment_with_line(node):
+            return True
+        if isinstance(node, doc.Concat) and node.parts:
+            return self._ends_with_inline_comment_line(node.parts[-1])
+        if isinstance(node, doc.Group):
+            return self._ends_with_inline_comment_line(node.contents)
+        if isinstance(node, doc.Indent):
+            return self._ends_with_inline_comment_line(node.contents)
+        return False
+
+    def _remove_trailing_line_from_inline_comment(
+        self, node: doc.DocType
+    ) -> doc.DocType:
+        """Remove the trailing hard line from the last inline comment in the node."""
+        if self._is_inline_comment_with_line(node):
+            # Remove the last part (the Line)
+            return doc.Concat(list(node.parts[:-1]))
+        if isinstance(node, doc.Concat) and node.parts:
+            new_parts = list(node.parts)
+            new_parts[-1] = self._remove_trailing_line_from_inline_comment(
+                new_parts[-1]
+            )
+            return doc.Concat(new_parts, ast_node=node.ast_node)
+        if isinstance(node, doc.Group):
+            return doc.Group(
+                self._remove_trailing_line_from_inline_comment(node.contents),
+                node.break_contiguous,
+                node.id,
+                ast_node=node.ast_node,
+            )
+        if isinstance(node, doc.Indent):
+            return doc.Indent(
+                self._remove_trailing_line_from_inline_comment(node.contents),
+                ast_node=node.ast_node,
+            )
+        return node
+
+    def _remove_redundant_lines(self, node: doc.DocType) -> doc.DocType:
+        """Remove redundant line breaks after inline comments."""
+        if isinstance(node, doc.Concat):
+            new_parts = []
+            i = 0
+            while i < len(node.parts):
+                part = node.parts[i]
+                processed_part = self._remove_redundant_lines(part)
+
+                # Check if this part ends with an inline comment with a hard line
+                # and is followed by a standalone comment
+                if (
+                    self._ends_with_inline_comment_line(processed_part)
+                    and i + 1 < len(node.parts)
+                    and self._is_standalone_comment(node.parts[i + 1])
+                ):
+                    # Remove the trailing hard line from the inline comment
+                    processed_part = self._remove_trailing_line_from_inline_comment(
+                        processed_part
+                    )
+                    new_parts.append(processed_part)
+                    # Standalone comment already has its line break, so just add a line to separate
+                    new_parts.append(doc.Line(hard=True))
+                    # Process and add the standalone comment
+                    next_part = self._remove_redundant_lines(node.parts[i + 1])
+                    # Remove the line from the standalone comment since we already added one
+                    if isinstance(next_part, doc.Concat) and len(next_part.parts) == 2:
+                        new_parts.append(
+                            doc.Concat(
+                                [next_part.parts[0]], ast_node=next_part.ast_node
+                            )
+                        )
+                    else:
+                        new_parts.append(next_part)
+                    i += 2
+                    continue
+
+                # Check if any part ends with an inline comment with hard line followed by hard Line
+                # This creates double line breaks - remove the comment's line
+                if (
+                    self._ends_with_inline_comment_line(processed_part)
+                    and i + 1 < len(node.parts)
+                    and isinstance(node.parts[i + 1], doc.Line)
+                    and node.parts[i + 1].hard
+                ):
+                    # Remove the inline comment's hard line - the next hard Line will handle it
+                    processed_part = self._remove_trailing_line_from_inline_comment(
+                        processed_part
+                    )
+
+                # Check if this is an Indent ending with inline/standalone comment followed by soft Line
+                # This creates unwanted blank lines - fix by replacing with single hard line
+                if (
+                    isinstance(processed_part, doc.Indent)
+                    and (
+                        self._ends_with_inline_comment_line(processed_part)
+                        or (
+                            isinstance(processed_part.contents, doc.Concat)
+                            and processed_part.contents.parts
+                            and self._is_standalone_comment(
+                                processed_part.contents.parts[-1]
+                            )
+                        )
+                    )
+                    and i + 1 < len(node.parts)
+                    and isinstance(node.parts[i + 1], doc.Line)
+                    and not node.parts[i + 1].hard  # Only for soft lines
+                ):
+                    # Remove comment's line and replace soft Line with hard Line
+                    if self._ends_with_inline_comment_line(processed_part):
+                        processed_part = self._remove_trailing_line_from_inline_comment(
+                            processed_part
+                        )
+                    elif (
+                        isinstance(processed_part.contents, doc.Concat)
+                        and processed_part.contents.parts
+                        and self._is_standalone_comment(
+                            processed_part.contents.parts[-1]
+                        )
+                    ):
+                        # Remove line from standalone comment
+                        indent_parts = list(processed_part.contents.parts)
+                        last_comment = indent_parts[-1]
+                        indent_parts[-1] = doc.Concat(
+                            [last_comment.parts[0]], ast_node=last_comment.ast_node
+                        )
+                        processed_part = doc.Indent(
+                            doc.Concat(
+                                indent_parts, ast_node=processed_part.contents.ast_node
+                            ),
+                            ast_node=processed_part.ast_node,
+                        )
+
+                    new_parts.append(processed_part)
+                    new_parts.append(
+                        doc.Line(hard=True)
+                    )  # Always use hard line for proper dedent
+                    i += 2
+                    continue
+
+                new_parts.append(processed_part)
+                i += 1
+
+            return doc.Concat(new_parts, ast_node=node.ast_node)
+        elif isinstance(node, doc.Group):
+            return doc.Group(
+                self._remove_redundant_lines(node.contents),
+                node.break_contiguous,
+                node.id,
+                ast_node=node.ast_node,
+            )
+        elif isinstance(node, doc.Indent):
+            return doc.Indent(
+                self._remove_redundant_lines(node.contents),
+                ast_node=node.ast_node,
+            )
+        elif isinstance(node, doc.IfBreak):
+            return doc.IfBreak(
+                self._remove_redundant_lines(node.break_contents),
+                self._remove_redundant_lines(node.flat_contents),
+            )
+        elif isinstance(node, doc.Align):
+            return doc.Align(self._remove_redundant_lines(node.contents), node.n)
+        return node
