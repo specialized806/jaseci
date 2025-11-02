@@ -68,7 +68,6 @@ class ModuleManager {
             x : x ** 2
             for x in numbersssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
         };
-
         # set comprehension example
         squares_set = {x ** 2 for x in numbers};
         squares_set = {
@@ -284,7 +283,6 @@ enum Y {
 # 121212
 def main() {
     print("Hello, World!");  # C1
-
     # This is a comment
     print(
         "Hello, World!"  # 123
@@ -313,6 +311,9 @@ obj Vehicle(ssdsd) {  # Has statements with type annotations (instance variables
 async def type_check(self: JacLangServer, file_path: str) -> None {
     # Cancel existing debounce timer for this file
     if file_path in self.debounce_timers {
+        # Cancel existing type check thread for this file if running
+        
+        # Cancel existing type check thread for this file if running
         self.debounce_timers[file_path].cancel();
     }
 
