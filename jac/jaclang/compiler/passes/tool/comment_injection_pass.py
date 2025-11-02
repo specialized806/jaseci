@@ -196,6 +196,19 @@ class CommentInjectionPass(UniPass):
                                 and comment.loc.first_line > prev_item_line + 1
                             )
 
+                            # If comment immediately follows previous item but there's a
+                            # gap line (two consecutive hard lines),
+                            # remove one to avoid double spacing
+                            if (
+                                not should_add_line
+                                and len(result) >= 2
+                                and isinstance(result[-1], doc.Line)
+                                and result[-1].hard
+                                and isinstance(result[-2], doc.Line)
+                                and result[-2].hard
+                            ):
+                                result.pop()
+
                             if should_add_line and not (
                                 result
                                 and isinstance(result[-1], doc.Line)
@@ -309,6 +322,19 @@ class CommentInjectionPass(UniPass):
                                 and comment.loc.first_line > prev_item_line + 1
                             )
 
+                            # If comment immediately follows previous item but '
+                            # there's a gap line (two consecutive hard lines),
+                            # remove one to avoid double spacing
+                            if (
+                                not should_add_line
+                                and len(parts_with_standalone) >= 2
+                                and isinstance(parts_with_standalone[-1], doc.Line)
+                                and parts_with_standalone[-1].hard
+                                and isinstance(parts_with_standalone[-2], doc.Line)
+                                and parts_with_standalone[-2].hard
+                            ):
+                                parts_with_standalone.pop()
+
                             if should_add_line and not (
                                 parts_with_standalone
                                 and isinstance(parts_with_standalone[-1], doc.Line)
@@ -355,6 +381,18 @@ class CommentInjectionPass(UniPass):
                         prev_comment
                         and comment.loc.first_line > prev_comment.loc.last_line + 1
                     ) or (comment.loc.first_line > last_body_line + 1)
+
+                    # If comment immediately follows previous item but there's a gap line (two consecutive hard lines),
+                    # remove one to avoid double spacing
+                    if (
+                        not should_add_line
+                        and len(result) >= 2
+                        and isinstance(result[-1], doc.Line)
+                        and result[-1].hard
+                        and isinstance(result[-2], doc.Line)
+                        and result[-2].hard
+                    ):
+                        result.pop()
 
                     if should_add_line and not (
                         result and isinstance(result[-1], doc.Line) and result[-1].hard
