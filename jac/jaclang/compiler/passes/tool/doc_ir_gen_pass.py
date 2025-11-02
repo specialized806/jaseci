@@ -197,6 +197,36 @@ class DocIRGenPass(UniPass):
         """Check if there is a gap between the previous and current node."""
         return prev_kid.loc.last_line + 1 < curr_kid.loc.first_line
 
+    def has_comments_between(
+        self, prev_kid: uni.UniNode, curr_kid: uni.UniNode
+    ) -> bool:
+        """Check if there are comments immediately after previous node."""
+        # Get the module by traversing up the parent chain
+        node = prev_kid
+        while node and not isinstance(node, uni.Module):
+            node = node.parent
+
+        if not node or not isinstance(node, uni.Module):
+            return False
+
+        # Find comments between the nodes
+        comments_between = [
+            comment
+            for comment in node.source.comments
+            if prev_kid.loc.last_line < comment.loc.first_line < curr_kid.loc.first_line
+        ]
+
+        if not comments_between:
+            return False
+
+        # Sort by line number to find the first comment
+        comments_between.sort(key=lambda c: c.loc.first_line)
+        first_comment = comments_between[0]
+
+        # Only return True if the first comment immediately follows the previous node
+        # (no gap before the comment means the comment "belongs" to the previous statement)
+        return first_comment.loc.first_line <= prev_kid.loc.last_line + 1
+
     def add_body_stmt_with_spacing(
         self,
         body_parts: list[doc.DocType],
@@ -204,7 +234,13 @@ class DocIRGenPass(UniPass):
         previous: Optional[uni.UniNode],
     ) -> None:
         """Add a body statement preserving single blank lines from source."""
-        if previous and self.has_gap(previous, current):
+        # Only add blank lines if there's a gap AND no comments immediately after previous
+        # (comments will handle their own spacing)
+        if (
+            previous
+            and self.has_gap(previous, current)
+            and not self.has_comments_between(previous, current)
+        ):
             body_parts.append(self.hard_line())
         body_parts.append(current.gen.doc_ir)
         body_parts.append(self.hard_line())

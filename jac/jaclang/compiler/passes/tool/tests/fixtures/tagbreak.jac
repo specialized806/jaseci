@@ -344,5 +344,3 @@ async def type_check(self: JacLangServer, file_path: str) -> None {
     # Wait for the current type check thread to finish (if any)
     await asyncio.to_thread(self.debounce_timers[file_path].join);
 }
-
-
