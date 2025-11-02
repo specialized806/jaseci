@@ -117,7 +117,9 @@ class CommentStore:
                 matches.append(info)
         return matches
 
-    def take_standalone_between(self, start_line: int, end_line: int) -> list[CommentInfo]:
+    def take_standalone_between(
+        self, start_line: int, end_line: int
+    ) -> list[CommentInfo]:
         """Return standalone comments within [start_line, end_line)."""
 
         if start_line >= end_line:
@@ -160,7 +162,6 @@ class CommentStore:
         return leftovers
 
 
-
 class CommentInjectionPass(UniPass):
     """
     Injects comments using token sequence analysis for perfect precision.
@@ -178,7 +179,6 @@ class CommentInjectionPass(UniPass):
             self._comments = CommentStore.from_module(self.ir_out)
 
         return super().before_pass()
-
 
     def after_pass(self) -> None:
         """Inject comments."""
@@ -475,11 +475,8 @@ class CommentInjectionPass(UniPass):
         for info in comments:
             comment_line = info.first_line
             should_add_line = (
-                prev_comment_line is not None
-                and comment_line > prev_comment_line + 1
-            ) or (
-                last_line is not None and comment_line > last_line + 1
-            )
+                prev_comment_line is not None and comment_line > prev_comment_line + 1
+            ) or (last_line is not None and comment_line > last_line + 1)
 
             if should_add_line:
                 if not self._ends_with_hard_line(sink):
