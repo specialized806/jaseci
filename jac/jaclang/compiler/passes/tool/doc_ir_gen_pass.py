@@ -3,7 +3,7 @@
 This is a pass for generating DocIr for Jac code.
 """
 
-from typing import Iterable, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
 import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
@@ -106,16 +106,9 @@ class DocIRGenPass(UniPass):
         """Return generated DocIR for each child."""
 
         docs: list[doc.DocType] = []
-        for kid in self._iter_kids(node):
+        for kid in node.kid:
             docs.append(kid.gen.doc_ir)
         return docs
-
-    def _iter_kids(self, node: uni.UniNode) -> Iterable[uni.UniNode]:
-        """Yield children while skipping injected client tokens inside client blocks."""
-        for kid in node.kid:
-            if isinstance(kid, uni.Token) and self._is_injected_client_token(kid):
-                continue
-            yield kid
 
     def _assign_concat(self, node: uni.UniNode) -> None:
         """Assign a simple Concat of child documents."""
@@ -162,7 +155,7 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = [self.hard_line()]
         prev_body_item: Optional[uni.UniNode] = None
 
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(body, Sequence) and self.is_within(i, body):
                 if body and i == body[0]:
                     parts.append(self.indent(self.concat(body_parts), ast_node=node))
@@ -298,7 +291,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         prev_kid = None
         first_kid = True
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if (isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import)) or (
                 isinstance(i, uni.GlobalVars)
                 and isinstance(prev_kid, uni.GlobalVars)
@@ -326,7 +319,7 @@ class DocIRGenPass(UniPass):
         mod_items: list[doc.DocType] = []
         is_in_items: bool = False
 
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and self._is_injected_client_token(i):
                 continue
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
@@ -371,7 +364,7 @@ class DocIRGenPass(UniPass):
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
@@ -383,7 +376,7 @@ class DocIRGenPass(UniPass):
     def exit_module_path(self, node: uni.ModulePath) -> None:
         """Generate DocIR for module paths."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
@@ -398,7 +391,7 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = []
         prev_item = None
         in_body = False
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if (node.doc and i is node.doc) or (
                 node.decorators and i in node.decorators
             ):
@@ -451,7 +444,7 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = []
         in_body = False
         prev_body_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc or (node.decorators and i in node.decorators):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -493,7 +486,7 @@ class DocIRGenPass(UniPass):
         indent_parts: list[doc.DocType] = []
         in_params = False
         has_parens = False
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.LPAREN and node.params:
                 in_params = True
                 parts.append(i.gen.doc_ir)
@@ -540,7 +533,7 @@ class DocIRGenPass(UniPass):
     def exit_param_var(self, node: uni.ParamVar) -> None:
         """Generate DocIR for parameter variables."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.EQ:
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
@@ -552,7 +545,7 @@ class DocIRGenPass(UniPass):
     def exit_type_ref(self, node: uni.TypeRef) -> None:
         """Generate DocIR for type references."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -563,7 +556,7 @@ class DocIRGenPass(UniPass):
         eq_tok: Optional[doc.DocType] = None
         seen_eq = False
 
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_LET:
                 lhs_parts.append(i.gen.doc_ir)
                 lhs_parts.append(self.space())
@@ -598,7 +591,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for if statements."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts), ast_node=node))
@@ -634,7 +627,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for else if statements."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts), ast_node=node))
@@ -670,7 +663,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for else statements."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts), ast_node=node))
@@ -698,7 +691,7 @@ class DocIRGenPass(UniPass):
     def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
         """Generate DocIR for concurrent expressions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -706,7 +699,7 @@ class DocIRGenPass(UniPass):
     def exit_return_stmt(self, node: uni.ReturnStmt) -> None:
         """Generate DocIR for return statements."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -720,7 +713,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
         in_params = False
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.LPAREN and node.params:
                 in_params = True
                 parts.append(i.gen.doc_ir)
@@ -760,7 +753,7 @@ class DocIRGenPass(UniPass):
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -769,7 +762,7 @@ class DocIRGenPass(UniPass):
         not_broke = self.concat(parts)
 
         parts = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -798,18 +791,36 @@ class DocIRGenPass(UniPass):
             node.gen.doc_ir = self.group(self.concat([]))
             return
 
-        opening = node.kid[0].gen.doc_ir
-        closing = node.kid[-1].gen.doc_ir if len(node.kid) > 1 else self.concat([])
-        kv_pairs = [kid for kid in node.kid if isinstance(kid, uni.KVPair)]
-        has_trailing_comma = (
-            len(node.kid) >= 2
-            and isinstance(node.kid[-2], uni.Token)
-            and node.kid[-2].name == Tok.COMMA
-        )
+        kv_indices = [
+            idx for idx, kid in enumerate(node.kid) if isinstance(kid, uni.KVPair)
+        ]
+        kv_pairs = [node.kid[idx] for idx in kv_indices]
 
         if not kv_pairs:
-            node.gen.doc_ir = self.group(self.concat([opening, closing]))
+            node.gen.doc_ir = self.group(
+                self.concat([kid.gen.doc_ir for kid in node.kid])
+            )
             return
+
+        first_idx = kv_indices[0]
+        last_idx = kv_indices[-1]
+
+        prefix_docs = [node.kid[i].gen.doc_ir for i in range(first_idx)]
+        suffix_nodes = node.kid[last_idx + 1 :]
+
+        has_trailing_comma = (
+            bool(suffix_nodes)
+            and isinstance(suffix_nodes[0], uni.Token)
+            and suffix_nodes[0].name == Tok.COMMA
+        )
+
+        if has_trailing_comma:
+            suffix_docs = [kid.gen.doc_ir for kid in suffix_nodes[1:]]
+        else:
+            suffix_docs = [kid.gen.doc_ir for kid in suffix_nodes]
+
+        opening = self.concat(prefix_docs) if prefix_docs else self.concat([])
+        closing = self.concat(suffix_docs) if suffix_docs else self.concat([])
 
         inline_body = self.join(
             self.text(", "),
@@ -843,12 +854,42 @@ class DocIRGenPass(UniPass):
 
     def exit_k_v_pair(self, node: uni.KVPair) -> None:
         """Generate DocIR for key-value pairs."""
-        self._assign_space_group(node)
+        parts: list[doc.DocType] = []
+        kid_count = len(node.kid)
+
+        for idx, kid in enumerate(node.kid):
+            if not isinstance(
+                kid.gen.doc_ir,
+                (
+                    doc.Text,
+                    doc.Concat,
+                    doc.Group,
+                    doc.Indent,
+                    doc.Line,
+                    doc.Align,
+                    doc.IfBreak,
+                ),
+            ):
+                self.enter_exit(kid)
+
+            parts.append(kid.gen.doc_ir)
+
+            is_last = idx == kid_count - 1
+            if isinstance(kid, uni.Token) and kid.name == Tok.COLON:
+                if not is_last:
+                    parts.append(self.space())
+            elif not is_last:
+                next_kid = node.kid[idx + 1]
+                if isinstance(next_kid, uni.Token) and next_kid.name == Tok.COLON:
+                    continue
+                parts.append(self.space())
+
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Generate DocIR for has variable declarations."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.EQ:
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
@@ -864,7 +905,7 @@ class DocIRGenPass(UniPass):
     def exit_arch_has(self, node: uni.ArchHas) -> None:
         """Generate DocIR for architecture has declarations."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -907,7 +948,7 @@ class DocIRGenPass(UniPass):
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
         """Generate DocIR for tuple values."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -916,7 +957,7 @@ class DocIRGenPass(UniPass):
         not_broke = self.concat(parts)
 
         parts = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -942,14 +983,14 @@ class DocIRGenPass(UniPass):
     def exit_multi_string(self, node: uni.MultiString) -> None:
         """Generate DocIR for multiline strings."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_set_val(self, node: uni.SetVal) -> None:
         """Generate DocIR for set values."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
 
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -958,7 +999,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for with statements."""
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(node.body, Sequence) and self.is_within(i, node.body):
                 if i == node.body[0]:
                     parts.append(self.indent(self.concat(body_parts), ast_node=node))
@@ -979,7 +1020,7 @@ class DocIRGenPass(UniPass):
     def exit_list_compr(self, node: uni.ListCompr) -> None:
         """Generate DocIR for list comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.InnerCompr):
                 parts.append(self.group(self.concat([self.tight_line(), i.gen.doc_ir])))
             else:
@@ -991,7 +1032,7 @@ class DocIRGenPass(UniPass):
     def exit_inner_compr(self, node: uni.InnerCompr) -> None:
         """Generate DocIR for inner comprehension clauses."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_IF:
                 parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
@@ -1005,14 +1046,14 @@ class DocIRGenPass(UniPass):
     def exit_f_string(self, node: uni.FString) -> None:
         """Generate DocIR for formatted strings."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_formatted_value(self, node: uni.FormattedValue) -> None:
         """Generate DocIR for formatted value expressions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -1021,7 +1062,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         need_parens = not isinstance(node.parent, uni.AtomUnit)
 
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Expr):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
@@ -1088,7 +1129,7 @@ class DocIRGenPass(UniPass):
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         """Generate DocIR for unary expressions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if (
                 isinstance(i, uni.Token) and i.value in ["-", "~", "+", "*"]
             ) or isinstance(i, uni.Expr):
@@ -1102,7 +1143,7 @@ class DocIRGenPass(UniPass):
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
         """Generate DocIR for lambda expressions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1127,7 +1168,7 @@ class DocIRGenPass(UniPass):
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
         """Generate DocIR for edge reference trailers."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name in [Tok.KW_EDGE, Tok.KW_NODE]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1138,21 +1179,21 @@ class DocIRGenPass(UniPass):
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
         """Generate DocIR for edge operation references."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_index_slice(self, node: uni.IndexSlice) -> None:
         """Generate DocIR for index slices."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_gen_compr(self, node: uni.GenCompr) -> None:
         """Generate DocIR for generator comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.InnerCompr):
                 parts.append(self.group(self.concat([self.tight_line(), i.gen.doc_ir])))
             else:
@@ -1164,7 +1205,7 @@ class DocIRGenPass(UniPass):
     def exit_set_compr(self, node: uni.SetCompr) -> None:
         """Generate DocIR for set comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.InnerCompr):
                 parts.append(self.group(self.concat([self.tight_line(), i.gen.doc_ir])))
             else:
@@ -1176,7 +1217,7 @@ class DocIRGenPass(UniPass):
     def exit_dict_compr(self, node: uni.DictCompr) -> None:
         """Generate DocIR for dictionary comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name in [Tok.STAR_POW, Tok.STAR_MUL]:
                 parts.append(i.gen.doc_ir)
             else:
@@ -1221,7 +1262,7 @@ class DocIRGenPass(UniPass):
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
         """Generate DocIR for assert statements."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.SEMI and len(parts):
                 parts.pop()
             parts.append(i.gen.doc_ir)
@@ -1236,7 +1277,7 @@ class DocIRGenPass(UniPass):
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Generate DocIR for global variables."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -1255,7 +1296,7 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = []
         in_body = False
         prev_body_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_CLIENT:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1287,7 +1328,7 @@ class DocIRGenPass(UniPass):
         body_parts: list[doc.DocType] = []
         in_body = False
         prev_body_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if node.doc and i is node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -1322,7 +1363,7 @@ class DocIRGenPass(UniPass):
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Generate DocIR for global statements."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
             if isinstance(i, uni.Token) and i.name == Tok.GLOBAL_OP:
                 parts.append(self.space())
@@ -1335,7 +1376,7 @@ class DocIRGenPass(UniPass):
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         """Generate DocIR for visit statements."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -1361,7 +1402,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for atom units (parenthesized expressions)."""
         parts: list[doc.DocType] = []
         prev_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.LPAREN:
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.Token) and i.name == Tok.RPAREN:
@@ -1405,7 +1446,7 @@ class DocIRGenPass(UniPass):
     def exit_filter_compr(self, node: uni.FilterCompr) -> None:
         """Generate DocIR for filter comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -1413,7 +1454,7 @@ class DocIRGenPass(UniPass):
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
         """Generate DocIR for assignment comprehensions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -1421,7 +1462,7 @@ class DocIRGenPass(UniPass):
     def exit_py_inline_code(self, node: uni.PyInlineCode) -> None:
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -1438,7 +1479,7 @@ class DocIRGenPass(UniPass):
     def exit_test(self, node: uni.Test) -> None:
         """Generate DocIR for test nodes."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -1455,7 +1496,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for match statements."""
         parts: list[doc.DocType] = []
         match_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.target:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1476,7 +1517,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
         prev_body_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COLON:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -1493,7 +1534,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for switch statements."""
         parts: list[doc.DocType] = []
         switch_parts: list[doc.DocType] = [self.hard_line()]
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.target:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1514,7 +1555,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
         prev_body_item: Optional[uni.UniNode] = None
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COLON:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -1562,7 +1603,7 @@ class DocIRGenPass(UniPass):
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
         """Generate DocIR for match key-value pairs."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name in [Tok.STAR_POW, Tok.STAR_MUL]:
                 parts.append(i.gen.doc_ir)
             else:
@@ -1574,7 +1615,7 @@ class DocIRGenPass(UniPass):
     def exit_match_arch(self, node: uni.MatchArch) -> None:
         """Generate DocIR for match architecture patterns."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COMMA:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1587,7 +1628,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
         in_body = False
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if (node.doc and i is node.doc) or (
                 node.decorators and i in node.decorators
             ):
@@ -1624,7 +1665,7 @@ class DocIRGenPass(UniPass):
         after_colon: list[doc.DocType] = []
         seen_colon = False
 
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.COLON and not seen_colon:
                 colon_tok = i.gen.doc_ir
                 seen_colon = True
@@ -1651,7 +1692,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         body_parts: list[doc.DocType] = []
         in_body = False
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i == node.doc or (node.decorators and i in node.decorators):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
@@ -1688,7 +1729,7 @@ class DocIRGenPass(UniPass):
     def exit_sem_def(self, node: uni.SemDef) -> None:
         """Generate DocIR for semantic definitions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             if i in node.target:
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
@@ -1707,7 +1748,7 @@ class DocIRGenPass(UniPass):
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
         """Generate DocIR for typed context blocks."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -1940,32 +1981,65 @@ class DocIRGenPass(UniPass):
     def exit_jsx_element_name(self, node: uni.JsxElementName) -> None:
         """Generate DocIR for JSX element names."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_spread_attribute(self, node: uni.JsxSpreadAttribute) -> None:
         """Generate DocIR for JSX spread attributes."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_normal_attribute(self, node: uni.JsxNormalAttribute) -> None:
         """Generate DocIR for JSX normal attributes."""
-        # Normalize to ensure LBRACE/RBRACE tokens are added for expression values
-        node.normalize()
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
-            # Tokens created by normalize() have empty doc_ir, so regenerate it
-            if (
-                isinstance(i, uni.Token)
-                and isinstance(i.gen.doc_ir, doc.Text)
-                and not i.gen.doc_ir.text
-            ):
-                i.gen.doc_ir = self.text(i.value)
-            elif not isinstance(
-                i.gen.doc_ir,
+
+        has_brace_tokens = any(
+            isinstance(child, uni.Token) and child.name in {Tok.LBRACE, Tok.RBRACE}
+            for child in node.kid
+        )
+
+        if has_brace_tokens:
+            for child in node.kid:
+                if not isinstance(
+                    child.gen.doc_ir,
+                    (
+                        doc.Text,
+                        doc.Concat,
+                        doc.Group,
+                        doc.Indent,
+                        doc.Line,
+                        doc.Align,
+                        doc.IfBreak,
+                    ),
+                ):
+                    self.enter_exit(child)
+                parts.append(child.gen.doc_ir)
+            node.gen.doc_ir = self.concat(parts)
+            return
+
+        for child in node.kid:
+            if child is node.value and child and not isinstance(child, uni.String):
+                if not isinstance(
+                    child.gen.doc_ir,
+                    (
+                        doc.Text,
+                        doc.Concat,
+                        doc.Group,
+                        doc.Indent,
+                        doc.Line,
+                        doc.Align,
+                        doc.IfBreak,
+                    ),
+                ):
+                    self.enter_exit(child)
+                parts.extend([self.text("{"), child.gen.doc_ir, self.text("}")])
+                continue
+
+            if not isinstance(
+                child.gen.doc_ir,
                 (
                     doc.Text,
                     doc.Concat,
@@ -1976,21 +2050,20 @@ class DocIRGenPass(UniPass):
                     doc.IfBreak,
                 ),
             ):
-                # For nodes with invalid doc_ir, generate it by visiting
-                self.enter_exit(i)
-            parts.append(i.gen.doc_ir)
+                self.enter_exit(child)
+            parts.append(child.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_text(self, node: uni.JsxText) -> None:
         """Generate DocIR for JSX text."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_expression(self, node: uni.JsxExpression) -> None:
         """Generate DocIR for JSX expressions."""
         parts: list[doc.DocType] = []
-        for i in self._iter_kids(node):
+        for i in node.kid:
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
