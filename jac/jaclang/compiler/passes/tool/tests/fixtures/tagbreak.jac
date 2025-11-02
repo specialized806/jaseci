@@ -312,7 +312,7 @@ async def type_check(self: JacLangServer, file_path: str) -> None {
     # Cancel existing debounce timer for this file
     if file_path in self.debounce_timers {
         # Cancel existing type check thread for this file if running
-        
+
         # Cancel existing type check thread for this file if running
         self.debounce_timers[file_path].cancel();
     }
