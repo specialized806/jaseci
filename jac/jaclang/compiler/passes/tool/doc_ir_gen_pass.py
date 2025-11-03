@@ -1909,23 +1909,10 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for JSX normal attributes."""
         parts: list[doc.DocType] = []
 
-        has_brace_tokens = any(
-            isinstance(child, uni.Token) and child.name in {Tok.LBRACE, Tok.RBRACE}
-            for child in node.kid
-        )
-
-        if has_brace_tokens:
-            for child in node.kid:
-                parts.append(child.gen.doc_ir)
-            node.gen.doc_ir = self.concat(parts)
-            return
-
+        # Simply render all kids - expressions with braces will render them as part of their kids
         for child in node.kid:
-            if child is node.value and child and not isinstance(child, uni.String):
-                parts.extend([self.text("{"), child.gen.doc_ir, self.text("}")])
-                continue
-
             parts.append(child.gen.doc_ir)
+
         node.gen.doc_ir = self.concat(parts)
 
     def exit_jsx_text(self, node: uni.JsxText) -> None:
