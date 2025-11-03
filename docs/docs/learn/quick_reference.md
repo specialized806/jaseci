@@ -183,7 +183,10 @@ def learnOSP(){
 	}
 
 	a +>:Friend(since=2020):+> b;
-	# TODO: filtering
+	a +>:Friend(since=1995):+> c;
+
+    # edges can be queried with filters
+    old_friends = [a ->:Friend:since < 2018:->];
 
 	# Walkers are objects that "walk" across nodes doing operations
 	# Walkers contain automatic methods that trigger on events
@@ -221,15 +224,54 @@ def learnOSP(){
 	}
 
 	# nodes can also have abilities
-	node FriendlyPerson {
+	node FriendlyPerson(Person) {
 		has name:str;
 		can greet with Visitor entry{
 			print(f"Welcome, visitor");
 		}
 	}
+
+    f = FriendlyPerson(name="Joe");
+
+    # root is a special named node in all graphs
+    root ++> f ++> a;
+
+    # walker can then be spawned at a node in the graph
+    root spawn Visitor();
 }
 
 def learnSpecial(){
-	# pipes, walrus, async
+    # lambdas create anonymous functions
+    add = lambda a: int, b: int -> int : a + b;
+    print(add(5, 3));
+
+    # walrus operator allow assignment within expressions
+    result = (y := 20) + 10;
+    print(f"y = {y}, result = {result}");
+
+    # flow/wait allows for concurrent operations
+    def compute(x: int, y: int) -> int {
+        print(f"Computing {x} + {y}");
+        sleep(1);
+        return x + y;
+    }
+
+    def slow_task(n: int) -> int {
+        print(f"Task {n} started");
+        sleep(1);
+        print(f"Task {n} done");
+        return n * 2;
+    }
+
+    task1 = flow compute(5, 10);
+    task2 = flow compute(3, 7);
+    task3 = flow slow_task(42);
+
+    result1 = wait task1;
+    result2 = wait task2;
+    result3 = wait task3;
+    print(f"Results: {result1}, {result2}, {result3}");
+
+	# other things to look at: pipes, generators
 }
 ```
