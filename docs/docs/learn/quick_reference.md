@@ -7,7 +7,7 @@
 # jac run <filename>
 
 # Single line comment
-#* 
+#*
     Multi-line
     Comment
 *#
@@ -78,7 +78,7 @@ def learnFlowControl() {
 		print(f"element: {i}");
 	}
 
-	for x in ["a", "b", "c"] { 
+	for x in ["a", "b", "c"] {
 		print(f"element: {x}");
 	}
 
@@ -126,7 +126,7 @@ def learnCollections() {
     # With condition
     evens = [i for i in range(10) if i % 2 == 0];
     print(evens);  # [0, 2, 4, 6, 8]
-	
+
 	learnClasses();
 	learnOSP();
 }
@@ -203,7 +203,7 @@ def learnOSP(){
 			# visit [<-->]; all connections
 		}
 
-		# runs when walker visits any person 
+		# runs when walker visits any person
 		can meet_person with Person entry {
 			# here refers to current node
 			# self refers to walker
