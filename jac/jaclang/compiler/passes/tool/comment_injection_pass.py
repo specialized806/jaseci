@@ -207,7 +207,13 @@ class CommentInjectionPass(Transform[uni.Module, uni.Module]):
             ctx = node.ast_node if node.ast_node else ctx
             if isinstance(ctx, uni.Module):
                 return self._handle_module(ctx, node)
-            return doc.Concat(self._inject_into_parts(node.parts, ctx), ast_node=ctx)
+            processed_parts = self._inject_into_parts(node.parts, ctx)
+            # Fix spacing after empty bodies that now have comments
+            fixed_parts = self._fix_empty_body_spacing(processed_parts)
+            # Handle comments in empty parameter lists
+            if isinstance(ctx, uni.FuncSignature):
+                fixed_parts = self._handle_empty_params(ctx, fixed_parts)
+            return doc.Concat(fixed_parts, ast_node=ctx)
         elif isinstance(node, doc.Group):
             ctx = node.ast_node if node.ast_node else ctx
             return doc.Group(
@@ -229,6 +235,160 @@ class CommentInjectionPass(Transform[uni.Module, uni.Module]):
         elif isinstance(node, doc.Align):
             return doc.Align(self._process(ctx, node.contents), node.n)
         return node
+
+    def _handle_empty_params(
+        self, sig: uni.FuncSignature, parts: list[doc.DocType]
+    ) -> list[doc.DocType]:
+        """Handle comments in parameter lists.
+
+        Handles both empty parameter lists with comments, and non-empty parameter
+        lists with trailing comments before the closing parenthesis.
+        """
+        if not self._comments:
+            return parts
+
+        # Find LPAREN and RPAREN tokens
+        lparen_line = None
+        rparen_line = None
+        lparen_idx = None
+        rparen_idx = None
+        indent_idx = None
+
+        for i, part in enumerate(parts):
+            if isinstance(part, doc.Text):
+                # Check by token name or text content
+                if part.source_token:
+                    if part.source_token.name == Tok.LPAREN:
+                        lparen_line = part.source_token.loc.last_line
+                        lparen_idx = i
+                    elif part.source_token.name == Tok.RPAREN:
+                        rparen_line = part.source_token.loc.first_line
+                        rparen_idx = i
+                elif part.text == "(":
+                    # Fallback: detect by text content
+                    lparen_idx = i
+                    # Try to get line from next token
+                    if lparen_idx > 0:
+                        for j in range(lparen_idx - 1, -1, -1):
+                            if (
+                                isinstance(parts[j], doc.Text)
+                                and parts[j].source_token
+                                and parts[j].source_token.loc
+                            ):
+                                lparen_line = parts[j].source_token.loc.last_line
+                                break
+                elif part.text == ")":
+                    rparen_idx = i
+                    # Try to get line from previous token
+                    for j in range(i - 1, -1, -1):
+                        if (
+                            isinstance(parts[j], doc.Text)
+                            and parts[j].source_token
+                            and parts[j].source_token.loc
+                        ):
+                            rparen_line = parts[j].source_token.loc.last_line + 1
+                            break
+            elif isinstance(part, doc.Indent):
+                # Track Indent node (contains params in non-empty param lists)
+                indent_idx = i
+
+        if (
+            lparen_line is None
+            or rparen_line is None
+            or lparen_idx is None
+            or rparen_idx is None
+        ):
+            return parts
+
+        # Check for standalone comments between ( and )
+        comments = self._comments.take_standalone_between(
+            lparen_line + 1,
+            rparen_line,
+        )
+
+        if not comments:
+            return parts
+
+        # Case 1: Empty parameter list - inject comments directly
+        if not sig.params:
+            # Build new parts list with comments injected
+            result = list(parts[: lparen_idx + 1])  # Everything up to and including (
+
+            # Create an indented block with the comments
+            comment_parts: list[doc.DocType] = [doc.Line(hard=True, tight=True)]
+            for info in comments:
+                comment_parts.append(doc.Text(info.token.value))
+                comment_parts.append(doc.Line(hard=True))
+
+            # Remove last hard line since we'll add tight line before )
+            if comment_parts and isinstance(comment_parts[-1], doc.Line):
+                comment_parts.pop()
+
+            result.append(doc.Indent(doc.Concat(comment_parts)))
+            result.append(doc.Line(hard=True, tight=True))
+            result.extend(parts[rparen_idx:])  # ) and everything after
+
+            return result
+
+        # Case 2: Non-empty parameter list - append comments to existing Indent
+        if indent_idx is not None:
+            result = list(parts)
+            indent_part = result[indent_idx]
+
+            if isinstance(indent_part, doc.Indent) and isinstance(
+                indent_part.contents, doc.Concat
+            ):
+                # Add comments to the end of the indent contents
+                new_indent_parts = list(indent_part.contents.parts)
+
+                for info in comments:
+                    new_indent_parts.append(doc.Line(hard=True))
+                    new_indent_parts.append(doc.Text(info.token.value))
+
+                result[indent_idx] = doc.Indent(
+                    doc.Concat(
+                        new_indent_parts, ast_node=indent_part.contents.ast_node
+                    ),
+                    ast_node=indent_part.ast_node,
+                )
+
+            return result
+
+        return parts
+
+    def _fix_empty_body_spacing(self, parts: list[doc.DocType]) -> list[doc.DocType]:
+        """Fix spacing after empty bodies that now contain comments.
+
+        When an empty body gets comments injected, the DocIR still has a Space
+        before the closing brace (from when it was empty). We need to replace
+        that Space with a hard line (outside the Indent).
+        """
+        result = []
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+            # Check if this is an Indent with comments, followed by whitespace
+            if (
+                isinstance(part, doc.Indent)
+                and isinstance(part.contents, doc.Concat)
+                and part.contents.parts  # Has content
+                and i + 1 < len(parts)
+            ):
+                next_part = parts[i + 1]
+                # Check if next part is a Space (single space for empty bodies)
+                if (
+                    isinstance(next_part, doc.Text)
+                    and next_part.text.strip() == ""
+                    and len(next_part.text) <= 1
+                ):
+                    # Replace the space with a hard line (outside the Indent)
+                    result.append(part)
+                    result.append(doc.Line(hard=True))
+                    i += 2
+                    continue
+            result.append(part)
+            i += 1
+        return result
 
     def _inject_into_parts(
         self, parts: list[doc.DocType], ctx: uni.UniNode
@@ -424,23 +584,56 @@ class CommentInjectionPass(Transform[uni.Module, uni.Module]):
         result = self._inject_into_parts(parts_with_standalone, node)
 
         # Add any remaining comments after all body items but before closing brace
-        if body_end and node.body:
-            last_body_line = (
-                node.body[-1].loc.last_line if node.body[-1].loc else current_line - 1
-            )
-            comments = []
-            if self._comments:
-                comments = self._comments.take_standalone_between(
-                    last_body_line + 1,
-                    body_end,
+        if body_end is not None:
+            if node.body:
+                # Body has items - add comments after the last item
+                last_body_line = (
+                    node.body[-1].loc.last_line
+                    if node.body[-1].loc
+                    else current_line - 1
                 )
+                comments = []
+                if self._comments:
+                    comments = self._comments.take_standalone_between(
+                        last_body_line + 1,
+                        body_end,
+                    )
 
-            if comments:
-                self._emit_standalone_comments(
-                    result,
-                    comments,
-                    prev_item_line=last_body_line,
-                )
+                if comments:
+                    self._emit_standalone_comments(
+                        result,
+                        comments,
+                        prev_item_line=last_body_line,
+                    )
+            else:
+                # Empty body - add comments between opening and closing braces
+                comments = []
+                if self._comments:
+                    comments = self._comments.take_standalone_between(
+                        body_start,
+                        body_end,
+                    )
+
+                if comments:
+                    # For empty bodies, add a hard line before the first comment
+                    result.append(doc.Line(hard=True))
+                    self._emit_standalone_comments(
+                        result,
+                        comments,
+                        prev_item_line=body_start - 1,
+                    )
+                    # Remove trailing hard line from last comment - it will be added outside the Indent
+                    if result:
+                        last = result[-1]
+                        if isinstance(last, doc.Concat) and len(last.parts) == 2:
+                            text_part, line_part = last.parts
+                            if (
+                                isinstance(text_part, doc.Text)
+                                and isinstance(line_part, doc.Line)
+                                and line_part.hard
+                            ):
+                                # Replace the comment Concat with just the text part
+                                result[-1] = text_part
 
         return doc.Indent(doc.Concat(result), ast_node=node)
 
